@@ -7,4 +7,5 @@ license = "MIT/Apache-2.0"
 description="For manipulating struct fields."
 
 [dependencies]
-structural_derive="0.0.0"
+structural_derive={version="0.0.0",path="../structural_derive"}
+core_extensions={version="0.1",default_features=false}
