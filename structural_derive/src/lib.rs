@@ -19,9 +19,12 @@ mod parse_utils;
 
 
 use proc_macro::TokenStream as TokenStream1;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{
+    TokenStream as TokenStream2,
+    Span,
+};
 
-use quote::quote;
+use quote::{quote,ToTokens};
 
 
 /**
@@ -31,26 +34,54 @@ The implementation of the tstr macro when const parameters aren't supported.
 pub fn tstr_impl(input: TokenStream1) -> TokenStream1 {
     use crate::parse_utils::ParsePunctuated;
 
-    parse_or_compile_err(input,|str_lit: ParsePunctuated<syn::LitStr,syn::Token!(,)>|{
+    fn tstring_tokenizer(string:String)->impl ToTokens{
         use std::fmt::Write;
-        let strings=str_lit.list.into_iter()
-            .map(|string|{
-                let mut buffer=String::new();
-                let string=string.value();
-                let bytes=string.bytes()
-                    .map(move|b|{
-                        buffer.clear();
-                        let _=write!(buffer,"B{}",b);
-                        syn::Ident::new(&buffer, proc_macro2::Span::call_site())
-                    });
-                quote!( TString<( #(#bytes,)* )> )
+        let mut buffer=String::new();
+        let bytes=string.bytes()
+            .map(move|b|{
+                buffer.clear();
+                let _=write!(buffer,"B{}",b);
+                syn::Ident::new(&buffer, Span::call_site())
             });
+        quote!( TString<( #(#bytes,)* )> )
+    }
 
-        Ok(quote!(
-            use structural::proc_macro_reexports::*;
+    parse_or_compile_err(input,|str_lit: ParsePunctuated<syn::LitStr,syn::Token!(,)>|{
+        let strings=str_lit.list;
+        let tokens=if strings.len()==1 {
+            let string=strings[0].value();
+            let tstring=tstring_tokenizer(string);
 
-            pub const VALUE:(#(#strings),*)=MarkerType::MTVAL;
-        ))
+            quote!(
+                use structural::proc_macro_reexports::*;
+
+                pub const VALUE:#tstring=MarkerType::MTVAL;
+            )
+        }else{
+            let mut prev_strings=Vec::<String>::new();
+            let mut tstring=Vec::new();
+            for string_lit in strings {
+                let string=string_lit.value();
+                if prev_strings.contains(&string) {
+                    return Err(syn::Error::new(
+                        string_lit.span(),
+                        "Field names cannot be used more than once"
+                    ));
+                }else{
+                    prev_strings.push(string.clone());
+                    tstring.push(tstring_tokenizer(string));
+                }
+            }
+            quote!(
+                use structural::proc_macro_reexports::*;
+
+                pub const VALUE:MultiTString<(#(#tstring),*)>=unsafe{
+                    MultiTString::new()
+                };
+            )
+        };
+
+        Ok(tokens)
     }).into()
 }
 

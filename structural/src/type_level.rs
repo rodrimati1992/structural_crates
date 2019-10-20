@@ -2,4 +2,4 @@
 
 pub mod ident;
 
-pub use self::ident::TString;
+pub use self::ident::{MultiTString,TString};

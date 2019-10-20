@@ -42,6 +42,36 @@ macro_rules! create_unit_struct {
 }
 
 
+/// A tuple of multiple unique `TString`s
+pub struct MultiTString<T>(PhantomData<T>);
+
+impl<T> MultiTString<T>{
+    /// Constructs a `MultiTString`.
+    ///
+    /// # Safety
+    ///
+    /// `T` must be a tuple of `TString<_>`s,
+    /// where no `TString<_>` type is repeated within the tuple.
+    pub const unsafe fn new()->Self{
+        MultiTString(PhantomData)
+    }
+}
+
+impl<T> Copy for MultiTString<T>{}
+impl<T> Clone for MultiTString<T>{
+    fn clone(&self)->Self{
+        *self
+    }
+}
+
+// `MarkerType` is not implemented for `MultiTString` 
+// because `MultiTString` ought only be constructible
+// by satisfying the safety requirements of `MultiTString::new`,
+// which aren't cheaply enforceable on the type level.
+//
+// impl<T> !MarkerType for MultiTString<T>{}
+
+
 /*
 
 This is code used to generate the macro invocation.

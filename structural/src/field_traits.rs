@@ -1,6 +1,7 @@
 use crate::{
     mut_ref::MutRef,
     utils::coerce_slice,
+    type_level::MultiTString,
 };
 
 use std::marker::PhantomData;
@@ -17,12 +18,6 @@ mod tuple_impls;
 pub trait GetField<FieldName>{
     /// The type of the `FieldName` field.
     type Ty;
-
-    /// The name of the field,used mostly for error messages.
-    const NAME:&'static str;
-    
-    /// The number of the field,each index only corresponds to one field.
-    const INDEX:usize;
 
     /// Accesses the `FieldName` field by reference.
     fn get_field_(&self)->&Self::Ty;
@@ -92,23 +87,19 @@ pub trait GetFieldExt{
     /// # Panic
     ///
     /// This function panics if `Field0` and `Field1` are the same field.
-    fn field_mut_2<Field0,Field1>(&mut self,_:(Field0,Field1))-> (
+    fn field_mut_2<Field0,Field1>(&mut self,_:MultiTString<(Field0,Field1)>)-> (
         &mut GetFieldType<Self,Field0>,
         &mut GetFieldType<Self,Field1>,
     )where
         Self:GetFieldMut<Field0>,
         Self:GetFieldMut<Field1>,
     {
-        if Compare2Indices::<Self,Field0,Field1>::ARE_ALL_DIFFERENT {
-            let this=MutRef::new(self);
-            unsafe{
-                (
-                    GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
-                    GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
-                )
-            }
-        }else{
-            panic_same_fields(Compare2Indices::<Self,Field0,Field1>::NAME_INDICES);
+        let this=MutRef::new(self);
+        unsafe{
+            (
+                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
+                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
+            )
         }
     }
     
@@ -117,7 +108,7 @@ pub trait GetFieldExt{
     /// # Panic
     ///
     /// This function panics if a field is repeated more than once.
-    fn field_mut_3<Field0,Field1,Field2>(&mut self,_:(Field0,Field1,Field2))-> (
+    fn field_mut_3<Field0,Field1,Field2>(&mut self,_:MultiTString<(Field0,Field1,Field2)>)-> (
         &mut GetFieldType<Self,Field0>,
         &mut GetFieldType<Self,Field1>,
         &mut GetFieldType<Self,Field2>,
@@ -126,17 +117,13 @@ pub trait GetFieldExt{
         Self:GetFieldMut<Field1>,
         Self:GetFieldMut<Field2>,
     {
-        if Compare3Indices::<Self,Field0,Field1,Field2>::ARE_ALL_DIFFERENT {
-            let this=MutRef::new(self);
-            unsafe{
-                (
-                    GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
-                    GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
-                    GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),
-                )
-            }
-        }else{
-            panic_same_fields(Compare3Indices::<Self,Field0,Field1,Field2>::NAME_INDICES);
+        let this=MutRef::new(self);
+        unsafe{
+            (
+                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
+                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
+                GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),
+            )
         }
     }
     
@@ -147,7 +134,7 @@ pub trait GetFieldExt{
     /// This function panics if a field is repeated more than once.
     fn field_mut_4<Field0,Field1,Field2,Field3>(
         &mut self,
-        _:(Field0,Field1,Field2,Field3)
+        _:MultiTString<(Field0,Field1,Field2,Field3)>,
     )-> (
         &mut GetFieldType<Self,Field0>,
         &mut GetFieldType<Self,Field1>,
@@ -159,20 +146,14 @@ pub trait GetFieldExt{
         Self:GetFieldMut<Field2>,
         Self:GetFieldMut<Field3>,
     {
-        if Compare4Indices::<Self,Field0,Field1,Field2,Field3>::ARE_ALL_DIFFERENT {
-            let this=MutRef::new(self);
-            unsafe{
-                (
-                    GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),        
-                    GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),        
-                    GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),        
-                    GetFieldMut::<Field3>::raw_get_mut_field(this.clone()),        
-                )
-            }
-        }else{
-            panic_same_fields(
-                Compare4Indices::<Self,Field0,Field1,Field2,Field3>::NAME_INDICES
-            );
+        let this=MutRef::new(self);
+        unsafe{
+            (
+                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),        
+                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),        
+                GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),        
+                GetFieldMut::<Field3>::raw_get_mut_field(this.clone()),        
+            )
         }
     }
 }
@@ -181,95 +162,3 @@ pub trait GetFieldExt{
 impl<T:?Sized> GetFieldExt for T{}
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-#[cold]
-#[inline(never)]
-fn panic_same_fields(names_indices:&'static &'static [(&'static str,usize)])->!{
-    panic!(
-        "One of the fields is the same as another:{:#?}", 
-        names_indices
-    );
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-struct GetIndex<Struct:?Sized,FieldName>(PhantomData<fn()->(*const Struct,FieldName)>);
-
-impl<Struct:?Sized,FieldName> GetIndex<Struct,FieldName>
-where
-    Struct:GetField<FieldName>
-{
-    const VAL:usize=<Struct as GetField<FieldName>>::INDEX;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// Makes a helper struct which calculates
-/// whether any of its FieldName type parameters are for the same field.
-macro_rules! make_index_comparator {
-    ( 
-        comparator=$comparator:ident
-        struct=$struct_:ident
-        fields=[$($field:ident),*]
-        comparison=$comparison:expr
-    ) => (
-        struct $comparator<$struct_:?Sized,$($field,)*>(
-            PhantomData<fn(&$struct_,$($field,)*)>
-        );
-
-        impl<$struct_:?Sized,$($field,)*> $comparator<$struct_,$($field,)*>
-        where
-            $( $struct_:GetField<$field>, )*
-        {
-            const ARE_ALL_DIFFERENT:bool= $comparison ;
-            const NAME_INDICES:&'static &'static [(&'static str,usize)]=&coerce_slice(&[
-                $(
-                    (
-                        <$struct_ as GetField<$field>>::NAME,
-                        <$struct_ as GetField<$field>>::INDEX,
-                    ),
-                )*
-            ]);
-        }
-    )
-}
-
-
-make_index_comparator!{
-    comparator=Compare2Indices
-    struct=Struct
-    fields=[ A,B ]
-    comparison=
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,B>::VAL
-}
-
-make_index_comparator!{
-    comparator=Compare3Indices
-    struct=Struct
-    fields=[ A,B,C ]
-    comparison=
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,B>::VAL &&
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,C>::VAL &&
-        GetIndex::<Struct,B>::VAL != GetIndex::<Struct,C>::VAL
-}
-
-make_index_comparator!{
-    comparator=Compare4Indices
-    struct=Struct
-    fields=[ A,B,C,D ]
-    comparison=
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,B>::VAL &&
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,C>::VAL &&
-        GetIndex::<Struct,A>::VAL != GetIndex::<Struct,D>::VAL &&
-        GetIndex::<Struct,B>::VAL != GetIndex::<Struct,C>::VAL &&
-        GetIndex::<Struct,B>::VAL != GetIndex::<Struct,D>::VAL &&
-        GetIndex::<Struct,C>::VAL != GetIndex::<Struct,D>::VAL
-}
-
-
-////////////////////////////////////////////////////////////////////////////////

@@ -6,10 +6,6 @@ macro_rules! impl_getter{
         impl<$($typarams)*> GetField<$name_param> for $self_ {
             type Ty=$field_ty;
 
-            const INDEX:usize=$index;
-
-            const NAME:&'static str=stringify!($field_name);
-            
             fn get_field_(&self)->&Self::Ty{
                 &self.$field_name
             }
