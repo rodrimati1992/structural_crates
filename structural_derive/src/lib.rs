@@ -16,35 +16,32 @@ extern crate proc_macro;
 
 
 mod parse_utils;
+mod structural_alias_impl;
+mod tokenizers;
 
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::{
     TokenStream as TokenStream2,
-    Span,
 };
 
-use quote::{quote,ToTokens};
+use quote::quote;
 
+
+#[proc_macro]
+pub fn structural_alias(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,structural_alias_impl::macro_impl).into()
+}
 
 /**
 The implementation of the tstr macro when const parameters aren't supported.
 */
 #[proc_macro]
 pub fn tstr_impl(input: TokenStream1) -> TokenStream1 {
-    use crate::parse_utils::ParsePunctuated;
-
-    fn tstring_tokenizer(string:String)->impl ToTokens{
-        use std::fmt::Write;
-        let mut buffer=String::new();
-        let bytes=string.bytes()
-            .map(move|b|{
-                buffer.clear();
-                let _=write!(buffer,"B{}",b);
-                syn::Ident::new(&buffer, Span::call_site())
-            });
-        quote!( TString<( #(#bytes,)* )> )
-    }
+    use crate::{
+        parse_utils::ParsePunctuated,
+        tokenizers::tstring_tokenizer,
+    };
 
     parse_or_compile_err(input,|str_lit: ParsePunctuated<syn::LitStr,syn::Token!(,)>|{
         let strings=str_lit.list;

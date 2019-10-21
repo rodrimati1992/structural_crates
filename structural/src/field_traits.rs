@@ -1,10 +1,7 @@
 use crate::{
     mut_ref::MutRef,
-    utils::coerce_slice,
     type_level::MultiTString,
 };
-
-use std::marker::PhantomData;
 
 
 mod tuple_impls;

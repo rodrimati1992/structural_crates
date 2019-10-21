@@ -15,7 +15,7 @@ pub mod utils;
 pub use crate::type_level::ident as chars;
 
 pub use crate::{
-    field_traits::{GetField,GetFieldMut,IntoField},
+    field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt},
 };
 
 
