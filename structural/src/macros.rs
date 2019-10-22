@@ -159,3 +159,123 @@ macro_rules! TChar{
         $crate::chars::$byte
     }
 } 
+
+
+/**
+
+The `structural_alias` defines a trait alias for multiple field accessors.
+
+# The entire syntax
+
+```
+# use structural::structural_alias;
+# trait SuperTrait{}
+
+structural_alias!{
+    pub trait Foo<'a,T,const A:usize>:SuperTrait
+    where
+        T:SuperTrait
+    {
+             a:u32,
+        ref  b:T,
+        mut  c:i64,
+        move d:String,
+    }
+}
+```
+
+Outside of the `{...}` the trait syntax is the same as the 
+regular one,with the same meaning.
+
+Inside the `{...}` is a list of fields,
+each of which get turned into supertraits on `Foo`:
+
+`     a:u32`:
+    Corresponds to the `GetField<TString<(_a,)>,Ty=u32>` shared reference 
+    field accessor trait.
+
+`ref  b:T`
+    Corresponds to the `GetField<TString<(_b,)>,Ty=T>` shared reference 
+    field accessor trait.
+
+`mut  c:i64`:
+    Corresponds to the `GetFieldMut<TString<(_c,)>,Ty=i64>` mutable reference 
+    field accessor trait (which`itself implies `GetField`).
+
+`move d:String`:
+    Corresponds to the `IntoField<TString<(_d,)>,Ty=String>` by value
+    field accessor trait (which`itself implies `GetField` and `GetFieldMut`).
+
+# Examples
+
+### Defining a Point trait alias
+
+```rust
+use structural::{
+    structural_alias,
+    tstr,
+    GetFieldExt,
+};
+
+structural_alias!{
+    trait Point<T>{
+        x:T,
+        y:T,
+    }
+}
+
+pub fn print_point<T,U>(value:&T)
+where
+    T:Point<u32>
+{
+    // This gets references to the `x` and `y` fields.
+    let (x,y)=value.field_2(tstr!("x","y"));
+    assert_ne!(x,y);
+}
+
+// TODO:add 3 structs deriving Structural,and pass them into the function.
+
+```
+
+### Defining a trait aliases with all accessibilities
+
+```
+use structural::{
+    structural_alias,
+    tstr,
+    GetFieldExt,
+};
+
+structural_alias!{
+    trait Person{
+        // shared access (a & reference to the field)
+        id:PersonId,
+        
+        // shared access (a & reference to the field)
+        name:String,
+
+        // mutable access (a &mut reference to the field),as well as shared access.
+        mut friends:Vec<PersonId>,
+
+        // by value access to the field (as well as shared and mutable)
+        move 
+    }
+}
+
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct Seconds(u64);
+
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct PersonId(u64);
+
+
+```
+
+
+*/
+#[macro_export]
+macro_rules! structural_alias{
+    ( $($everything:tt)* )=>{
+        structural_alias_impl!( $($everything)* )
+    }
+}

@@ -63,6 +63,63 @@ pub trait GetFieldExt{
         self.get_field_()
     }
 
+    /// Gets references to the `Field0` and `Field1` fields.
+    fn field_2<Field0,Field1>(&self,_:MultiTString<(Field0,Field1)>)-> (
+        &GetFieldType<Self,Field0>,
+        &GetFieldType<Self,Field1>,
+    )where
+        Self:GetField<Field0>,
+        Self:GetField<Field1>,
+    {
+        (
+            GetField::<Field0>::get_field_(self),
+            GetField::<Field1>::get_field_(self),
+        )
+    }
+
+    /// Gets references to the `Field0`,`Field1`,and `Field2` fields.
+    fn field_3<Field0,Field1,Field2>(
+        &self,
+        _:MultiTString<(Field0,Field1,Field2)>
+    )-> (
+        &GetFieldType<Self,Field0>,
+        &GetFieldType<Self,Field1>,
+        &GetFieldType<Self,Field2>,
+    )where
+        Self:GetField<Field0>,
+        Self:GetField<Field1>,
+        Self:GetField<Field2>,
+    {
+        (
+            GetField::<Field0>::get_field_(self),
+            GetField::<Field1>::get_field_(self),
+            GetField::<Field2>::get_field_(self),
+        )
+    }
+
+    /// Gets references to the `Field0`,`Field1`,`Field2`,and `Field3` fields.
+    fn field_4<Field0,Field1,Field2,Field3>(
+        &self,
+        _:MultiTString<(Field0,Field1,Field2,Field3)>
+    )-> (
+        &GetFieldType<Self,Field0>,
+        &GetFieldType<Self,Field1>,
+        &GetFieldType<Self,Field2>,
+        &GetFieldType<Self,Field3>,
+    )where
+        Self:GetField<Field0>,
+        Self:GetField<Field1>,
+        Self:GetField<Field2>,
+        Self:GetField<Field3>,
+    {
+        (
+            GetField::<Field0>::get_field_(self),
+            GetField::<Field1>::get_field_(self),
+            GetField::<Field2>::get_field_(self),
+            GetField::<Field3>::get_field_(self),
+        )
+    }
+
     /// Gets a mutable reference to the ´FieldName´ field.
     fn field_mut<FieldName>(&mut self,_:FieldName)->&mut Self::Ty
     where 

@@ -81,6 +81,8 @@ impl Parse for StructuralAlias {
 
         generics.where_clause = input.parse()?;
 
+        // let equal:Token![=]= input.parse()?;
+
         let content;
         let _ = syn::braced!(content in input);
         let mut fields = Vec::<StructuralAliasField>::new();
@@ -88,6 +90,8 @@ impl Parse for StructuralAlias {
             fields.push(content.parse()?);
             let _:Result<Token![,],syn::Error>=content.parse();
         }
+        
+        // let equal:Token![;]= input.parse()?;
 
         Ok(Self {
             attrs,

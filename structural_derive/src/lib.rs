@@ -29,7 +29,7 @@ use quote::quote;
 
 
 #[proc_macro]
-pub fn structural_alias(input: TokenStream1) -> TokenStream1 {
+pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input,structural_alias_impl::macro_impl).into()
 }
 
