@@ -169,10 +169,10 @@ The `structural_alias` defines a trait alias for multiple field accessors.
 
 ```
 # use structural::structural_alias;
-# trait SuperTrait{}
+# pub trait SuperTrait{}
 
 structural_alias!{
-    pub trait Foo<'a,T,const A:usize>:SuperTrait
+    pub trait Foo<'a,T>:SuperTrait
     where
         T:SuperTrait
     {
@@ -182,6 +182,8 @@ structural_alias!{
         move d:String,
     }
 }
+
+# fn main(){}
 ```
 
 Outside of the `{...}` the trait syntax is the same as the 
@@ -224,16 +226,18 @@ structural_alias!{
     }
 }
 
-pub fn print_point<T,U>(value:&T)
+fn print_point<T,U>(value:&T)
 where
     T:Point<u32>
 {
     // This gets references to the `x` and `y` fields.
-    let (x,y)=value.field_2(tstr!("x","y"));
+    let (x,y)=value.fields(tstr!("x","y"));
     assert_ne!(x,y);
 }
 
 // TODO:add 3 structs deriving Structural,and pass them into the function.
+
+# fn main(){}
 
 ```
 
@@ -258,7 +262,7 @@ structural_alias!{
         mut friends:Vec<PersonId>,
 
         // by value access to the field (as well as shared and mutable)
-        move 
+        move candy:Candy,
     }
 }
 
@@ -268,6 +272,10 @@ structural_alias!{
 # #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 # struct PersonId(u64);
 
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct Candy;
+
+# fn main(){}
 
 ```
 
@@ -276,6 +284,6 @@ structural_alias!{
 #[macro_export]
 macro_rules! structural_alias{
     ( $($everything:tt)* )=>{
-        structural_alias_impl!( $($everything)* )
+        structural_derive::structural_alias_impl!{ $($everything)* }
     }
 }

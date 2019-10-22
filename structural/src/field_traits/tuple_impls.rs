@@ -202,7 +202,7 @@ mod tests{
     where
         T:GetField<TStr!(1),Ty=u64>,
     {
-        val.field(tstr!("1"))
+        val.field_(tstr!("1"))
     }
 
 
@@ -224,7 +224,7 @@ mod tests{
     fn get_mut_many(){
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1)=tup.field_mut_2(tstr!("0","1"));
+            let (e0,e1)=tup.fields_mut(tstr!("0","1"));
             *e0=101;
             *e1=102;
 
@@ -233,7 +233,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1,e2)=tup.field_mut_3(tstr!("0","1","3"));
+            let (e0,e1,e2)=tup.fields_mut(tstr!("0","1","3"));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -246,7 +246,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5,6,7,8);
-            let (e0,e1,e2,e3)=tup.field_mut_4(tstr!("0","1","2","8"));
+            let (e0,e1,e2,e3)=tup.fields_mut(tstr!("0","1","2","8"));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -260,6 +260,40 @@ mod tests{
             assert_eq!(tup.7,7);
             assert_eq!(tup.8,200);
         }
+    }
+
+
+    structural_alias!{
+        trait Tuple4{
+            move 0:u32,
+            move 1:u32,
+            move 2:u32,
+            move 3:u32,
+        }
+    }
+
+
+
+    fn takes_tuple4<This>(mut this:This)
+    where
+        This:Tuple4,
+    {
+        assert_eq!(this.fields(tstr!("0","1")),(&6,&5));
+        assert_eq!(this.fields(tstr!("0","1","2")),(&6,&5,&4));
+        assert_eq!(this.fields(tstr!("0","1","2","3")),(&6,&5,&4,&3));
+
+
+        assert_eq!(this.fields_mut(tstr!("0","1")),(&mut 6,&mut 5));
+        assert_eq!(this.fields_mut(tstr!("0","1","2")),(&mut 6,&mut 5,&mut 4));
+        assert_eq!(this.fields_mut(tstr!("0","1","2","3")),(&mut 6,&mut 5,&mut 4,&mut 3));
+    }
+
+
+    #[test]
+    fn tuple4_test(){
+        takes_tuple4((6,5,4,3,2,1));
+        takes_tuple4((6,5,4,3,2));
+        takes_tuple4((6,5,4,3));
     }
 
 }

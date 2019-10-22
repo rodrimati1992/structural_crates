@@ -53,71 +53,104 @@ pub trait IntoField<FieldName>:GetFieldMut<FieldName>+Sized{
 }
 
 
+
+/// This trait allows a MultiTString to borrow the fields it names.
+pub trait GetMultiField<'a,This:?Sized>{
+    type MultiTy:'a;
+
+    fn multi_get_field_(this:&'a This)->Self::MultiTy;
+}
+
+/// This trait allows a MultiTString to borrow the fields it names mutably.
+pub trait GetMultiFieldMut<'a,This:?Sized>:Sized{
+    type MultiTy:'a;
+
+    fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy;
+}
+
+
+macro_rules! impl_get_multi_field {
+    ( $($fname:ident)* ) => (
+        impl<'a,This:?Sized,$($fname,)*> GetMultiField<'a,This> for ($($fname,)*)
+        where
+            $(
+                This:GetField<$fname>,
+                GetFieldType<This,$fname>:'a,
+            )*
+        {
+            type MultiTy=(
+                $(
+                    &'a GetFieldType<This,$fname>,
+                )*
+            );
+
+            fn multi_get_field_(this:&'a This)->Self::MultiTy{
+                (
+                    $(
+                        GetField::<$fname>::get_field_(this),
+                    )*
+                )
+            }
+        }
+
+        impl<'a,This:?Sized,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
+        where
+            $(
+                This:GetFieldMut<$fname>,
+                GetFieldType<This,$fname>:'a,
+            )*
+        {
+            type MultiTy=(
+                $(
+                    &'a mut GetFieldType<This,$fname>,
+                )*
+            );
+
+            fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy{
+                let this=MutRef::new(this);
+                unsafe{
+                    (
+                        $(
+                            GetFieldMut::<$fname>::raw_get_mut_field(this.clone()),
+                        )*
+                    )
+                }
+            }
+        }
+    )
+}
+
+
+impl_get_multi_field!{F0}
+impl_get_multi_field!{F0 F1}
+impl_get_multi_field!{F0 F1 F2}
+impl_get_multi_field!{F0 F1 F2 F3}
+impl_get_multi_field!{F0 F1 F2 F3 F4}
+impl_get_multi_field!{F0 F1 F2 F3 F4 F5}
+impl_get_multi_field!{F0 F1 F2 F3 F4 F5 F6}
+impl_get_multi_field!{F0 F1 F2 F3 F4 F5 F6 F7}
+
+
+
 /// An extension trait,which defines methods for accessing fields generically.
 pub trait GetFieldExt{
     /// Gets a reference to the ´FieldName´ field.
-    fn field<FieldName>(&self,_:FieldName)->&Self::Ty
+    ///
+    /// This is named `field_` instead of `field`
+    /// because `field` collides with the `DebugTuple`/`DebugStruct` method
+    fn field_<FieldName>(&self,_:FieldName)->&Self::Ty
     where 
         Self:GetField<FieldName>
     {
         self.get_field_()
     }
 
-    /// Gets references to the `Field0` and `Field1` fields.
-    fn field_2<Field0,Field1>(&self,_:MultiTString<(Field0,Field1)>)-> (
-        &GetFieldType<Self,Field0>,
-        &GetFieldType<Self,Field1>,
-    )where
-        Self:GetField<Field0>,
-        Self:GetField<Field1>,
+    /// Gets multiple references to fields.
+    fn fields<'a,Fields>(&'a self,_:MultiTString<Fields>)->Fields::MultiTy
+    where
+        Fields:GetMultiField<'a,Self>
     {
-        (
-            GetField::<Field0>::get_field_(self),
-            GetField::<Field1>::get_field_(self),
-        )
-    }
-
-    /// Gets references to the `Field0`,`Field1`,and `Field2` fields.
-    fn field_3<Field0,Field1,Field2>(
-        &self,
-        _:MultiTString<(Field0,Field1,Field2)>
-    )-> (
-        &GetFieldType<Self,Field0>,
-        &GetFieldType<Self,Field1>,
-        &GetFieldType<Self,Field2>,
-    )where
-        Self:GetField<Field0>,
-        Self:GetField<Field1>,
-        Self:GetField<Field2>,
-    {
-        (
-            GetField::<Field0>::get_field_(self),
-            GetField::<Field1>::get_field_(self),
-            GetField::<Field2>::get_field_(self),
-        )
-    }
-
-    /// Gets references to the `Field0`,`Field1`,`Field2`,and `Field3` fields.
-    fn field_4<Field0,Field1,Field2,Field3>(
-        &self,
-        _:MultiTString<(Field0,Field1,Field2,Field3)>
-    )-> (
-        &GetFieldType<Self,Field0>,
-        &GetFieldType<Self,Field1>,
-        &GetFieldType<Self,Field2>,
-        &GetFieldType<Self,Field3>,
-    )where
-        Self:GetField<Field0>,
-        Self:GetField<Field1>,
-        Self:GetField<Field2>,
-        Self:GetField<Field3>,
-    {
-        (
-            GetField::<Field0>::get_field_(self),
-            GetField::<Field1>::get_field_(self),
-            GetField::<Field2>::get_field_(self),
-            GetField::<Field3>::get_field_(self),
-        )
+        Fields::multi_get_field_(self)
     }
 
     /// Gets a mutable reference to the ´FieldName´ field.
@@ -128,6 +161,18 @@ pub trait GetFieldExt{
         self.get_field_mut_()
     }
 
+    /// Gets multiple mutable references to fields.
+    ///
+    /// This is safe since `MultiTString` requires its strings 
+    /// to be checked for uniqueness before being constructed
+    /// (the safety invariant of `MultiTString`).
+    fn fields_mut<'a,Fields>(&'a mut self,ms:MultiTString<Fields>)->Fields::MultiTy
+    where
+        Fields:GetMultiFieldMut<'a,Self>
+    {
+        Fields::multi_get_field_mut_(self,ms)
+    }
+
     /// Converts ´self´ into the ´FieldName´ field.
     fn into_field<FieldName>(self,_:FieldName)->Self::Ty
     where 
@@ -135,84 +180,42 @@ pub trait GetFieldExt{
     {
         self.into_field_()
     }
-
-    /// Gets mutable references to the ´Field0´ and ´Field1´ fields.
-    ///
-    /// # Panic
-    ///
-    /// This function panics if `Field0` and `Field1` are the same field.
-    fn field_mut_2<Field0,Field1>(&mut self,_:MultiTString<(Field0,Field1)>)-> (
-        &mut GetFieldType<Self,Field0>,
-        &mut GetFieldType<Self,Field1>,
-    )where
-        Self:GetFieldMut<Field0>,
-        Self:GetFieldMut<Field1>,
-    {
-        let this=MutRef::new(self);
-        unsafe{
-            (
-                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
-                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
-            )
-        }
-    }
-    
-    /// Gets mutable references to the ´Field0´,´Field1´,and ´Field2´ fields.
-    ///
-    /// # Panic
-    ///
-    /// This function panics if a field is repeated more than once.
-    fn field_mut_3<Field0,Field1,Field2>(&mut self,_:MultiTString<(Field0,Field1,Field2)>)-> (
-        &mut GetFieldType<Self,Field0>,
-        &mut GetFieldType<Self,Field1>,
-        &mut GetFieldType<Self,Field2>,
-    )where
-        Self:GetFieldMut<Field0>,
-        Self:GetFieldMut<Field1>,
-        Self:GetFieldMut<Field2>,
-    {
-        let this=MutRef::new(self);
-        unsafe{
-            (
-                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),
-                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),
-                GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),
-            )
-        }
-    }
-    
-    /// Gets mutable references to the ´Field0´,´Field1´,´Field2´,and ´Field3´ fields.
-    ///
-    /// # Panic
-    ///
-    /// This function panics if a field is repeated more than once.
-    fn field_mut_4<Field0,Field1,Field2,Field3>(
-        &mut self,
-        _:MultiTString<(Field0,Field1,Field2,Field3)>,
-    )-> (
-        &mut GetFieldType<Self,Field0>,
-        &mut GetFieldType<Self,Field1>,
-        &mut GetFieldType<Self,Field2>,
-        &mut GetFieldType<Self,Field3>,
-    )where
-        Self:GetFieldMut<Field0>,
-        Self:GetFieldMut<Field1>,
-        Self:GetFieldMut<Field2>,
-        Self:GetFieldMut<Field3>,
-    {
-        let this=MutRef::new(self);
-        unsafe{
-            (
-                GetFieldMut::<Field0>::raw_get_mut_field(this.clone()),        
-                GetFieldMut::<Field1>::raw_get_mut_field(this.clone()),        
-                GetFieldMut::<Field2>::raw_get_mut_field(this.clone()),        
-                GetFieldMut::<Field3>::raw_get_mut_field(this.clone()),        
-            )
-        }
-    }
 }
 
 
 impl<T:?Sized> GetFieldExt for T{}
 
 
+
+
+structural_alias!{
+    trait Tuple4{
+        move 0:u32,
+        move 1:u32,
+        move 2:u32,
+        move 3:u32,
+    }
+}
+
+
+
+fn wha<This>(mut this:This)
+where
+    This:Tuple4,
+{
+    assert_eq!(this.fields(tstr!("0","1")),(&6,&5));
+    assert_eq!(this.fields(tstr!("0","1","2")),(&6,&5,&4));
+    assert_eq!(this.fields(tstr!("0","1","2","3")),(&6,&5,&4,&3));
+
+    assert_eq!(this.fields_mut(tstr!("0","1")),(&mut 6,&mut 5));
+    assert_eq!(this.fields_mut(tstr!("0","1","2")),(&mut 6,&mut 5,&mut 4));
+    assert_eq!(this.fields_mut(tstr!("0","1","2","3")),(&mut 6,&mut 5,&mut 4,&mut 3));
+}
+
+
+#[test]
+fn who(){
+    wha((6,5,4,3,2,1));
+    wha((6,5,4,3,2));
+    wha((6,5,4,3));
+}
