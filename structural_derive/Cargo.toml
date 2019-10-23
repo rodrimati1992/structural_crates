@@ -20,7 +20,7 @@ include = [
 proc-macro = true
 
 [dependencies]
-as_derive_utils= {version="0.8.0",path="../../abi_stable_workspace/as_derive_utils"}
+as_derive_utils= {version="0.8.0",path="../../abi_stable_crates/as_derive_utils"}
 quote = "1.0"
 proc-macro2 = "1.0"
 

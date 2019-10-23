@@ -1,11 +1,12 @@
 use crate::{
-    tokenizers::names_modules,
+    tokenizers::NamedModuleAndTokens,
 };
 
 use as_derive_utils::{
     gen_params_in::{GenParamsIn,InWhat},
 };
 
+#[allow(unused_imports)]
 use core_extensions::SelfOps;
 
 use proc_macro2::{
@@ -46,14 +47,11 @@ pub(crate) struct StructuralAliasField{
     pub(crate) ty: syn::Type,
 }
 
-
-/// Whether a field can be accessed by reference/mutable-reference/value.
-pub(crate) enum Access{
-    Shared,
-    Mutable,
-    Value
+pub(crate) struct StructuralAliasFieldRef<'a>{
+    pub(crate) access: Access,
+    pub(crate) ident: IdentOrIndexRef<'a>,
+    pub(crate) ty: &'a syn::Type,
 }
-
 
 
 impl Parse for StructuralAlias {
@@ -110,16 +108,46 @@ impl Parse for StructuralAlias {
 impl Parse for StructuralAliasField {
     /// Parses a named (braced struct) field.
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
+        let access= input.parse()?;
+        let ident= input.parse()?;
+        let _:Token![:]= input.parse()?;
+        let ty= input.parse()?;
         Ok(Self {
-            access: input.parse()?,
-            ident: input.parse()?,
-            ty: input.parse()?,
+            access,
+            ident,
+            ty,
         })
+    }
+}
+
+impl StructuralAliasField{
+    fn borrowed(&self)->StructuralAliasFieldRef<'_>{
+        StructuralAliasFieldRef{
+            access: self.access,
+            ident: self.ident.borrowed(),
+            ty: &self.ty,
+        }
     }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+/// Whether a field can be accessed by reference/mutable-reference/value.
+#[derive(Debug,Copy,Clone,PartialEq,Eq)]
+pub(crate) enum Access{
+    Shared,
+    Mutable,
+    Value
+}
+
+impl Default for Access{
+    fn default()->Self{
+        Access::Shared
+    }
+}
+
 
 impl Parse for Access {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
@@ -140,6 +168,16 @@ impl Parse for Access {
 }
 
 
+impl ToTokens for Access{
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        match *self {
+            Access::Shared=>Ident::new("GetField",Span::call_site()),
+            Access::Mutable=>Ident::new("GetFieldMut",Span::call_site()),
+            Access::Value=>Ident::new("IntoField",Span::call_site()),
+        }.to_tokens(tokens);
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -149,6 +187,14 @@ pub(crate) enum IdentOrIndex{
     Index(syn::LitInt),
 }
 
+impl IdentOrIndex{
+    pub(crate) fn borrowed(&self)->IdentOrIndexRef<'_>{
+        match self {
+            IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(x),
+            IdentOrIndex::Index(x) => IdentOrIndexRef::Index(x),
+        }
+    }
+}
 
 impl Parse for IdentOrIndex{
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
@@ -183,41 +229,78 @@ impl Display for IdentOrIndex{
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+pub(crate) enum IdentOrIndexRef<'a>{
+    Ident(&'a Ident),
+    Index(&'a syn::LitInt),
+}
+
+impl ToTokens for IdentOrIndexRef<'_>{
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        match self {
+            IdentOrIndexRef::Ident(x) => x.to_tokens(tokens),
+            IdentOrIndexRef::Index(x) => x.to_tokens(tokens),
+        }
+    }
+}
+
+impl Display for IdentOrIndexRef<'_>{
+    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+        match self {
+            IdentOrIndexRef::Ident(x) => Display::fmt(x,f),
+            IdentOrIndexRef::Index(x) => Display::fmt(x,f),
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
-    let StructuralAlias{
-        attrs,
-        vis,
-        trait_token,
-        ident,
-        generics,
-        supertraits,
-        fields,
-        ..
-    }=&saf;
+    let names_module_definition=NamedModuleAndTokens::new(
+        &saf.ident,
+        saf.fields.iter().map(|f| &f.ident )
+    );
+    
+    for_delegation(
+        &saf.attrs,
+        &saf.vis,
+        &saf.trait_token,
+        &saf.ident,
+        &saf.generics,
+        &saf.supertraits,
+        &names_module_definition,
+        saf.fields.iter().map(StructuralAliasField::borrowed)
+    )
 
-    let names_module=Ident::new(&format!("{}_names_module",ident),Span::call_site());
+}
 
-    let alias_names=fields.iter()
-        .map(|f| Ident::new(&format!("STR_{}",f.ident),Span::call_site()) )
-        .collect::<Vec<Ident>>();
+/// This allows both `structural_alias` and `#[derive(Structural)]` to generate
+/// the trait alias and its impl.
+pub(crate) fn for_delegation<'a,A,I>(
+    attrs: A,
+    vis: &syn::Visibility,
+    trait_token: &Token!(trait),
+    ident: &Ident,
+    generics: &syn::Generics,
+    supertraits: &Punctuated<syn::TypeParamBound, token::Add>,
+    names_module_definition:&NamedModuleAndTokens,
+    fields:I,
+)->Result<TokenStream2,syn::Error> 
+where
+    A:IntoIterator,
+    A::Item:ToTokens,
+    I:IntoIterator<Item=StructuralAliasFieldRef<'a>>+Clone,
+{
+    let attrs=attrs.into_iter();
 
-    let field_name_strs=fields.iter()
-        .map(|f| f.ident.to_string() )
-        .collect::<Vec<String>>();
-
-    let names_module_definition=alias_names.iter()
-        .zip( field_name_strs.iter().map(|s|s.as_str()) )
-        .piped(|i| names_modules(&names_module,i) );
+    let names_module=&names_module_definition.names_module;
+    let alias_names=&names_module_definition.alias_names;
 
     let field_bounds={
-        let x=fields.iter()
-            .zip(&alias_names)
+        let x=fields.clone().into_iter()
+            .zip(alias_names)
             .map(|(field,alias_names)|{
-                let trait_=match field.access {
-                    Access::Shared=>quote!(GetField),
-                    Access::Mutable=>quote!(GetFieldMut),
-                    Access::Value=>quote!(IntoField),
-                };
+                let trait_=field.access;
                 let field_ty=&field.ty;
                 quote!(
                     structural::#trait_<
@@ -233,7 +316,7 @@ pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
     use std::fmt::Write;
     let mut docs=format!("A trait alias for the following traits:\n");
     
-    for field in fields {
+    for field in fields.into_iter() {
         let (the_trait,access_desc)=match field.access {
             Access::Shared=>("GetField","shared"),
             Access::Mutable=>("GetFieldMut","shared and mutable"),

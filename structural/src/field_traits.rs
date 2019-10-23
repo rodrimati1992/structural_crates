@@ -43,7 +43,8 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
     ///
     /// Once you call this function,it must not be called again for the same `FieldName`
     /// until the returned mutable reference is dropped.
-    unsafe fn raw_get_mut_field<'a>(this:MutRef<'a,Self>)->&'a mut Self::Ty;
+    unsafe fn raw_get_mut_field<'a>(this:MutRef<'a,Self>)->&'a mut Self::Ty
+    where Self::Ty:'a;
 }
 
 /// Converts this type into its `FieldName` field.
@@ -188,34 +189,3 @@ impl<T:?Sized> GetFieldExt for T{}
 
 
 
-structural_alias!{
-    trait Tuple4{
-        move 0:u32,
-        move 1:u32,
-        move 2:u32,
-        move 3:u32,
-    }
-}
-
-
-
-fn wha<This>(mut this:This)
-where
-    This:Tuple4,
-{
-    assert_eq!(this.fields(tstr!("0","1")),(&6,&5));
-    assert_eq!(this.fields(tstr!("0","1","2")),(&6,&5,&4));
-    assert_eq!(this.fields(tstr!("0","1","2","3")),(&6,&5,&4,&3));
-
-    assert_eq!(this.fields_mut(tstr!("0","1")),(&mut 6,&mut 5));
-    assert_eq!(this.fields_mut(tstr!("0","1","2")),(&mut 6,&mut 5,&mut 4));
-    assert_eq!(this.fields_mut(tstr!("0","1","2","3")),(&mut 6,&mut 5,&mut 4,&mut 3));
-}
-
-
-#[test]
-fn who(){
-    wha((6,5,4,3,2,1));
-    wha((6,5,4,3,2));
-    wha((6,5,4,3));
-}

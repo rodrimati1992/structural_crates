@@ -17,6 +17,7 @@ extern crate proc_macro;
 
 mod parse_utils;
 mod structural_alias_impl;
+mod structural_derive;
 mod tokenizers;
 
 
@@ -26,6 +27,20 @@ use proc_macro2::{
 };
 
 use quote::quote;
+
+
+
+/**
+
+
+This macro is documented in structural::docs::structural_derive_macro
+
+*/
+
+#[proc_macro_derive(Structural, attributes(struc))]
+pub fn derive_structural(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err( input, structural_derive::derive ).into()
+}
 
 
 #[proc_macro]

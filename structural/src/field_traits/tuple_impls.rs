@@ -1,12 +1,10 @@
-use super::*;
-
 use crate::type_level::ident::{TString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
 macro_rules! impl_tuple {
     (inner; ($field:tt,$field_ty:ident,$field_param:ty) ($($tuple_param:ident),*) )=>{
         impl_getter!{
             unsafe impl[$($tuple_param),*] 
-                IntoField< $field:$field_ty,$field_param,{$field} > 
+                IntoField< $field:$field_ty,$field_param > 
             for ($($tuple_param,)*)
         }
     };
@@ -196,7 +194,7 @@ impl_tuple!{
 
 #[cfg(test)]
 mod tests{
-    use super::*;
+    use crate::*;
 
     fn get_field_1<T>(val:&T)->&u64
     where

@@ -1,5 +1,6 @@
 extern crate self as structural;
 
+pub use structural_derive::Structural;
 
 
 #[macro_use]
@@ -9,6 +10,12 @@ pub mod mut_ref;
 pub mod field_traits;
 pub mod type_level;
 pub mod utils;
+
+#[cfg(test)]
+pub mod tests{
+    mod structural_derive;
+}
+
 
 
 #[doc(hidden)]

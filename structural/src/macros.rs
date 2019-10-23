@@ -1,9 +1,16 @@
+#[doc(hidden)]
+#[macro_export]
 macro_rules! impl_getter{
-    ( impl[$($typarams:tt)*]
-        GetField <$field_name:tt : $field_ty:ty,$name_param:tt,{$index:expr}> 
+    ( 
+        $(unsafe)?
+        impl[$($typarams:tt)*]
+        GetField <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
+        $( where[$($where_:tt)*] )?
     )=>{
-        impl<$($typarams)*> GetField<$name_param> for $self_ {
+        impl<$($typarams)*> $crate::GetField<$name_param> for $self_
+        $( where $($where_)* )?
+        {
             type Ty=$field_ty;
 
             fn get_field_(&self)->&Self::Ty{
@@ -11,41 +18,77 @@ macro_rules! impl_getter{
             }
         }
     };
-    ( unsafe impl[$($typarams:tt)*]
-        GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:tt,{$index:expr}> 
+    ( 
+        unsafe impl[$($typarams:tt)*]
+        GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
+        $( where[$($where_:tt)*] )?
     )=>{
-        impl_getter!{
-            impl[$($typarams)*] GetField<$field_name:$field_ty,$name_param,{$index}> for $self_
+        $crate::impl_getter!{
+            impl[$($typarams)*] GetField<$field_name:$field_ty,$name_param> for $self_
+            $( where[$($where_)*] )?
         }
     
-        unsafe impl<$($typarams)*> GetFieldMut<$name_param> for $self_ {
+        unsafe impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_ 
+        $( where $($where_)* )?
+        {
             fn get_field_mut_(&mut self)->&mut Self::Ty{
                 &mut self.$field_name
             }
 
-            unsafe fn raw_get_mut_field(this:MutRef<'_,Self>)->&mut Self::Ty{
+            unsafe fn raw_get_mut_field<'a>(
+                this:$crate::mut_ref::MutRef<'a,Self>
+            )->&'a mut Self::Ty
+            where Self::Ty:'a
+            {
                 &mut (*this.ptr).$field_name
             }
         }
     };
-    ( unsafe impl[$($typarams:tt)*]
-        IntoField <$field_name:tt : $field_ty:ty,$name_param:tt,{$index:expr}> 
+    ( 
+        unsafe impl[$($typarams:tt)*]
+        IntoField <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
+        $( where[$($where_:tt)*] )?
     )=>{
-        impl_getter!{
+        $crate::impl_getter!{
             unsafe impl[$($typarams)*] 
-                GetFieldMut<$field_name:$field_ty,$name_param,{$index}> 
+                GetFieldMut<$field_name:$field_ty,$name_param> 
             for $self_
+            $( where[$($where_)*] )?
         }
     
-        impl<$($typarams)*> IntoField<$name_param> for $self_ {
+        impl<$($typarams)*> $crate::IntoField<$name_param> for $self_ 
+        $( where $($where_)* )?
+        {
             fn into_field_(self)->Self::Ty{
                 self.$field_name
             }
         }
     };
 } 
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_getters_for_derive{
+    (   
+        impl $typarams:tt $self_:ty 
+        where $where_preds:tt
+        {
+            $(($getter_trait:ident< $field_name:tt : $field_ty:ty,$name_param:ty> ))*
+        }
+    )=>{
+        $(
+            $crate::impl_getter!{
+                unsafe impl $typarams 
+                    $getter_trait<$field_name : $field_ty,$name_param>
+                for $self_
+                where $where_preds
+            }
+        )*
+    }
+}
+
 
 /// Gets a type-level string value
 ///
