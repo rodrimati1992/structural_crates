@@ -23,8 +23,7 @@ use std::marker::PhantomData;
 
 
 pub(crate) struct StructuralOptions<'a>{
-    pub(crate) field_access:FieldMap<Access>,
-    pub(crate) renamed_fields:FieldMap<Option<IdentOrIndex>>,
+    pub(crate) fields:FieldMap<FieldConfig>,
 
     pub(crate) debug_print:bool,
 
@@ -38,16 +37,14 @@ impl<'a> StructuralOptions<'a>{
         this:StructuralAttrs<'a>,
     )->Result<Self,syn::Error> {
         let StructuralAttrs{
-            field_access,
-            renamed_fields,
+            fields,
             debug_print,
             errors:_,
             _marker,
         }=this;
         
         Ok(Self{
-            field_access,
-            renamed_fields,
+            fields,
             debug_print,
             _marker,
         })
@@ -58,9 +55,24 @@ impl<'a> StructuralOptions<'a>{
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Default)]
+pub(crate) struct FieldConfig{
+    pub(crate) access:Access,
+    pub(crate) renamed:Option<IdentOrIndex>,
+    
+    /// Determines whether the field is considered public.
+    /// 
+    /// `false`: means that the field does not get an accessor.
+    /// `true`: means that the field gets an accessor.
+    pub(crate) is_pub:bool,
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#[derive(Default)]
 struct StructuralAttrs<'a>{
-    field_access:FieldMap<Access>,
-    renamed_fields:FieldMap<Option<IdentOrIndex>>,
+    fields:FieldMap<FieldConfig>,
 
     debug_print:bool,
 
@@ -87,8 +99,13 @@ pub(crate) fn parse_attrs_for_structural<'a>(
 ) -> Result<StructuralOptions<'a>,syn::Error> {
     let mut this = StructuralAttrs::default();
 
-    this.field_access=FieldMap::defaulted(ds);
-    this.renamed_fields=FieldMap::defaulted(ds);
+    this.fields=FieldMap::with(ds,|field|{
+        FieldConfig{
+            access:Default::default(),
+            renamed:Default::default(),
+            is_pub:field.is_public(),
+        }
+    });
 
     let name=ds.name;
 
@@ -171,16 +188,39 @@ fn parse_sabi_attr<'a>(
             
             if ident=="rename" {
                 let renamed=value.parse::<IdentOrIndex>()?;
-                this.renamed_fields.insert(field,Some(renamed));
+                this.fields[field].renamed=Some(renamed);
             }if ident=="access" {
                 let access=value.parse::<Access>()?;
-                this.field_access.insert(field,access);
+                let fa=&mut this.fields[field];
+                fa.access=access;
+                fa.is_pub=true;
             }else{
                 return Err(make_err(&path))?;
             }
         }
-        (ParseContext::TypeAttr{..},Meta::Path(ref path)) if path.equals_str("debug_print") =>{
-            this.debug_print=true;
+        (ParseContext::Field{field,..}, Meta::Path(path)) => {
+            if path.equals_str("public") {
+                this.fields[field].is_pub=true;
+            }else if path.equals_str("not_public") {
+                this.fields[field].is_pub=false;
+            }else{
+                return Err(make_err(&path))?;
+            }
+        }
+        (ParseContext::TypeAttr{..},Meta::Path(ref path)) =>{
+            if path.equals_str("debug_print"){
+                this.debug_print=true;
+            }else if path.equals_str("public") {
+                for (_,field) in this.fields.iter_mut() {
+                    field.is_pub=true;
+                }
+            }else if path.equals_str("not_public") {
+                for (_,field) in this.fields.iter_mut() {
+                    field.is_pub=false;
+                }
+            }else{
+                return Err(make_err(&path))?;
+            }            
         }
         (
             ParseContext::TypeAttr{..},
@@ -190,8 +230,8 @@ fn parse_sabi_attr<'a>(
 
             if ident=="access" {
                 let access=unparsed_lit.parse::<Access>()?;
-                for (_,fa) in this.field_access.iter_mut() {
-                    *fa=access;
+                for (_,fa) in this.fields.iter_mut() {
+                    fa.access=access;
                 }
             }else{
                 return Err(make_err(path));

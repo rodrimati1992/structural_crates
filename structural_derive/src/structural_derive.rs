@@ -1,5 +1,6 @@
 use crate::{
     tokenizers::NamedModuleAndTokens,
+    structural_alias_impl::{IdentOrIndexRef,StructuralAliasFieldRef},
 };
 
 use as_derive_utils::{
@@ -21,6 +22,8 @@ use quote::{quote,ToTokens};
 use syn::{
     punctuated::Punctuated,
     DeriveInput,
+    Ident,
+    Token,
 };
 
 
@@ -42,8 +45,10 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     
     let struct_=&ds.variants[0];
 
-    let fields=struct_.fields.iter()
-        .filter(|f| f.is_public() )
+    let fields=config.fields.values()
+        .zip( struct_.fields.iter() )
+        .filter(|(f_cond,_)| f_cond.is_pub )
+        .map(|(_,f)| f )
         .collect::<Vec<&Field<'_>>>();
     
     let names_module_definition=NamedModuleAndTokens::new(
@@ -54,11 +59,11 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let names_module=&names_module_definition.names_module;
     let alias_names=&names_module_definition.alias_names;
     
-    let field_names=config.renamed_fields.iter()
+    let field_names=config.fields.values()
         .zip( fields.iter().cloned() )
-        .map(|((_,rename),field)|{
+        .map(|(field_conf,field)|{
             ToTokenFnMut::new(move|ts|{
-                match rename {
+                match &field_conf.renamed {
                     Some(x) => x.to_tokens(ts),
                     None => field.ident().to_tokens(ts),
                 }
@@ -80,14 +85,46 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let empty_preds=Punctuated::new();
     let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates).into_iter();
 
-    let getter_trait=config.field_access.values();
+    let getter_trait=config.fields.values().map(|f| f.access );
 
     // dbg!(field_names.clone().for_each(|x|{ dbg!(x.to_token_stream().to_string()); }));
     // dbg!(&field_tys);
     // dbg!(alias_names.iter().for_each(|x|{ dbg!(x); }));
 
+    let docs=format!(
+        "A trait aliasing the accessor impls for \
+         [{struct_}](./struct.{struct_}.html) fields\n\
+         \n\
+         This trait also has all the constraints(where clause and generic parametr bounds)
+         of [the same struct](./struct.{struct_}.html).\n\n\
+         ### Accessor traits\n\
+         These are the accessor traits this aliases:\n\
+        ",
+        struct_=tyname,
+    );
+
+    let structural_alias_trait=crate::structural_alias_impl::for_delegation(
+        std::iter::empty::<Ident>(),
+        docs,
+        ds.vis,
+        &<Token!(trait)>::default(),
+        &Ident::new(&format!("{}_SI",tyname),Span::call_site()),
+        ds.generics,
+        &Punctuated::new(),
+        &names_module_definition,
+        fields.iter()
+            .zip(config.fields.values())
+            .map(|( field, field_config )|{
+                StructuralAliasFieldRef{
+                    access:field_config.access,
+                    ident:field.ident().piped(IdentOrIndexRef::Ident),
+                    ty:field.ty,
+                }
+            }),
+    )?;
+
     quote!(
-        #names_module_definition
+        #structural_alias_trait
 
         impl_getters_for_derive!{
             impl[#impl_generics] #tyname #ty_generics

@@ -263,6 +263,7 @@ pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
     
     for_delegation(
         &saf.attrs,
+        format!("A trait alias for the following traits:\n"),
         &saf.vis,
         &saf.trait_token,
         &saf.ident,
@@ -278,6 +279,7 @@ pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
 /// the trait alias and its impl.
 pub(crate) fn for_delegation<'a,A,I>(
     attrs: A,
+    mut docs:String,
     vis: &syn::Visibility,
     trait_token: &Token!(trait),
     ident: &Ident,
@@ -314,7 +316,8 @@ where
     };
 
     use std::fmt::Write;
-    let mut docs=format!("A trait alias for the following traits:\n");
+
+    let _=writeln!(docs,);
     
     for field in fields.into_iter() {
         let (the_trait,access_desc)=match field.access {
@@ -324,7 +327,7 @@ where
         };
         let _=writeln!(
             docs,
-            "- `{0}<\"{1}\",{2}>`\n:{3} access to a `{1}:{2}` field.",
+            "- `{0}<\"{1}\",Ty={2}>`\n:{3} access to a `{1}:{2}` field.",
             the_trait,
             field.ident,
             field.ty.to_token_stream(),
