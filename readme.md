@@ -11,9 +11,13 @@ These are the features this library provides:
 
 - Declaration of trait alises for the field accessor traits,with convenient syntax.
 
+# Changelog
+
+The changelog is in the "Changelog.md" file.
+
 # Example
 
-This example demonstrates how you can use any type sharing the
+This example demonstrates how you can use any type with the
 same fields as another one in a function.
 
 ```rust
@@ -24,11 +28,11 @@ use structural::{GetFieldExt,Structural,tstr};
 struct Point4<T>(T,T,T,T);
 
 
-fn reads_point4<S>(point:&S)
+fn reads_point4<S,T>(point:&S)
 where
     // Point4_SI aliases the accessor traits for Point4,
     // this allows passing in tuples larger than 4 elements
-    S:Point4_SI<u32>
+    S:Point4_SI<T>
 {
     let (a,b,c,d)=point.fields(tstr!("0","1","2","3"));
     
@@ -45,45 +49,14 @@ reads_point4(&(0,11,33,66,0xDEAD,0xBEEF));
 
 ```
 
-*/
 
-extern crate self as structural;
+# Minimum Rust version
 
-pub use structural_derive::Structural;
+This crate support Rust back to 1.34,
+and will use a build script to automatically enable features from newer versions.
 
+# Cargo Features
 
-#[macro_use]
-mod macros;
+If it becomes possible to disable build scripts,
+you can manually enable support for Rust past 1.34 features with the `rust_*_*` cargo features.
 
-pub mod mut_ref;
-pub mod field_traits;
-pub mod type_level;
-pub mod utils;
-
-#[cfg(test)]
-pub mod tests{
-    mod structural_derive;
-}
-
-
-
-#[doc(hidden)]
-pub use crate::type_level::ident as chars;
-
-pub use crate::{
-    field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt},
-};
-
-
-
-/// Reexports from the `core_extensions` crate.
-pub mod reexports{
-    pub use core_extensions::{MarkerType,SelfOps};
-}
-
-// Reexports for the proc macros in structural_derive.
-#[doc(hidden)]
-pub mod proc_macro_reexports{
-    pub use crate::type_level::ident::*;
-    pub use core_extensions::MarkerType;
-}
