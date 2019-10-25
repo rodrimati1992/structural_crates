@@ -260,27 +260,70 @@ use structural::{
     structural_alias,
     tstr,
     GetFieldExt,
+    Structural,
+};
+
+use std::{
+    cmp::PartialEq,
+    fmt::{Debug,Display},
 };
 
 structural_alias!{
     trait Point<T>{
-        x:T,
-        y:T,
+        move x:T,
+        move y:T,
     }
 }
 
 fn print_point<T,U>(value:&T)
 where
-    T:Point<u32>
+    T:Point<U>,
+    U:Debug+Display+PartialEq,
 {
     // This gets references to the `x` and `y` fields.
     let (x,y)=value.fields(tstr!("x","y"));
     assert_ne!(x,y);
+    println!("x={} y={}",x,y);
 }
 
-// TODO:add 3 structs deriving Structural,and pass them into the function.
+#[derive(Structural)]
+#[struc(access="move")]
+struct Point3D<T>{
+    pub x:T,
+    pub y:T,
+    pub z:T,
+}
 
-# fn main(){}
+#[derive(Structural)]
+#[struc(access="move")]
+struct Rectangle<T>{
+    pub x:T,
+    pub y:T,
+    pub w:T,
+    pub h:T,
+}
+
+#[derive(Structural)]
+#[struc(access="move")]
+struct Entity{
+    pub id:PersonId,
+    pub x:f32,
+    pub y:f32,
+}
+
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct PersonId(u64);
+
+# fn main(){
+
+print_point(&Point2D{ x:100, y:200, z:6000 });
+
+print_point(&Rectangle{ x:100, y:200, w:300, h:400 });
+
+print_point(&Entity{ x:100.0, y:200.0, id:PersonId(0xDEAD) });
+
+
+# }
 
 ```
 

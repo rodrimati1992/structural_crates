@@ -65,7 +65,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
             ToTokenFnMut::new(move|ts|{
                 match &field_conf.renamed {
                     Some(x) => x.to_tokens(ts),
-                    None => field.ident().to_tokens(ts),
+                    None => field.ident.to_tokens(ts),
                 }
             })
         });
@@ -126,7 +126,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     quote!(
         #structural_alias_trait
 
-        impl_getters_for_derive!{
+        ::structural::impl_getters_for_derive!{
             impl[#impl_generics] #tyname #ty_generics
             where[ #(#where_preds)* ] 
             {
