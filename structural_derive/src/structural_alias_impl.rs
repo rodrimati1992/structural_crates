@@ -108,7 +108,7 @@ impl Parse for StructuralAlias {
 impl Parse for StructuralAliasField {
     /// Parses a named (braced struct) field.
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let access= input.parse()?;
+        let access= Access::parse_in_field(input);
         let ident= input.parse()?;
         let _:Token![:]= input.parse()?;
         let ty= input.parse()?;
@@ -149,6 +149,24 @@ impl Default for Access{
 }
 
 
+impl Access {
+    fn parse_in_field(input: ParseStream) -> Self {
+        let lookahead = input.lookahead1();
+        if lookahead.peek(Token![ref]) {
+            let _:Result<Token![ref],_>=input.parse();
+            Access::Shared
+        } else if lookahead.peek(Token![mut]) {
+            let _:Result<Token![mut],_>=input.parse();
+            Access::Mutable
+        } else if lookahead.peek(Token![move]) {
+            let _:Result<Token![move],_>=input.parse();
+            Access::Value
+        } else {
+            Access::Shared
+        }
+    }
+}
+
 impl Parse for Access {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
         let lookahead = input.lookahead1();
@@ -162,7 +180,7 @@ impl Parse for Access {
             let _:Result<Token![move],_>=input.parse();
             Ok(Access::Value)
         } else {
-            Ok(Access::Shared)
+            Err(lookahead.error())
         }
     }
 }
@@ -181,7 +199,7 @@ impl ToTokens for Access{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+#[derive(Debug)]
 pub(crate) enum IdentOrIndex{
     Ident(Ident),
     Index(syn::LitInt),

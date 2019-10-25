@@ -68,6 +68,28 @@ macro_rules! impl_getter{
     };
 } 
 
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_structural{
+    (
+        impl[$($typarams:tt)*] Structural for $self_:ty 
+        where[$($where_:tt)*]
+        {
+            field_names=[$( $field_name:tt ,)*]
+        }
+    )=>{
+        impl<$($typarams)*> $crate::Structural for $self_
+        where $($where_)*
+        {
+            const FIELDS:&'static[&'static str]=&[
+                $( stringify!( $field_name ) ,)*
+            ];
+        }
+    }
+}
+
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_getters_for_derive{
@@ -78,6 +100,15 @@ macro_rules! impl_getters_for_derive{
             $(($getter_trait:ident< $field_name:tt : $field_ty:ty,$name_param:ty> ))*
         }
     )=>{
+
+        $crate::impl_structural!{
+            impl $typarams Structural for $self_
+            where $where_preds
+            {
+                field_names=[ $( $field_name ,)* ]
+            }
+        }
+
         $(
             $crate::impl_getter!{
                 unsafe impl $typarams 
@@ -316,7 +347,7 @@ struct Entity{
 
 # fn main(){
 
-print_point(&Point2D{ x:100, y:200, z:6000 });
+print_point(&Point3D{ x:100, y:200, z:6000 });
 
 print_point(&Rectangle{ x:100, y:200, w:300, h:400 });
 

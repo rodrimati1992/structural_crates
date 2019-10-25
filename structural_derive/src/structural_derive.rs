@@ -29,6 +29,8 @@ use syn::{
 
 mod attribute_parsing;
 
+use self::attribute_parsing::StructuralOptions;
+
 
 pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let ds = &DataStructure::new(&data);
@@ -41,16 +43,22 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
         DataVariant::Struct=>{}            
     }
 
-    let config=&attribute_parsing::parse_attrs_for_structural(ds)?;
+    let StructuralOptions{
+        fields:ref config_fields,
+        debug_print,
+        ..
+    }=attribute_parsing::parse_attrs_for_structural(ds)?;
     
     let struct_=&ds.variants[0];
 
-    let fields=config.fields.values()
+    let fields=config_fields.values()
         .zip( struct_.fields.iter() )
         .filter(|(f_cond,_)| f_cond.is_pub )
         .map(|(_,f)| f )
         .collect::<Vec<&Field<'_>>>();
     
+    let config_fields=&config_fields.values().filter(|f| f.is_pub ).collect::<Vec<_>>();
+
     let names_module_definition=NamedModuleAndTokens::new(
         ds.name,
         fields.iter().cloned().map(|f| &f.ident )
@@ -59,7 +67,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let names_module=&names_module_definition.names_module;
     let alias_names=&names_module_definition.alias_names;
     
-    let field_names=config.fields.values()
+    let field_names=config_fields.iter()
         .zip( fields.iter().cloned() )
         .map(|(field_conf,field)|{
             ToTokenFnMut::new(move|ts|{
@@ -85,7 +93,8 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let empty_preds=Punctuated::new();
     let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates).into_iter();
 
-    let getter_trait=config.fields.values().map(|f| f.access );
+
+    let getter_trait=config_fields.iter().map(|f| f.access );
 
     // dbg!(field_names.clone().for_each(|x|{ dbg!(x.to_token_stream().to_string()); }));
     // dbg!(&field_tys);
@@ -113,7 +122,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
         &Punctuated::new(),
         &names_module_definition,
         fields.iter()
-            .zip(config.fields.values())
+            .zip(config_fields.iter())
             .map(|( field, field_config )|{
                 StructuralAliasFieldRef{
                     access:field_config.access,
@@ -139,7 +148,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
         }
     )
     .observe(|tokens|{
-        if config.debug_print{
+        if debug_print{
             panic!("\n\n\n{}\n\n\n",tokens);
         }
     })

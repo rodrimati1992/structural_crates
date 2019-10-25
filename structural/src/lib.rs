@@ -57,6 +57,7 @@ mod macros;
 
 pub mod mut_ref;
 pub mod field_traits;
+pub mod structural_trait;
 pub mod type_level;
 pub mod utils;
 
@@ -72,6 +73,7 @@ pub use crate::type_level::ident as chars;
 
 pub use crate::{
     field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt},
+    structural_trait::Structural,
 };
 
 

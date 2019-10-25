@@ -22,6 +22,7 @@ use syn::{
 use std::marker::PhantomData;
 
 
+#[derive(Debug)]
 pub(crate) struct StructuralOptions<'a>{
     pub(crate) fields:FieldMap<FieldConfig>,
 
@@ -54,7 +55,7 @@ impl<'a> StructuralOptions<'a>{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Default)]
+#[derive(Debug,Default)]
 pub(crate) struct FieldConfig{
     pub(crate) access:Access,
     pub(crate) renamed:Option<IdentOrIndex>,
@@ -201,7 +202,7 @@ fn parse_sabi_attr<'a>(
         (ParseContext::Field{field,..}, Meta::Path(path)) => {
             if path.equals_str("public") {
                 this.fields[field].is_pub=true;
-            }else if path.equals_str("not_public") {
+            }else if path.equals_str("not_public")||path.equals_str("private") {
                 this.fields[field].is_pub=false;
             }else{
                 return Err(make_err(&path))?;
@@ -214,7 +215,7 @@ fn parse_sabi_attr<'a>(
                 for (_,field) in this.fields.iter_mut() {
                     field.is_pub=true;
                 }
-            }else if path.equals_str("not_public") {
+            }else if path.equals_str("not_public")||path.equals_str("private") {
                 for (_,field) in this.fields.iter_mut() {
                     field.is_pub=false;
                 }
