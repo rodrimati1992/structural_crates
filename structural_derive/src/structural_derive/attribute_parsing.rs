@@ -185,12 +185,11 @@ fn parse_sabi_attr<'a>(
             ParseContext::Field{field,..}, 
             Meta::NameValue(MetaNameValue{lit:Lit::Str(ref value),ref path,..})
         ) => {
-            let ident=path.get_ident().ok_or_else(|| make_err(&path) )?;
-            
-            if ident=="rename" {
+
+            if path.equals_str("rename") {
                 let renamed=value.parse::<IdentOrIndex>()?;
                 this.fields[field].renamed=Some(renamed);
-            }if ident=="access" {
+            }else if path.equals_str("access") {
                 let access=value.parse::<Access>()?;
                 let fa=&mut this.fields[field];
                 fa.access=access;

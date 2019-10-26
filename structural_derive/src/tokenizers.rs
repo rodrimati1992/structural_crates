@@ -43,7 +43,7 @@ pub(crate) struct NamedModuleAndTokens{
 impl NamedModuleAndTokens{
     pub fn new<'a,I,S>(thing_ident:&'a syn::Ident,iter:I)->Self
     where
-        I:IntoIterator<Item=&'a S>+Clone,
+        I:IntoIterator<Item=S>+Clone,
         S:std::fmt::Display+'a,
     {
 

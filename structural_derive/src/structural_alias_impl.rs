@@ -30,6 +30,18 @@ use syn::{
 use std::fmt::{self,Display};
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#[cfg(test)]
+mod tests;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 pub(crate) struct StructuralAlias {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: syn::Visibility,
@@ -273,6 +285,13 @@ impl Display for IdentOrIndexRef<'_>{
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#[cfg(test)]
+pub(crate) fn derive_from_str(saf:&str)->Result<TokenStream2,syn::Error> {
+    syn::parse_str(saf).and_then(macro_impl)
+}
+
+
+
 pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
     let names_module_definition=NamedModuleAndTokens::new(
         &saf.ident,
@@ -381,8 +400,8 @@ where
     Ok(quote!(
         #names_module_definition
 
-        #(#attrs)*
         #[doc=#docs]
+        #(#attrs)*
         #vis
         #trait_token #ident #generics : 
             #( #supertraits_a+ )* 

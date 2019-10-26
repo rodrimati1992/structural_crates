@@ -64,6 +64,7 @@ pub mod utils;
 #[cfg(test)]
 pub mod tests{
     mod structural_derive;
+    mod structural_alias;
 }
 
 
@@ -72,7 +73,7 @@ pub mod tests{
 pub use crate::type_level::ident as chars;
 
 pub use crate::{
-    field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt},
+    field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt,GetFieldType},
     structural_trait::Structural,
 };
 

@@ -1,7 +1,4 @@
-use crate::*;
-
-use structural_derive::Structural;
-
+use crate::{GetField,GetFieldMut,IntoField,GetFieldExt,GetFieldType,Structural};
 
 structural_alias!{
     trait HuhInterface{
@@ -88,6 +85,9 @@ trait Privacies1Test:Privacies1_SI{
     type Dummy;
 }
 
+// Using this trait to test that `Privacies1_SI` has the bounds from bellow as supertraits.
+// Because these bounds might be more constrained than `Privacies1_SI` itself
+// I'm testing that `Privacies1` implements those traits inside the `privacies` test.
 impl<L> Privacies1Test for L
 where
     L:GetField<TStr!(a),Ty=u32>+
@@ -109,14 +109,41 @@ fn privacies(){
     let _=|this:Privacies0|{
         let _=this.fields(tstr!("a","b"));
     };
-    let _=|mut this:Privacies1|{
+    fn generic_1<T>(mut this:T)
+    where
+        T:Privacies1_SI
+    {
         let _=this.fields(tstr!("a","b","e","f","g","h"));
         let _=this.fields_mut(tstr!("g","h"));
         let _=this.into_field(tstr!("h"));
-    };
+    }
+    let _=generic_1::<Privacies1>;
 
     assert_eq!(<Privacies0 as Structural>::FIELDS , &["a","b"]);
 
-
     assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","h"]);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#[derive(Structural,Clone)]
+#[struc(public)]
+struct Renamed{
+    pub a:u32,
+    pub b:u32,
+    #[struc(rename="e")]
+    pub c:u32,
+}
+
+
+#[test]
+fn renamed(){
+    assert_eq!(<Renamed as Structural>::FIELDS , &["a","b","c"]);
+
+    let _:GetFieldType<Renamed,TStr!(a)>;
+    let _:GetFieldType<Renamed,TStr!(b)>;
+    let _:GetFieldType<Renamed,TStr!(e)>;
+
 }

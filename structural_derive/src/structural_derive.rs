@@ -7,7 +7,6 @@ use as_derive_utils::{
     datastructure::{DataStructure,DataVariant,Field},
     gen_params_in::{GenParamsIn,InWhat},
     return_syn_err,
-    ToTokenFnMut,
 };
 
 use core_extensions::SelfOps;
@@ -17,7 +16,7 @@ use proc_macro2::{
     Span,
 };
 
-use quote::{quote,ToTokens};
+use quote::quote;
 
 use syn::{
     punctuated::Punctuated,
@@ -29,8 +28,16 @@ use syn::{
 
 mod attribute_parsing;
 
+#[cfg(test)]
+mod tests;
+
 use self::attribute_parsing::StructuralOptions;
 
+
+#[cfg(test)]
+fn derive_from_str(string:&str) -> Result<TokenStream2,syn::Error> {
+    syn::parse_str(string).and_then(derive)
+}
 
 pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let ds = &DataStructure::new(&data);
@@ -59,24 +66,23 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     
     let config_fields=&config_fields.values().filter(|f| f.is_pub ).collect::<Vec<_>>();
 
+    let renamed_field_names=config_fields.iter()
+        .zip( fields.iter().cloned() )
+        .map(|(field_conf,field)|{
+            match &field_conf.renamed {
+                Some(x) => x.to_string(),
+                None => field.ident.to_string(),
+            }
+        });
+
     let names_module_definition=NamedModuleAndTokens::new(
         ds.name,
-        fields.iter().cloned().map(|f| &f.ident )
+        renamed_field_names
     );
     
     let names_module=&names_module_definition.names_module;
     let alias_names=&names_module_definition.alias_names;
     
-    let field_names=config_fields.iter()
-        .zip( fields.iter().cloned() )
-        .map(|(field_conf,field)|{
-            ToTokenFnMut::new(move|ts|{
-                match &field_conf.renamed {
-                    Some(x) => x.to_tokens(ts),
-                    None => field.ident.to_tokens(ts),
-                }
-            })
-        });
 
     let field_tys=fields.iter().cloned().map(|f| &f.ty );
 
@@ -131,6 +137,8 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                 }
             }),
     )?;
+
+    let field_names=fields.iter().map(|f| &f.ident );
 
     quote!(
         #structural_alias_trait
