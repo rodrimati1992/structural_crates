@@ -77,7 +77,7 @@ struct Privacies1{
     #[struc(access="mut")]
     g:u32,
     #[struc(access="move")]
-    h:u32,
+    hello:u32,
 }
 
 
@@ -95,7 +95,7 @@ where
         GetField<TStr!(e),Ty=u32>+
         GetField<TStr!(f),Ty=u32>+
         GetFieldMut<TStr!(g),Ty=u32>+
-        IntoField<TStr!(h),Ty=u32>+
+        IntoField<TStr!(h e l l o),Ty=u32>+
         Sized,
 {
     type Dummy=();
@@ -113,15 +113,15 @@ fn privacies(){
     where
         T:Privacies1_SI
     {
-        let _=this.fields(tstr!("a","b","e","f","g","h"));
-        let _=this.fields_mut(tstr!("g","h"));
-        let _=this.into_field(tstr!("h"));
+        let _=this.fields(tstr!("a","b","e","f","g","hello"));
+        let _=this.fields_mut(tstr!("g","hello"));
+        let _=this.into_field(tstr!("hello"));
     }
     let _=generic_1::<Privacies1>;
 
     assert_eq!(<Privacies0 as Structural>::FIELDS , &["a","b"]);
 
-    assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","h"]);
+    assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","hello"]);
 }
 
 

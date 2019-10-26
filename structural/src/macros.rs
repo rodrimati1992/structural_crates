@@ -123,6 +123,25 @@ macro_rules! impl_getters_for_derive{
 
 /// Gets a type-level string value
 ///
+/// When passed comma separated string literals,this instantiates a `MultiTString`,
+/// which is what's passed to the `GetFieldExt::{fields,fields_mut}` methods.
+///
+/// # Example
+///
+/// ```
+/// use structural::{GetFieldExt,tstr};
+///
+/// let tup=("I","you","they");
+///
+/// assert_eq!( tup.field_(tstr!("0")), &"I" );
+/// assert_eq!( tup.field_(tstr!("1")), &"you" );
+/// assert_eq!( tup.field_(tstr!("2")), &"they" );
+///
+/// assert_eq!( tup.fields(tstr!("0","1")), (&"I",&"you") );
+///
+/// assert_eq!( tup.fields(tstr!("0","1","2")), (&"I",&"you",&"they") );
+///
+/// ```
 #[macro_export]
 macro_rules! tstr {
     ( $($strings:literal),* $(,)* ) => {{
@@ -140,6 +159,22 @@ macro_rules! tstr {
 /// This macro will continue supporting space separated characters 
 /// even after string literals are usable as trait parameters.
 ///
+/// # Examples
+///
+/// This demonstrates how one can bound types by the accessor traits in a where clause.
+///
+/// ```rust
+/// use structural::{GetField,GetFieldExt,tstr,TStr};
+///
+/// fn greet_entity<This,S>(entity:&This)
+/// where
+///     This:GetField<TStr!(n a m e),Ty=S>,
+///     S:AsRef<str>,
+/// {
+///     println!("Hello, {}!",entity.field_(tstr!("name")).as_ref() );
+/// }
+///
+/// ```
 #[macro_export]
 macro_rules! TStr {
     ($($char:tt)*) => {
@@ -246,7 +281,7 @@ The `structural_alias` defines a trait alias for multiple field accessors.
 # pub trait SuperTrait{}
 
 structural_alias!{
-    pub trait Foo<'a,T>:SuperTrait
+    pub trait Foo<'a,T:Copy>:SuperTrait
     where
         T:SuperTrait
     {

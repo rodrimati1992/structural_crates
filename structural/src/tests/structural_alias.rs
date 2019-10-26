@@ -1,4 +1,4 @@
-use crate::GetField;
+use crate::*;
 
 use std::fmt::Debug;
 
@@ -17,6 +17,11 @@ mod with_super_traits{
     where
         This:Copy+GetField<TStr!(a),Ty=u8>
     {}
+
+    fn func<T:Trait>(v:T){
+        let _copy=v;
+        let _:&u8=v.field_(tstr!("a"));
+    }
 }
 
 
@@ -54,3 +59,35 @@ mod with_where_clause{
 /////////////////////////////////////////////
 
 
+
+mod all_access{
+    use super::*;
+
+    structural_alias!{
+        trait Foo<T>{
+                 a:u32,
+            ref  b:T,
+            mut  c:i64,
+            move d:String,
+        }
+    }
+
+    trait Dummy{
+        fn well<This,T>()
+        where
+            This:Foo<T>;
+    }
+
+    impl Dummy for () {
+        fn well<This,T>()
+        where
+            This:
+                GetField<TStr!(a), Ty=u32>+
+                GetField<TStr!(b), Ty=T>+
+                GetFieldMut<TStr!(c), Ty=i64>+
+                IntoField<TStr!(d), Ty=String>,
+        {}
+    }
+
+
+}
