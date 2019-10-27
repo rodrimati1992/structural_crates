@@ -116,7 +116,7 @@ fn main(){
 #![no_std]
 
 #[doc(hidden)]
-pub extern crate core;
+pub extern crate core as std_;
 
 extern crate self as structural;
 

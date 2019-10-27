@@ -1,6 +1,6 @@
 use crate::*;
 
-use core::fmt::Debug;
+use std_::fmt::Debug;
 
 
 mod with_super_traits{
