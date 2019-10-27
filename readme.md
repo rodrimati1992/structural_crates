@@ -1,6 +1,14 @@
+[![Build Status](https://travis-ci.org/rodrimati1992/structural_crates.svg?branch=master)](https://travis-ci.org/rodrimati1992/structural_crates) [![Join the chat at https://gitter.im/structural_crates/community](https://badges.gitter.im/structural_crates/community.svg)](https://gitter.im/structural_crates/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![](https://img.shields.io/crates/v/structural.svg)][crates-io]
+[![](https://docs.rs/structural/badge.svg)][api-docs]
+
+[crates-io]: https://crates.io/crates/structural
+[api-docs]: https://docs.rs/structural
+
+
 This library provides abstractions over fields,
 allowing for limited emulation of structural types.
- 
+
 # Features
 
 These are the features this library provides:
