@@ -46,6 +46,10 @@ reads_point4(&(0,11,33,66,0xDEAD,0xBEEF));
 ```
 
 */
+#![no_std]
+
+#[doc(hidden)]
+pub extern crate core;
 
 extern crate self as structural;
 

@@ -26,7 +26,7 @@ mod tuple_impls;
 /// fn formatted_value<T,S>(this:&T)->String
 /// where
 ///     T:GetField<TStr!(v a l u e), Ty=S>,
-///     S:std::fmt::Debug,
+///     S:core::fmt::Debug,
 /// {
 ///     format!("{:#?}",this.field_(tstr!("value")) )
 /// }
@@ -151,7 +151,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     T:GetFieldMut<TStr!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
-///     std::mem::replace( this.field_mut(tstr!("value")), Default::default() )
+///     core::mem::replace( this.field_mut(tstr!("value")), Default::default() )
 /// }
 ///
 /// #[derive(structural::Structural)]

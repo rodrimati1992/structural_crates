@@ -329,7 +329,7 @@ use structural::{
     Structural,
 };
 
-use std::{
+use core::{
     cmp::PartialEq,
     fmt::{Debug,Display},
 };
