@@ -38,11 +38,11 @@ features=["full","extra-traits"]
 
 [dependencies.as_derive_utils]
 version="0.8.1"
-path="../../abi_stable_crates/as_derive_utils"
+#path="../../abi_stable_crates/as_derive_utils"
 
 [dev-dependencies.as_derive_utils]
 version="0.8.1"
-path="../../abi_stable_crates/as_derive_utils"
+#path="../../abi_stable_crates/as_derive_utils"
 features=["testing"]
 
 
