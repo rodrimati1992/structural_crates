@@ -52,10 +52,13 @@ Changes the implemented accessor traits for the field(s).
 Generates impls of the `GetField` trait for the field(s).
 
 `#[struc(access="mut")]`:
-Generates impls of the `GetField`+`GetFieldMut` for the field(s).
+Generates impls of the `GetField`+`GetFieldMut` traits for the field(s).
 
 `#[struc(access="move")]`:
-Generates impls of the `GetField`+`GetFieldMut`+`IntoField` for the field(s).
+Generates impls of the `GetField`+`IntoField` traits for the field(s).
+
+`#[struc(access="mut move")]`:
+Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field(s).
 
 # Examples
 
@@ -68,7 +71,7 @@ use structural::{Structural,GetFieldExt,structural_alias,tstr};
 structural_alias!{
     trait Pair<T>{
         a:T,
-        a:T,
+        b:T,
     }
 }
 
@@ -83,23 +86,27 @@ where
 }
 
 
-#[derive(Structural)]
+#[derive(Debug,Structural,PartialEq,Eq)]
+#[struc(public)]
 struct Hello{
     a:u32,
     b:u32
 }
 
 #[derive(Structural)]
-#[struc(access="move")]
+#[struc(access="mut move")]
+#[struc(public)]
 struct World{
     run:String,
     a:u32,
     b:u32,
 }
 
-reads_pair(&Hello{ a:11, b:33 });
+fn main(){
+    reads_pair(&Hello{ a:11, b:33 });
 
-reads_pair(&World{ run:"nope".into(), a:11, b:33 });
+    reads_pair(&World{ run:"nope".into(), a:11, b:33 });
+}
 
 
 ```
@@ -112,8 +119,8 @@ use structural::{Structural,GetFieldExt,structural_alias,tstr};
 
 structural_alias!{
     trait Tuple2<T>{
-        move 0:T,
-        move 1:T,
+        mut move 0:T,
+        mut move 1:T,
     }
 }
 
@@ -130,26 +137,28 @@ where
 }
 
 
-#[derive(Structural)]
-#[struc(access="move")]
+#[derive(Debug,Structural,PartialEq,Eq)]
+#[struc(access="mut move")]
 struct Point(
     #[struc(public)]
     u32,
     // This attribute isn't redundant,it causes the field to get accessor trait impls.
-    #[struc(access="move")]
+    #[struc(access="mut move")]
     u32,
     #[struc(not_public)]
     pub u32,
 );
 
-let mut point=Point(14,16,11);
-let mut tuple=(14,16);
+fn main(){
+    let mut point=Point(14,16,11);
+    let mut tuple=(14,16);
 
-mutates_pair(&mut point);
-mutates_pair(&mut tuple);
+    mutates_pair(&mut point);
+    mutates_pair(&mut tuple);
 
-assert_eq!(point,Point(28,32,11));
-assert_eq!(tuple,(28,32));
+    assert_eq!(point,Point(28,32,11));
+    assert_eq!(tuple,(28,32));
+}
 
 ```
 

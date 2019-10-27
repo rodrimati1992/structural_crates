@@ -24,9 +24,21 @@
           find_all:[not(regex("GetField *<")),str("GetFieldMut"),not(str("IntoField"))], 
           error_count: 0,
         ),
+        // shared and by value access
         ( 
           replacements: { "#r0":"move" },
-          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoField")], 
+          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),regex("IntoField *<")], 
+          error_count: 0,
+        ),
+        // Mutable and by value access
+        ( 
+          replacements: { "#r0":"move mut " },
+          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
+          error_count: 0,
+        ),
+        ( 
+          replacements: { "#r0":"mut move" },
+          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
           error_count: 0,
         ),
       ],

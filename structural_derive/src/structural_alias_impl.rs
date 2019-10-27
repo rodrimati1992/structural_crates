@@ -148,11 +148,26 @@ impl StructuralAliasField{
 
 /// Whether a field can be accessed by reference/mutable-reference/value.
 #[derive(Debug,Copy,Clone,PartialEq,Eq)]
-pub(crate) enum Access{
-    Shared,
-    Mutable,
-    Value
+pub(crate) struct Access{
+    mutable:bool,
+    value:bool,
 }
+
+#[allow(non_upper_case_globals)]
+impl Access{
+    /// A field gets a GetField impl.
+    pub(crate) const Shared:Self=Self{ mutable:false, value:false };
+
+    /// A field gets GetField,and GetFieldMut impls.
+    pub(crate) const Mutable:Self=Self{ mutable:true, value:false };
+
+    /// A field gets GetField,and IntoField impls.
+    pub(crate) const Value:Self=Self{ mutable:false, value:true };
+
+    /// A field gets GetField,GetFieldMut,and IntoField impls.
+    pub(crate) const MutValue:Self=Self{ mutable:true, value:true };
+}
+
 
 impl Default for Access{
     fn default()->Self{
@@ -163,37 +178,45 @@ impl Default for Access{
 
 impl Access {
     fn parse_in_field(input: ParseStream) -> Self {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(Token![ref]) {
-            let _:Result<Token![ref],_>=input.parse();
-            Access::Shared
-        } else if lookahead.peek(Token![mut]) {
-            let _:Result<Token![mut],_>=input.parse();
-            Access::Mutable
-        } else if lookahead.peek(Token![move]) {
-            let _:Result<Token![move],_>=input.parse();
-            Access::Value
-        } else {
-            Access::Shared
+        let mut this=Access::Shared;
+
+        for _ in 0..2 {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(Token![ref]) {
+                let _:Result<Token![ref],_>=input.parse();
+            } else if lookahead.peek(Token![mut]) {
+                let _:Result<Token![mut],_>=input.parse();
+                this.mutable=true;
+            } else if lookahead.peek(Token![move]) {
+                let _:Result<Token![move],_>=input.parse();
+                this.value=true;
+            }
         }
+
+        this
     }
 }
 
 impl Parse for Access {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(Token![ref]) {
-            let _:Result<Token![ref],_>=input.parse();
-            Ok(Access::Shared)
-        } else if lookahead.peek(Token![mut]) {
-            let _:Result<Token![mut],_>=input.parse();
-            Ok(Access::Mutable)
-        } else if lookahead.peek(Token![move]) {
-            let _:Result<Token![move],_>=input.parse();
-            Ok(Access::Value)
-        } else {
-            Err(lookahead.error())
+        let mut this=Access::Shared;
+
+        for i in 0..2 {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(Token![ref]) {
+                let _:Result<Token![ref],_>=input.parse();
+            } else if lookahead.peek(Token![mut]) {
+                let _:Result<Token![mut],_>=input.parse();
+                this.mutable=true;
+            } else if lookahead.peek(Token![move]) {
+                let _:Result<Token![move],_>=input.parse();
+                this.value=true;
+            } else if i==0 {
+                return Err(lookahead.error());
+            }
         }
+
+        Ok(this)
     }
 }
 
@@ -204,6 +227,7 @@ impl ToTokens for Access{
             Access::Shared=>Ident::new("GetField",Span::call_site()),
             Access::Mutable=>Ident::new("GetFieldMut",Span::call_site()),
             Access::Value=>Ident::new("IntoField",Span::call_site()),
+            Access::MutValue=>Ident::new("IntoFieldMut",Span::call_site()),
         }.to_tokens(tokens);
     }
 }
@@ -360,7 +384,8 @@ where
         let (the_trait,access_desc)=match field.access {
             Access::Shared=>("GetField","shared"),
             Access::Mutable=>("GetFieldMut","shared and mutable"),
-            Access::Value=>("IntoField","shared,mutable and by value"),
+            Access::Value=>("IntoField","shared, and by value"),
+            Access::MutValue=>("IntoFieldMut","shared,mutable and by value"),
         };
         let _=writeln!(
             docs,

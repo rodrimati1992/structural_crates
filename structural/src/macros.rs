@@ -4,7 +4,7 @@ macro_rules! impl_getter{
     ( 
         $(unsafe)?
         impl[$($typarams:tt)*]
-        GetField <$field_name:tt : $field_ty:ty,$name_param:ty> 
+            GetField <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
     )=>{
@@ -20,7 +20,7 @@ macro_rules! impl_getter{
     };
     ( 
         unsafe impl[$($typarams:tt)*]
-        GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
+            GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
     )=>{
@@ -46,8 +46,30 @@ macro_rules! impl_getter{
         }
     };
     ( 
+        $(unsafe)?
+        impl[$($typarams:tt)*]
+            IntoField <$field_name:tt : $field_ty:ty,$name_param:ty> 
+        for $self_:ty 
+        $( where[$($where_:tt)*] )?
+    )=>{
+        $crate::impl_getter!{
+            impl[$($typarams)*] 
+                GetField<$field_name:$field_ty,$name_param> 
+            for $self_
+            $( where[$($where_)*] )?
+        }
+    
+        impl<$($typarams)*> $crate::IntoField<$name_param> for $self_ 
+        $( where $($where_)* )?
+        {
+            fn into_field_(self)->Self::Ty{
+                self.$field_name
+            }
+        }
+    };
+    ( 
         unsafe impl[$($typarams:tt)*]
-        IntoField <$field_name:tt : $field_ty:ty,$name_param:ty> 
+            IntoFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
     )=>{
@@ -289,6 +311,7 @@ structural_alias!{
         ref  b:T,
         mut  c:i64,
         move d:String,
+        mut move e:String,
     }
 }
 
@@ -301,21 +324,25 @@ regular one,with the same meaning.
 Inside the `{...}` is a list of fields,
 each of which get turned into supertraits on `Foo`:
 
-`     a:u32`:
+- `     a:u32`:
     Corresponds to the `GetField<TString<(_a,)>,Ty=u32>` shared reference 
     field accessor trait.
 
-`ref  b:T`
+- `ref  b:T`
     Corresponds to the `GetField<TString<(_b,)>,Ty=T>` shared reference 
     field accessor trait.
 
-`mut  c:i64`:
+- `mut  c:i64`:
     Corresponds to the `GetFieldMut<TString<(_c,)>,Ty=i64>` mutable reference 
     field accessor trait (which`itself implies `GetField`).
 
-`move d:String`:
+- `move d:String`:
     Corresponds to the `IntoField<TString<(_d,)>,Ty=String>` by value
-    field accessor trait (which`itself implies `GetField` and `GetFieldMut`).
+    field accessor trait (which itself implies `GetField`).
+
+- `mut move e:String`:
+    Corresponds to the `IntoFieldMut<TString<(_e,)>,Ty=String>` trait,
+    allowing shared,mutable,and by value access to the field.
 
 # Examples
 
@@ -336,8 +363,8 @@ use core::{
 
 structural_alias!{
     trait Point<T>{
-        move x:T,
-        move y:T,
+        mut move x:T,
+        mut move y:T,
     }
 }
 
@@ -353,7 +380,7 @@ where
 }
 
 #[derive(Structural)]
-#[struc(access="move")]
+#[struc(access="mut move")]
 struct Point3D<T>{
     pub x:T,
     pub y:T,
@@ -361,7 +388,7 @@ struct Point3D<T>{
 }
 
 #[derive(Structural)]
-#[struc(access="move")]
+#[struc(access="mut move")]
 struct Rectangle<T>{
     pub x:T,
     pub y:T,
@@ -370,7 +397,7 @@ struct Rectangle<T>{
 }
 
 #[derive(Structural)]
-#[struc(access="move")]
+#[struc(access="mut move")]
 struct Entity{
     pub id:PersonId,
     pub x:f32,
@@ -413,8 +440,11 @@ structural_alias!{
         // mutable access (a &mut reference to the field),as well as shared access.
         mut friends:Vec<PersonId>,
 
-        // by value access to the field (as well as shared and mutable)
+        // by value access to the field (as well as shared)
         move candy:Candy,
+
+        // by value access to the field (as well as shared and mutable)
+        mut move snack:Snack,
     }
 }
 
@@ -426,6 +456,9 @@ structural_alias!{
 
 # #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 # struct Candy;
+
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct Snack;
 
 # fn main(){}
 

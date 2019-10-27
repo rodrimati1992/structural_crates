@@ -5,6 +5,7 @@ use crate::{
 
 
 mod tuple_impls;
+mod most_impls;
 
 
 /// Allows accessing the `FieldName` field.
@@ -258,7 +259,7 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldMut,IntoField,TStr};
+/// use structural::{GetField,IntoField,TStr};
 /// use structural::mut_ref::MutRef;
 ///
 /// struct Huh<T>{
@@ -273,19 +274,6 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 ///     }
 /// }
 ///
-/// unsafe impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
-///     fn get_field_mut_(&mut self)->&mut Self::Ty{
-///         &mut self.value
-///     }
-///
-///     unsafe fn raw_get_mut_field<'a>(this:MutRef<'a,Self>)->&'a mut Self::Ty
-///     where
-///         Self::Ty:'a,
-///     {
-///         &mut (*this.ptr).value
-///     }
-/// }
-///
 /// impl<T> IntoField<TStr!(v a l u e)> for Huh<T>{
 ///     fn into_field_(self)->Self::Ty{
 ///         self.value
@@ -294,10 +282,20 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 ///
 /// ```
 ///
-pub trait IntoField<FieldName>:GetFieldMut<FieldName>+Sized{
+pub trait IntoField<FieldName>:GetField<FieldName>+Sized{
     /// Converts self into the field.
     fn into_field_(self)->Self::Ty;
 }
+
+
+/// An alias for a shared,mutable,and by-value accessor for a field.
+pub trait IntoFieldMut<FieldName>:IntoField<FieldName>+GetFieldMut<FieldName>{}
+
+impl<This,FieldName> IntoFieldMut<FieldName> for This
+where
+    This:IntoField<FieldName>+GetFieldMut<FieldName>
+{}
+
 
 
 

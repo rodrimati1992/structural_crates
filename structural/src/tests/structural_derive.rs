@@ -1,4 +1,9 @@
-use crate::{GetField,GetFieldMut,IntoField,GetFieldExt,GetFieldType,Structural};
+use crate::{
+    GetField,GetFieldMut,IntoField,IntoFieldMut,
+    GetFieldExt,
+    GetFieldType,
+    Structural,
+};
 
 structural_alias!{
     trait HuhInterface{
@@ -30,7 +35,6 @@ where
     let (a,b)=this.fields(tstr!("a","b"));
     assert_eq!(a, &10);
     assert_eq!(b, &33);
-    println!("a={} b={}", a,b);
 }
 
 #[test]
@@ -76,8 +80,10 @@ struct Privacies1{
     f:u32,
     #[struc(access="mut")]
     g:u32,
-    #[struc(access="move")]
+    #[struc(access="mut move")]
     hello:u32,
+    #[struc(access="move")]
+    world:u32,
 }
 
 
@@ -95,7 +101,8 @@ where
         GetField<TStr!(e),Ty=u32>+
         GetField<TStr!(f),Ty=u32>+
         GetFieldMut<TStr!(g),Ty=u32>+
-        IntoField<TStr!(h e l l o),Ty=u32>+
+        IntoFieldMut<TStr!(h e l l o),Ty=u32>+
+        IntoField<TStr!(w o r l d),Ty=u32>+
         Sized,
 {
     type Dummy=();
@@ -111,17 +118,18 @@ fn privacies(){
     };
     fn generic_1<T>(mut this:T)
     where
-        T:Privacies1_SI
+        T:Privacies1_SI+Clone
     {
         let _=this.fields(tstr!("a","b","e","f","g","hello"));
         let _=this.fields_mut(tstr!("g","hello"));
-        let _=this.into_field(tstr!("hello"));
+        let _=this.clone().into_field(tstr!("hello"));
+        let _=this.clone().into_field(tstr!("world"));
     }
     let _=generic_1::<Privacies1>;
 
     assert_eq!(<Privacies0 as Structural>::FIELDS , &["a","b"]);
 
-    assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","hello"]);
+    assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","hello","world"]);
 }
 
 

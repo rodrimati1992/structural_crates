@@ -6,7 +6,7 @@ macro_rules! impl_tuple {
     (inner; ($field:tt,$field_ty:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{
         impl_getter!{
             unsafe impl[$($tuple_param),*] 
-                IntoField< $field:$field_ty,$field_param > 
+                IntoFieldMut< $field:$field_ty,$field_param > 
             for ($($tuple_param,)*)
         }
     };
@@ -271,10 +271,10 @@ mod tests{
 
     structural_alias!{
         trait Tuple4{
-            move 0:u32,
-            move 1:u32,
-            move 2:u32,
-            move 3:u32,
+            mut move 0:u32,
+            mut move 1:u32,
+            mut move 2:u32,
+            mut move 3:u32,
         }
     }
 

@@ -33,7 +33,7 @@ use quote::quote;
 /**
 
 
-This macro is documented in structural::docs::structural_derive_macro
+This macro is documented in structural::docs::structural_macro
 
 */
 

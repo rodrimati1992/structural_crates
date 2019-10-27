@@ -11,10 +11,13 @@ These are the features this library provides:
 
 - Declaration of trait alises for the field accessor traits,with convenient syntax.
 
-# Example
+# Examples
 
-This example demonstrates how you can use any type sharing the
-same fields as another one in a function.
+
+### Structural Derive
+
+This demonstrates how you can use any type with a superset of the
+fields of another one in a function.
 
 ```rust
 use structural::{GetFieldExt,Structural,tstr};
@@ -26,8 +29,8 @@ struct Point4<T>(T,T,T,T);
 
 fn reads_point4<S>(point:&S)
 where
-    // Point4_SI aliases the accessor traits for Point4,
-    // this allows passing in tuples larger than 4 elements
+    // The `Structural` derive macro generated the `Point4_SI` trait,
+    // aliasing the accessor traits for Point4.
     S:Point4_SI<u32>
 {
     let (a,b,c,d)=point.fields(tstr!("0","1","2","3"));
@@ -45,6 +48,70 @@ reads_point4(&(0,11,33,66,0xDEAD,0xBEEF));
 
 ```
 
+### Structural alias
+
+This demonstrates how you can define a trait alias for a single read-only field accessor.
+
+For more details you can look at the docs for the 
+[`structural_alias`](./macro.structural_alias.html) macro.
+
+```rust
+
+use structural::{GetFieldExt,Structural,structural_alias,tstr};
+
+use std::borrow::Borrow;
+
+structural_alias!{
+    trait Person<S>{
+        name:S,
+    }
+}
+
+fn print_name<T,S>(this:&T)
+where
+    T:Person<S>,
+    S:Borrow<str>,
+{
+    println!("Hello, {}!",this.field_(tstr!("name")).borrow() )
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+////          The stuff here could be defined in a separate crate
+
+#[derive(Structural)]
+#[struc(public)]
+struct Worker{
+    name:String,
+    salary:Cents,
+}
+
+#[derive(Structural)]
+#[struc(public)]
+struct Student{
+    name:String,
+    birth_year:u32,
+}
+
+# #[derive(Debug,Copy,Clone,PartialEq,Eq)]
+# struct Cents(u64);
+
+fn main(){
+    print_name(&Worker{
+        name:"John Doe".into(),
+        salary:Cents(1_000_000_000_000_000),
+    });
+    
+    print_name(&Student{
+        name:"Jake English".into(),
+        birth_year:1995,
+    });
+}
+
+```
+
+
+
 */
 #![no_std]
 
@@ -59,6 +126,7 @@ pub use structural_derive::Structural;
 #[macro_use]
 mod macros;
 
+pub mod docs;
 pub mod mut_ref;
 pub mod field_traits;
 pub mod structural_trait;
@@ -77,7 +145,11 @@ pub mod tests{
 pub use crate::type_level::ident as chars;
 
 pub use crate::{
-    field_traits::{GetField,GetFieldMut,IntoField,GetFieldExt,GetFieldType},
+    field_traits::{
+        GetField,GetFieldMut,IntoField,IntoFieldMut,
+        GetFieldExt,
+        GetFieldType,
+    },
     structural_trait::Structural,
 };
 

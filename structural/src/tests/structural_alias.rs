@@ -68,7 +68,7 @@ mod all_access{
                  a:u32,
             ref  b:T,
             mut  c:i64,
-            move d:String,
+            move d:&'static str,
         }
     }
 
@@ -85,7 +85,7 @@ mod all_access{
                 GetField<TStr!(a), Ty=u32>+
                 GetField<TStr!(b), Ty=T>+
                 GetFieldMut<TStr!(c), Ty=i64>+
-                IntoField<TStr!(d), Ty=String>,
+                IntoField<TStr!(d), Ty=&'static str>,
         {}
     }
 
