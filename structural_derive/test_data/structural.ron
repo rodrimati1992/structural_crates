@@ -57,5 +57,37 @@
         ( replacements: { "#replaced":"private" }, error_count: 0 ),
       ],
     ),
+    (
+      // This test checks that,if a field is private,
+      // that accessor trait impls aren't generated.
+      //
+      // If private fields start being outputted from the derive macro,
+      // this'll have to change.
+      name:"single field and accessors",
+      code:r##"
+        struct Huh{
+          #p0 hello:u32,
+          pub world:u64,
+          #p0 dino:String,
+        }
+      "##,
+      subcase: [
+        ( 
+          replacements: { "#p0":"" },
+          find_all:[not(str("hello")),str("world"),not(str("dino"))],
+          error_count: 0,
+        ),
+        ( 
+          replacements: { "#p0":"pub " },
+          find_all:[str("hello"),str("world"),str("dino")],
+          error_count: 0,
+        ),
+        ( 
+          replacements: { "#p0":"#[struc(public)]" },
+          find_all:[str("hello"),str("world"),str("dino")],
+          error_count: 0,
+        ),
+      ],
+    ),
   ]
 )
