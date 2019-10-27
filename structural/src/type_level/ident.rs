@@ -2,7 +2,7 @@
 
 use core_extensions::MarkerType;
 
-use core::marker::PhantomData;
+use std_::marker::PhantomData;
 
 
 /// A type-level string,represented as a tuple of type-level bytes.

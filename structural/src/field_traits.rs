@@ -27,7 +27,7 @@ mod most_impls;
 /// fn formatted_value<T,S>(this:&T)->String
 /// where
 ///     T:GetField<TStr!(v a l u e), Ty=S>,
-///     S:core::fmt::Debug,
+///     S:std::fmt::Debug,
 /// {
 ///     format!("{:#?}",this.field_(tstr!("value")) )
 /// }
@@ -152,7 +152,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     T:GetFieldMut<TStr!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
-///     core::mem::replace( this.field_mut(tstr!("value")), Default::default() )
+///     std::mem::replace( this.field_mut(tstr!("value")), Default::default() )
 /// }
 ///
 /// #[derive(structural::Structural)]
