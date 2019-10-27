@@ -1,11 +1,22 @@
 [package]
 name = "structural"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
-description="For manipulating struct fields."
+description="Abstractions over fields."
+documentation = "https://docs.rs/structural/"
+keywords = ["data-structures"]
+categories = ["data-structures","rust-patterns"]
+repository = "https://github.com/rodrimati1992/structural_crates/"
+include = [
+    "Cargo.toml", 
+    "src/**/*.rs", 
+    "../APACHE_license", 
+    "../MIT_license"
+]
+
 
 [dependencies]
-structural_derive={version="0.0.0",path="../structural_derive"}
+structural_derive={version="0.1.0",path="../structural_derive"}
 core_extensions={version="0.1",default_features=false}
