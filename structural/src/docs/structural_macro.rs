@@ -60,6 +60,9 @@ Generates impls of the `GetField`+`IntoField` traits for the field(s).
 `#[struc(access="mut move")]`:
 Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field(s).
 
+When this attribute is used on a non-pub field,
+it'll mark the field as public for the purpose of generating accessor trait impls.
+
 # Examples
 
 ### Basic example
