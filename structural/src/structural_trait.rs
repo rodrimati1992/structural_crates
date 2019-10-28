@@ -2,12 +2,65 @@
 Contains the Structural trait with info about the fields that have accessor trait impls.
 */
 
-/// Indicates that the type derives Structural,
-/// and provides information about the fields that impl accessor traits.
+use std_::marker::PhantomData;
+    
+
+
+
+
+/// Indicates and provides information about the fields that implement accessor traits.
 pub trait Structural{
     /// Information about fields that have accessor trait implemented for them.
     const FIELDS:&'static[FieldInfo];
 }
+
+
+/// An object-safe version of the `Structural` trait.
+/// with information about the fields that implement accessor traits.
+///
+/// This trait has a blanket implementation for types that implement `Structural`,
+/// and cannot be implemented outside this module.
+pub trait StructuralDyn{
+    /// Information about fields that have accessor trait implemented for them.
+    fn fields_info(&self)->&'static[FieldInfo];
+
+    // This is to ensure that the trait is only implemented by types that implement Structural.
+    //
+    // Adding Structural as a supertrait would make this not object safe,
+    // so this is the best alternative.
+    #[doc(hidden)]
+    fn unimplementable_outside_the_structural_trait_module()->BlanketImpl<Self>
+    where
+        Self:Sized;
+}
+
+
+impl<This> StructuralDyn for This
+where
+    This:Structural
+{    
+    fn fields_info(&self)->&'static[FieldInfo]{
+        &<This as Structural>::FIELDS
+    }
+
+    fn unimplementable_outside_the_structural_trait_module()->BlanketImpl<Self>
+    where
+        Self:Sized
+    {
+        BlanketImpl(PhantomData)
+    }
+}
+
+
+mod blanket_impl{
+    use super::*;
+    pub struct BlanketImpl<T>(pub(super) PhantomData<T>);
+}
+
+use blanket_impl::BlanketImpl;
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 /// Information about a field with accessor trait impls.
@@ -29,6 +82,8 @@ impl FieldInfo{
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 /// The names that `T`'s fields have in their accessor trait impls.

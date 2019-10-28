@@ -6,6 +6,18 @@ use crate::{
     Structural,
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+#[allow(dead_code)]
+fn object_safety(){
+    let _:dyn GetField<TStr!(a b),Ty=()>;
+    let _:dyn GetFieldMut<TStr!(a b),Ty=()>;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 structural_alias!{
     trait HuhInterface{
         a:u32,

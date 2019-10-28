@@ -6,6 +6,7 @@ use crate::{
     mut_ref::MutRef,
     type_level::MultiTString,
     Structural,
+    StructuralDyn,
 };
 
 
@@ -86,7 +87,7 @@ use self::multi_fields::{
 ///
 /// ```
 ///
-pub trait GetField<FieldName>:Structural{
+pub trait GetField<FieldName>:StructuralDyn{
     /// The type of the `FieldName` field.
     type Ty;
 
