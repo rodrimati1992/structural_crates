@@ -1,4 +1,5 @@
 use crate::{
+    structural_trait::accessor_names,
     GetField,GetFieldMut,IntoField,IntoFieldMut,
     GetFieldExt,
     GetFieldType,
@@ -127,9 +128,15 @@ fn privacies(){
     }
     let _=generic_1::<Privacies1>;
 
-    assert_eq!(<Privacies0 as Structural>::FIELDS , &["a","b"]);
+    assert!(
+        accessor_names::<Privacies0>()
+        .eq(["a","b"].iter().cloned()),
+    );
 
-    assert_eq!(<Privacies1 as Structural>::FIELDS , &["a","b","e","f","g","hello","world"]);
+    assert!(
+        accessor_names::<Privacies1>()
+        .eq(["a","b","e","f","g","hello","world"].iter().cloned()),
+    );
 }
 
 
@@ -148,7 +155,10 @@ struct Renamed{
 
 #[test]
 fn renamed(){
-    assert_eq!(<Renamed as Structural>::FIELDS , &["a","b","c"]);
+    assert!(
+        accessor_names::<Renamed>()
+            .eq(["a","b","e"].iter().cloned())
+    );
 
     let _:GetFieldType<Renamed,TStr!(a)>;
     let _:GetFieldType<Renamed,TStr!(b)>;

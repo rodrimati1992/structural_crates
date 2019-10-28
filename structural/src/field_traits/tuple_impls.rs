@@ -1,4 +1,5 @@
 use crate::Structural;
+use crate::structural_trait::FieldInfo;
 
 use crate::type_level::ident::{TString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
@@ -17,8 +18,8 @@ macro_rules! impl_tuple {
         $tuple_ty:tt        
     ) => {
         impl<$($field_ty),*> Structural for $tuple_ty {
-            const FIELDS:&'static[&'static str]=&[
-                $( stringify!( $field ) ,)*
+            const FIELDS:&'static[FieldInfo]=&[
+                $( FieldInfo::not_renamed(stringify!( $field )) ,)*
             ];
         }
 
