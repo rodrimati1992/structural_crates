@@ -98,15 +98,24 @@ macro_rules! impl_structural{
         impl[$($typarams:tt)*] Structural for $self_:ty 
         where[$($where_:tt)*]
         {
-            field_names=[$( $field_name:tt ,)*]
+            field_names=[$( ($field_name:expr,$renamed:expr) ,)*]
         }
     )=>{
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {
-            const FIELDS:&'static[&'static str]=&[
-                $( stringify!( $field_name ) ,)*
-            ];
+            const FIELDS:&'static[$crate::structural_trait::FieldInfo]={
+                use $crate::structural_trait::FieldInfo;
+
+                &[
+                    $( 
+                        FieldInfo{
+                            original_name:$field_name,
+                            accessor_name:$renamed,
+                        },
+                    )*
+                ]
+            };
         }
     }
 }
@@ -119,7 +128,13 @@ macro_rules! impl_getters_for_derive{
         impl $typarams:tt $self_:ty 
         where $where_preds:tt
         {
-            $(($getter_trait:ident< $field_name:tt : $field_ty:ty,$name_param:ty> ))*
+            $((
+                $getter_trait:ident< 
+                    $field_name:tt : $field_ty:ty,
+                    $name_param_ty:ty,
+                    $name_param_str:expr,
+                > 
+            ))*
         }
     )=>{
 
@@ -127,14 +142,16 @@ macro_rules! impl_getters_for_derive{
             impl $typarams Structural for $self_
             where $where_preds
             {
-                field_names=[ $( $field_name ,)* ]
+                field_names=[ 
+                    $( (stringify!($field_name),$name_param_str), )* 
+                ]
             }
         }
 
         $(
             $crate::impl_getter!{
                 unsafe impl $typarams 
-                    $getter_trait<$field_name : $field_ty,$name_param>
+                    $getter_trait<$field_name : $field_ty,$name_param_ty>
                 for $self_
                 where $where_preds
             }

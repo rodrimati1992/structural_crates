@@ -5,6 +5,7 @@ Accessor and extension traits for fields.
 use crate::{
     mut_ref::MutRef,
     type_level::MultiTString,
+    Structural,
 };
 
 
@@ -63,10 +64,15 @@ use self::multi_fields::{
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,TStr};
+/// use structural::{GetField,Structural,TStr};
+/// use structural::structural_trait::FieldInfo;
 ///
 /// struct Huh<T>{
 ///     value:T,
+/// }
+///
+/// impl<T> Structural for Huh<T>{
+///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
 ///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
@@ -80,7 +86,7 @@ use self::multi_fields::{
 ///
 /// ```
 ///
-pub trait GetField<FieldName>{
+pub trait GetField<FieldName>:Structural{
     /// The type of the `FieldName` field.
     type Ty;
 
@@ -187,11 +193,16 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldMut,TStr};
+/// use structural::{GetField,GetFieldMut,Structural,TStr};
+/// use structural::structural_trait::FieldInfo;
 /// use structural::mut_ref::MutRef;
 ///
 /// struct Huh<T>{
 ///     value:T,
+/// }
+///
+/// impl<T> Structural for Huh<T>{
+///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
 ///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
@@ -271,11 +282,17 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,IntoField,TStr};
+/// use structural::{GetField,IntoField,Structural,TStr};
+/// use structural::structural_trait::FieldInfo;
 /// use structural::mut_ref::MutRef;
 ///
 /// struct Huh<T>{
 ///     value:T,
+/// }
+///
+///
+/// impl<T> Structural for Huh<T>{
+///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
 ///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{

@@ -73,11 +73,12 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                 Some(x) => x.to_string(),
                 None => field.ident.to_string(),
             }
-        });
+        })
+        .collect::<Vec<_>>();
 
     let names_module_definition=NamedModuleAndTokens::new(
         ds.name,
-        renamed_field_names
+        &renamed_field_names
     );
     
     let names_module=&names_module_definition.names_module;
@@ -139,7 +140,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     )?;
 
     let field_names=fields.iter().map(|f| &f.ident );
-
+    
     quote!(
         #structural_alias_trait
 
@@ -150,7 +151,9 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                 #((
                     #getter_trait< 
                         #field_names : #field_tys , 
-                        #names_module::#alias_names> 
+                        #names_module::#alias_names,
+                        #renamed_field_names,
+                    > 
                 ))*
             }
         }

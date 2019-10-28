@@ -1,31 +1,55 @@
 use super::*;
 
+use crate::structural_trait::FieldInfo;
+
 use core::{
     ops::{Range,RangeFrom,RangeTo,RangeInclusive,RangeToInclusive},
 };
 
 
-impl_getter!{
-    unsafe impl[T] IntoFieldMut< start:T ,TStr!(s t a r t) > for Range<T>
-}
-impl_getter!{
-    unsafe impl[T] IntoFieldMut< end:T ,TStr!(e n d) > for Range<T>
-}
-
-
-impl_getter!{
-    unsafe impl[T] IntoFieldMut< start:T ,TStr!(s t a r t) > for RangeFrom<T>
+impl_getters_for_derive!{
+    impl[T] Range<T>
+    where[]
+    {
+        (IntoFieldMut< start : T,TStr!(s t a r t),"start",  > )
+        (IntoFieldMut< end : T,TStr!(e n d),"end",  > )
+    }
 }
 
-impl_getter!{
-    unsafe impl[T] IntoFieldMut< end:T ,TStr!(e n d) > for RangeTo<T>
+impl_getters_for_derive!{
+    impl[T] RangeFrom<T>
+    where[]
+    {
+        (IntoFieldMut< start : T,TStr!(s t a r t),"start",  > )
+    }
+}
+
+impl_getters_for_derive!{
+    impl[T] RangeTo<T>
+    where[]
+    {
+        (IntoFieldMut< end : T,TStr!(e n d),"end",  > )
+    }
+}
+
+impl_getters_for_derive!{
+    impl[T] RangeToInclusive<T>
+    where[]
+    {
+        (IntoFieldMut< end : T,TStr!(e n d),"end",  > )
+    }
 }
 
 
-impl_getter!{
-    unsafe impl[T] IntoFieldMut< end:T ,TStr!(e n d) > for RangeToInclusive<T>
-}
+///////////////////////////////////////////////////////
 
+
+impl<T> Structural for RangeInclusive<T>{
+    const FIELDS:&'static[FieldInfo]=&[
+        FieldInfo::not_renamed("start"),
+        FieldInfo::not_renamed("end"),
+    ];
+}
 
 impl<T> GetField<TStr!(s t a r t)> for RangeInclusive<T>{
     type Ty=T;
@@ -53,3 +77,8 @@ impl<T> IntoField<TStr!(e n d)> for RangeInclusive<T>{
         self.into_inner().0
     }
 }
+
+
+///////////////////////////////////////////////////////
+
+
