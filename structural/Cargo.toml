@@ -16,6 +16,9 @@ include = [
     "../MIT_license"
 ]
 
+[features]
+std=[]
+
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}

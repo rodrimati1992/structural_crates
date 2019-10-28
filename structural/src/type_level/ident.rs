@@ -1,3 +1,7 @@
+/*!
+Contains type-level characters,strings,and multi-strings.
+*/
+
 #![allow(non_snake_case, non_camel_case_types)]
 
 use core_extensions::MarkerType;

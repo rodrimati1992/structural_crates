@@ -1,3 +1,7 @@
+/*!
+A wrapper type for a mutable pointer with a lifetime.
+*/
+
 use std_::marker::PhantomData;
 
 
@@ -20,6 +24,7 @@ impl<'a,T:?Sized> Clone for MutRef<'a,T>{
 }
 
 impl<'a,T:?Sized> MutRef<'a,T>{
+    /// Constructs a MutRef from a mutable reference.
     #[inline]
     pub fn new(mut_ref:&'a mut T)->Self{
         Self{

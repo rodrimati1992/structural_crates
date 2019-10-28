@@ -119,6 +119,10 @@ fn main(){
 
 ```
 
+# no-std support
+
+This library is #[no_std] by default and requires enabling the `std` feature for 
+implementations of std traits and for std types.
 
 # Minimum Rust version
 
