@@ -18,6 +18,9 @@ mod with_super_traits{
         This:Copy+GetField<TStr!(a),Ty=u8>
     {}
 
+    /// This function ensures that the supertraits and field accessors in Trait
+    /// are implied by `T:Trait`.
+    #[allow(dead_code)]
     fn func<T:Trait>(v:T){
         let _copy=v;
         let _:&u8=v.field_(tstr!("a"));

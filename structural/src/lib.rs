@@ -150,7 +150,7 @@ pub use crate::{
         GetFieldExt,
         GetFieldType,
     },
-    structural_trait::Structural,
+    structural_trait::{Structural,StructuralDyn},
 };
 
 
