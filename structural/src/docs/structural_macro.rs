@@ -132,10 +132,12 @@ fn mutates_pair<O>(pair:&mut O)
 where
     O:Tuple2<u32>
 {
-    let (a,b)=pair.fields_mut(tstr!("0","1"));
+    let a=pair.field_mut(tstr!("0"));
     assert_eq!(a,&mut 14);
-    assert_eq!(b,&mut 16);
     *a*=2;
+
+    let b=pair.field_mut(tstr!("1"));
+    assert_eq!(b,&mut 16);
     *b*=2;
 }
 

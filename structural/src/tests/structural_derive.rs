@@ -10,12 +10,28 @@ use crate::{
 
 #[allow(dead_code)]
 fn object_safety(){
-    let _:dyn GetField<TStr!(a b),Ty=()>;
-    let _:dyn GetFieldMut<TStr!(a b),Ty=()>;
-    let _:dyn Huh_SI;
-    let _:dyn Whoah_SI;
-    let _:dyn Renamed_SI;
-    let _:dyn Privacies1_SI;
+    #[cfg(feature="alloc")]
+    type AllocPtrs<'a,T>=(
+        crate::alloc::boxed::Box<T>,
+        crate::alloc::sync::Arc<T>,
+    );
+
+    #[cfg(not(feature="alloc"))]
+    type AllocPtrs<'a,T>=(T,);
+
+
+    type TraitObjects<'a,T>=(
+        &'a T,
+        &'a mut T,
+        AllocPtrs<'a,T>,
+    );
+
+    let _:TraitObjects<'_,dyn GetField<TStr!(a b),Ty=()>>;
+    let _:TraitObjects<'_,dyn GetFieldMut<TStr!(a b),Ty=()>>;
+    let _:TraitObjects<'_,dyn Huh_SI>;
+    let _:TraitObjects<'_,dyn Whoah_SI>;
+    let _:TraitObjects<'_,dyn Renamed_SI>;
+    let _:TraitObjects<'_,dyn Privacies1_SI>;
 }
 
 
@@ -138,7 +154,7 @@ fn privacies(){
         T:Privacies1_SI+Clone
     {
         let _=this.fields(tstr!("a","b","e","f","g","hello"));
-        let _=this.fields_mut(tstr!("g","hello"));
+        // let _=this.fields_mut(tstr!("g","hello"));
         let _=this.clone().into_field(tstr!("hello"));
         let _=this.clone().into_field(tstr!("world"));
         #[cfg(feature="alloc")]
@@ -149,13 +165,14 @@ fn privacies(){
     }
     let _=generic_1::<Privacies1>;
 
+    #[cfg(feature="alloc")]
     fn generic_1_dyn<T>(mut ctor:impl FnMut()->Box<dyn Privacies1_SI> ){
         let mut this=ctor();
         let _=this.fields(tstr!("a","b","e","f","g","hello"));
         // No support until I figure out how to do fields_mut with boxed trait objects
         // let _=this.fields_mut(tstr!("g","hello"));
-        let _=(*this).field_mut(tstr!("g"));
-        let _=(*this).field_mut(tstr!("hello"));
+        let _=this.field_mut(tstr!("g"));
+        let _=this.field_mut(tstr!("hello"));
         #[cfg(feature="alloc")]
         {
             let _=ctor().box_into_field(tstr!("hello"));
