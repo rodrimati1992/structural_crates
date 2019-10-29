@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::structural_trait::FieldInfo;
+use crate::structural_trait::{FieldInfo,StructuralDyn};
 
 use core::{
     ops::{Range,RangeFrom,RangeTo,RangeInclusive,RangeToInclusive},
@@ -51,6 +51,13 @@ impl<T> Structural for RangeInclusive<T>{
     ];
 }
 
+impl<T> StructuralDyn for RangeInclusive<T>{
+    fn fields_info(&self)->&'static[FieldInfo]{
+        <Self as crate::Structural>::FIELDS
+    }
+}
+
+
 impl<T> GetField<TStr!(s t a r t)> for RangeInclusive<T>{
     type Ty=T;
 
@@ -71,11 +78,13 @@ impl<T> IntoField<TStr!(s t a r t)> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
+    impl_box_into_field_method!{TStr!(s t a r t)}
 }
 impl<T> IntoField<TStr!(e n d)> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
+    impl_box_into_field_method!{TStr!(e n d)}
 }
 
 

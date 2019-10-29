@@ -12,6 +12,10 @@ use crate::{
 fn object_safety(){
     let _:dyn GetField<TStr!(a b),Ty=()>;
     let _:dyn GetFieldMut<TStr!(a b),Ty=()>;
+    let _:dyn Huh_SI;
+    let _:dyn Whoah_SI;
+    let _:dyn Renamed_SI;
+    let _:dyn Privacies1_SI;
 }
 
 
@@ -137,8 +141,27 @@ fn privacies(){
         let _=this.fields_mut(tstr!("g","hello"));
         let _=this.clone().into_field(tstr!("hello"));
         let _=this.clone().into_field(tstr!("world"));
+        #[cfg(feature="alloc")]
+        {
+            let _=Box::new(this.clone()).box_into_field(tstr!("hello"));
+            let _=Box::new(this.clone()).box_into_field(tstr!("world"));
+        }
     }
     let _=generic_1::<Privacies1>;
+
+    fn generic_1_dyn<T>(mut ctor:impl FnMut()->Box<dyn Privacies1_SI> ){
+        let mut this=ctor();
+        let _=this.fields(tstr!("a","b","e","f","g","hello"));
+        // No support until I figure out how to do fields_mut with boxed trait objects
+        // let _=this.fields_mut(tstr!("g","hello"));
+        let _=(*this).field_mut(tstr!("g"));
+        let _=(*this).field_mut(tstr!("hello"));
+        #[cfg(feature="alloc")]
+        {
+            let _=ctor().box_into_field(tstr!("hello"));
+            let _=ctor().box_into_field(tstr!("world"));
+        }
+    }
 
     assert!(
         accessor_names::<Privacies0>()

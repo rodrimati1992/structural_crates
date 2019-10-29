@@ -121,8 +121,26 @@ fn main(){
 
 # no-std support
 
-This library is #[no_std] by default and requires enabling the `std` feature for 
-implementations of std traits and for std types.
+To use `structural` in no_std contexts disable the default-feature.
+
+This crate has few features that require the standard library (instead of core/alloc),
+it is required by default so that users that are not aware of the core/alloc libraries don't have 
+to pass a feature to enable std support.
+
+# Features
+
+These are the cargo features in structural:
+
+- `std`: Enables std support,this is enabled by default.
+
+- `alloc`:
+    Enables alloc crate support,this is enabled by default.
+    If this is enabled on a version prior to 1.36 it will enable `std` support.
+
+- `1.36`:
+    A feature is for enabling support of Rust versions from 1.36 onwards ,
+    this is automatically enabled by `structural`'s build script.
+
 
 # Minimum Rust version
 
