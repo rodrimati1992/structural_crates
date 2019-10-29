@@ -65,6 +65,7 @@ macro_rules! impl_getter{
             fn into_field_(self)->Self::Ty{
                 self.$field_name
             }
+            $crate::impl_box_into_field_method!{$name_param}
         }
     };
     ( 
@@ -86,9 +87,44 @@ macro_rules! impl_getter{
             fn into_field_(self)->Self::Ty{
                 self.$field_name
             }
+            $crate::impl_box_into_field_method!{$name_param}
         }
     };
 } 
+
+
+/// For use in manual implementations of the IntoField trait.
+/// 
+/// Implements the `IntoField::box_into_field_` method,
+/// automatically handling conditional `#![no_std]` support in `structural`.
+///
+/// For an example of using this macro look at
+/// [the documentation for IntoField](./field_traits/trait.IntoField.html)
+#[macro_export]
+#[cfg(not(feature="alloc"))]
+macro_rules! impl_box_into_field_method {
+    ($($anything:tt)*) => ()
+}
+
+/// For use in manual implementations of the IntoField trait.
+/// 
+/// Implements the `IntoField::box_into_field_` method,
+/// automatically handling conditional `#![no_std]` support in `structural`.
+///
+/// For an example of using this macro look at
+/// [the documentation for IntoField](./field_traits/trait.IntoField.html)
+#[macro_export]
+#[cfg(feature="alloc")]
+macro_rules! impl_box_into_field_method {
+    ($field_name:ty) => (
+        #[cfg(feature="alloc")]
+        fn box_into_field_(self:structural::alloc::boxed::Box<Self>)->Self::Ty{
+            $crate::IntoField::<$field_name>::into_field_(*self)
+        }
+    )
+}
+
+
 
 
 #[doc(hidden)]
@@ -117,6 +153,15 @@ macro_rules! impl_structural{
                 ]
             };
         }
+
+        impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_
+        where $($where_)*
+        {
+            fn fields_info(&self)->&'static[$crate::structural_trait::FieldInfo]{
+                <Self as $crate::Structural>::FIELDS
+            }
+        }
+
     }
 }
 

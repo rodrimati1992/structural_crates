@@ -32,6 +32,14 @@ impl<'a,T:?Sized> MutRef<'a,T>{
             _marker:PhantomData,
         }
     }
+
+    /// Constructs a MutRef from a mutable pointer.
+    pub fn from_ptr(ptr:*mut T)->Self{
+        Self{
+            ptr,
+            _marker:PhantomData,
+        }
+    }
 }
 
 impl<'a,T:?Sized> From<&'a mut T> for MutRef<'a,T>{

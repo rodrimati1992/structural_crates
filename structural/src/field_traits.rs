@@ -308,13 +308,20 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 ///     fn into_field_(self)->Self::Ty{
 ///         self.value
 ///     }
+///
+///     structural::impl_box_into_field_method!{TStr!(v a l u e)}
 /// }
 ///
 /// ```
 ///
-pub trait IntoField<FieldName>:GetField<FieldName>+Sized{
+pub trait IntoField<FieldName>:GetField<FieldName>{
     /// Converts self into the field.
-    fn into_field_(self)->Self::Ty;
+    fn into_field_(self)->Self::Ty
+    where Self:Sized;
+
+    /// Converts a boxed self into the field.
+    #[cfg(feature="alloc")]
+    fn box_into_field_(self: crate::alloc::boxed::Box<Self>)->Self::Ty;
 }
 
 
@@ -447,9 +454,34 @@ pub trait GetFieldExt{
     /// ```
     fn into_field<FieldName>(self,_:FieldName)->Self::Ty
     where 
-        Self:IntoField<FieldName>
+        Self:IntoField<FieldName>+Sized,
     {
         self.into_field_()
+    }
+
+    /// Converts a boxed ´self´ into the ´FieldName´ field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,tstr};
+    ///
+    /// let tup=Box::new((1,1,2,3,5,8));
+    ///
+    /// assert_eq!( tup.clone().box_into_field(tstr!("0")), 1 );
+    /// assert_eq!( tup.clone().box_into_field(tstr!("1")), 1 );
+    /// assert_eq!( tup.clone().box_into_field(tstr!("2")), 2 );
+    /// assert_eq!( tup.clone().box_into_field(tstr!("3")), 3 );
+    /// assert_eq!( tup.clone().box_into_field(tstr!("4")), 5 );
+    /// assert_eq!( tup.clone().box_into_field(tstr!("5")), 8 );
+    ///
+    /// ```
+    #[cfg(feature="alloc")]
+    fn box_into_field<FieldName>(self:crate::alloc::boxed::Box<Self>,_:FieldName)->Self::Ty
+    where 
+        Self:IntoField<FieldName>,
+    {
+        self.box_into_field_()
     }
 }
 
@@ -458,4 +490,67 @@ impl<T:?Sized> GetFieldExt for T{}
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 
+
+macro_rules! unsized_impls {
+    ( shared,$ptr:ident ) => {
+
+        impl<T> Structural for $ptr<T>
+        where
+            T:Structural
+        {
+            const FIELDS:&'static [FieldInfo]=T::FIELDS;
+        }
+
+        impl<T> StructuralDyn for $ptr<T>
+        where
+            T:StructuralDyn+?Sized
+        {
+            fn fields_info(&self)->&'static[FieldInfo]{
+                (**self).fields_info()
+            }
+        }
+
+
+        impl<This,Name,Ty> GetField<Name> for $ptr<This>
+        where
+            This:GetField<Name,Ty=Ty>+?Sized
+        {
+            type Ty=Ty;
+
+            fn get_field_(&self)->&Self::Ty{
+                (**self).get_field_()
+            }
+        }
+    };
+    (mutable,$ptr:ident)=>{
+
+        unsized_impls!{ shared,$ptr }
+
+        // No GetFieldMut impl until I figure out how to do multiple 
+        // mutable field references combined with trait objects.
+
+    };
+    (value,$ptr:ident)=>{
+        
+        unsized_impls!{ mutable,$ptr }
+
+    };
+}
+
+#[cfg(feature="alloc")]
+mod alloc_impls{
+    use super::*;
+
+    use crate::{
+        alloc::{
+            boxed::Box,
+            sync::Arc,
+        },
+        structural_trait::FieldInfo,
+    };
+
+    unsized_impls!{value,Box}
+    unsized_impls!{shared,Arc}
+}

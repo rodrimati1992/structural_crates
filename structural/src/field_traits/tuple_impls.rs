@@ -1,5 +1,5 @@
 use crate::Structural;
-use crate::structural_trait::FieldInfo;
+use crate::structural_trait::{FieldInfo,StructuralDyn};
 
 use crate::type_level::ident::{TString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
@@ -22,6 +22,13 @@ macro_rules! impl_tuple {
                 $( FieldInfo::not_renamed(stringify!( $field )) ,)*
             ];
         }
+
+        impl<$($field_ty),*> StructuralDyn for $tuple_ty{
+            fn fields_info(&self)->&'static[FieldInfo]{
+                <Self as $crate::Structural>::FIELDS
+            }
+        }
+
 
         $(
             impl_tuple!{

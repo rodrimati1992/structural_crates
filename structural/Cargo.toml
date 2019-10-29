@@ -17,9 +17,16 @@ include = [
 ]
 
 [features]
-std=[]
+default = ["std"]
+std=["alloc"]
+alloc=[]
+rust_1_36=[]
 
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}
 core_extensions={version="0.1",default_features=false}
+
+
+[build-dependencies]
+rustc_version = "0.2"

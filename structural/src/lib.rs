@@ -75,6 +75,14 @@ where
     println!("Hello, {}!",this.field_(tstr!("name")).borrow() )
 }
 
+// most structural aliases are object safe
+fn print_name_dyn<S>(this:&dyn Person<S>)
+where
+    S:Borrow<str>,
+{
+    println!("Hello, {}!",this.field_(tstr!("name")).borrow() )
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 ////          The stuff here could be defined in a separate crate
@@ -97,15 +105,21 @@ struct Student{
 # struct Cents(u64);
 
 fn main(){
-    print_name(&Worker{
+    let worker=Worker{
         name:"John Doe".into(),
         salary:Cents(1_000_000_000_000_000),
-    });
-    
-    print_name(&Student{
+    };
+
+    let student=Student{
         name:"Jake English".into(),
         birth_year:1995,
-    });
+    };
+
+    print_name(&worker);
+    print_name(&student);
+
+    print_name_dyn(&worker);
+    print_name_dyn(&student);
 }
 
 ```
@@ -113,10 +127,22 @@ fn main(){
 
 
 */
-#![no_std]
+#![cfg_attr(not(feature="alloc"),no_std)]
 
 #[doc(hidden)]
 pub extern crate core as std_;
+
+#[cfg(all(feature="alloc",feature="rust_1_36"))]
+pub extern crate alloc;
+
+#[doc(hidden)]
+#[cfg(all(feature="alloc",feature="rust_1_36"))]
+pub use alloc;
+
+#[doc(hidden)]
+#[cfg(all(feature="alloc",not(feature="rust_1_36")))]
+pub use std as alloc;
+
 
 extern crate self as structural;
 
