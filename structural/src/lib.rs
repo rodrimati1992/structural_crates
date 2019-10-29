@@ -132,12 +132,13 @@ fn main(){
 #[doc(hidden)]
 pub extern crate core as std_;
 
+#[doc(hidden)]
 #[cfg(all(feature="alloc",feature="rust_1_36"))]
-pub extern crate alloc;
+pub extern crate alloc as alloc_;
 
 #[doc(hidden)]
 #[cfg(all(feature="alloc",feature="rust_1_36"))]
-pub use alloc;
+pub use alloc_ as alloc;
 
 #[doc(hidden)]
 #[cfg(all(feature="alloc",not(feature="rust_1_36")))]

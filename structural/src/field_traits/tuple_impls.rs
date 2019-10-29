@@ -6,7 +6,7 @@ use crate::type_level::ident::{TString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 macro_rules! impl_tuple {
     (inner; ($field:tt,$field_ty:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{
         impl_getter!{
-            unsafe impl[$($tuple_param),*] 
+            impl[$($tuple_param),*] 
                 IntoFieldMut< $field:$field_ty,$field_param > 
             for ($($tuple_param,)*)
         }
@@ -233,7 +233,7 @@ mod tests{
         assert_eq!(*get_field_1(&(3,5,7,11,13,17,19,23,29,31)), 5);
     }
 
-
+    /* Uncomment if multiple borrows are added back.
     #[test]
     fn get_mut_many(){
         {
@@ -275,7 +275,7 @@ mod tests{
             assert_eq!(tup.8,200);
         }
     }
-
+    */
 
     structural_alias!{
         trait Tuple4{
@@ -287,7 +287,7 @@ mod tests{
     }
 
 
-
+    /* Uncomment this is multiple mutable references are added back.
     fn takes_tuple4<This>(mut this:This)
     where
         This:Tuple4,
@@ -309,5 +309,6 @@ mod tests{
         takes_tuple4((6,5,4,3,2));
         takes_tuple4((6,5,4,3));
     }
+    */
 
 }

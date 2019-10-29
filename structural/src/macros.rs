@@ -19,7 +19,7 @@ macro_rules! impl_getter{
         }
     };
     ( 
-        unsafe impl[$($typarams:tt)*]
+        impl[$($typarams:tt)*]
             GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
@@ -29,19 +29,11 @@ macro_rules! impl_getter{
             $( where[$($where_)*] )?
         }
     
-        unsafe impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_ 
+        impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_ 
         $( where $($where_)* )?
         {
             fn get_field_mut_(&mut self)->&mut Self::Ty{
                 &mut self.$field_name
-            }
-
-            unsafe fn raw_get_mut_field<'a>(
-                this:$crate::mut_ref::MutRef<'a,Self>
-            )->&'a mut Self::Ty
-            where Self::Ty:'a
-            {
-                &mut (*this.ptr).$field_name
             }
         }
     };
@@ -69,13 +61,13 @@ macro_rules! impl_getter{
         }
     };
     ( 
-        unsafe impl[$($typarams:tt)*]
+        impl[$($typarams:tt)*]
             IntoFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
     )=>{
         $crate::impl_getter!{
-            unsafe impl[$($typarams)*] 
+            impl[$($typarams)*] 
                 GetFieldMut<$field_name:$field_ty,$name_param> 
             for $self_
             $( where[$($where_)*] )?
@@ -126,7 +118,6 @@ macro_rules! impl_box_into_field_method {
 
 
 
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_structural{
@@ -166,6 +157,26 @@ macro_rules! impl_structural{
 }
 
 
+
+/// Implements StructuralDyn for some type,by delegating to Structural. 
+#[macro_export]
+macro_rules! impl_structural_dyn{
+    (
+        impl[$($typarams:tt)*] $self_:ty 
+        $( where[$($where_:tt)*] )?
+    )=>{
+        impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_
+        $( where $($where_)* )?
+        {
+            fn fields_info(&self)->&'static[$crate::structural_trait::FieldInfo]{
+                <Self as $crate::Structural>::FIELDS
+            }
+        }
+    }
+}
+
+
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_getters_for_derive{
@@ -195,7 +206,7 @@ macro_rules! impl_getters_for_derive{
 
         $(
             $crate::impl_getter!{
-                unsafe impl $typarams 
+                impl $typarams 
                     $getter_trait<$field_name : $field_ty,$name_param_ty>
                 for $self_
                 where $where_preds
@@ -208,7 +219,7 @@ macro_rules! impl_getters_for_derive{
 /// Gets a type-level string value
 ///
 /// When passed comma separated string literals,this instantiates a `MultiTString`,
-/// which is what's passed to the `GetFieldExt::{fields,fields_mut}` methods.
+/// which is what's passed to the `GetFieldExt::fields` methods.
 ///
 /// # Example
 ///

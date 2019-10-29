@@ -17,7 +17,6 @@ pub mod multi_fields;
 
 use self::multi_fields::{
     GetMultiField,
-    GetMultiFieldMut,
 };
 
 
@@ -65,8 +64,11 @@ use self::multi_fields::{
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,Structural,TStr};
-/// use structural::structural_trait::FieldInfo;
+/// use structural::{
+///     GetField,Structural,TStr,
+///     structural_trait::FieldInfo,
+///     impl_structural_dyn,
+/// };
 ///
 /// struct Huh<T>{
 ///     value:T,
@@ -75,6 +77,8 @@ use self::multi_fields::{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
+///
+/// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
@@ -149,13 +153,6 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 
 /// Allows accessing the `FieldName` field mutably.
 ///
-/// # Safety
-///
-/// This trait must be implemented for a field of the `FieldName` name.
-///
-/// The `raw_get_mut_field` method must only access the `FieldName` field.
-/// It's definition must always be `&mut (*this.ptr).$field_name`.
-///
 /// # Usage as Bound Example
 ///
 /// This example demonstrates how you can use this trait as a bound.
@@ -194,9 +191,12 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldMut,Structural,TStr};
-/// use structural::structural_trait::FieldInfo;
-/// use structural::mut_ref::MutRef;
+/// use structural::{
+///     GetField,GetFieldMut,Structural,TStr,
+///     structural_trait::FieldInfo,
+///     mut_ref::MutRef,
+///     impl_structural_dyn,
+/// };
 ///
 /// struct Huh<T>{
 ///     value:T,
@@ -206,6 +206,8 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
 ///
+/// impl_structural_dyn!{ impl[T] Huh<T> }
+///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
@@ -214,35 +216,17 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     }
 /// }
 ///
-/// unsafe impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
+/// impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
-///     }
-///
-///     unsafe fn raw_get_mut_field<'a>(this:MutRef<'a,Self>)->&'a mut Self::Ty
-///     where
-///         Self::Ty:'a,
-///     {
-///         &mut (*this.ptr).value
 ///     }
 /// }
 ///
 /// ```
 ///
-pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
+pub trait GetFieldMut<FieldName>:GetField<FieldName>{
     /// Accesses the `FieldName` field by mutable reference.
     fn get_field_mut_(&mut self)->&mut Self::Ty;
-
-    /// Accesses the `FieldName` field mutably.
-    ///
-    /// # Safety
-    ///
-    /// Once you call this function,it must not be called again for the same `FieldName`
-    /// until the returned mutable reference is dropped.
-    unsafe fn raw_get_mut_field<'a>(this:MutRef<'a,Self>)->&'a mut Self::Ty
-    where 
-        Self:Sized,
-        Self::Ty:'a;
 }
 
 /// Converts this type into its `FieldName` field.
@@ -283,9 +267,12 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{GetField,IntoField,Structural,TStr};
-/// use structural::structural_trait::FieldInfo;
-/// use structural::mut_ref::MutRef;
+/// use structural::{
+///     GetField,IntoField,Structural,TStr,
+///     structural_trait::FieldInfo,
+///     mut_ref::MutRef,
+///     impl_structural_dyn,
+/// };
 ///
 /// struct Huh<T>{
 ///     value:T,
@@ -295,6 +282,8 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 /// }
+///
+/// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
@@ -409,32 +398,6 @@ pub trait GetFieldExt{
         self.get_field_mut_()
     }
 
-    /// Gets multiple mutable references to fields.
-    ///
-    /// This is safe since `MultiTString` requires its strings 
-    /// to be checked for uniqueness before being constructed
-    /// (the safety invariant of `MultiTString`).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,tstr};
-    ///
-    /// let mut tup=(1,1,2,3,5,8);
-    ///
-    /// assert_eq!( tup.fields_mut(tstr!("0","1")), (&mut 1,&mut 1) );
-    /// assert_eq!( tup.fields_mut(tstr!("3","2")), (&mut 3,&mut 2) );
-    /// assert_eq!( tup.fields_mut(tstr!("4","5","3")), (&mut 5,&mut 8,&mut 3) );
-    ///
-    /// ```
-    fn fields_mut<'a,Fields>(&'a mut self,ms:MultiTString<Fields>)->Fields::MultiTy
-    where
-        Fields:GetMultiFieldMut<'a,Self>,
-        Self:Sized,
-    {
-        Fields::multi_get_field_mut_(self,ms)
-    }
-
     /// Converts ´self´ into the ´FieldName´ field.
     ///
     /// # Example
@@ -528,8 +491,15 @@ macro_rules! unsized_impls {
 
         unsized_impls!{ shared,$ptr }
 
-        // No GetFieldMut impl until I figure out how to do multiple 
-        // mutable field references combined with trait objects.
+        impl<T,FieldName,Ty> GetFieldMut<FieldName> for Box<T>
+        where
+            T:GetFieldMut<FieldName,Ty=Ty>+?Sized
+        {
+            /// Accesses the `FieldName` field by mutable reference.
+            fn get_field_mut_(&mut self)->&mut Self::Ty{
+                (**self).get_field_mut_()
+            }
+        }
 
     };
     (value,$ptr:ident)=>{

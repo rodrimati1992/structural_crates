@@ -5,25 +5,17 @@ Contains traits for accessing multiple fields at once.
 use super::*;
 
 /// This trait allows a MultiTString to borrow the fields it names.
-pub trait GetMultiField<'a,This:?Sized>{
+pub trait GetMultiField<'a,This:?Sized>:'a{
     type MultiTy:'a;
 
     fn multi_get_field_(this:&'a This)->Self::MultiTy;
 }
 
-/// This trait allows a MultiTString to borrow the fields it names mutably.
-pub trait GetMultiFieldMut<'a,This:?Sized>:Sized{
-    type MultiTy:'a;
-
-    fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy
-    where This:Sized;
-}
-
-
 macro_rules! impl_get_multi_field {
     ( $($fname:ident)* ) => (
         impl<'a,This:?Sized,$($fname,)*> GetMultiField<'a,This> for ($($fname,)*)
         where
+            Self:'a,
             $(
                 This:GetField<$fname>,
                 GetFieldType<This,$fname>:'a,
@@ -41,34 +33,6 @@ macro_rules! impl_get_multi_field {
                         GetField::<$fname>::get_field_(this),
                     )*
                 )
-            }
-        }
-
-        impl<'a,This:?Sized,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
-        where
-            $(
-                This:GetFieldMut<$fname>,
-                GetFieldType<This,$fname>:'a,
-            )*
-        {
-            type MultiTy=(
-                $(
-                    &'a mut GetFieldType<This,$fname>,
-                )*
-            );
-
-            fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy
-            where
-                This:Sized,
-            {
-                let this=MutRef::new(this);
-                unsafe{
-                    (
-                        $(
-                            GetFieldMut::<$fname>::raw_get_mut_field(this.clone()),
-                        )*
-                    )
-                }
             }
         }
     )
