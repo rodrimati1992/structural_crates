@@ -19,7 +19,7 @@ macro_rules! impl_getter{
         }
     };
     ( 
-        impl[$($typarams:tt)*]
+        unsafe impl[$($typarams:tt)*]
             GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
@@ -29,11 +29,17 @@ macro_rules! impl_getter{
             $( where[$($where_)*] )?
         }
     
-        impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_ 
+        unsafe impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_ 
         $( where $($where_)* )?
         {
             fn get_field_mut_(&mut self)->&mut Self::Ty{
                 &mut self.$field_name
+            }
+
+            $crate::unsafe_impl_get_field_raw_mut_method!{
+                Self,
+                field_name=$field_name,
+                name_generic=$name_param
             }
         }
     };
@@ -61,13 +67,13 @@ macro_rules! impl_getter{
         }
     };
     ( 
-        impl[$($typarams:tt)*]
+        unsafe impl[$($typarams:tt)*]
             IntoFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty> 
         for $self_:ty 
         $( where[$($where_:tt)*] )?
     )=>{
         $crate::impl_getter!{
-            impl[$($typarams)*] 
+            unsafe impl[$($typarams)*] 
                 GetFieldMut<$field_name:$field_ty,$name_param> 
             for $self_
             $( where[$($where_)*] )?
@@ -83,6 +89,34 @@ macro_rules! impl_getter{
         }
     };
 } 
+
+
+
+#[macro_export]
+macro_rules! unsafe_impl_get_field_raw_mut_method {
+    ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
+        unsafe fn get_field_mutref(
+            this:$crate::mut_ref::MutRef<'_,()>,
+            _:$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty>
+        )->&mut $Self::Ty{
+            &mut (*this.cast::<$Self>().ptr).$field_name
+        }
+
+        fn as_mutref(&mut self)->$crate::mut_ref::MutRef<'_,()>{
+            $crate::mut_ref::MutRef::new(self)
+                .cast::<()>()
+        }
+
+        fn get_field_mutref_func(
+            &self
+        )->$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty>{
+            $crate::field_traits::GetFieldMutRefFn::new(
+                <$Self as $crate::GetFieldMut<$name_param>>::get_field_mutref
+            )
+        }
+    )
+}
+
 
 
 /// For use in manual implementations of the IntoField trait.
@@ -206,7 +240,7 @@ macro_rules! impl_getters_for_derive{
 
         $(
             $crate::impl_getter!{
-                impl $typarams 
+                unsafe impl $typarams 
                     $getter_trait<$field_name : $field_ty,$name_param_ty>
                 for $self_
                 where $where_preds
