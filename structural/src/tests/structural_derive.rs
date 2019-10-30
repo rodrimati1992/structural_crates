@@ -6,6 +6,12 @@ use crate::{
     Structural,
 };
 
+#[cfg(feature="alloc")]
+use crate::alloc::{
+    rc::Rc,
+    sync::Arc,
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #[allow(dead_code)]
@@ -149,36 +155,7 @@ fn privacies(){
     let _=|this:Privacies0|{
         let _=this.fields(tstr!("a","b"));
     };
-    fn generic_1<T>(mut this:T)
-    where
-        T:Privacies1_SI+Clone
-    {
-        let _=this.fields(tstr!("a","b","e","f","g","hello"));
-        // let _=this.fields_mut(tstr!("g","hello"));
-        let _=this.clone().into_field(tstr!("hello"));
-        let _=this.clone().into_field(tstr!("world"));
-        #[cfg(feature="alloc")]
-        {
-            let _=Box::new(this.clone()).box_into_field(tstr!("hello"));
-            let _=Box::new(this.clone()).box_into_field(tstr!("world"));
-        }
-    }
     let _=generic_1::<Privacies1>;
-
-    #[cfg(feature="alloc")]
-    fn generic_1_dyn<T>(mut ctor:impl FnMut()->Box<dyn Privacies1_SI> ){
-        let mut this=ctor();
-        let _=this.fields(tstr!("a","b","e","f","g","hello"));
-        // No support until I figure out how to do fields_mut with boxed trait objects
-        // let _=this.fields_mut(tstr!("g","hello"));
-        let _=this.field_mut(tstr!("g"));
-        let _=this.field_mut(tstr!("hello"));
-        #[cfg(feature="alloc")]
-        {
-            let _=ctor().box_into_field(tstr!("hello"));
-            let _=ctor().box_into_field(tstr!("world"));
-        }
-    }
 
     assert!(
         accessor_names::<Privacies0>()
@@ -189,6 +166,63 @@ fn privacies(){
         accessor_names::<Privacies1>()
         .eq(["a","b","e","f","g","hello","world"].iter().cloned()),
     );
+}
+
+
+// This tests that boxed trait objects can still call GetFieldExt methods.
+#[cfg(feature="alloc")]
+#[test]
+fn ptr_dyn_methods(){
+    let _=|this:Privacies1|{
+        #[cfg(feature="alloc")]
+        {
+            generic_1_dyn(||Box::new(this.clone()));
+        }
+    };
+
+    let _=|this:Privacies0|{
+        #[cfg(feature="alloc")]
+        {
+            generic_0_dyn(||Arc::new(this.clone()));
+            let _:Rc<Privacies0_SI>=Rc::new(this.clone());
+        }
+    };
+}
+
+
+fn generic_1<T>(mut this:T)
+where
+    T:Privacies1_SI+Clone
+{
+    let _=this.fields(tstr!("a","b","e","f","g","hello"));
+    let _=this.fields_mut(tstr!("g","hello"));
+    let _=this.clone().into_field(tstr!("hello"));
+    let _=this.clone().into_field(tstr!("world"));
+    #[cfg(feature="alloc")]
+    {
+        let _=Box::new(this.clone()).box_into_field(tstr!("hello"));
+        let _=Box::new(this.clone()).box_into_field(tstr!("world"));
+    }
+}
+
+#[cfg(feature="alloc")]
+fn generic_0_dyn(mut ctor:impl FnMut()->Arc<dyn Privacies0_SI> ){
+    let mut this=ctor();
+    let _=this.fields(tstr!("a","b"));
+}
+
+#[cfg(feature="alloc")]
+fn generic_1_dyn(mut ctor:impl FnMut()->Box<dyn Privacies1_SI> ){
+    let mut this=ctor();
+    let _=this.fields(tstr!("a","b","e","f","g","hello"));
+    let _=this.fields_mut(tstr!("g","hello"));
+    let _=this.field_mut(tstr!("g"));
+    let _=this.field_mut(tstr!("hello"));
+    #[cfg(feature="alloc")]
+    {
+        let _=ctor().box_into_field(tstr!("hello"));
+        let _=ctor().box_into_field(tstr!("world"));
+    }
 }
 
 

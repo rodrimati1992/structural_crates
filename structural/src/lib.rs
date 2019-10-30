@@ -168,6 +168,14 @@ pub mod tests{
 
 
 
+mod oof{
+    pub type Hi=();
+}
+
+#[doc(inline)]
+pub use oof::Hi as Hi_;
+
+
 #[doc(hidden)]
 pub use crate::type_level::ident as chars;
 

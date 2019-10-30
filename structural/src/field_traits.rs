@@ -2,9 +2,12 @@
 Accessor and extension traits for fields.
 */
 
+use crate::std_::marker::PhantomData;
+
 use crate::{
     mut_ref::MutRef,
     type_level::MultiTString,
+    utils::Unsized,
     Structural,
     StructuralDyn,
 };
@@ -17,6 +20,7 @@ pub mod multi_fields;
 
 use self::multi_fields::{
     GetMultiField,
+    GetMultiFieldMut,
 };
 
 
@@ -216,18 +220,80 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     }
 /// }
 ///
-/// impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
+/// unsafe impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
+///     }
+///     structural::unsafe_impl_get_field_raw_mut_method!{
+///         Self,
+///         field_name=value,
+///         name_generic=TStr!(v a l u e)
 ///     }
 /// }
 ///
 /// ```
 ///
-pub trait GetFieldMut<FieldName>:GetField<FieldName>{
+pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
     /// Accesses the `FieldName` field by mutable reference.
     fn get_field_mut_(&mut self)->&mut Self::Ty;
+
+    /// Gets a mutable reference to the field.
+    /// 
+    /// # Safety
+    /// 
+    /// For the `ptr` argument,you must pass the return value of the
+    /// `as_mutref` method for this field.
+    /// 
+    /// For the `getter` argument,you must pass the return value of the
+    /// `get_field_mutref_func` method for this field.
+    ///
+    /// The `getter` argument is necessary for boxed trait objects.
+    unsafe fn get_field_mutref(
+        ptr:MutRef<'_,()>,
+        getter:GetFieldMutRefFn<FieldName,Self::Ty>,
+    )->&mut Self::Ty
+    where 
+        Self:Sized;
+
+    /// Gets a pointer to the struct that contains this field.
+    /// 
+    /// Implementors must return a pointer to the same type that 
+    /// `GetFieldMut::get_field_mutref` casts the pointer to.
+    fn as_mutref(&mut self)->MutRef<'_,()>;
+
+    /// Gets the `get_field_mutref` associated function as a function pointer.
+    fn get_field_mutref_func(&self)->GetFieldMutRefFn<FieldName,Self::Ty>;
 }
+
+
+/////////////////////////////////////////////////
+
+#[repr(transparent)]
+pub struct GetFieldMutRefFn<FieldName,FieldTy>{
+    pub func:unsafe fn(MutRef<'_,()>,Self)->&mut FieldTy,
+    marker:PhantomData<FieldName>,
+}
+
+impl<FieldName,FieldTy> GetFieldMutRefFn<FieldName,FieldTy>{
+    pub fn new(func:unsafe fn(MutRef<'_,()>,Self)->&mut FieldTy)->Self{
+        Self{
+            func,
+            marker:PhantomData,
+        }
+    }
+}
+
+impl<FieldName,FieldTy> Copy for GetFieldMutRefFn<FieldName,FieldTy>{}
+
+impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
+    #[inline(always)]
+    fn clone(&self)->Self{
+        *self
+    }
+}
+
+/////////////////////////////////////////////////
+
 
 /// Converts this type into its `FieldName` field.
 ///
@@ -346,6 +412,7 @@ pub trait GetFieldExt{
     /// assert_eq!( tup.field_(tstr!("5")), &8 );
     ///
     /// ```
+    #[inline(always)]
     fn field_<FieldName>(&self,_:FieldName)->&Self::Ty
     where 
         Self:GetField<FieldName>
@@ -367,6 +434,7 @@ pub trait GetFieldExt{
     /// assert_eq!( tup.fields(tstr!("4","5","3")), (&5,&8,&3) );
     ///
     /// ```
+    #[inline(always)]
     fn fields<'a,Fields>(&'a self,_:MultiTString<Fields>)->Fields::MultiTy
     where
         Fields:GetMultiField<'a,Self>
@@ -391,11 +459,39 @@ pub trait GetFieldExt{
     /// assert_eq!( tup.field_mut(tstr!("5")), &mut 8 );
     ///
     /// ```
+    #[inline(always)]
     fn field_mut<FieldName>(&mut self,_:FieldName)->&mut Self::Ty
     where 
         Self:GetFieldMut<FieldName>
     {
         self.get_field_mut_()
+    }
+
+    /// Gets multiple mutable references to fields.
+    ///
+    /// This is safe since `MultiTString` requires its strings 
+    /// to be checked for uniqueness before being constructed
+    /// (the safety invariant of `MultiTString`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,tstr};
+    ///
+    /// let mut tup=(1,1,2,3,5,8);
+    ///
+    /// assert_eq!( tup.fields_mut(tstr!("0","1")), (&mut 1,&mut 1) );
+    /// assert_eq!( tup.fields_mut(tstr!("3","2")), (&mut 3,&mut 2) );
+    /// assert_eq!( tup.fields_mut(tstr!("4","5","3")), (&mut 5,&mut 8,&mut 3) );
+    ///
+    /// ```
+    #[inline(always)]
+    fn fields_mut<'a,Fields>(&'a mut self,ms:MultiTString<Fields>)->Fields::MultiTy
+    where
+        Fields:GetMultiFieldMut<'a,Self>,
+        Self:Sized,
+    {
+        Fields::multi_get_field_mut_(self,ms)
     }
 
     /// Converts ´self´ into the ´FieldName´ field.
@@ -415,6 +511,7 @@ pub trait GetFieldExt{
     /// assert_eq!( tup.clone().into_field(tstr!("5")), 8 );
     ///
     /// ```
+    #[inline(always)]
     fn into_field<FieldName>(self,_:FieldName)->Self::Ty
     where 
         Self:IntoField<FieldName>+Sized,
@@ -440,6 +537,7 @@ pub trait GetFieldExt{
     ///
     /// ```
     #[cfg(feature="alloc")]
+    #[inline(always)]
     fn box_into_field<FieldName>(self:crate::alloc::boxed::Box<Self>,_:FieldName)->Self::Ty
     where 
         Self:IntoField<FieldName>,
@@ -491,7 +589,7 @@ macro_rules! unsized_impls {
 
         unsized_impls!{ shared,$ptr }
 
-        impl<T,FieldName,Ty> GetFieldMut<FieldName> for Box<T>
+        unsafe impl<T,FieldName,Ty> GetFieldMut<FieldName> for Box<T>
         where
             T:GetFieldMut<FieldName,Ty=Ty>+?Sized
         {
@@ -499,8 +597,22 @@ macro_rules! unsized_impls {
             fn get_field_mut_(&mut self)->&mut Self::Ty{
                 (**self).get_field_mut_()
             }
-        }
 
+            unsafe fn get_field_mutref(
+                ptr:MutRef<'_,()>,
+                get_field:GetFieldMutRefFn<FieldName,Self::Ty>
+            )->&mut Self::Ty{
+                (get_field.func)(ptr,get_field)
+            }
+
+            fn as_mutref(&mut self)->MutRef<'_,()>{
+                (**self).as_mutref()
+            }
+
+            fn get_field_mutref_func(&self)->GetFieldMutRefFn<FieldName,Ty>{
+                (**self).get_field_mutref_func()
+            }
+        }
     };
     (value,$ptr:ident)=>{
         
@@ -516,6 +628,7 @@ mod alloc_impls{
     use crate::{
         alloc::{
             boxed::Box,
+            rc::Rc,
             sync::Arc,
         },
         structural_trait::FieldInfo,
@@ -523,4 +636,5 @@ mod alloc_impls{
 
     unsized_impls!{value,Box}
     unsized_impls!{shared,Arc}
+    unsized_impls!{shared,Rc}
 }

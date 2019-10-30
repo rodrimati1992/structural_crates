@@ -14,18 +14,18 @@ pub struct MutRef<'a,T:?Sized>{
     _marker:PhantomData<&'a mut T>,
 }
 
+impl<'a,T:?Sized> Copy for MutRef<'a,T>{}
+
 impl<'a,T:?Sized> Clone for MutRef<'a,T>{
+    #[inline(always)]
     fn clone(&self)->Self{
-        Self{
-            ptr:self.ptr,
-            _marker:PhantomData,
-        }
+        *self
     }
 }
 
 impl<'a,T:?Sized> MutRef<'a,T>{
     /// Constructs a MutRef from a mutable reference.
-    #[inline]
+    #[inline(always)]
     pub fn new(mut_ref:&'a mut T)->Self{
         Self{
             ptr:mut_ref,
@@ -34,16 +34,26 @@ impl<'a,T:?Sized> MutRef<'a,T>{
     }
 
     /// Constructs a MutRef from a mutable pointer.
+    #[inline(always)]
     pub fn from_ptr(ptr:*mut T)->Self{
         Self{
             ptr,
             _marker:PhantomData,
         }
     }
+
+    /// An unchecked cast from `MutRef<'a,T>` to `MutRef<'a,U>`.
+    #[inline(always)]
+    pub fn cast<U>(self)->MutRef<'a,U>{
+        MutRef{
+            ptr:self.ptr as *mut U,
+            _marker:PhantomData,
+        }
+    }
 }
 
 impl<'a,T:?Sized> From<&'a mut T> for MutRef<'a,T>{
-    #[inline]
+    #[inline(always)]
     fn from(mutref:&'a mut T)->Self{
         Self::new(mutref)
     }
