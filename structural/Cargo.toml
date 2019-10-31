@@ -22,6 +22,9 @@ std=["alloc"]
 alloc=[]
 rust_1_36=[]
 
+specialization=[]
+nightly_specialization=["specialization"]
+
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}

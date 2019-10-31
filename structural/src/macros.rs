@@ -91,6 +91,30 @@ macro_rules! impl_getter{
 } 
 
 
+#[macro_export]
+macro_rules! cfg_default_impl {
+    ( cfg() $($tokens:tt)* ) => ()
+}
+
+
+macro_rules! default_if {
+    ( 
+        $(#[$attr:meta])*
+        cfg($($cfg_attr:tt)*) 
+        $($default_impl:tt)*
+    ) => (
+        #[cfg($($cfg_attr)*)]
+        $(#[$attr])*
+        default $($default_impl)*
+
+        #[cfg(not($($cfg_attr)*))]
+        $(#[$attr])*
+        $($default_impl)*
+    )
+}
+
+
+
 
 #[macro_export]
 macro_rules! unsafe_impl_get_field_raw_mut_method {

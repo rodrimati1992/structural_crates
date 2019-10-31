@@ -141,6 +141,17 @@ These are the cargo features in structural:
     A feature is for enabling support of Rust versions from 1.36 onwards ,
     this is automatically enabled by `structural`'s build script.
 
+- `specialization`:
+    Enables specialization inside structural,without enabling the nightly feature flag.
+    This is for the case that specialization is stabilized after the last update to this library.
+
+- `nightly_specialization`:
+    Enables specialization inside structural,
+    requires nightly because it enables the nightly feature.
+
+
+Specialization is used inside structural for performance reasons.
+There are no benchmarks comparing when specialization is enabled and disabled yet.
 
 # Minimum Rust version
 
