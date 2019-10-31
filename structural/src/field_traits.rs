@@ -7,7 +7,6 @@ use crate::std_::marker::PhantomData;
 use crate::{
     mut_ref::MutRef,
     type_level::MultiTString,
-    utils::Unsized,
     Structural,
     StructuralDyn,
 };
