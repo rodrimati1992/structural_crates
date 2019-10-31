@@ -15,8 +15,7 @@ pub trait GetMultiField<'a,This:?Sized>{
 pub trait GetMultiFieldMut<'a,This:?Sized>:Sized{
     type MultiTy:'a;
 
-    fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy
-    where This:Sized;
+    fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy;
 }
 
 
@@ -42,7 +41,7 @@ macro_rules! impl_get_multi_field {
                     )*
                 )
             }
-        }
+        }        
 
         impl<'a,This:?Sized,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
         where
@@ -57,6 +56,40 @@ macro_rules! impl_get_multi_field {
                 )*
             );
 
+            default_if!{
+                #[allow(non_snake_case)]
+                cfg(feature="specialization")
+
+                fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy{
+                    $(
+                        let $fname:GetFieldMutRefFn<$fname,GetFieldType<This,$fname>>=
+                            this.get_field_mutref_func();
+                    )*
+                    let this=GetFieldMut::<F0>::as_mutref(this);
+                    // unsafe:
+                    // This is passing the pointer obtained from the `as_mutref` function,
+                    // which ought be the same for all impls of GetFieldMut on the same type.
+                    unsafe{
+                        (
+                            $(
+                                ($fname.func)(this.clone(),$fname),
+                            )*
+                        )
+                    }
+                }
+            }
+
+        }
+
+
+        #[cfg(feature="specialization")]
+        impl<'a,This,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
+        where
+            $(
+                This:GetFieldMut<$fname>,
+                GetFieldType<This,$fname>:'a,
+            )*
+        {
             #[allow(non_snake_case)]
             fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy{
                 $(
@@ -64,18 +97,16 @@ macro_rules! impl_get_multi_field {
                         this.get_field_mutref_func();
                 )*
                 let this=GetFieldMut::<F0>::as_mutref(this);
-                // unsafe:
-                // This is passing the pointer obtained from the `as_mutref` function,
-                // which ought be the same for all impls of GetFieldMut on the same type.
                 unsafe{
                     (
                         $(
-                            ($fname.func)(this.clone(),$fname),
+                            <This as GetFieldMut<$fname>>::get_field_mutref(this.clone(),$fname),
                         )*
                     )
                 }
             }
         }
+
     )
 }
 

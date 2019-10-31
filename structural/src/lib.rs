@@ -125,8 +125,8 @@ fn main(){
 ```
 
 
-
 */
+#![cfg_attr(feature="nightly_specialization",feature(specialization))]
 #![cfg_attr(not(feature="alloc"),no_std)]
 
 #[doc(hidden)]

@@ -597,11 +597,14 @@ macro_rules! unsized_impls {
                 (**self).get_field_mut_()
             }
 
-            unsafe fn get_field_mutref(
-                ptr:MutRef<'_,()>,
-                get_field:GetFieldMutRefFn<FieldName,Self::Ty>
-            )->&mut Self::Ty{
-                (get_field.func)(ptr,get_field)
+            default_if!{
+                cfg(feature="specialization")
+                unsafe fn get_field_mutref(
+                    ptr:MutRef<'_,()>,
+                    get_field:GetFieldMutRefFn<FieldName,Self::Ty>
+                )->&mut Self::Ty{
+                    (get_field.func)(ptr,get_field)
+                }
             }
 
             fn as_mutref(&mut self)->MutRef<'_,()>{
@@ -610,6 +613,20 @@ macro_rules! unsized_impls {
 
             fn get_field_mutref_func(&self)->GetFieldMutRefFn<FieldName,Ty>{
                 (**self).get_field_mutref_func()
+            }
+        }
+
+
+        #[cfg(feature="specialization")]
+        unsafe impl<T,FieldName,Ty> GetFieldMut<FieldName> for Box<T>
+        where
+            T:GetFieldMut<FieldName,Ty=Ty>
+        {
+            unsafe fn get_field_mutref(
+                ptr:MutRef<'_,()>,
+                get_field:GetFieldMutRefFn<FieldName,Self::Ty>
+            )->&mut Self::Ty{
+                T::get_field_mutref(ptr,get_field)
             }
         }
     };
