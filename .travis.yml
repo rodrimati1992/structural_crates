@@ -12,8 +12,8 @@ matrix:
         - cd "${TRAVIS_BUILD_DIR}/structural/"
 
         - MIRI_NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)
+        - echo "Installing latest nightly with Miri"
         - echo "$MIRI_NIGHTLY"
-        - echo "Installing latest nightly with Miri: $MIRI_NIGHTLY"
         - rustup set profile minimal
         - rustup default "$MIRI_NIGHTLY"
         - rustup override set "$MIRI_NIGHTLY"
@@ -21,13 +21,15 @@ matrix:
         - cargo miri setup
 
         - cargo test --no-default-features --features nightly_specialization
+        # I need to pass each individual feature with --features featurename
+        # because otherwise it gets parsed as a test file.
         - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         
-        - cargo test --no-default-features --features alloc nightly_specialization
-        - cargo miri test --no-default-features --features alloc nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo test --no-default-features --features alloc --features nightly_specialization
+        - cargo miri test --no-default-features --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         
         - cargo test --no-default-features --features std nightly_specialization
-        - cargo miri test --no-default-features --features std nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
     - rust: 1.34.0
 
 script:
