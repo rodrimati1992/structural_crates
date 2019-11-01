@@ -3,8 +3,6 @@ Contains the Structural trait with info about the fields that have accessor trai
 */
 
 use std_::marker::PhantomData;
-    
-
 
 
 
@@ -12,6 +10,24 @@ use std_::marker::PhantomData;
 pub trait Structural{
     /// Information about fields that have accessor trait implemented for them.
     const FIELDS:&'static[FieldInfo];
+
+    /// A type-level list of field name,field type pairs.
+    ///
+    /// Those lists can be manually constructed like this:
+    ///
+    /// ```
+    /// use structural::{
+    ///     TList,TStr,
+    ///     structural_trait::TField,
+    /// };
+    /// 
+    /// type TheList=TList![
+    ///     TField<TStr!(f o o),String>,
+    ///     TField<TStr!(b a r),Vec<u8>>,
+    /// ];
+    /// 
+    /// ```
+    type Fields;
 }
 
 
@@ -44,6 +60,13 @@ impl FieldInfo{
         }
     }
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+/// A type-level value representing a field's name and type.
+pub struct TField<Name,Ty>(PhantomData<(Name,Ty)>);
 
 
 ////////////////////////////////////////////////////////////////////////////////

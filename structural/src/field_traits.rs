@@ -68,8 +68,8 @@ use self::multi_fields::{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,Structural,TStr,
-///     structural_trait::FieldInfo,
+///     GetField,Structural,TStr,TList,
+///     structural_trait::{FieldInfo,TField},
 ///     impl_structural_dyn,
 /// };
 ///
@@ -79,6 +79,8 @@ use self::multi_fields::{
 ///
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
+///     
+///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
@@ -195,8 +197,8 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///
 /// ```rust
 /// use structural::{
-///     GetField,GetFieldMut,Structural,TStr,
-///     structural_trait::FieldInfo,
+///     GetField,GetFieldMut,Structural,TStr,TList,
+///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
 /// };
@@ -207,6 +209,8 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
+///
+///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
@@ -333,8 +337,8 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,IntoField,Structural,TStr,
-///     structural_trait::FieldInfo,
+///     GetField,IntoField,Structural,TStr,TList,
+///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
 /// };
@@ -346,6 +350,8 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
+///
+///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
@@ -561,6 +567,8 @@ macro_rules! unsized_impls {
             T:Structural
         {
             const FIELDS:&'static [FieldInfo]=T::FIELDS;
+
+            type Fields=T::Fields;
         }
 
         impl<T> StructuralDyn for $ptr<T>

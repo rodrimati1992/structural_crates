@@ -1,3 +1,6 @@
+#[macro_use]
+mod list;
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_getter{
@@ -183,7 +186,13 @@ macro_rules! impl_structural{
         impl[$($typarams:tt)*] Structural for $self_:ty 
         where[$($where_:tt)*]
         {
-            field_names=[$( ($field_name:expr,$renamed:expr) ,)*]
+            field_names=[$( 
+                (
+                    $field_name:tt : $field_ty:ty,
+                    $name_param_ty:ty,
+                    $name_param_str:expr,
+                ),
+            )*]
         }
     )=>{
         impl<$($typarams)*> $crate::Structural for $self_
@@ -195,12 +204,21 @@ macro_rules! impl_structural{
                 &[
                     $( 
                         FieldInfo{
-                            original_name:$field_name,
-                            accessor_name:$renamed,
+                            original_name:stringify!($field_name),
+                            accessor_name:$name_param_str,
                         },
                     )*
                 ]
             };
+
+            type Fields=$crate::TList![
+                $(
+                    $crate::structural_trait::TField<
+                        $name_param_ty,
+                        $field_ty,
+                    >,
+                )*
+            ];
         }
 
         impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_
@@ -257,7 +275,13 @@ macro_rules! impl_getters_for_derive{
             where $where_preds
             {
                 field_names=[ 
-                    $( (stringify!($field_name),$name_param_str), )* 
+                    $( 
+                        (
+                            $field_name : $field_ty,
+                            $name_param_ty,
+                            $name_param_str,
+                        ),
+                    )* 
                 ]
             }
         }
