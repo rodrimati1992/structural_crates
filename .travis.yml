@@ -19,19 +19,19 @@ matrix:
         - rustup override set "$MIRI_NIGHTLY"
         - rustup component add miri
         - cargo miri setup
+
+        - cargo test --no-default-features --features nightly_specialization
+        - cargo test --no-default-features --features alloc --features nightly_specialization
+        - cargo test --no-default-features --features std nightly_specialization
         
         - cargo clean
 
-        - cargo test --no-default-features --features nightly_specialization
         # I need to pass each individual feature with --features featurename
         # because otherwise it gets parsed as a test file.
         - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        
-        - cargo test --no-default-features --features alloc --features nightly_specialization
         - cargo miri test --no-default-features --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        
-        - cargo test --no-default-features --features std nightly_specialization
         - cargo miri test --no-default-features --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+
     - rust: 1.34.0
 
 script:
