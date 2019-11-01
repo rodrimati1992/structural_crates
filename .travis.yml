@@ -21,13 +21,13 @@ matrix:
         - cargo miri setup
 
         - cargo test --no-default-features --features nightly_specialization
-        - cargo miri test --no-default-features --features nightly_specialization -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         
         - cargo test --no-default-features --features alloc nightly_specialization
-        - cargo miri test --no-default-features --features alloc nightly_specialization -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features alloc nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         
         - cargo test --no-default-features --features std nightly_specialization
-        - cargo miri test --no-default-features --features std nightly_specialization -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features std nightly_specialization -- -- -Zunstable-options --exclude-should-panic
     - rust: 1.34.0
 
 script:
