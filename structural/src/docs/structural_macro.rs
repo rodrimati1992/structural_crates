@@ -68,7 +68,7 @@ it'll mark the field as public for the purpose of generating accessor trait impl
 ### Basic example
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,tstr};
+use structural::{Structural,GetFieldExt,structural_alias,ti};
 
 
 structural_alias!{
@@ -83,7 +83,7 @@ fn reads_pair<O>(pair:&O)
 where
     O:Pair<u32>
 {
-    let (a,b)=pair.fields(tstr!("a","b"));
+    let (a,b)=pair.fields(ti!(a,b));
     assert_eq!(a,&11);
     assert_eq!(b,&33);
 }
@@ -117,7 +117,7 @@ fn main(){
 ### Mutating fields
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,tstr};
+use structural::{Structural,GetFieldExt,structural_alias,ti};
 
 
 structural_alias!{
@@ -132,11 +132,11 @@ fn mutates_pair<O>(pair:&mut O)
 where
     O:Tuple2<u32>
 {
-    let a=pair.field_mut(tstr!("0"));
+    let a=pair.field_mut(ti!(0));
     assert_eq!(a,&mut 14);
     *a*=2;
 
-    let b=pair.field_mut(tstr!("1"));
+    let b=pair.field_mut(ti!(1));
     assert_eq!(b,&mut 16);
     *b*=2;
 }

@@ -4,18 +4,18 @@ Contains traits for accessing multiple fields at once.
 
 use super::*;
 
-/// This trait allows a MultiTString to borrow the fields it names.
+/// This trait allows a TStringSet to borrow the fields it names.
 pub trait GetMultiField<'a,This:?Sized>{
     type MultiTy:'a;
 
     fn multi_get_field_(this:&'a This)->Self::MultiTy;
 }
 
-/// This trait allows a MultiTString to borrow the fields it names mutably.
+/// This trait allows a TStringSet to borrow the fields it names mutably.
 pub trait GetMultiFieldMut<'a,This:?Sized>:Sized{
     type MultiTy:'a;
 
-    fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy;
+    fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy;
 }
 
 
@@ -60,7 +60,7 @@ macro_rules! impl_get_multi_field {
                 #[allow(non_snake_case)]
                 cfg(feature="specialization")
 
-                fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy{
+                fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy{
                     $(
                         let $fname:GetFieldMutRefFn<$fname,GetFieldType<This,$fname>>=
                             this.get_field_mutref_func();
@@ -91,7 +91,7 @@ macro_rules! impl_get_multi_field {
             )*
         {
             #[allow(non_snake_case)]
-            fn multi_get_field_mut_(this:&'a mut This,_:MultiTString<Self>)->Self::MultiTy{
+            fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy{
                 $(
                     let $fname:GetFieldMutRefFn<$fname,GetFieldType<This,$fname>>=
                         this.get_field_mutref_func();

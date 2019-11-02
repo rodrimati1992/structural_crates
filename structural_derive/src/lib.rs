@@ -18,6 +18,7 @@ extern crate proc_macro;
 mod parse_utils;
 mod structural_alias_impl;
 mod structural_derive;
+mod str_or_ident;
 mod tokenizers;
 
 
@@ -49,17 +50,19 @@ pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
 }
 
 /**
-The implementation of the tstr macro when const parameters aren't supported.
+The implementation of the ti macro when const parameters aren't supported.
 */
 #[proc_macro]
 pub fn tstr_impl(input: TokenStream1) -> TokenStream1 {
     use crate::{
         parse_utils::ParsePunctuated,
         tokenizers::tstring_tokenizer,
+        str_or_ident::StrOrIdent,
     };
 
-    parse_or_compile_err(input,|str_lit: ParsePunctuated<syn::LitStr,syn::Token!(,)>|{
-        let strings=str_lit.list;
+
+    parse_or_compile_err(input,|strings_: ParsePunctuated<StrOrIdent,syn::Token!(,)>|{
+        let strings=strings_.list;
         let tokens=if strings.len()==1 {
             let string=strings[0].value();
             let tstring=tstring_tokenizer(string);
@@ -87,8 +90,8 @@ pub fn tstr_impl(input: TokenStream1) -> TokenStream1 {
             quote!(
                 use structural::proc_macro_reexports::*;
 
-                pub const VALUE:MultiTString<(#(#tstring),*)>=unsafe{
-                    MultiTString::new()
+                pub const VALUE:TStringSet<(#(#tstring),*)>=unsafe{
+                    TStringSet::new()
                 };
             )
         };

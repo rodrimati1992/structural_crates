@@ -298,30 +298,46 @@ macro_rules! impl_getters_for_derive{
 }
 
 
-/// Gets a type-level string value
+/// Constructs type-level identifier(s).
 ///
-/// When passed comma separated string literals,this instantiates a `MultiTString`,
+/// The arguments to this macro can be either identifiers or string literals.
+/// The string literals must be valid field identifiers.
+///
+/// When passed multiple arguments,this instantiates a `TStringSet`
 /// which is what's passed to the `GetFieldExt::fields` methods.
+/// This requires unique arguments to be passed,
+/// otherwise this macro will cause a compile-time error.
 ///
 /// # Example
 ///
 /// ```
-/// use structural::{GetFieldExt,tstr};
+/// use structural::{GetFieldExt,ti};
 ///
 /// let tup=("I","you","they");
 ///
-/// assert_eq!( tup.field_(tstr!("0")), &"I" );
-/// assert_eq!( tup.field_(tstr!("1")), &"you" );
-/// assert_eq!( tup.field_(tstr!("2")), &"they" );
+/// assert_eq!( tup.field_(ti!(0)), &"I" );
+/// assert_eq!( tup.field_(ti!(1)), &"you" );
+/// assert_eq!( tup.field_(ti!(2)), &"they" );
 ///
-/// assert_eq!( tup.fields(tstr!("0","1")), (&"I",&"you") );
+/// assert_eq!( tup.fields(ti!(0,1)), (&"I",&"you") );
 ///
-/// assert_eq!( tup.fields(tstr!("0","1","2")), (&"I",&"you",&"they") );
+/// assert_eq!( tup.fields(ti!(0,1,2)), (&"I",&"you",&"they") );
+///
+/// ```
+///
+/// # Example
+/// 
+/// You can't pass multiple strings to this macro,as this demonstrates:
+///
+/// ```compile_fail
+/// use structural::ti;
+///
+/// let _=ti!(hello,hello);
 ///
 /// ```
 #[macro_export]
-macro_rules! tstr {
-    ( $($strings:literal),* $(,)* ) => {{
+macro_rules! ti {
+    ( $($strings:tt),* ) => {{
         mod dummy{
             structural_derive::tstr_impl!{$($strings),*}
         }
@@ -329,7 +345,7 @@ macro_rules! tstr {
     }};
 }
 
-/// Gets a type-level string for use as a generic parameter.
+/// Constructs a type-level ident for use as a generic parameter.
 ///
 /// # Future Compatibility
 ///
@@ -341,19 +357,19 @@ macro_rules! tstr {
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,tstr,TStr};
+/// use structural::{GetField,GetFieldExt,ti,TI};
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
-///     This:GetField<TStr!(n a m e),Ty=S>,
+///     This:GetField<TI!(n a m e),Ty=S>,
 ///     S:AsRef<str>,
 /// {
-///     println!("Hello, {}!",entity.field_(tstr!("name")).as_ref() );
+///     println!("Hello, {}!",entity.field_(ti!(name)).as_ref() );
 /// }
 ///
 /// ```
 #[macro_export]
-macro_rules! TStr {
+macro_rules! TI {
     ($($char:tt)*) => {
         $crate::type_level::TString<($($crate::TChar!($char),)*)>
     };
@@ -506,7 +522,7 @@ each of which get turned into supertraits on `Foo`:
 ```rust
 use structural::{
     structural_alias,
-    tstr,
+    ti,
     GetFieldExt,
     Structural,
 };
@@ -529,7 +545,7 @@ where
     U:Debug+Display+PartialEq,
 {
     // This gets references to the `x` and `y` fields.
-    let (x,y)=value.fields(tstr!("x","y"));
+    let (x,y)=value.fields(ti!(x,y));
     assert_ne!(x,y);
     println!("x={} y={}",x,y);
 }
@@ -580,7 +596,7 @@ print_point(&Entity{ x:100.0, y:200.0, id:PersonId(0xDEAD) });
 ```
 use structural::{
     structural_alias,
-    tstr,
+    ti,
     GetFieldExt,
 };
 

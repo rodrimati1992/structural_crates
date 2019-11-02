@@ -46,34 +46,34 @@ macro_rules! create_unit_struct {
 }
 
 
-/// A tuple of multiple unique `TString`s
-pub struct MultiTString<T>(PhantomData<T>);
+/// A set of `TString`s.
+pub struct TStringSet<T>(PhantomData<T>);
 
-impl<T> MultiTString<T>{
-    /// Constructs a `MultiTString`.
+impl<T> TStringSet<T>{
+    /// Constructs a `TStringSet`.
     ///
     /// # Safety
     ///
     /// `T` must be a tuple of `TString<_>`s,
     /// where no `TString<_>` type is repeated within the tuple.
     pub const unsafe fn new()->Self{
-        MultiTString(PhantomData)
+        TStringSet(PhantomData)
     }
 }
 
-impl<T> Copy for MultiTString<T>{}
-impl<T> Clone for MultiTString<T>{
+impl<T> Copy for TStringSet<T>{}
+impl<T> Clone for TStringSet<T>{
     fn clone(&self)->Self{
         *self
     }
 }
 
-// `MarkerType` is not implemented for `MultiTString` 
-// because `MultiTString` ought only be constructible
-// by satisfying the safety requirements of `MultiTString::new`,
+// `MarkerType` is not implemented for `TStringSet` 
+// because `TStringSet` ought only be constructible
+// by satisfying the safety requirements of `TStringSet::new`,
 // which aren't cheaply enforceable on the type level.
 //
-// impl<T> !MarkerType for MultiTString<T>{}
+// impl<T> !MarkerType for TStringSet<T>{}
 
 
 /*

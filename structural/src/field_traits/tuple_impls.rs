@@ -218,9 +218,9 @@ mod tests{
 
     fn get_field_1<T>(val:&T)->&u64
     where
-        T:GetField<TStr!(1),Ty=u64>,
+        T:GetField<TI!(1),Ty=u64>,
     {
-        val.field_(tstr!("1"))
+        val.field_(ti!(1))
     }
 
 
@@ -241,7 +241,7 @@ mod tests{
     fn get_mut_many(){
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1)=tup.fields_mut(tstr!("0","1"));
+            let (e0,e1)=tup.fields_mut(ti!(0,1));
             *e0=101;
             *e1=102;
 
@@ -250,7 +250,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1,e2)=tup.fields_mut(tstr!("0","1","3"));
+            let (e0,e1,e2)=tup.fields_mut(ti!(0,1,3));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -263,7 +263,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5,6,7,8);
-            let (e0,e1,e2,e3)=tup.fields_mut(tstr!("0","1","2","8"));
+            let (e0,e1,e2,e3)=tup.fields_mut(ti!(0,1,2,8));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -293,14 +293,14 @@ mod tests{
     where
         This:Tuple4,
     {
-        assert_eq!(this.fields(tstr!("0","1")),(&6,&5));
-        assert_eq!(this.fields(tstr!("0","1","2")),(&6,&5,&4));
-        assert_eq!(this.fields(tstr!("0","1","2","3")),(&6,&5,&4,&3));
+        assert_eq!(this.fields(ti!(0,1)),(&6,&5));
+        assert_eq!(this.fields(ti!(0,1,2)),(&6,&5,&4));
+        assert_eq!(this.fields(ti!(0,1,2,3)),(&6,&5,&4,&3));
 
 
-        assert_eq!(this.fields_mut(tstr!("0","1")),(&mut 6,&mut 5));
-        assert_eq!(this.fields_mut(tstr!("0","1","2")),(&mut 6,&mut 5,&mut 4));
-        assert_eq!(this.fields_mut(tstr!("0","1","2","3")),(&mut 6,&mut 5,&mut 4,&mut 3));
+        assert_eq!(this.fields_mut(ti!(0,1)),(&mut 6,&mut 5));
+        assert_eq!(this.fields_mut(ti!(0,1,2)),(&mut 6,&mut 5,&mut 4));
+        assert_eq!(this.fields_mut(ti!(0,1,2,3)),(&mut 6,&mut 5,&mut 4,&mut 3));
     }
 
 

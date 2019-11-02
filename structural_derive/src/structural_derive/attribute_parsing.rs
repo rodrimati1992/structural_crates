@@ -1,5 +1,6 @@
 use crate::{
-    structural_alias_impl::{Access,IdentOrIndex},
+    structural_alias_impl::Access,
+    str_or_ident::IdentOrIndex,
 };
 
 use as_derive_utils::{
