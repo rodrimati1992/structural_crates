@@ -22,6 +22,10 @@ requiring use of the `#[struc(access="...")]` attribute to implement extra trait
 
 Prints the output of the derive macro by panicking.
 
+### `#[struc(no_trait)]`
+
+Disables the generation of the `<deriving_type>_SI` trait.
+
 
 # Field Attributes
 
@@ -166,6 +170,39 @@ fn main(){
 }
 
 ```
+
+### Disabling the trait alias
+
+This example demonstrates how one disables the generation of the 
+`<deriving_type>_SI` trait to declare it manually.
+
+```rust
+use structural::{Structural,IntoFieldMut,GetFieldExt,structural_alias,ti,TI};
+
+#[derive(Debug,Structural,PartialEq,Eq)]
+#[struc(no_trait)]
+#[struc(access="mut move")]
+struct Hello{
+    pub hello:u32,
+    pub world:String,
+}
+
+
+pub trait Hello_SI:
+    IntoFieldMut<TI!(h e l l o), Ty=u32>+
+    IntoFieldMut<TI!(w o r l d), Ty=String> 
+{}
+
+impl<T> Hello_SI for T
+where
+    T:?Sized+
+        IntoFieldMut<TI!(h e l l o), Ty=u32>+
+        IntoFieldMut<TI!(w o r l d), Ty=String> 
+{}
+
+```
+
+
 
 
 */

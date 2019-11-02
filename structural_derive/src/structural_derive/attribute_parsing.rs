@@ -28,6 +28,7 @@ pub(crate) struct StructuralOptions<'a>{
     pub(crate) fields:FieldMap<FieldConfig>,
 
     pub(crate) debug_print:bool,
+    pub(crate) with_trait_alias:bool,
 
     _marker:PhantomData<&'a ()>,
 }
@@ -41,6 +42,7 @@ impl<'a> StructuralOptions<'a>{
         let StructuralAttrs{
             fields,
             debug_print,
+            with_trait_alias,
             errors:_,
             _marker,
         }=this;
@@ -48,6 +50,7 @@ impl<'a> StructuralOptions<'a>{
         Ok(Self{
             fields,
             debug_print,
+            with_trait_alias,
             _marker,
         })
     }
@@ -77,6 +80,7 @@ struct StructuralAttrs<'a>{
     fields:FieldMap<FieldConfig>,
 
     debug_print:bool,
+    with_trait_alias:bool,
 
     errors:LinearResult<()>,
     
@@ -100,6 +104,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
     ds: &'a DataStructure<'a>,
 ) -> Result<StructuralOptions<'a>,syn::Error> {
     let mut this = StructuralAttrs::default();
+    this.with_trait_alias=true;
 
     this.fields=FieldMap::with(ds,|field|{
         FieldConfig{
@@ -211,6 +216,8 @@ fn parse_sabi_attr<'a>(
         (ParseContext::TypeAttr{..},Meta::Path(ref path)) =>{
             if path.equals_str("debug_print"){
                 this.debug_print=true;
+            }else if path.equals_str("no_trait") {
+                this.with_trait_alias=false;
             }else if path.equals_str("public") {
                 for (_,field) in this.fields.iter_mut() {
                     field.is_pub=true;

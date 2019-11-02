@@ -14,6 +14,18 @@ use crate::alloc::{
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+#[test]
+fn derive_inside_function(){
+    #[derive(Structural)]
+    pub struct Bar{
+        pub b:u32,
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 #[allow(dead_code)]
 fn object_safety(){
     #[cfg(feature="alloc")]
