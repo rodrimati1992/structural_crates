@@ -54,6 +54,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
     let StructuralOptions{
         fields:ref config_fields,
         debug_print,
+        with_trait_alias,
         ..
     }=attribute_parsing::parse_attrs_for_structural(ds)?;
     
@@ -120,30 +121,45 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
         struct_=tyname,
     );
 
-    let structural_alias_trait=crate::structural_alias_impl::for_delegation(
-        std::iter::empty::<Ident>(),
-        docs,
-        ds.vis,
-        &<Token!(trait)>::default(),
-        &Ident::new(&format!("{}_SI",tyname),Span::call_site()),
-        ds.generics,
-        &Punctuated::new(),
-        &names_module_definition,
-        fields.iter()
-            .zip(config_fields.iter())
-            .map(|( field, field_config )|{
-                StructuralAliasFieldRef{
-                    access:field_config.access,
-                    ident:field.ident().piped(IdentOrIndexRef::Ident),
-                    ty:field.ty,
-                }
-            }),
-    )?;
+    let structural_alias_trait;
+    let opt_names_module_definition;
+
+    if with_trait_alias {
+        structural_alias_trait=crate::structural_alias_impl::for_delegation(
+            std::iter::empty::<Ident>(),
+            docs,
+            ds.vis,
+            &<Token!(trait)>::default(),
+            &Ident::new(&format!("{}_SI",tyname),Span::call_site()),
+            ds.generics,
+            &Punctuated::new(),
+            &names_module_definition,
+            fields.iter()
+                .zip(config_fields.iter())
+                .map(|( field, field_config )|{
+                    StructuralAliasFieldRef{
+                        access:field_config.access,
+                        ident:field.ident().piped(IdentOrIndexRef::Ident),
+                        ty:field.ty,
+                    }
+                }),
+        )?.piped(Some);
+        opt_names_module_definition=None;
+    }else{
+        structural_alias_trait=None;
+        opt_names_module_definition=Some(&names_module_definition);
+    };
+
+    let structural_alias_trait=structural_alias_trait.into_iter();
+    let opt_names_module_definition=opt_names_module_definition.into_iter();
+
 
     let field_names=fields.iter().map(|f| &f.ident );
     
     quote!(
-        #structural_alias_trait
+        #(#structural_alias_trait)*
+
+        #(#opt_names_module_definition)*
 
         ::structural::impl_getters_for_derive!{
             impl[#impl_generics] #tyname #ty_generics
