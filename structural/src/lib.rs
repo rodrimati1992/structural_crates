@@ -127,6 +127,8 @@ fn main(){
 
 */
 #![cfg_attr(feature="nightly_specialization",feature(specialization))]
+#![cfg_attr(feature="nightly_better_ti",feature(proc_macro_hygiene))]
+
 #![cfg_attr(not(feature="alloc"),no_std)]
 
 #[doc(hidden)]
@@ -164,16 +166,8 @@ pub mod utils;
 pub mod tests{
     mod structural_derive;
     mod structural_alias;
+    mod macro_tests;
 }
-
-
-
-mod oof{
-    pub type Hi=();
-}
-
-#[doc(inline)]
-pub use oof::Hi as Hi_;
 
 
 #[doc(hidden)]

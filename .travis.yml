@@ -24,6 +24,14 @@ matrix:
         - cargo test --no-default-features --features alloc --features nightly_specialization
         - cargo test --no-default-features --features std nightly_specialization
         
+        - cargo test --no-default-features --features nightly_better_ti
+        - cargo test --no-default-features --features alloc --features nightly_better_ti
+        - cargo test --no-default-features --features std nightly_better_ti
+        
+        - cargo test --no-default-features --features better_ti
+        - cargo test --no-default-features --features alloc --features better_ti
+        - cargo test --no-default-features --features std better_ti
+        
         - cargo clean
 
         # I need to pass each individual feature with --features featurename

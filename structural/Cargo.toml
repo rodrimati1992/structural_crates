@@ -25,6 +25,9 @@ rust_1_36=[]
 specialization=[]
 nightly_specialization=["specialization"]
 
+better_ti=[]
+nightly_better_ti=["better_ti"]
+
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}

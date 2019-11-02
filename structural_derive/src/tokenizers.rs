@@ -8,13 +8,24 @@ use quote::{quote,ToTokens};
 use syn::Ident;
 
 
-/// Tokenizes a `TString<>` in which each character is written as just its identifier,
-/// requires that this be used in a module that imports everything from 
-/// `structural::proc_macro_reexports`.
-pub(crate) fn tstring_tokenizer<S>(string:S)->impl ToTokens
+/// Whether to use the full path to an item when refering to it.
+#[derive(Debug,Copy,Clone,Eq,PartialEq)]
+pub(crate) enum FullPathForChars{
+    Yes,
+    No
+}
+
+
+/// Tokenizes a `TString<>` in which each character is written as a type.
+pub(crate) fn tident_tokenizer<S>(string:S,char_verbosity:FullPathForChars)->impl ToTokens
 where
     S:AsRef<str>
 {
+    let path_prefix=match char_verbosity {
+        FullPathForChars::Yes=>quote!(::structural::chars::),
+        FullPathForChars::No=>quote!(),
+    };
+
     use std::fmt::Write;
     let mut buffer=String::new();
     let bytes=string.as_ref().bytes()
@@ -28,7 +39,7 @@ where
             };
             syn::Ident::new(&buffer, Span::call_site())
         });
-    quote!( TString<( #(#bytes,)* )> )
+    quote!( ::structural::type_level::TString<( #( #path_prefix #bytes,)* )> )
 }
 
 
@@ -59,7 +70,7 @@ impl NamedModuleAndTokens{
         let aliases_names=alias_names.iter()
             .zip( iter.clone().into_iter() )
             .map(|(alias_name,field_name)|{
-                let field_name=tstring_tokenizer(field_name.to_string());
+                let field_name=tident_tokenizer(field_name.to_string(),FullPathForChars::No);
                 quote!(pub type #alias_name=#field_name;)
             });
 

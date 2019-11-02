@@ -184,7 +184,7 @@ fn ptr_dyn_methods(){
         #[cfg(feature="alloc")]
         {
             generic_0_dyn(||Arc::new(this.clone()));
-            let _:Rc<Privacies0_SI>=Rc::new(this.clone());
+            let _:Rc<dyn Privacies0_SI>=Rc::new(this.clone());
         }
     };
 }
@@ -207,7 +207,7 @@ where
 
 #[cfg(feature="alloc")]
 fn generic_0_dyn(mut ctor:impl FnMut()->Arc<dyn Privacies0_SI> ){
-    let mut this=ctor();
+    let this=ctor();
     let _=this.fields(ti!(a,b));
 }
 

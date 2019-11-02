@@ -327,7 +327,7 @@ macro_rules! impl_getters_for_derive{
 ///
 /// # Example
 /// 
-/// You can't pass multiple strings to this macro,as this demonstrates:
+/// You can't pass multiple identical arguments to this macro,as this demonstrates:
 ///
 /// ```compile_fail
 /// use structural::ti;
@@ -339,19 +339,35 @@ macro_rules! impl_getters_for_derive{
 macro_rules! ti {
     ( $($strings:tt),* ) => {{
         mod dummy{
-            structural_derive::tstr_impl!{$($strings),*}
+            structural_derive::_ti_impl_!{$($strings),*}
         }
         dummy::VALUE
     }};
 }
 
-/// Constructs a type-level ident for use as a generic parameter.
+/// Constructs a type-level identifier for use as a generic parameter.
 ///
 /// # Future Compatibility
 ///
 /// This macro will continue supporting space separated characters 
-/// even after string literals are usable as trait parameters.
+/// even after identifiers and string literals are supported
 ///
+/// # Improved macro
+///
+/// To get an improved version of this macro (it requires Rust nightly or Rust 1.40) 
+/// which can also take an identifier or string literal parameter,
+/// you can use either the `nightly_better_ti` or `better_ti` cargo features.
+/// 
+/// You would use `better_ti` to make `TI!(0)`/`TI!(hello)`/`TI!("world")` work
+/// in Rust from 1.40 onwards
+/// (proc-macros in type position is stabilizing on Rust 1.40 on as of 2019-11-02).
+///
+/// You would use `nightly_better_ti` to  to make `TI!(0)`/`TI!(hello)`/`TI!("world")` work
+/// in Rust nightly from 1.40 backwards.
+///
+/// Once proc-macros in types reaches stable this will be enabled automatically
+/// for Rust versions since.
+/// 
 /// # Examples
 ///
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
@@ -368,12 +384,58 @@ macro_rules! ti {
 /// }
 ///
 /// ```
+/// 
+/// # Example
+/// 
+/// This demonstrates the improved version of this macro,which requires either the 
+/// the `nightly_better_ti` or `better_ti` cargo features.
+/// Once proc-macros in types reaches stable this will be usable automatically
+/// for Rust versions since.
+/// 
+#[cfg_attr(feature="better_ti",doc=" ```rust")]
+#[cfg_attr(not(feature="better_ti"),doc=" ```ignore")]
+/// use structural::{GetField,GetFieldExt,ti,TI};
+///
+/// fn greet_entity<This,S>(entity:&This)
+/// where
+///     This:GetField<TI!(name),Ty=S>,
+///     S:AsRef<str>,
+/// {
+///     println!("Hello, {}!",entity.field_(ti!(name)).as_ref() );
+/// }
+///
+/// type NumericIdent=TI!(0);
+/// type StringyIdent=TI!("huh");
+///
+/// ```
+///
 #[macro_export]
 macro_rules! TI {
     ($($char:tt)*) => {
-        $crate::type_level::TString<($($crate::TChar!($char),)*)>
+        $crate::_delegate_TI!($($char)*)
     };
 }
+
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature="better_ti"))]
+macro_rules! _delegate_TI {
+    ($($char:tt)*) => (
+        $crate::type_level::TString<($($crate::TChar!($char),)*)>
+    )
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature="better_ti")]
+macro_rules! _delegate_TI {
+    ($($everything:tt)*) => (
+        structural_derive::_TI_impl_!($($everything)*)
+    )
+}
+
+
 
 
 /*
