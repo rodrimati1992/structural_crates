@@ -1,6 +1,7 @@
 use crate::{
     tokenizers::NamedModuleAndTokens,
-    structural_alias_impl::{IdentOrIndexRef,StructuralAliasFieldRef},
+    structural_alias_impl::StructuralAliasFieldRef,
+    str_or_ident::IdentOrIndexRef,
 };
 
 use as_derive_utils::{

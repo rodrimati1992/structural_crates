@@ -20,7 +20,7 @@ This demonstrates how you can use any type with a superset of the
 fields of another one in a function.
 
 ```rust
-use structural::{GetFieldExt,Structural,tstr};
+use structural::{GetFieldExt,Structural,ti};
 
 #[derive(Structural)]
 #[struc(public)]
@@ -33,7 +33,7 @@ where
     // aliasing the accessor traits for Point4.
     S:Point4_SI<u32>
 {
-    let (a,b,c,d)=point.fields(tstr!("0","1","2","3"));
+    let (a,b,c,d)=point.fields(ti!(0,1,2,3));
     
     assert_eq!(a,&0);
     assert_eq!(b,&11);
@@ -57,7 +57,7 @@ For more details you can look at the docs for the
 
 ```rust
 
-use structural::{GetFieldExt,Structural,structural_alias,tstr};
+use structural::{GetFieldExt,Structural,structural_alias,ti};
 
 use std::borrow::Borrow;
 
@@ -72,7 +72,7 @@ where
     T:Person<S>,
     S:Borrow<str>,
 {
-    println!("Hello, {}!",this.field_(tstr!("name")).borrow() )
+    println!("Hello, {}!",this.field_(ti!(name)).borrow() )
 }
 
 // most structural aliases are object safe
@@ -80,7 +80,7 @@ fn print_name_dyn<S>(this:&dyn Person<S>)
 where
     S:Borrow<str>,
 {
-    println!("Hello, {}!",this.field_(tstr!("name")).borrow() )
+    println!("Hello, {}!",this.field_(ti!(name)).borrow() )
 }
 
 

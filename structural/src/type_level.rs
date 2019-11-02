@@ -8,6 +8,6 @@ pub mod ident;
 pub mod list;
 
 pub use self::{
-    ident::{MultiTString,TString},
+    ident::{TStringSet,TString},
     list::{TList,TNil},
 };

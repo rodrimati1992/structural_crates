@@ -6,7 +6,7 @@ use crate::std_::marker::PhantomData;
 
 use crate::{
     mut_ref::MutRef,
-    type_level::MultiTString,
+    type_level::TStringSet,
     Structural,
     StructuralDyn,
 };
@@ -38,14 +38,14 @@ use self::multi_fields::{
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,TStr,tstr};
+/// use structural::{GetField,GetFieldExt,TI,ti};
 /// 
 /// fn formatted_value<T,S>(this:&T)->String
 /// where
-///     T:GetField<TStr!(v a l u e), Ty=S>,
+///     T:GetField<TI!(v a l u e), Ty=S>,
 ///     S:std::fmt::Debug,
 /// {
-///     format!("{:#?}",this.field_(tstr!("value")) )
+///     format!("{:#?}",this.field_(ti!(value)) )
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -68,7 +68,7 @@ use self::multi_fields::{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,Structural,TStr,TList,
+///     GetField,Structural,TI,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     impl_structural_dyn,
 /// };
@@ -80,12 +80,12 @@ use self::multi_fields::{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///     
-///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
+///     type Fields=TList![ TField<TI!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -112,13 +112,13 @@ pub trait GetField<FieldName>:StructuralDyn{
 /// Here is one way you can get the type of a field.
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,TStr,tstr};
+/// use structural::{GetField,GetFieldExt,GetFieldType,TI,ti};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,TStr!(n a m e)>
+/// fn get_name<T>(this:&T)->&GetFieldType<T,TI!(n a m e)>
 /// where
-///     T:GetField<TStr!(n a m e)>
+///     T:GetField<TI!(n a m e)>
 /// {
-///     this.field_(tstr!("name"))
+///     this.field_(ti!(name))
 /// }
 ///
 ///
@@ -139,13 +139,13 @@ pub trait GetField<FieldName>:StructuralDyn{
 /// Another way `get_name` could have been written is like this:
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,TStr,tstr};
+/// use structural::{GetField,GetFieldExt,GetFieldType,TI,ti};
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
-///     T:GetField<TStr!(n a m e), Ty=O>
+///     T:GetField<TI!(n a m e), Ty=O>
 /// {
-///     this.field_(tstr!("name"))
+///     this.field_(ti!(name))
 /// }
 /// ```
 /// A potential downside of adding another type parameter is that it 
@@ -166,14 +166,14 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{GetFieldMut,GetFieldExt,TStr,tstr};
+/// use structural::{GetFieldMut,GetFieldExt,TI,ti};
 /// 
 /// fn take_value<T,V>(this:&mut T)->V
 /// where
-///     T:GetFieldMut<TStr!(v a l u e), Ty=V>,
+///     T:GetFieldMut<TI!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
-///     std::mem::replace( this.field_mut(tstr!("value")), Default::default() )
+///     std::mem::replace( this.field_mut(ti!(value)), Default::default() )
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -197,7 +197,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///
 /// ```rust
 /// use structural::{
-///     GetField,GetFieldMut,Structural,TStr,TList,
+///     GetField,GetFieldMut,Structural,TI,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
@@ -210,12 +210,12 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
+///     type Fields=TList![ TField<TI!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -223,14 +223,14 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     }
 /// }
 ///
-/// unsafe impl<T> GetFieldMut<TStr!(v a l u e)> for Huh<T>{
+/// unsafe impl<T> GetFieldMut<TI!(v a l u e)> for Huh<T>{
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
 ///     }
 ///     structural::unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
 ///         field_name=value,
-///         name_generic=TStr!(v a l u e)
+///         name_generic=TI!(v a l u e)
 ///     }
 /// }
 ///
@@ -308,13 +308,13 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{IntoField,GetFieldExt,GetFieldType,TStr,tstr};
+/// use structural::{IntoField,GetFieldExt,GetFieldType,TI,ti};
 /// 
 /// fn into_value<T,V>(this:T)->V
 /// where
-///     T:IntoField<TStr!(v a l u e), Ty=V>,
+///     T:IntoField<TI!(v a l u e), Ty=V>,
 /// {
-///     this.into_field(tstr!("value"))
+///     this.into_field(ti!(value))
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -337,7 +337,7 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,IntoField,Structural,TStr,TList,
+///     GetField,IntoField,Structural,TI,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
@@ -351,12 +351,12 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<TStr!(v a l u e),T> ];
+///     type Fields=TList![ TField<TI!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TStr!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -364,12 +364,12 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///     }
 /// }
 ///
-/// impl<T> IntoField<TStr!(v a l u e)> for Huh<T>{
+/// impl<T> IntoField<TI!(v a l u e)> for Huh<T>{
 ///     fn into_field_(self)->Self::Ty{
 ///         self.value
 ///     }
 ///
-///     structural::impl_box_into_field_method!{TStr!(v a l u e)}
+///     structural::impl_box_into_field_method!{TI!(v a l u e)}
 /// }
 ///
 /// ```
@@ -405,16 +405,16 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.field_(tstr!("0")), &1 );
-    /// assert_eq!( tup.field_(tstr!("1")), &1 );
-    /// assert_eq!( tup.field_(tstr!("2")), &2 );
-    /// assert_eq!( tup.field_(tstr!("3")), &3 );
-    /// assert_eq!( tup.field_(tstr!("4")), &5 );
-    /// assert_eq!( tup.field_(tstr!("5")), &8 );
+    /// assert_eq!( tup.field_(ti!(0)), &1 );
+    /// assert_eq!( tup.field_(ti!(1)), &1 );
+    /// assert_eq!( tup.field_(ti!(2)), &2 );
+    /// assert_eq!( tup.field_(ti!(3)), &3 );
+    /// assert_eq!( tup.field_(ti!(4)), &5 );
+    /// assert_eq!( tup.field_(ti!(5)), &8 );
     ///
     /// ```
     #[inline(always)]
@@ -430,17 +430,17 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.fields(tstr!("0","1")), (&1,&1) );
-    /// assert_eq!( tup.fields(tstr!("3","2")), (&3,&2) );
-    /// assert_eq!( tup.fields(tstr!("4","5","3")), (&5,&8,&3) );
+    /// assert_eq!( tup.fields(ti!(0,1)),  (&1,&1) );
+    /// assert_eq!( tup.fields(ti!(3,2)),  (&3,&2) );
+    /// assert_eq!( tup.fields(ti!(4,5,3)),(&5,&8,&3) );
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a,Fields>(&'a self,_:MultiTString<Fields>)->Fields::MultiTy
+    fn fields<'a,Fields>(&'a self,_:TStringSet<Fields>)->Fields::MultiTy
     where
         Fields:GetMultiField<'a,Self>
     {
@@ -452,16 +452,16 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let mut tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.field_mut(tstr!("0")), &mut 1 );
-    /// assert_eq!( tup.field_mut(tstr!("1")), &mut 1 );
-    /// assert_eq!( tup.field_mut(tstr!("2")), &mut 2 );
-    /// assert_eq!( tup.field_mut(tstr!("3")), &mut 3 );
-    /// assert_eq!( tup.field_mut(tstr!("4")), &mut 5 );
-    /// assert_eq!( tup.field_mut(tstr!("5")), &mut 8 );
+    /// assert_eq!( tup.field_mut(ti!(0)), &mut 1 );
+    /// assert_eq!( tup.field_mut(ti!(1)), &mut 1 );
+    /// assert_eq!( tup.field_mut(ti!(2)), &mut 2 );
+    /// assert_eq!( tup.field_mut(ti!(3)), &mut 3 );
+    /// assert_eq!( tup.field_mut(ti!(4)), &mut 5 );
+    /// assert_eq!( tup.field_mut(ti!(5)), &mut 8 );
     ///
     /// ```
     #[inline(always)]
@@ -474,24 +474,24 @@ pub trait GetFieldExt{
 
     /// Gets multiple mutable references to fields.
     ///
-    /// This is safe since `MultiTString` requires its strings 
+    /// This is safe since `TStringSet` requires its strings 
     /// to be checked for uniqueness before being constructed
-    /// (the safety invariant of `MultiTString`).
+    /// (the safety invariant of `TStringSet`).
     ///
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let mut tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.fields_mut(tstr!("0","1")), (&mut 1,&mut 1) );
-    /// assert_eq!( tup.fields_mut(tstr!("3","2")), (&mut 3,&mut 2) );
-    /// assert_eq!( tup.fields_mut(tstr!("4","5","3")), (&mut 5,&mut 8,&mut 3) );
+    /// assert_eq!( tup.fields_mut(ti!(0,1)), (&mut 1,&mut 1) );
+    /// assert_eq!( tup.fields_mut(ti!(3,2)), (&mut 3,&mut 2) );
+    /// assert_eq!( tup.fields_mut(ti!(4,5,3)), (&mut 5,&mut 8,&mut 3) );
     ///
     /// ```
     #[inline(always)]
-    fn fields_mut<'a,Fields>(&'a mut self,ms:MultiTString<Fields>)->Fields::MultiTy
+    fn fields_mut<'a,Fields>(&'a mut self,ms:TStringSet<Fields>)->Fields::MultiTy
     where
         Fields:GetMultiFieldMut<'a,Self>,
         Self:Sized,
@@ -504,16 +504,16 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.clone().into_field(tstr!("0")), 1 );
-    /// assert_eq!( tup.clone().into_field(tstr!("1")), 1 );
-    /// assert_eq!( tup.clone().into_field(tstr!("2")), 2 );
-    /// assert_eq!( tup.clone().into_field(tstr!("3")), 3 );
-    /// assert_eq!( tup.clone().into_field(tstr!("4")), 5 );
-    /// assert_eq!( tup.clone().into_field(tstr!("5")), 8 );
+    /// assert_eq!( tup.clone().into_field(ti!(0)), 1 );
+    /// assert_eq!( tup.clone().into_field(ti!(1)), 1 );
+    /// assert_eq!( tup.clone().into_field(ti!(2)), 2 );
+    /// assert_eq!( tup.clone().into_field(ti!(3)), 3 );
+    /// assert_eq!( tup.clone().into_field(ti!(4)), 5 );
+    /// assert_eq!( tup.clone().into_field(ti!(5)), 8 );
     ///
     /// ```
     #[inline(always)]
@@ -529,16 +529,16 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,tstr};
+    /// use structural::{GetFieldExt,ti};
     ///
     /// let tup=Box::new((1,1,2,3,5,8));
     ///
-    /// assert_eq!( tup.clone().box_into_field(tstr!("0")), 1 );
-    /// assert_eq!( tup.clone().box_into_field(tstr!("1")), 1 );
-    /// assert_eq!( tup.clone().box_into_field(tstr!("2")), 2 );
-    /// assert_eq!( tup.clone().box_into_field(tstr!("3")), 3 );
-    /// assert_eq!( tup.clone().box_into_field(tstr!("4")), 5 );
-    /// assert_eq!( tup.clone().box_into_field(tstr!("5")), 8 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(0)), 1 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(1)), 1 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(2)), 2 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(3)), 3 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(4)), 5 );
+    /// assert_eq!( tup.clone().box_into_field(ti!(5)), 8 );
     ///
     /// ```
     #[cfg(feature="alloc")]

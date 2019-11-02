@@ -1,3 +1,5 @@
+#![allow(non_camel_case_types)]
+
 use super::*;
 
 use crate::structural_trait::{FieldInfo,StructuralDyn,TField};
@@ -7,8 +9,8 @@ use core::{
 };
 
 
-type Start_STR=TStr!(s t a r t);
-type End_STR=TStr!(e n d);
+type Start_STR=TI!(s t a r t);
+type End_STR=TI!(e n d);
 
 ///////////////////////////////////////////////////////
 
