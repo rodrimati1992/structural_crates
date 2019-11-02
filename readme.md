@@ -149,6 +149,18 @@ These are the cargo features in structural:
     Enables specialization inside structural,
     requires nightly because it enables the nightly feature.
 
+- `better_ti`:
+    This enables the `TI` macro to take in an identifier or a string literal.
+    This requires proc macros in type position,
+    which is as of 2019-11-02 stabilizes on Rust 1.40.
+
+- `nightly_better_to`
+    This enables the `TI` macro to take in an identifier or a string literal,
+    as well as enable the nightly features required before it was 
+    marked as stable for Rust 1.40 (as of 2019-11-02).
+
+nightly_type_pmacros
+
 
 Specialization is used inside structural for performance reasons.
 There are no benchmarks comparing when specialization is enabled and disabled yet.

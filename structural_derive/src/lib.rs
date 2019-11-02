@@ -20,14 +20,11 @@ mod structural_alias_impl;
 mod structural_derive;
 mod str_or_ident;
 mod tokenizers;
+mod ti_impl;
 
 
 use proc_macro::TokenStream as TokenStream1;
-use proc_macro2::{
-    TokenStream as TokenStream2,
-};
-
-use quote::quote;
+use proc_macro2::TokenStream as TokenStream2;
 
 
 
@@ -49,59 +46,21 @@ pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input,structural_alias_impl::macro_impl).into()
 }
 
-/**
-The implementation of the ti macro when const parameters aren't supported.
-*/
+
 #[proc_macro]
-pub fn tstr_impl(input: TokenStream1) -> TokenStream1 {
-    use crate::{
-        parse_utils::ParsePunctuated,
-        tokenizers::tstring_tokenizer,
-        str_or_ident::StrOrIdent,
-    };
-
-
-    parse_or_compile_err(input,|strings_: ParsePunctuated<StrOrIdent,syn::Token!(,)>|{
-        let strings=strings_.list;
-        let tokens=if strings.len()==1 {
-            let string=strings[0].value();
-            let tstring=tstring_tokenizer(string);
-
-            quote!(
-                use structural::proc_macro_reexports::*;
-
-                pub const VALUE:#tstring=MarkerType::MTVAL;
-            )
-        }else{
-            let mut prev_strings=Vec::<String>::new();
-            let mut tstring=Vec::new();
-            for string_lit in strings {
-                let string=string_lit.value();
-                if prev_strings.contains(&string) {
-                    return Err(syn::Error::new(
-                        string_lit.span(),
-                        "Field names cannot be used more than once"
-                    ));
-                }else{
-                    prev_strings.push(string.clone());
-                    tstring.push(tstring_tokenizer(string));
-                }
-            }
-            quote!(
-                use structural::proc_macro_reexports::*;
-
-                pub const VALUE:TStringSet<(#(#tstring),*)>=unsafe{
-                    TStringSet::new()
-                };
-            )
-        };
-
-        Ok(tokens)
-    }).into()
+#[allow(non_snake_case)]
+pub fn _TI_impl_(input: TokenStream1) -> TokenStream1{
+    parse_or_compile_err(input,ti_impl::TI_impl).into()
 }
 
 
-
+/**
+The implementation of the ti macro.
+*/
+#[proc_macro]
+pub fn _ti_impl_(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,ti_impl::ti_impl).into()
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

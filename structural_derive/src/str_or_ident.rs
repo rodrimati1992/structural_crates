@@ -54,6 +54,16 @@ impl StrOrIdent {
     }
 }
 
+impl Display for StrOrIdent{
+    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+        match self {
+            StrOrIdent::Str(x) => Display::fmt(&x.value(),f),
+            StrOrIdent::Ident(x) => Display::fmt(x,f),
+        }
+    }
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
