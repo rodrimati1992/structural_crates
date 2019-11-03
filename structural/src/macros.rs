@@ -1,6 +1,9 @@
 #[macro_use]
 mod list;
 
+// #[macro_use]
+// mod make_struct;
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_getter{
@@ -301,7 +304,9 @@ macro_rules! impl_getters_for_derive{
 /// Constructs type-level identifier(s).
 ///
 /// The arguments to this macro can be either identifiers or string literals.
-/// The string literals must be valid field identifiers.
+///
+/// This macro doesn't take aliases for field identifiers,
+/// they must be the literal name of the fields.
 ///
 /// When passed multiple arguments,this instantiates a `TStringSet`
 /// which is what's passed to the `GetFieldExt::fields` methods.
@@ -705,3 +710,90 @@ macro_rules! structural_alias{
         structural_derive::structural_alias_impl!{ $($everything)* }
     }
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+/**
+
+Declares a module with aliases for type-level idents,used to access fields.
+
+Every one of these aliases are types and constants of the same name.
+
+These aliases *cannot* be combined to pass to
+`GetFieldExt::fields` or `GetFieldExt::fields_mut`.
+When macros take in identifiers those must be the
+literal identifiers for the fields(you can't pass aliases),
+since they must check that the field names passed to the macro don't repeat
+within the macro invocation.
+
+# Example
+
+```rust
+use structural::{declare_names_module,GetField,GetFieldExt};
+
+declare_names_module!{
+    pub mod names{
+        _a,
+        _b,
+        _0,
+        c,
+        zero=0,
+        one=1,
+        two=2,
+        e=10,
+        g=abcd,
+
+        // Used to access the `0`,`1`,and `2` fields
+        // with the fields or fields_mut method.
+        FirstThree=(0,1,2),
+        h=(a,b,c),
+        i=(0,3,5),
+
+        j=(p), // The identifier can also be parenthesised
+        k=("p"), // This is equivalent to the `j` alias
+
+    }
+}
+
+
+fn assert_fields<T>(this:&T)
+where
+    T:GetField<names::zero,Ty=i32>+
+        GetField<names::one,Ty=i32>+
+        GetField<names::two,Ty=i32>
+{
+    assert_eq!( this.field_(names::zero), &2 );
+    assert_eq!( this.field_(names::one), &3 );
+    assert_eq!( this.field_(names::two), &5 );
+    assert_eq!( this.fields(names::FirstThree), (&2,&3,&5) );
+}
+
+assert_fields(&(2,3,5));
+assert_fields(&(2,3,5,8));
+assert_fields(&(2,3,5,8,13));
+assert_fields(&(2,3,5,8,13,21));
+
+```
+
+
+*/
+#[macro_export]
+macro_rules! declare_names_module {
+    (
+        $vis:vis mod $mod_name:ident{
+            $($mod_contents:tt)*
+        }
+    ) => (
+        #[allow(non_camel_case_types)]
+        #[allow(non_upper_case_globals)]
+        $vis mod $mod_name{
+            structural_derive::declare_name_aliases!{
+                $($mod_contents)*
+            }
+        }
+    )
+}
+

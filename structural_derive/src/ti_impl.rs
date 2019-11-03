@@ -2,6 +2,7 @@ use crate::{
     parse_utils::ParsePunctuated,
     tokenizers::{tident_tokenizer,FullPathForChars},
     str_or_ident::{IdentOrIndex,StrOrIdent},
+    tstring_set::TStringSet,
 };
 
 use core_extensions::SelfOps;
@@ -12,7 +13,7 @@ use quote::{quote,ToTokens};
 
 use syn::{
     parse::{self,Parse,ParseStream},
-    LitStr,
+    Ident,LitStr,
 };
 
 
@@ -73,42 +74,16 @@ impl Parse for CapTIInput{
 
 ///////////////////////////////////////////////////////////////////////////////
 
-
 pub(crate) fn ti_impl(
     strings_: ParsePunctuated<StrOrIdent,syn::Token!(,)>,
 ) -> Result<TokenStream2,syn::Error> {
-    let strings=strings_.list;
-    if strings.len()==1 {
-        let string=strings[0].value();
-        let tstring=tident_tokenizer(string,FullPathForChars::No);
+    let set=TStringSet::from_iter(strings_.list.into_iter())?;
+    let const_name=Ident::new("VALUE",proc_macro2::Span::call_site());
+    let constant=set.constant_named(&const_name,FullPathForChars::No);
 
-        quote!(
-            use structural::proc_macro_reexports::*;
-
-            pub const VALUE:#tstring=MarkerType::MTVAL;
-        )
-    }else{
-        let mut prev_strings=Vec::<String>::new();
-        let mut tstring=Vec::new();
-        for string_lit in strings {
-            let string=string_lit.value();
-            if prev_strings.contains(&string) {
-                return Err(syn::Error::new(
-                    string_lit.span(),
-                    "Field names cannot be used more than once"
-                ));
-            }else{
-                prev_strings.push(string.clone());
-                tstring.push(tident_tokenizer(string,FullPathForChars::No));
-            }
-        }
-        quote!(
-            use structural::proc_macro_reexports::*;
-
-            pub const VALUE:TStringSet<(#(#tstring),*)>=unsafe{
-                TStringSet::new()
-            };
-        )
-    }.piped(Ok)
+    Ok(quote!(
+        use structural::pmr::*;
+        #constant
+    ))
 }
 

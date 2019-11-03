@@ -16,6 +16,9 @@ pub(crate) enum FullPathForChars{
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
 /// Tokenizes a `TString<>` in which each character is written as a type.
 pub(crate) fn tident_tokenizer<S>(string:S,char_verbosity:FullPathForChars)->impl ToTokens
 where
@@ -42,6 +45,8 @@ where
     quote!( ::structural::type_level::TString<( #( #path_prefix #bytes,)* )> )
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /// Represents a crate-visible module with a bunch of type aliases for TStrings.
@@ -76,7 +81,7 @@ impl NamedModuleAndTokens{
 
         let mod_tokens=quote!(
             pub(crate) mod #names_module{
-                use structural::proc_macro_reexports::*;
+                use structural::pmr::*;
 
                 #(#aliases_names)*
             }

@@ -15,12 +15,14 @@ An implementation detail of abi_stable.
 extern crate proc_macro;
 
 
+mod declare_name_aliases_macro;
 mod parse_utils;
 mod structural_alias_impl;
 mod structural_derive;
 mod str_or_ident;
 mod tokenizers;
 mod ti_impl;
+mod tstring_set;
 
 
 use proc_macro::TokenStream as TokenStream1;
@@ -49,6 +51,7 @@ pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
 
 #[proc_macro]
 #[allow(non_snake_case)]
+#[doc(hidden)]
 pub fn _TI_impl_(input: TokenStream1) -> TokenStream1{
     parse_or_compile_err(input,ti_impl::TI_impl).into()
 }
@@ -58,9 +61,19 @@ pub fn _TI_impl_(input: TokenStream1) -> TokenStream1{
 The implementation of the ti macro.
 */
 #[proc_macro]
+#[doc(hidden)]
 pub fn _ti_impl_(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input,ti_impl::ti_impl).into()
 }
+
+
+
+#[proc_macro]
+#[doc(hidden)]
+pub fn declare_name_aliases(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,declare_name_aliases_macro::impl_).into()
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

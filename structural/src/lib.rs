@@ -189,10 +189,10 @@ pub mod reexports{
     pub use core_extensions::{MarkerType,SelfOps};
 }
 
+// pmr(proc macro reexports):
 // Reexports for the proc macros in structural_derive.
 #[doc(hidden)]
-pub mod proc_macro_reexports{
+pub mod pmr{
     pub use crate::type_level::ident::*;
     pub use core_extensions::MarkerType;
 }
-
