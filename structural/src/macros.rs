@@ -1,8 +1,8 @@
 #[macro_use]
 mod list;
 
-// #[macro_use]
-// mod make_struct;
+#[macro_use]
+mod make_struct;
 
 #[doc(hidden)]
 #[macro_export]

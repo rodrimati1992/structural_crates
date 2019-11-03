@@ -32,3 +32,92 @@ fn identifier_macros_equality(){
     
 
 }
+
+
+
+
+
+
+mod make_struct_tests{
+    use crate::{
+        type_level::TString,
+        GetFieldExt,
+    };
+
+    crate::structural_alias!{
+        trait Hi<T>{
+            mut move a:u32,
+            mut move b:String,
+            mut move c:T,
+        }
+    }
+
+    fn returns_hi()->impl Hi<String>{
+        make_struct!{
+            a:0,
+            b:"hello".into(),
+            c:Default::default(),
+        }
+    }
+
+    #[test]
+    fn make_struct_test(){
+        {
+            let hi=returns_hi();
+            
+            // I had to write it like this due to a rustc bug.
+            // https://github.com/rust-lang/rust/issues/66057
+            assert_eq!(hi.field_::<TI!(a)>(TString::NEW),&0);
+            assert_eq!(hi.field_::<TI!(b)>(TString::NEW).as_str(), "hello");
+            assert_eq!(hi.field_::<TI!(c)>(TString::NEW).as_str(), "");
+        }
+
+        {
+            let hi:&dyn Hi<String>=&returns_hi();
+            assert_eq!(hi.field_(ti!(a)),&0);
+            assert_eq!(hi.field_(ti!(b)).as_str(), "hello");
+            assert_eq!(hi.field_(ti!(c)).as_str(), "");
+        }
+    }
+}
+
+
+mod names_module_tests{
+    declare_names_module!{
+        mod names_a{
+            _a,
+            _b,
+            _0,
+            c,
+            d=0,
+            e=10,
+            g=abcd,
+            h=(a,b,c),
+            i=(0,3,5),
+            j=(p), 
+            k=("p"),
+        }
+    }
+    #[test]
+    fn names_module_a(){
+        let _:names_a::_a=ti!(_a);
+        let _:names_a::_b=ti!(_b);
+        let _:names_a::_0=ti!(_0);
+        let _:names_a::c=ti!(c);
+        let _:names_a::d=ti!(0);
+        let _:names_a::e=ti!(10);
+        let _:names_a::g=ti!(abcd);
+        let _:names_a::h=ti!(a,b,c);
+        let _:names_a::i=ti!(0,3,5);
+        let _:names_a::j=ti!(p);
+        let _:names_a::k=ti!(p);
+    }
+}
+
+
+
+
+
+
+
+
