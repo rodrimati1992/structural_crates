@@ -7,6 +7,14 @@ use std_::marker::PhantomData;
 
 
 /// A wrapper type that associates a mutable raw pointer with a lifetime.
+///
+/// # Motivation
+///
+/// This type was declared to pass a mutable-reference-like type to 
+/// multiple methods to borrow multiple fields individually.
+/// If those methods took in mutable references it would cause 
+/// undefined behavior to borrow multiple fields mutably,
+/// since each call borrows the entire data structure.
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct MutRef<'a,T:?Sized>{

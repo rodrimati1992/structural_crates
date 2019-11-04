@@ -1,5 +1,5 @@
 /*!
-An implementation detail of abi_stable.
+An implementation detail of structural.
 */
 
 #![recursion_limit="192"]

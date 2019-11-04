@@ -6,8 +6,7 @@
 [api-docs]: https://docs.rs/structural
 
 
-This library provides abstractions over fields,
-allowing for limited emulation of structural types.
+This library provides abstractions over fields,emulating structural types.
 
 # Features
 
@@ -64,6 +63,11 @@ where
 
 #[derive(Structural)]
 #[struc(public)]
+// Using the `#[struc(access="mut move")]` attribute tells the derive macro to 
+// generate the accessor trait for accessing the 
+// fields by reference/mutable-reference/by value,
+// when by default it only impls the by-reference one.
+#[struc(access="mut move")]
 struct Point4D<T>{
     x:T,
     y:T,
@@ -73,6 +77,10 @@ struct Point4D<T>{
 
 #[derive(Structural)]
 #[struc(public)]
+// Using the `#[struc(access="move")]` attribute tells the derive macro to 
+// generate the accessor trait for accessing the 
+// fields by reference/by value,when by default it only impls the by-reference one.
+#[struc(access="move")]
 struct Point5D<T>{
     x:T,
     y:T,
@@ -139,6 +147,8 @@ where
 ////          The stuff here could be defined in a separate crate
 
 #[derive(Structural)]
+// Using the `#[struc(public)]` attribute tells the derive macro to 
+// generate the accessor trait impls for non-`pub` fields.
 #[struc(public)]
 struct Worker{
     name:String,
@@ -262,7 +272,7 @@ To use `structural` in no_std contexts disable the default-feature.
 structural={version="<insert_version_number_here>",default_features=false}
 ```
 
-This crate has few features that require the standard library (instead of core/alloc),
+This crate has few items that require the standard library (instead of core/alloc),
 it is required by default so that users that are not aware of the core/alloc libraries don't have 
 to pass a feature to enable std support.
 
@@ -276,8 +286,8 @@ These are the cargo features in structural:
     Enables alloc crate support,this is enabled by default.
     If this is enabled on a version prior to 1.36 it will enable `std` support.
 
-- `1.36`:
-    A feature is for enabling support of Rust versions from 1.36 onwards ,
+- `rust_1_36`:
+    For enabling support of Rust versions from 1.36 onwards ,
     this is automatically enabled by `structural`'s build script.
     This feature is required because the `alloc` crate was stabilized for Rust 1.36,
     while this library supports Rust back to 1.34.
@@ -305,13 +315,11 @@ These are the cargo features in structural:
 Specialization is used inside `structural` for performance reasons.
 There are no benchmarks comparing when specialization is enabled and disabled yet.
 
-# Minimum Rust version
-
-This crate support Rust back to 1.34,
-and will use a build script to automatically enable features from newer versions.
-
-# Cargo Features
-
 If it becomes possible to disable build scripts,
 you can manually enable support for Rust past 1.34 features with the `rust_*_*` cargo features.
 
+
+# Minimum Rust version
+
+This crate support Rust back to 1.34,
+and uses a build script to automatically enable features from newer versions.

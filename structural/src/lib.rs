@@ -1,7 +1,6 @@
 /*!
 
-This library provides abstractions over fields,
-allowing for limited emulation of structural types.
+This library provides abstractions over fields,emulating structural types.
 
 # Features
 
@@ -29,6 +28,8 @@ For details on the [Structural derive macro look here](./docs/structural_macro/i
 use structural::{GetFieldExt,Structural,ti};
 
 #[derive(Structural)]
+// Using the `#[struc(public)]` attribute tells the derive macro to 
+// generate the accessor trait impls for non-`pub` fields.
 #[struc(public)]
 struct Point3D<T>{
     x:T,
@@ -55,6 +56,11 @@ where
 
 #[derive(Structural)]
 #[struc(public)]
+// Using the `#[struc(access="mut move")]` attribute tells the derive macro to 
+// generate the accessor trait for accessing the 
+// fields by reference/mutable-reference/by value,
+// when by default it only impls the by-reference one.
+#[struc(access="mut move")]
 struct Point4D<T>{
     x:T,
     y:T,
@@ -64,6 +70,10 @@ struct Point4D<T>{
 
 #[derive(Structural)]
 #[struc(public)]
+// Using the `#[struc(access="move")]` attribute tells the derive macro to 
+// generate the accessor trait for accessing the 
+// fields by reference/by value,when by default it only impls the by-reference one.
+#[struc(access="move")]
 struct Point5D<T>{
     x:T,
     y:T,
@@ -131,6 +141,8 @@ where
 ////          The stuff here could be defined in a separate crate
 
 #[derive(Structural)]
+// Using the `#[struc(public)]` attribute tells the derive macro to 
+// generate the accessor trait impls for non-`pub` fields.
 #[struc(public)]
 struct Worker{
     name:String,
