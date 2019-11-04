@@ -119,7 +119,7 @@ where
 }
 
 // most structural aliases are object safe
-fn print_name_dyn<S>(this:&dyn Person<S>)
+fn print_name_dyn<  S>(this:&dyn Person<S>)
 where
     S:Borrow<str>,
 {
@@ -199,6 +199,8 @@ where
     assert_eq!( this.into_field(ti!(value)), list );
 }
 
+*/
+#![cfg_attr(feature="alloc",doc=r###"
 // most structural aliases are object safe
 fn print_name_dyn(mut this:Box<dyn Person<Vec<String>>>){
     println!("Hello, {}!",this.field_(ti!(name)) );
@@ -209,7 +211,8 @@ fn print_name_dyn(mut this:Box<dyn Person<Vec<String>>>){
     assert_eq!( this.box_into_field(ti!(value)), list );
 }
 
-
+"###)]
+/*!
 //////////////////////////////////////////////////////////////////////////
 ////          The stuff here could be defined in a separate crate
 
@@ -232,15 +235,17 @@ fn main(){
 
     print_name(worker.clone());
     print_name(student.clone());
-
+*/
+#![cfg_attr(feature="alloc",doc=r###"
     print_name_dyn(Box::new(worker));
     print_name_dyn(Box::new(student));
+"###)]
+/*!
+
 }
 
 #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 struct Cents(u64);
-
-
 
 ```
 
