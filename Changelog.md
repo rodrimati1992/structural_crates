@@ -23,4 +23,7 @@ which implements the `IntoFieldMut` trait for all its fields.
 
 Declared the `declare_names_module` for declaring a module with aliases for field names.
 
+Declared `delegate_structural_with` macro to delegate the implementation 
+of the field accessor traits.
+
 Declared some helper macros for manually implementing the `Structural` and accessor traits.
