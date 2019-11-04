@@ -63,19 +63,22 @@
 /// //     }
 /// // }
 ///
-/// fn get_dyn_runner()->Box<dyn Runner>{
-///     Box::new(make_struct!{
-///        #![derive(Copy,Clone)]
-///        name:"hello".into(),
-///        stamina:4_000_000_000,
-///     })
-/// }
-///
-/// {
-///     let runner=get_dyn_runner();
-///     assert_eq!( runner.field_(ti!(name)).as_str(), "hello" );
-///     assert_eq!( runner.field_(ti!(stamina)), &4_000_000_000 );
-/// }
+#[cfg_attr(feature="alloc",doc=r###"
+fn get_dyn_runner()->Box<dyn Runner>{
+    Box::new(make_struct!{
+       #![derive(Copy,Clone)]
+       name:"hello".into(),
+       stamina:4_000_000_000,
+    })
+}
+
+{
+    let runner=get_dyn_runner();
+    assert_eq!( runner.field_(ti!(name)).as_str(), "hello" );
+    assert_eq!( runner.field_(ti!(stamina)), &4_000_000_000 );
+}
+
+"###)]
 ///
 /// # }
 ///
@@ -91,6 +94,7 @@ macro_rules! make_struct {
     ) => ({
         #[allow(non_camel_case_types)]
         mod _anonyous_struct_{
+            #[allow(unused_imports)]
             use super::*;
 
             $crate::declare_names_module!{

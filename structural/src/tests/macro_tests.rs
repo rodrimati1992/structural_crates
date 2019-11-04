@@ -47,12 +47,12 @@ mod make_struct_tests{
     crate::structural_alias!{
         trait Hi<T>{
             mut move a:u32,
-            mut move b:String,
+            mut move b:Option<&'static str>,
             mut move c:T,
         }
     }
 
-    fn returns_hi()->impl Hi<String>{
+    fn returns_hi()->impl Hi<&'static str>{
         make_struct!{
             a:0,
             b:"hello".into(),
@@ -68,15 +68,15 @@ mod make_struct_tests{
             // I had to write it like this due to a rustc bug.
             // https://github.com/rust-lang/rust/issues/66057
             assert_eq!(hi.field_::<TI!(a)>(TString::NEW),&0);
-            assert_eq!(hi.field_::<TI!(b)>(TString::NEW).as_str(), "hello");
-            assert_eq!(hi.field_::<TI!(c)>(TString::NEW).as_str(), "");
+            assert_eq!(hi.field_::<TI!(b)>(TString::NEW).unwrap(), "hello");
+            assert_eq!(hi.field_::<TI!(c)>(TString::NEW), &"");
         }
 
         {
-            let hi:&dyn Hi<String>=&returns_hi();
+            let hi:&dyn Hi<&'static str>=&returns_hi();
             assert_eq!(hi.field_(ti!(a)),&0);
-            assert_eq!(hi.field_(ti!(b)).as_str(), "hello");
-            assert_eq!(hi.field_(ti!(c)).as_str(), "");
+            assert_eq!(hi.field_(ti!(b)).unwrap(), "hello");
+            assert_eq!(hi.field_(ti!(c)), &"");
         }
     }
 }
