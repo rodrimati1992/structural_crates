@@ -44,6 +44,7 @@ pub fn derive_structural(input: TokenStream1) -> TokenStream1 {
 
 
 #[proc_macro]
+#[doc(hidden)]
 pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input,structural_alias_impl::macro_impl).into()
 }
