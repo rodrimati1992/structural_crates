@@ -2,14 +2,25 @@ This is the changelog,summarising changes in each version(some minor changes may
 
 ### 0.1.0
 
-Defined per-field accessor traits (GetField/GetFieldMut/intoField) and 
+Declared per-field accessor traits (GetField/GetFieldMut/intoField/IntoFieldMut) and 
 implemented them for standard library types.
 
-Defined extension trait GetFieldExt that uses the accessor traits,
+Declared extension trait GetFieldExt that uses the accessor traits,
 this is the intended way to call field accessor methods.
 
-Defined Structural derive macro,to implement the accessor traits for the fields of structs.
+Declared `Structural` derive macro,
+to implement the accessor traits for the fields of structs.
 
-Defined the tstr macro to instntiate a field name to use as a parameter to GetFieldExt methods.
+Declared `Structural` and `StructuralDyn` traits to describe the fields that a type has.
 
-Defined the TStr macro to pass the field name as a generic parameter.
+Declared the `ti` macro to 
+instantiate field name(s) to use as a parameter to GetFieldExt methods.
+
+Declared the `TI` macro to pass a field name as a generic parameter.
+
+Declared the `make_struct` macro to construct an anonymous struct
+which implements the `IntoFieldMut` trait for all its fields.
+
+Declared the `declare_names_module` for declaring a module with aliases for field names.
+
+Declared some helper macros for manually implementing the `Structural` and accessor traits.
