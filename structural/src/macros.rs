@@ -187,7 +187,6 @@ macro_rules! impl_box_into_field_method {
 #[cfg(feature="alloc")]
 macro_rules! impl_box_into_field_method {
     ($field_name:ty) => (
-        #[cfg(feature="alloc")]
         fn box_into_field_(self:structural::alloc::boxed::Box<Self>)->Self::Ty{
             $crate::IntoField::<$field_name>::into_field_(*self)
         }
@@ -392,7 +391,7 @@ macro_rules! impl_getters_for_derive{
 macro_rules! ti {
     ( $($strings:tt),* ) => {{
         mod dummy{
-            structural_derive::_ti_impl_!{$($strings),*}
+            $crate::_ti_impl_!{$($strings),*}
         }
         dummy::VALUE
     }};
@@ -484,7 +483,7 @@ macro_rules! _delegate_TI {
 #[cfg(feature="better_ti")]
 macro_rules! _delegate_TI {
     ($($everything:tt)*) => (
-        structural_derive::_TI_impl_!($($everything)*)
+        $crate::_TI_impl_!($($everything)*)
     )
 }
 
@@ -755,7 +754,7 @@ structural_alias!{
 #[macro_export]
 macro_rules! structural_alias{
     ( $($everything:tt)* )=>{
-        structural_derive::structural_alias_impl!{ $($everything)* }
+        $crate::structural_alias_impl!{ $($everything)* }
     }
 }
 
@@ -838,7 +837,7 @@ macro_rules! declare_names_module {
         #[allow(non_camel_case_types)]
         #[allow(non_upper_case_globals)]
         $vis mod $mod_name{
-            structural_derive::declare_name_aliases!{
+            $crate::declare_name_aliases!{
                 $($mod_contents)*
             }
         }
