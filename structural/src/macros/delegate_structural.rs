@@ -20,6 +20,9 @@ borrowing from the same variable mutably.
 ```rust
 use structural::delegate_structural_with;
 
+# trait Trait{}
+# impl<T> Trait for T{}
+
 struct Foo<T>{
     value:T
 }
@@ -27,7 +30,9 @@ struct Foo<T>{
 delegate_structural_with!{
     impl[T] Foo<T>
     // This where clause is required syntax
-    where[ /*You put the where predicates in here.*/ ]
+    where[
+        T:Trait,
+    ]
     
     // This is the identifier used for `self` in the blocks bellow.
     self_ident=this;
@@ -48,12 +53,22 @@ delegate_structural_with!{
     // This is `unsafe` because this block must always evaluate to a mutable reference
     // for the same variable,
     // and it must not be the same variable as other implementations of the GetFieldMut trait
-    unsafe GetFieldMut {
+    unsafe GetFieldMut 
+    where [ 
+        // This is an optional where clause
+        // The last where predicate must have a trailing comma.
+        T:Trait, 
+    ]{
         &mut this.value
     }
     
     // This block of code is used to get the delegating variable by value in IntoField.
-    IntoField {
+    IntoField 
+    where [
+        // This is an optional where clause
+        // The last where predicate must have a trailing comma.
+        T:Trait,
+    ]{
         this.value 
     }
 }
@@ -64,7 +79,10 @@ delegate_structural_with!{
 This example is of a type wrapping a `ManuallyDrop<T>`,delegating to the `T` inside it.
 
 ```rust
-use std::mem::ManuallyDrop;
+use std::{
+    fmt::Debug,
+    mem::ManuallyDrop,
+};
 
 use structural::{GetFieldExt,delegate_structural_with,make_struct,ti};
 
@@ -96,14 +114,22 @@ delegate_structural_with!{
 #       T::clone;
         &*this.value 
     }
-    unsafe GetFieldMut {
-#       // This ensures that the `T:Clone` bound is put on the impl block.
+
+    unsafe GetFieldMut 
+    where [T:Debug,]
+    {
+#       // This ensures that the `T:Clone+Debug` bounds are put on the impl block.
 #       T::clone;
+#       <T as Debug>::fmt;
         &mut *this.value 
     }
-    IntoField {
-#       // This ensures that the `T:Clone` bound is put on the impl block.
+
+    IntoField 
+    where [T:Debug,]
+    {
+#       // This ensures that the `T:Clone+Debug` bounds are put on the impl block.
 #       T::clone;
+#       <T as Debug>::fmt;
         ManuallyDrop::into_inner(this.value)
     }
 }
@@ -125,7 +151,7 @@ delegate_structural_with!{
 
 {
     let mut bar=Bar::new(make_struct!{
-        #![derive(Clone)] //This derives Clone for the anonymous struct
+        #![derive(Clone,Debug)] //This derives Clone and Debug for the anonymous struct
 
         a:"hello",
         b:"world",
