@@ -1,9 +1,13 @@
+/*!
+Contains type-level lists,and related items
+*/
+
 use std_::{
     fmt::{self,Debug},
     marker::PhantomData,
 };
 
-/// A type-level list.
+/// A type-level non-empty list.
 pub struct TList<Curr,Rem>(PhantomData<fn()->(Curr,Rem)>);
 
 /// A type-level empty list.
@@ -29,6 +33,7 @@ impl<Curr,Rem> Clone for TList<Curr,Rem> {
 }
 
 impl<Curr,Rem> TList<Curr,Rem> {
+    /// Constructs this list.
     pub const NEW:Self=TList(PhantomData);
 }
 
@@ -38,6 +43,7 @@ impl<Curr,Rem> TList<Curr,Rem> {
 unsafe impl core_extensions::MarkerType for TNil{}
 
 impl TNil{
+    /// Constructs this empty list.
     pub const NEW:Self=TNil;
 }
 
