@@ -289,6 +289,14 @@ extern crate self as structural;
 
 pub use structural_derive::Structural;
 
+#[doc(hidden)]
+pub use structural_derive::{
+    _ti_impl_,
+    _TI_impl_,
+    structural_alias_impl,
+    declare_name_aliases,
+};
+
 
 #[macro_use]
 mod macros;
