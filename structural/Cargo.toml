@@ -6,15 +6,20 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 description="Abstractions over fields."
 documentation = "https://docs.rs/structural/"
+readme="../readme.md"
 keywords = ["data-structures"]
 categories = ["data-structures","rust-patterns"]
 repository = "https://github.com/rodrimati1992/structural_crates/"
 include = [
     "Cargo.toml", 
     "src/**/*.rs", 
+    "../readme.md",
     "../APACHE_license", 
     "../MIT_license"
 ]
+
+[badges]
+travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 
 [features]
 default = ["std"]
