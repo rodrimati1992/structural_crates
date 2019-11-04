@@ -7,9 +7,13 @@ allowing for limited emulation of structural types.
 
 These are the features this library provides:
 
-- Derivation of per-field accessor traits (GetField/GetFieldMut/IntoField).
+- [Derivation of per-field accessor traits](./docs/structural_macro/index.html)
+(GetField/GetFieldMut/IntoField).
 
-- Declaration of trait alises for the field accessor traits,with convenient syntax.
+- [Declaration of trait aliases for the field accessor traits
+](./macro.structural_alias.html).
+
+- [Construction of anonymous structs with make_struct](./macro.make_struct.html)
 
 # Examples
 
@@ -170,8 +174,7 @@ pub mod tests{
 }
 
 
-#[doc(hidden)]
-pub use crate::type_level::ident as chars;
+pub mod chars;
 
 pub use crate::{
     field_traits::{
@@ -194,5 +197,6 @@ pub mod reexports{
 #[doc(hidden)]
 pub mod pmr{
     pub use crate::type_level::ident::*;
+    pub use crate::chars::*;
     pub use core_extensions::MarkerType;
 }

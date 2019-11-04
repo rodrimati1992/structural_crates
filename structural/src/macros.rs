@@ -97,12 +97,6 @@ macro_rules! impl_getter{
 } 
 
 
-#[macro_export]
-macro_rules! cfg_default_impl {
-    ( cfg() $($tokens:tt)* ) => ()
-}
-
-
 macro_rules! default_if {
     ( 
         $(#[$attr:meta])*
@@ -121,7 +115,23 @@ macro_rules! default_if {
 
 
 
-
+/// For manual implementors of the GetFieldMut trait,
+/// implementing the methods used for accession multiple mutable fields.
+///
+/// # Safety
+///
+/// This is an unsafe macro,
+/// because it requires each invocation of it to borrow a different field for the type
+/// (the `field_name=` argument),
+/// otherwise this would cause undefined behavior because it would 
+/// create multiple mutable borrows to the same field.
+///
+/// # Example
+///
+/// For an example where this macro is used,
+/// you can look at the
+/// [manual implementation example of the GetFieldMut trait
+/// ](./field_traits/trait.GetFieldMut.html)
 #[macro_export]
 macro_rules! unsafe_impl_get_field_raw_mut_method {
     ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
@@ -301,15 +311,19 @@ macro_rules! impl_getters_for_derive{
 }
 
 
-/// Constructs type-level identifier(s).
+/// Constructs field identifier(s) (TString/TStringSet).
 ///
 /// The arguments to this macro can be either identifiers or string literals.
 ///
 /// This macro doesn't take aliases for field identifiers,
 /// they must be the literal name of the fields.
 ///
+/// When passed a single argument,this instantiates a `TString`,
+/// which is what's passed to the
+/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods.
+///
 /// When passed multiple arguments,this instantiates a `TStringSet`
-/// which is what's passed to the `GetFieldExt::fields` methods.
+/// which is what's passed to the `GetFieldExt::{fields,fields_mut}` methods.
 /// This requires unique arguments to be passed,
 /// otherwise this macro will cause a compile-time error.
 ///
@@ -318,15 +332,45 @@ macro_rules! impl_getters_for_derive{
 /// ```
 /// use structural::{GetFieldExt,ti};
 ///
-/// let tup=("I","you","they");
+/// {
+///     let tup=("I","you","they");
+///    
+///     assert_eq!( tup.field_(ti!(0)), &"I" );
+///     assert_eq!( tup.field_(ti!(1)), &"you" );
+///     assert_eq!( tup.field_(ti!(2)), &"they" );
+///    
+///     assert_eq!( tup.fields(ti!(0,1)), (&"I",&"you") );
+///    
+///     assert_eq!( tup.fields(ti!(0,1,2)), (&"I",&"you",&"they") );
+/// }
 ///
-/// assert_eq!( tup.field_(ti!(0)), &"I" );
-/// assert_eq!( tup.field_(ti!(1)), &"you" );
-/// assert_eq!( tup.field_(ti!(2)), &"they" );
+/// #[derive(structural::Structural)]
+/// #[struc(public)]
+/// #[struc(access="mut move")]
+/// struct Foo{
+///     bar:u32,
+///     baz:u32,
+///     ooo:u32,
+/// }
 ///
-/// assert_eq!( tup.fields(ti!(0,1)), (&"I",&"you") );
+/// {
+///     let mut foo=Foo{
+///         bar:0,
+///         baz:44,
+///         ooo:66,
+///     };
+///     
+///     assert_eq!( foo.field_(ti!(bar)), &0 );
+///     assert_eq!( foo.field_(ti!(baz)), &44 );
+///     assert_eq!( foo.field_(ti!(ooo)), &66 );
 ///
-/// assert_eq!( tup.fields(ti!(0,1,2)), (&"I",&"you",&"they") );
+///     assert_eq!( foo.fields(ti!(ooo,bar)), (&66,&0) );
+///     assert_eq!( foo.fields(ti!(bar,ooo,baz)), (&0,&66,&44) );
+///
+///     assert_eq!( foo.fields_mut(ti!(ooo,bar)), (&mut 66, &mut 0) );
+///     assert_eq!( foo.fields_mut(ti!(bar,ooo,baz)), (&mut 0, &mut 66, &mut 44) );
+///         
+/// }
 ///
 /// ```
 ///

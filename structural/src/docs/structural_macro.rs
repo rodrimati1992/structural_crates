@@ -1,6 +1,7 @@
 /*!
 
-The Structural derive macro implements the Structurl trit,as well as accessor traits(GetField/GetFieldMut/IntoField) for fields.
+The Structural derive macro implements the Structural trait,
+as well as accessor traits(GetField/GetFieldMut/IntoField) for fields.
 
 # Default Behavior
 

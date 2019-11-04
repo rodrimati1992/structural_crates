@@ -66,7 +66,6 @@
 #[cfg_attr(feature="alloc",doc=r###"
 fn get_dyn_runner()->Box<dyn Runner>{
     Box::new(make_struct!{
-       #![derive(Copy,Clone)]
        name:"hello".into(),
        stamina:4_000_000_000,
     })
