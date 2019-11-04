@@ -559,6 +559,7 @@ impl<T:?Sized> GetFieldExt for T{}
 ///////////////////////////////////////////////////////////////////////////////
 
 
+#[cfg(feature="alloc")]
 macro_rules! unsized_impls {
     ( shared,$ptr:ident ) => {
 
