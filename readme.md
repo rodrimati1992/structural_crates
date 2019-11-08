@@ -6,7 +6,7 @@
 [api-docs]: https://docs.rs/structural
 
 
-This library provides abstractions over fields,emulating structural types.
+This library provides field accessors,and emulation of structural types.
 
 # Features
 
