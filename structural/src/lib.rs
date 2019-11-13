@@ -301,31 +301,31 @@ pub use structural_derive::{
 #[macro_use]
 mod macros;
 
-pub mod docs;
-pub mod mut_ref;
-pub mod field_traits;
-pub mod structural_trait;
+// pub mod docs;
+// pub mod mut_ref;
+// pub mod field_traits;
+// pub mod structural_trait;
+// pub mod utils;
+
+// #[cfg(test)]
+// pub mod tests{
+//     mod structural_derive;
+//     mod structural_alias;
+//     mod macro_tests;
+// }
+
+
 pub mod type_level;
-pub mod utils;
-
-#[cfg(test)]
-pub mod tests{
-    mod structural_derive;
-    mod structural_alias;
-    mod macro_tests;
-}
-
-
 pub mod chars;
 
-pub use crate::{
-    field_traits::{
-        GetField,GetFieldMut,IntoField,IntoFieldMut,
-        GetFieldExt,
-        GetFieldType,
-    },
-    structural_trait::{Structural,StructuralDyn},
-};
+// pub use crate::{
+//     field_traits::{
+//         GetField,GetFieldMut,IntoField,IntoFieldMut,
+//         GetFieldExt,
+//         GetFieldType,
+//     },
+//     structural_trait::{Structural,StructuralDyn},
+// };
 
 
 
