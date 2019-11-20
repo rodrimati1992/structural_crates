@@ -30,21 +30,21 @@ fn fieldpaths_push_append(){
         let fp2=Fp::<C>::new();
         let fp3=Fp::<D>::new();
 
-        let fps0=unsafe{ FieldPaths::<(Fp<A>,),MutableAccess>::new() };
-        let fps1=unsafe{ FieldPaths::<(Fp<B>,),MutableAccess>::new() };
-        let fps2=unsafe{ FieldPaths::<(Fp<C>,),MutableAccess>::new() };
-        let fps3=unsafe{ FieldPaths::<(Fp<D>,),MutableAccess>::new() };
+        let fps0=unsafe{ FieldPathSet::<(Fp<A>,),UniquePaths>::new() };
+        let fps1=unsafe{ FieldPathSet::<(Fp<B>,),UniquePaths>::new() };
+        let fps2=unsafe{ FieldPathSet::<(Fp<C>,),UniquePaths>::new() };
+        let fps3=unsafe{ FieldPathSet::<(Fp<D>,),UniquePaths>::new() };
 
-        let a:FieldPaths::<(Fp<A>,Fp<B>),SharedAccess>=fps0.push(fps1);
-        let _:FieldPaths::<(Fp<A>,Fp<B>),SharedAccess>=fps0.push(fp1);
-        let _:FieldPaths::<(Fp<A>,Fp<B>),SharedAccess>=fps0.append(fps1);
+        let a:FieldPathSet::<(Fp<A>,Fp<B>),AliasedPaths>=fps0.push(fps1);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>),AliasedPaths>=fps0.push(fp1);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>),AliasedPaths>=fps0.append(fps1);
         
-        let b:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>),SharedAccess>=a.push(fps2);
-        let _:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>),SharedAccess>=a.push(fp2);
-        let _:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>),SharedAccess>=a.append(fps2);
+        let b:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>),AliasedPaths>=a.push(fps2);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>),AliasedPaths>=a.push(fp2);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>),AliasedPaths>=a.append(fps2);
 
-        let _:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),SharedAccess>=b.push(fps3);
-        let _:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),SharedAccess>=b.push(fp3);
-        let _:FieldPaths::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),SharedAccess>=b.append(fps3);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),AliasedPaths>=b.push(fps3);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),AliasedPaths>=b.push(fp3);
+        let _:FieldPathSet::<(Fp<A>,Fp<B>,Fp<C>,Fp<D>),AliasedPaths>=b.append(fps3);
     }
 }

@@ -1,6 +1,8 @@
 mod push_back;
 mod tuple_impls;
 
+///////////////////////////////////////////////////////////
+
 /// A trait which allows getting a heterogeneous collection type (like tuples),
 /// in which `Type` was added after the last element.
 pub trait PushBack_<Type>{
@@ -12,6 +14,7 @@ pub trait PushBack_<Type>{
 pub type PushBack<This,Type>=
     <This as PushBack_<Type>>::Output;
 
+///////////////////////////////////////////////////////////
 
 /// Gets the `TList` equivalent of `Self`.
 pub trait ToTList_{
@@ -24,6 +27,18 @@ pub type ToTList<This>=
     <This as ToTList_>::Output;
 
 
+///////////////////////////////////////////////////////////
+
+/// Gets the `TString` equivalent of `Self`.
+pub trait ToTString_{
+    type Output;
+}
+
+/// Gets the `TString` equivalent of `This`.
+pub type ToTString<This>=
+    <This as ToTString_>::Output;
+
+///////////////////////////////////////////////////////////
 
 /// Gets a tuple type equivalent of `Self`.
 pub trait ToTuple_{
@@ -34,6 +49,7 @@ pub trait ToTuple_{
 pub type ToTuple<This>=
     <This as ToTuple_>::Output;
 
+///////////////////////////////////////////////////////////
 
 /// Gets this collection type with `Other` appended at the end.
 pub trait Append_<Other>{
@@ -45,4 +61,12 @@ pub trait Append_<Other>{
 pub type Append<This,Other>=
     <This as Append_<Other>>::Output;
 
+///////////////////////////////////////////////////////////
 
+/// Flattens a collection of collection.
+pub trait Flatten_{
+    type Output;
+}
+
+pub type Flatten<This>=
+    <This as Flatten_>::Output;

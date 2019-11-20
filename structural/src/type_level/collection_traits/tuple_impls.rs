@@ -1,4 +1,4 @@
-use super::{Append_,ToTuple,ToTuple_,ToTList,ToTList_};
+use super::{Append_,Flatten,Flatten_,ToTuple,ToTuple_,ToTList,ToTList_};
 
 macro_rules! tuple_impls {
     (with-idents;
@@ -16,6 +16,15 @@ macro_rules! tuple_impls {
 
             impl<$($tparams),*> ToTList_ for ($($tparams,)*) {
                 type Output=TList![$($tparams),*];
+            }
+
+            impl<$($tparams,)*> Flatten_ for ($($tparams,)*) 
+            where
+                Self:ToTList_,
+                ToTList<Self>:Flatten_,
+                Flatten<ToTList<Self>>:ToTuple_
+            {
+                type Output=ToTuple<Flatten<ToTList<Self>>>;
             }
 
             impl<$($tparams,)* Other,Appended> Append_<Other> for ($($tparams,)*) 

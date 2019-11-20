@@ -8,10 +8,15 @@ use std_::{
 };
 
 use crate::type_level::collection_traits::{
-    ToTList_,
+    ToTList_,ToTList,
     Append_,Append,
     PushBack_,PushBack,
+    Flatten_,
 };
+
+
+#[cfg(test)]
+mod tests;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,3 +110,42 @@ impl Append_<TNil> for TNil{
 
 
 
+impl Flatten_ for TNil{
+    type Output=TNil;
+}
+impl<Curr,Rem,Out> Flatten_ for TList<Curr,Rem>
+where
+    ():FlattenImpl<Rem,Curr,Output=Out>
+{
+    type Output=Out;
+}
+
+
+
+#[doc(hidden)]
+pub trait FlattenImpl<Outer,Inner>{
+    type Output;
+}
+
+impl<List> FlattenImpl<TNil,List> for () 
+where
+    List:ToTList_,
+{
+    type Output=ToTList<List>;
+}
+
+impl<Curr,Rem,Out> FlattenImpl<TList<Curr,Rem>,TNil> for ()
+where
+    Curr:ToTList_,
+    ():FlattenImpl<Rem,ToTList<Curr>,Output=Out>,
+{
+    type Output=Out;
+}
+
+impl<CurrI,RemI,CurrO,RemO,Out> FlattenImpl<TList<CurrO,RemO>,TList<CurrI,RemI>> for ()
+where
+    RemI:ToTList_,
+    ():FlattenImpl<TList<CurrO,RemO>,ToTList<RemI>,Output=Out>,
+{
+    type Output=TList<CurrI,Out>;
+}
