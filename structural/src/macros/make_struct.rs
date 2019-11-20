@@ -25,7 +25,7 @@
 /// # Example
 ///
 /// ```rust
-/// use structural::{GetFieldExt,make_struct,structural_alias,ti};
+/// use structural::{GetFieldExt,make_struct,structural_alias,fp};
 ///
 /// use std::fmt::Debug;
 ///
@@ -41,8 +41,8 @@
 /// # fn main(){
 ///
 /// fn get_runner(this:&(impl Runner+Debug) ){
-///     assert_eq!( this.field_(ti!(name)).as_str(), "hello","{:?}",this);
-///     assert_eq!( this.field_(ti!(stamina)), &100,"{:?}",this);
+///     assert_eq!( this.field_(fp!(name)).as_str(), "hello","{:?}",this);
+///     assert_eq!( this.field_(fp!(stamina)), &100,"{:?}",this);
 /// }
 ///
 /// get_runner(&make_struct!{
@@ -73,8 +73,8 @@ fn get_dyn_runner()->Box<dyn Runner>{
 
 {
     let runner=get_dyn_runner();
-    assert_eq!( runner.field_(ti!(name)).as_str(), "hello" );
-    assert_eq!( runner.field_(ti!(stamina)), &4_000_000_000 );
+    assert_eq!( runner.field_(fp!(name)).as_str(), "hello" );
+    assert_eq!( runner.field_(fp!(stamina)), &4_000_000_000 );
 }
 
 "###)]
@@ -92,12 +92,14 @@ macro_rules! make_struct {
         )*
     ) => ({
         #[allow(non_camel_case_types)]
+        #[allow(unused_imports)]
         mod _anonyous_struct_{
             #[allow(unused_imports)]
             use super::*;
 
-            $crate::declare_names_module!{
-                pub mod _names_module_{
+            pub mod _names_module_{
+                use super::*;
+                $crate::field_path_aliases!{
                     $( $field_name, )*
                 }
             }

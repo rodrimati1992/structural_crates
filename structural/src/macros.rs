@@ -5,6 +5,9 @@ mod delegate_structural;
 mod list;
 
 #[macro_use]
+mod ident;
+
+#[macro_use]
 mod make_struct;
 
 
@@ -140,23 +143,16 @@ macro_rules! default_if {
 macro_rules! unsafe_impl_get_field_raw_mut_method {
     ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
         unsafe fn get_field_mutref(
-            this:$crate::mut_ref::MutRef<'_,()>,
-            _:$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty>
-        )->&mut $Self::Ty{
-            &mut (*this.cast::<$Self>().ptr).$field_name
-        }
-
-        fn as_mutref(&mut self)->$crate::mut_ref::MutRef<'_,()>{
-            $crate::mut_ref::MutRef::new(self)
-                .cast::<()>()
+            this:*mut (),
+            _:$crate::pmr::PhantomData<$name_param>,
+        )->*mut $Self::Ty{
+            &mut (*(this as *mut $Self)).$field_name as *mut $Self::Ty
         }
 
         fn get_field_mutref_func(
             &self
         )->$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty>{
-            $crate::field_traits::GetFieldMutRefFn::new(
-                <$Self as $crate::GetFieldMut<$name_param>>::get_field_mutref
-            )
+            <$Self as $crate::field_traits::GetFieldMut<$name_param>>::get_field_mutref
         }
     )
 }
@@ -313,270 +309,6 @@ macro_rules! impl_getters_for_derive{
     }
 }
 
-
-/// Constructs field identifier(s) (TString/TStringSet).
-///
-/// The arguments to this macro can be either identifiers or string literals.
-///
-/// This macro doesn't take aliases for field identifiers,
-/// they must be the literal name of the fields.
-///
-/// When passed a single argument,this instantiates a `TString`,
-/// which is what's passed to the
-/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods.
-///
-/// When passed multiple arguments,this instantiates a `TStringSet`
-/// which is what's passed to the `GetFieldExt::{fields,fields_mut}` methods.
-/// This requires unique arguments to be passed,
-/// otherwise this macro will cause a compile-time error.
-///
-/// # Example
-///
-/// ```
-/// use structural::{GetFieldExt,ti};
-///
-/// {
-///     let tup=("I","you","they");
-///    
-///     assert_eq!( tup.field_(ti!(0)), &"I" );
-///     assert_eq!( tup.field_(ti!(1)), &"you" );
-///     assert_eq!( tup.field_(ti!(2)), &"they" );
-///    
-///     assert_eq!( tup.fields(ti!(0,1)), (&"I",&"you") );
-///    
-///     assert_eq!( tup.fields(ti!(0,1,2)), (&"I",&"you",&"they") );
-/// }
-///
-/// #[derive(structural::Structural)]
-/// #[struc(public)]
-/// #[struc(access="mut move")]
-/// struct Foo{
-///     bar:u32,
-///     baz:u32,
-///     ooo:u32,
-/// }
-///
-/// {
-///     let mut foo=Foo{
-///         bar:0,
-///         baz:44,
-///         ooo:66,
-///     };
-///     
-///     assert_eq!( foo.field_(ti!(bar)), &0 );
-///     assert_eq!( foo.field_(ti!(baz)), &44 );
-///     assert_eq!( foo.field_(ti!(ooo)), &66 );
-///
-///     assert_eq!( foo.fields(ti!(ooo,bar)), (&66,&0) );
-///     assert_eq!( foo.fields(ti!(bar,ooo,baz)), (&0,&66,&44) );
-///
-///     assert_eq!( foo.fields_mut(ti!(ooo,bar)), (&mut 66, &mut 0) );
-///     assert_eq!( foo.fields_mut(ti!(bar,ooo,baz)), (&mut 0, &mut 66, &mut 44) );
-///         
-/// }
-///
-/// ```
-///
-/// # Example
-/// 
-/// You can't pass multiple identical arguments to this macro,as this demonstrates:
-///
-/// ```compile_fail
-/// use structural::ti;
-///
-/// let _=ti!(hello,hello);
-///
-/// ```
-#[macro_export]
-macro_rules! ti {
-    ( $($strings:tt),* ) => {{
-        mod dummy{
-            $crate::_ti_impl_!{$($strings),*}
-        }
-        dummy::VALUE
-    }};
-}
-
-/// Constructs a type-level identifier for use as a generic parameter.
-///
-/// # Future Compatibility
-///
-/// This macro will continue supporting space separated characters 
-/// even after identifiers and string literals are supported
-///
-/// # Improved macro
-///
-/// To get an improved version of this macro (it requires Rust nightly or Rust 1.40) 
-/// which can also take an identifier or string literal parameter,
-/// you can use either the `nightly_better_ti` or `better_ti` cargo features.
-/// 
-/// You would use `better_ti` to make `TI!(0)`/`TI!(hello)`/`TI!("world")` work
-/// in Rust from 1.40 onwards
-/// (proc-macros in type position is stabilizing on Rust 1.40 on as of 2019-11-02).
-///
-/// You would use `nightly_better_ti` to  to make `TI!(0)`/`TI!(hello)`/`TI!("world")` work
-/// in Rust nightly from 1.40 backwards.
-///
-/// Once proc-macros in types reaches stable this will be enabled automatically
-/// for Rust versions since.
-/// 
-/// # Examples
-///
-/// This demonstrates how one can bound types by the accessor traits in a where clause.
-///
-/// ```rust
-/// use structural::{GetField,GetFieldExt,ti,TI};
-///
-/// fn greet_entity<This,S>(entity:&This)
-/// where
-///     This:GetField<TI!(n a m e),Ty=S>,
-///     S:AsRef<str>,
-/// {
-///     println!("Hello, {}!",entity.field_(ti!(name)).as_ref() );
-/// }
-///
-/// ```
-/// 
-/// # Example
-/// 
-/// This demonstrates the improved version of this macro,which requires either the 
-/// the `nightly_better_ti` or `better_ti` cargo features.
-/// Once proc-macros in types reaches stable this will be usable automatically
-/// for Rust versions since.
-/// 
-#[cfg_attr(feature="better_ti",doc=" ```rust")]
-#[cfg_attr(not(feature="better_ti"),doc=" ```ignore")]
-/// use structural::{GetField,GetFieldExt,ti,TI};
-///
-/// fn greet_entity<This,S>(entity:&This)
-/// where
-///     This:GetField<TI!(name),Ty=S>,
-///     S:AsRef<str>,
-/// {
-///     println!("Hello, {}!",entity.field_(ti!(name)).as_ref() );
-/// }
-///
-/// type NumericIdent=TI!(0);
-/// type StringyIdent=TI!("huh");
-///
-/// ```
-///
-#[macro_export]
-macro_rules! TI {
-    ($($char:tt)*) => {
-        $crate::_delegate_TI!($($char)*)
-    };
-}
-
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(not(feature="better_ti"))]
-macro_rules! _delegate_TI {
-    ($($char:tt)*) => (
-        $crate::type_level::TString<($($crate::TChar!($char),)*)>
-    )
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(feature="better_ti")]
-macro_rules! _delegate_TI {
-    ($($everything:tt)*) => (
-        $crate::_TI_impl_!($($everything)*)
-    )
-}
-
-
-
-
-/*
-
-Code to generate the non-default branches
-
-fn main() {
-    for b in 0..=255u8 {
-        let c=b as char;
-        if c.is_alphanumeric() && b<128 || c=='_' {
-            println!("({})=>( $crate::chars::_{} );",c,c)
-        }
-    }
-}
-
-*/
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! TChar{
-    (0)=>( $crate::chars::_0 );
-    (1)=>( $crate::chars::_1 );
-    (2)=>( $crate::chars::_2 );
-    (3)=>( $crate::chars::_3 );
-    (4)=>( $crate::chars::_4 );
-    (5)=>( $crate::chars::_5 );
-    (6)=>( $crate::chars::_6 );
-    (7)=>( $crate::chars::_7 );
-    (8)=>( $crate::chars::_8 );
-    (9)=>( $crate::chars::_9 );
-    (A)=>( $crate::chars::_A );
-    (B)=>( $crate::chars::_B );
-    (C)=>( $crate::chars::_C );
-    (D)=>( $crate::chars::_D );
-    (E)=>( $crate::chars::_E );
-    (F)=>( $crate::chars::_F );
-    (G)=>( $crate::chars::_G );
-    (H)=>( $crate::chars::_H );
-    (I)=>( $crate::chars::_I );
-    (J)=>( $crate::chars::_J );
-    (K)=>( $crate::chars::_K );
-    (L)=>( $crate::chars::_L );
-    (M)=>( $crate::chars::_M );
-    (N)=>( $crate::chars::_N );
-    (O)=>( $crate::chars::_O );
-    (P)=>( $crate::chars::_P );
-    (Q)=>( $crate::chars::_Q );
-    (R)=>( $crate::chars::_R );
-    (S)=>( $crate::chars::_S );
-    (T)=>( $crate::chars::_T );
-    (U)=>( $crate::chars::_U );
-    (V)=>( $crate::chars::_V );
-    (W)=>( $crate::chars::_W );
-    (X)=>( $crate::chars::_X );
-    (Y)=>( $crate::chars::_Y );
-    (Z)=>( $crate::chars::_Z );
-    (_)=>( $crate::chars::__ );
-    (a)=>( $crate::chars::_a );
-    (b)=>( $crate::chars::_b );
-    (c)=>( $crate::chars::_c );
-    (d)=>( $crate::chars::_d );
-    (e)=>( $crate::chars::_e );
-    (f)=>( $crate::chars::_f );
-    (g)=>( $crate::chars::_g );
-    (h)=>( $crate::chars::_h );
-    (i)=>( $crate::chars::_i );
-    (j)=>( $crate::chars::_j );
-    (k)=>( $crate::chars::_k );
-    (l)=>( $crate::chars::_l );
-    (m)=>( $crate::chars::_m );
-    (n)=>( $crate::chars::_n );
-    (o)=>( $crate::chars::_o );
-    (p)=>( $crate::chars::_p );
-    (q)=>( $crate::chars::_q );
-    (r)=>( $crate::chars::_r );
-    (s)=>( $crate::chars::_s );
-    (t)=>( $crate::chars::_t );
-    (u)=>( $crate::chars::_u );
-    (v)=>( $crate::chars::_v );
-    (w)=>( $crate::chars::_w );
-    (x)=>( $crate::chars::_x );
-    (y)=>( $crate::chars::_y );
-    (z)=>( $crate::chars::_z );
-    ($byte:ident)=>{
-        $crate::chars::$byte
-    }
-} 
-
-
 /**
 
 The `structural_alias` defines a trait alias for multiple field accessors.
@@ -636,7 +368,7 @@ each of which get turned into supertraits on `Foo`:
 ```rust
 use structural::{
     structural_alias,
-    ti,
+    fp,
     GetFieldExt,
     Structural,
 };
@@ -659,7 +391,7 @@ where
     U:Debug+Display+PartialEq,
 {
     // This gets references to the `x` and `y` fields.
-    let (x,y)=value.fields(ti!(x,y));
+    let (x,y)=value.fields(fp!(x,y));
     assert_ne!(x,y);
     println!("x={} y={}",x,y);
 }
@@ -710,7 +442,7 @@ print_point(&Entity{ x:100.0, y:200.0, id:PersonId(0xDEAD) });
 ```
 use structural::{
     structural_alias,
-    ti,
+    fp,
     GetFieldExt,
 };
 
@@ -757,90 +489,3 @@ macro_rules! structural_alias{
         $crate::structural_alias_impl!{ $($everything)* }
     }
 }
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-/**
-
-Declares a module with aliases for type-level idents,used to access fields.
-
-Every one of these aliases are types and constants of the same name.
-
-These aliases *cannot* be combined to pass to
-`GetFieldExt::fields` or `GetFieldExt::fields_mut`.
-When macros take in identifiers those must be the
-literal identifiers for the fields(you can't pass aliases),
-since they must check that the field names passed to the macro don't repeat
-within the macro invocation.
-
-# Example
-
-```rust
-use structural::{declare_names_module,GetField,GetFieldExt};
-
-declare_names_module!{
-    pub mod names{
-        _a,
-        _b,
-        _0,
-        c,
-        zero=0,
-        one=1,
-        two=2,
-        e=10,
-        g=abcd,
-
-        // Used to access the `0`,`1`,and `2` fields
-        // with the fields or fields_mut method.
-        FirstThree=(0,1,2),
-        h=(a,b,c),
-        i=(0,3,5),
-
-        j=(p), // The identifier can also be parenthesised
-        k=("p"), // This is equivalent to the `j` alias
-
-    }
-}
-
-
-fn assert_fields<T>(this:&T)
-where
-    T:GetField<names::zero,Ty=i32>+
-        GetField<names::one,Ty=i32>+
-        GetField<names::two,Ty=i32>
-{
-    assert_eq!( this.field_(names::zero), &2 );
-    assert_eq!( this.field_(names::one), &3 );
-    assert_eq!( this.field_(names::two), &5 );
-    assert_eq!( this.fields(names::FirstThree), (&2,&3,&5) );
-}
-
-assert_fields(&(2,3,5));
-assert_fields(&(2,3,5,8));
-assert_fields(&(2,3,5,8,13));
-assert_fields(&(2,3,5,8,13,21));
-
-```
-
-
-*/
-#[macro_export]
-macro_rules! declare_names_module {
-    (
-        $vis:vis mod $mod_name:ident{
-            $($mod_contents:tt)*
-        }
-    ) => (
-        #[allow(non_camel_case_types)]
-        #[allow(non_upper_case_globals)]
-        $vis mod $mod_name{
-            $crate::declare_name_aliases!{
-                $($mod_contents)*
-            }
-        }
-    )
-}
-
