@@ -19,11 +19,10 @@ mod declare_name_aliases_macro;
 mod parse_utils;
 mod structural_alias_impl;
 mod structural_derive;
-mod str_or_ident;
+mod ident_or_index;
 mod tokenizers;
-mod ti_impl;
-mod tstring_set;
-
+mod fp_impl;
+mod field_paths;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream as TokenStream2;
@@ -53,19 +52,28 @@ pub fn structural_alias_impl(input: TokenStream1) -> TokenStream1 {
 #[proc_macro]
 #[allow(non_snake_case)]
 #[doc(hidden)]
-pub fn _TI_impl_(input: TokenStream1) -> TokenStream1{
-    parse_or_compile_err(input,ti_impl::TI_impl).into()
+pub fn _FP_impl_(input: TokenStream1) -> TokenStream1{
+    parse_or_compile_err(input,fp_impl::FP_impl).into()
 }
 
-
 /**
-The implementation of the ti macro.
+The implementation of the fp macro without enabling proc macros in expression position.
 */
 #[proc_macro]
 #[doc(hidden)]
-pub fn _ti_impl_(input: TokenStream1) -> TokenStream1 {
-    parse_or_compile_err(input,ti_impl::ti_impl).into()
+pub fn old_fp_impl_(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,fp_impl::old_fp_impl).into()
 }
+
+/*
+/// This is for referencing generic parameters within `fp!()`,
+uncomment this if you add a cargo feature to enable proc macros in expression position.
+#[proc_macro]
+#[doc(hidden)]
+pub fn new_fp_impl_(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,fp_impl::new_fp_impl).into()
+}
+*/
 
 
 

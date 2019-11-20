@@ -1,7 +1,6 @@
 use crate::{
-    str_or_ident::StrOrIdent,
     tokenizers::FullPathForChars,
-    tstring_set::TStringSet,
+    field_paths::{FieldPaths,FieldPath},
 };
 
 #[allow(unused_imports)]
@@ -27,13 +26,15 @@ pub(crate) fn impl_(parsed: NameAliases) -> Result<TokenStream2,syn::Error> {
 
     let aliases_names_a=parsed.aliases.iter().map(|x|&x.name);
     let field_name=parsed.aliases.iter()
-        .map(|x| x.value.type_tokenizer(char_verbosity) );
+        .map(|x| x.value.type_tokens(char_verbosity) );
     let constants=parsed.aliases.iter()
         .map(|x| x.value.constant_named(&x.name,char_verbosity) );
 
     Ok(quote!(
         #(
+            #[allow(non_camel_case_types)]
             pub type #aliases_names_a=#field_name;
+            #[allow(non_upper_case_globals)]
             #constants
         )*
     ))
@@ -41,14 +42,15 @@ pub(crate) fn impl_(parsed: NameAliases) -> Result<TokenStream2,syn::Error> {
 
 
 
-
+#[derive(Debug)]
 pub(crate) struct NameAliases{
     aliases:Punctuated<NameAlias,Token![,]>,
 }
 
+#[derive(Debug)]
 pub(crate) struct NameAlias{
     name:Ident,
-    value:TStringSet,
+    value:FieldPaths,
 }
 
 
@@ -69,13 +71,13 @@ impl Parse for NameAlias{
             let content;
             if input.peek(syn::token::Paren) {
                 let _=syn::parenthesized!(content in input);
-                content.parse::<TStringSet>()?
+                content.parse::<FieldPaths>()?
             }else {
-                let soi=input.parse::<StrOrIdent>()?;
-                TStringSet::from_single(soi)
+                input.parse::<FieldPath>()?
+                    .piped(FieldPaths::from_path)
             }
         }else{
-            TStringSet::Single(name.to_string())
+            FieldPaths::from_ident(name.clone())
         };
         Ok(Self{name,value})
     }

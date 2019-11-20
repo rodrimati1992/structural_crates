@@ -1,6 +1,6 @@
 use crate::{
     tokenizers::NamedModuleAndTokens,
-    str_or_ident::{IdentOrIndex,IdentOrIndexRef},
+    ident_or_index::{IdentOrIndex,IdentOrIndexRef},
 };
 
 use as_derive_utils::{
