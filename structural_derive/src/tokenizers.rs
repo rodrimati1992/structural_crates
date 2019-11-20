@@ -12,21 +12,32 @@ use syn::Ident;
 #[derive(Debug,Copy,Clone,Eq,PartialEq)]
 pub(crate) enum FullPathForChars{
     Yes,
-    No
+    No,
+    StructPmr,
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
+pub(crate) fn struct_pmr_prefix()->TokenStream2{
+    quote!( __struct_pmr:: )
+}
+pub(crate) fn struct_pmr()->TokenStream2{
+    quote!( __struct_pmr )
+}
+
+
+
 /// Tokenizes a `TString<>` in which each character is written as a type.
-pub(crate) fn tident_tokenizer<S>(string:S,char_verbosity:FullPathForChars)->impl ToTokens
+pub(crate) fn tident_tokens<S>(string:S,char_verbosity:FullPathForChars)->TokenStream2
 where
     S:AsRef<str>
 {
     let path_prefix=match char_verbosity {
         FullPathForChars::Yes=>quote!(::structural::chars::),
         FullPathForChars::No=>quote!(),
+        FullPathForChars::StructPmr=>struct_pmr_prefix(),
     };
 
     use std::fmt::Write;
@@ -75,8 +86,8 @@ impl NamedModuleAndTokens{
         let aliases_names=alias_names.iter()
             .zip( iter.clone().into_iter() )
             .map(|(alias_name,field_name)|{
-                let field_name=tident_tokenizer(field_name.to_string(),FullPathForChars::No);
-                quote!(pub type #alias_name=#field_name;)
+                let field_name=tident_tokens(field_name.to_string(),FullPathForChars::No);
+                quote!(pub type #alias_name=structural::pmr::FieldPath<(#field_name,)>;)
             });
 
         let mod_tokens=quote!(
