@@ -8,15 +8,15 @@ use crate::GetFieldExt;
 
 use core::{
     ops::{Range,RangeFrom,RangeTo,RangeInclusive,RangeToInclusive},
-    marker::Unpin,
+    //marker::Unpin,
     mem::ManuallyDrop,
-    ops::{Deref,DerefMut},
+    ops::Deref,
     pin::Pin,
 };
 
 
-type Start_STR=TI!(s t a r t);
-type End_STR=TI!(e n d);
+type Start_STR=FP!(s t a r t);
+type End_STR=FP!(e n d);
 
 ///////////////////////////////////////////////////////
 
@@ -114,11 +114,13 @@ delegate_structural_with!{
     impl[T] ManuallyDrop<T>
     where[]
     self_ident=this;
-    field_ty=T;
+    delegating_to_type=T;
+    field_name_param=( fname : fname_ty );
 
     GetField { this }
     
     unsafe GetFieldMut { this }
+    as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
     
     IntoField { ManuallyDrop::into_inner(this) }
 }
@@ -127,14 +129,14 @@ delegate_structural_with!{
 fn delegated_mdrop(){
     let tup=(2,3,5,8);
     let mut mdrop=ManuallyDrop::new(tup);
-    assert_eq!( mdrop.fields(ti!(0,1,2,3)), (&2,&3,&5,&8) );
+    assert_eq!( mdrop.fields(fp!(0,1,2,3)), (&2,&3,&5,&8) );
     
-    assert_eq!( mdrop.fields_mut(ti!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
+    assert_eq!( mdrop.fields_mut(fp!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
     
-    assert_eq!( mdrop.clone().into_field(ti!(0)), 2 );
-    assert_eq!( mdrop.clone().into_field(ti!(1)), 3 );
-    assert_eq!( mdrop.clone().into_field(ti!(2)), 5 );
-    assert_eq!( mdrop.clone().into_field(ti!(3)), 8 );
+    assert_eq!( mdrop.clone().into_field(fp!(0)), 2 );
+    assert_eq!( mdrop.clone().into_field(fp!(1)), 3 );
+    assert_eq!( mdrop.clone().into_field(fp!(2)), 5 );
+    assert_eq!( mdrop.clone().into_field(fp!(3)), 8 );
 }
 
 
@@ -145,24 +147,24 @@ fn delegated_mdrop(){
 
 delegate_structural_with!{
     impl[P] Pin<P>
-    where[ P:Deref,P::Target:Sized ]
+    where[
+        P:Deref,
+        P::Target:Sized,
+    ]
     self_ident=this;
-    field_ty=P::Target;
+    delegating_to_type=P::Target;
+    field_name_param=( fname : fname_ty );
 
-    GetField { {this} }
-    
-    unsafe GetFieldMut
-    where[ P:DerefMut,P::Target:Unpin, ]
-    { {this} }
+    GetField { &*this }
 }
 
 
 #[test]
 fn delegated_pin(){
-    let mut tup=(2,3,5,8);
-    let mut pin=Pin::new(&mut tup);
-    assert_eq!( pin.fields(ti!(0,1,2,3)), (&2,&3,&5,&8) );
-    assert_eq!( pin.fields_mut(ti!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
+    let tup=(2,3,5,8);
+    let pin=Pin::new(&tup);
+    assert_eq!( pin.fields(fp!(0,1,2,3)), (&2,&3,&5,&8) );
+    //assert_eq!( pin.fields_mut(fp!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
 }
 
 
