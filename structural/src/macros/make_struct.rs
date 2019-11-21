@@ -91,47 +91,47 @@ macro_rules! make_struct {
             $field_name:ident : $field_value:expr,
         )*
     ) => ({
-        #[allow(non_camel_case_types)]
-        #[allow(unused_imports)]
-        mod _anonyous_struct_{
+        $(let $field_name=$field_value;)*
+
+        {
+            #[allow(non_camel_case_types)]
             #[allow(unused_imports)]
-            use super::*;
-
-            pub mod _names_module_{
+            mod _anonyous_struct_{
+                #[allow(unused_imports)]
                 use super::*;
-                $crate::field_path_aliases!{
-                    $( $field_name, )*
+
+                pub mod _names_module_{
+                    use super::*;
+                    $crate::field_path_aliases!{
+                        $( $field_name, )*
+                    }
+                }
+
+                $( #[$inner_attrs] )*
+                pub struct __Anonymous_Struct<$($field_name),*>{
+                    $(
+                        $( #[$field_attrs] )*
+                        pub $field_name:$field_name,
+                    )*
+                }
+                
+                $crate::impl_getters_for_derive!{
+                    impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*> 
+                    where[]
+                    {
+                        $((
+                            IntoFieldMut<
+                                $field_name : $field_name,
+                                _names_module_::$field_name,
+                                stringify!($field_name),
+                            >
+                        ))*
+                    }
                 }
             }
-
-            $( #[$inner_attrs] )*
-            pub struct __Anonymous_Struct<$($field_name),*>{
-                $(
-                    $( #[$field_attrs] )*
-                    pub $field_name:$field_name,
-                )*
+            _anonyous_struct_::__Anonymous_Struct{
+                $($field_name,)*
             }
-            
-            $crate::impl_getters_for_derive!{
-                impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*> 
-                where[]
-                {
-                    $((
-                        IntoFieldMut<
-                            $field_name : $field_name,
-                            _names_module_::$field_name,
-                            stringify!($field_name),
-                        >
-                    ))*
-                }
-            }
-        }
-        use _anonyous_struct_::__Anonymous_Struct;
-        
-
-
-        __Anonymous_Struct{
-            $($field_name:$field_value,)*
         }
     })
 }
