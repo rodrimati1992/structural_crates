@@ -142,17 +142,17 @@ macro_rules! default_if {
 #[macro_export]
 macro_rules! unsafe_impl_get_field_raw_mut_method {
     ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
-        unsafe fn get_field_mutref(
+        unsafe fn get_field_raw_mut(
             this:*mut (),
             _:$crate::pmr::PhantomData<$name_param>,
         )->*mut $Self::Ty{
             &mut (*(this as *mut $Self)).$field_name as *mut $Self::Ty
         }
 
-        fn get_field_mutref_func(
+        fn get_field_raw_mut_func(
             &self
         )->$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty>{
-            <$Self as $crate::field_traits::GetFieldMut<$name_param>>::get_field_mutref
+            <$Self as $crate::field_traits::GetFieldMut<$name_param>>::get_field_raw_mut
         }
     )
 }

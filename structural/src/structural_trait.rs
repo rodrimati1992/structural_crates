@@ -17,13 +17,13 @@ pub trait Structural{
     ///
     /// ```
     /// use structural::{
-    ///     TList,TI,
+    ///     TList,FP,
     ///     structural_trait::TField,
     /// };
     /// 
     /// type TheList=TList![
-    ///     TField<TI!(f o o),String>,
-    ///     TField<TI!(b a r),Vec<u8>>,
+    ///     TField<FP!(f o o),String>,
+    ///     TField<FP!(b a r),Vec<u8>>,
     /// ];
     /// 
     /// ```

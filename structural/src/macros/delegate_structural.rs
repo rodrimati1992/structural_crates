@@ -342,7 +342,7 @@ macro_rules! delegate_structural_with {
                 let field:&mut $delegating_to_type=$unsafe_get_field_mut_closure;
                 <$delegating_to_type as $crate::GetFieldMut<__FieldName>>::get_field_mut_(field)
             }
-            unsafe fn get_field_mutref(
+            unsafe fn get_field_raw_mut(
                 $this:*mut (),
                 $fname_var:$crate::pmr::PhantomData<__FieldName>
             )->*mut Self::Ty
@@ -353,13 +353,13 @@ macro_rules! delegate_structural_with {
                 let $this:*mut $delegating_to_type=
                     $as_field_mutref_closure;
                 
-                <$delegating_to_type>::get_field_mutref( $this as *mut (),$fname_var )
+                <$delegating_to_type>::get_field_raw_mut( $this as *mut (),$fname_var )
             }
 
-            fn get_field_mutref_func(
+            fn get_field_raw_mut_func(
                 &self
             )->$crate::field_traits::GetFieldMutRefFn<__FieldName,Self::Ty>{
-                <Self as $crate::GetFieldMut<__FieldName>>::get_field_mutref
+                <Self as $crate::GetFieldMut<__FieldName>>::get_field_raw_mut
             }
         }
     };

@@ -30,13 +30,13 @@ rust_1_36=[]
 specialization=[]
 nightly_specialization=["specialization"]
 
-better_ti=[]
-nightly_better_ti=["better_ti"]
+better_macros=[]
+nightly_better_macros=["better_macros"]
 
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}
-core_extensions={version="0.1",default_features=false}
+core_extensions={version="0.1.11",default_features=false}
 
 
 [build-dependencies]
