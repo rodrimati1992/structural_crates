@@ -1,4 +1,5 @@
 use crate::{
+    parse_utils::ParseBufferExt,
     tokenizers::{tident_tokens,FullPathForChars},
     ident_or_index::IdentOrIndex,
 };
@@ -161,7 +162,11 @@ impl Parse for FieldPath{
         let mut list=Vec::<FieldPathComponent>::new();
         let mut contains_splice=false;
         while !input.peek(Token![,]) && !input.is_empty() {
-            if input.peek(syn::LitFloat) {
+            let mut is_period=false;
+            if input.peek(syn::LitFloat) || 
+                input.peek_parse(Token!(.)).is_some().observe(|x| is_period=*x )&& 
+                input.peek(syn::LitFloat)
+            {
                 let f=input.parse::<syn::LitFloat>()?;
                 let digits=f.base10_digits();
                 let make_int=|digits:&str|{
