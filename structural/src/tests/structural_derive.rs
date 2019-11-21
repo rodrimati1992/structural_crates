@@ -44,8 +44,8 @@ fn object_safety(){
         AllocPtrs<'a,T>,
     );
 
-    let _:TraitObjects<'_,dyn GetField<TI!(a b),Ty=()>>;
-    let _:TraitObjects<'_,dyn GetFieldMut<TI!(a b),Ty=()>>;
+    let _:TraitObjects<'_,dyn GetField<FP!(a b),Ty=()>>;
+    let _:TraitObjects<'_,dyn GetFieldMut<FP!(a b),Ty=()>>;
     let _:TraitObjects<'_,dyn Huh_SI>;
     let _:TraitObjects<'_,dyn Whoah_SI>;
     let _:TraitObjects<'_,dyn Renamed_SI>;
@@ -83,7 +83,7 @@ fn huh_printer<This>(this:This)
 where
     This:HuhInterface
 {
-    let (a,b)=this.fields(ti!(a,b));
+    let (a,b)=this.fields(fp!(a,b));
     assert_eq!(a, &10);
     assert_eq!(b, &33);
 }
@@ -147,13 +147,13 @@ trait Privacies1Test:Privacies1_SI{
 // I'm testing that `Privacies1` implements those traits inside the `privacies` test.
 impl<L> Privacies1Test for L
 where
-    L:GetField<TI!(a),Ty=u32>+
-        GetField<TI!(b),Ty=u32>+
-        GetField<TI!(e),Ty=u32>+
-        GetField<TI!(f),Ty=u32>+
-        GetFieldMut<TI!(g),Ty=u32>+
-        IntoFieldMut<TI!(h e l l o),Ty=u32>+
-        IntoField<TI!(w o r l d),Ty=u32>+
+    L:GetField<FP!(a),Ty=u32>+
+        GetField<FP!(b),Ty=u32>+
+        GetField<FP!(e),Ty=u32>+
+        GetField<FP!(f),Ty=u32>+
+        GetFieldMut<FP!(g),Ty=u32>+
+        IntoFieldMut<FP!(h e l l o),Ty=u32>+
+        IntoField<FP!(w o r l d),Ty=u32>+
         Sized,
 {
     type Dummy=();
@@ -165,7 +165,7 @@ fn privacies(){
     let _:<Privacies1 as Privacies1Test>::Dummy;
 
     let _=|this:Privacies0|{
-        let _=this.fields(ti!(a,b));
+        let _=this.fields(fp!(a,b));
     };
     let _=generic_1::<Privacies1>;
 
@@ -206,34 +206,34 @@ fn generic_1<T>(mut this:T)
 where
     T:Privacies1_SI+Clone
 {
-    let _=this.fields(ti!(a,b,e,f,g,hello));
-    let _=this.fields_mut(ti!(g,hello));
-    let _=this.clone().into_field(ti!(hello));
-    let _=this.clone().into_field(ti!(world));
+    let _=this.fields(fp!(a,b,e,f,g,hello));
+    let _=this.fields_mut(fp!(g,hello));
+    let _=this.clone().into_field(fp!(hello));
+    let _=this.clone().into_field(fp!(world));
     #[cfg(feature="alloc")]
     {
-        let _=Box::new(this.clone()).box_into_field(ti!(hello));
-        let _=Box::new(this.clone()).box_into_field(ti!(world));
+        let _=Box::new(this.clone()).box_into_field(fp!(hello));
+        let _=Box::new(this.clone()).box_into_field(fp!(world));
     }
 }
 
 #[cfg(feature="alloc")]
 fn generic_0_dyn(mut ctor:impl FnMut()->Arc<dyn Privacies0_SI> ){
     let this=ctor();
-    let _=this.fields(ti!(a,b));
+    let _=this.fields(fp!(a,b));
 }
 
 #[cfg(feature="alloc")]
 fn generic_1_dyn(mut ctor:impl FnMut()->Box<dyn Privacies1_SI> ){
     let mut this=ctor();
-    let _=this.fields(ti!(a,b,e,f,g,hello));
-    let _=this.fields_mut(ti!(g,hello));
-    let _=this.field_mut(ti!(g));
-    let _=this.field_mut(ti!(hello));
+    let _=this.fields(fp!(a,b,e,f,g,hello));
+    let _=this.fields_mut(fp!(g,hello));
+    let _=this.field_mut(fp!(g));
+    let _=this.field_mut(fp!(hello));
     #[cfg(feature="alloc")]
     {
-        let _=ctor().box_into_field(ti!(hello));
-        let _=ctor().box_into_field(ti!(world));
+        let _=ctor().box_into_field(fp!(hello));
+        let _=ctor().box_into_field(fp!(world));
     }
 }
 
@@ -258,8 +258,8 @@ fn renamed(){
             .eq(["a","b","e"].iter().cloned())
     );
 
-    let _:GetFieldType<Renamed,TI!(a)>;
-    let _:GetFieldType<Renamed,TI!(b)>;
-    let _:GetFieldType<Renamed,TI!(e)>;
+    let _:GetFieldType<Renamed,FP!(a)>;
+    let _:GetFieldType<Renamed,FP!(b)>;
+    let _:GetFieldType<Renamed,FP!(e)>;
 
 }

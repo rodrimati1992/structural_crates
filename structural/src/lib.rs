@@ -310,7 +310,7 @@ pub mod utils;
 
 #[cfg(test)]
 pub mod tests{
-    mod nested_fields;
+    mod multi_nested_fields;
     mod structural_derive;
     mod structural_alias;
     mod macro_tests;

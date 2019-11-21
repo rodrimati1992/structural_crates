@@ -1,33 +1,30 @@
-/// Tests that the ti and TI macros are correct
+/// Tests that the fp and FP macros are correct
 #[allow(non_camel_case_types)]
-#[cfg(feature="better_ti")]
+#[cfg(feature="better_macros")]
 #[test]
 fn identifier_macros_equality(){
-    use crate::{chars,type_level::TString};
+    use crate::{chars,type_level::{TString,FieldPath}};
 
-    fn assert_ident<T,U>(_ident:T)
+    fn assert_ident<T,U>(_ident:U)
     where
-        T:core_extensions::TypeIdentity<Type=U>
+        FieldPath<(T,)>:core_extensions::TypeIdentity<Type=U>
     {}
 
     {
         type TheStr=TString<(chars::_a,chars::_b,chars::_c,chars::_d)>;
-        assert_ident::<TheStr,TI!("abcd")>(ti!(abcd));
-        assert_ident::<TheStr,TI!(a b c d)>(ti!(abcd));
-        assert_ident::<TheStr,TI!(abcd)>(ti!(abcd));
+        assert_ident::<TheStr,FP!(abcd)>(fp!(abcd));
     }
     {
         type TheStr=TString<(chars::_0,)>;
-        assert_ident::<TheStr,TI!(0)>(ti!(0));
+        assert_ident::<TheStr,FP!(0)>(fp!(0));
     }
     {
         type TheStr=TString<(chars::_2,chars::_1)>;
-        assert_ident::<TheStr,TI!(21)>(ti!(21));
-        assert_ident::<TheStr,TI!(2 1)>(ti!(21));
+        assert_ident::<TheStr,FP!(21)>(fp!(21));
     }
     {
         type TheStr=TString<(chars::_a,chars::_b,chars::_0)>;
-        assert_ident::<TheStr ,TI!(ab0)>(ti!(ab0));
+        assert_ident::<TheStr ,FP!(ab0)>(fp!(ab0));
     }
     
 
@@ -40,7 +37,7 @@ fn identifier_macros_equality(){
 
 mod make_struct_tests{
     use crate::{
-        type_level::TString,
+        type_level::FieldPath,
         GetFieldExt,
     };
 
@@ -67,23 +64,23 @@ mod make_struct_tests{
             
             // I had to write it like this due to a rustc bug.
             // https://github.com/rust-lang/rust/issues/66057
-            assert_eq!(hi.field_::<TI!(a)>(TString::NEW),&0);
-            assert_eq!(hi.field_::<TI!(b)>(TString::NEW).unwrap(), "hello");
-            assert_eq!(hi.field_::<TI!(c)>(TString::NEW), &"");
+            assert_eq!(hi.field_::<FP!(a)>(FieldPath::NEW),&0);
+            assert_eq!(hi.field_::<FP!(b)>(FieldPath::NEW).unwrap(), "hello");
+            assert_eq!(hi.field_::<FP!(c)>(FieldPath::NEW), &"");
         }
 
         {
             let hi:&dyn Hi<&'static str>=&returns_hi();
-            assert_eq!(hi.field_(ti!(a)),&0);
-            assert_eq!(hi.field_(ti!(b)).unwrap(), "hello");
-            assert_eq!(hi.field_(ti!(c)), &"");
+            assert_eq!(hi.field_(fp!(a)),&0);
+            assert_eq!(hi.field_(fp!(b)).unwrap(), "hello");
+            assert_eq!(hi.field_(fp!(c)), &"");
         }
     }
 }
 
 
 mod names_module_tests{
-    declare_names_module!{
+    field_path_aliases_module!{
         mod names_a{
             _a,
             _b,
@@ -95,22 +92,20 @@ mod names_module_tests{
             h=(a,b,c),
             i=(0,3,5),
             j=(p), 
-            k=("p"),
         }
     }
     #[test]
     fn names_module_a(){
-        let _:names_a::_a=ti!(_a);
-        let _:names_a::_b=ti!(_b);
-        let _:names_a::_0=ti!(_0);
-        let _:names_a::c=ti!(c);
-        let _:names_a::d=ti!(0);
-        let _:names_a::e=ti!(10);
-        let _:names_a::g=ti!(abcd);
-        let _:names_a::h=ti!(a,b,c);
-        let _:names_a::i=ti!(0,3,5);
-        let _:names_a::j=ti!(p);
-        let _:names_a::k=ti!(p);
+        let _:names_a::_a=fp!(_a);
+        let _:names_a::_b=fp!(_b);
+        let _:names_a::_0=fp!(_0);
+        let _:names_a::c=fp!(c);
+        let _:names_a::d=fp!(0);
+        let _:names_a::e=fp!(10);
+        let _:names_a::g=fp!(abcd);
+        let _:names_a::h=fp!(a,b,c);
+        let _:names_a::i=fp!(0,3,5);
+        let _:names_a::j=fp!(p);
     }
 }
 
