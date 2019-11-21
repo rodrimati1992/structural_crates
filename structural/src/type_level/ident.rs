@@ -273,7 +273,7 @@ impl<T> FieldPathSet<T,AliasedPaths>{
     /// You must ensure that all the `FieldPath`s are unique,
     /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
     #[inline(always)]
-    pub const unsafe fn upgrade_unchecked(self)->FieldPathSet<T,AliasedPaths>{
+    pub const unsafe fn upgrade_unchecked(self)->FieldPathSet<T,UniquePaths>{
         FieldPathSet(PhantomData)
     }
 }
