@@ -2,27 +2,31 @@
 Accessor and extension traits for fields.
 */
 
-use crate::std_::marker::PhantomData;
-
 use crate::{
     mut_ref::MutRef,
-    type_level::TStringSet,
+    type_level::{FieldPath,FieldPathSet,IsFieldPath,IsFieldPathSet,UniquePaths},
     Structural,
     StructuralDyn,
 };
 
+use std_::marker::PhantomData;
+
 
 mod tuple_impls;
 mod most_impls;
+pub mod rev_get_field;
 pub mod multi_fields;
 
 
-use self::multi_fields::{
-    GetMultiField,
-    GetMultiFieldMut,
+use self::rev_get_field::{
+    RevFieldType,
+    RevFieldMutType,
+    RevFieldMutRefType,
+    RevIntoFieldType,
+    RevGetField,
+    RevGetFieldMut,
+    RevIntoField,
 };
-
-
 
 /// Allows accessing the `FieldName` field.
 ///
@@ -38,14 +42,14 @@ use self::multi_fields::{
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,TI,ti};
+/// use structural::{GetField,GetFieldExt,FP,fp};
 /// 
 /// fn formatted_value<T,S>(this:&T)->String
 /// where
-///     T:GetField<TI!(v a l u e), Ty=S>,
+///     T:GetField<FP!(v a l u e), Ty=S>,
 ///     S:std::fmt::Debug,
 /// {
-///     format!("{:#?}",this.field_(ti!(value)) )
+///     format!("{:#?}",this.field_(fp!(value)) )
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -68,7 +72,7 @@ use self::multi_fields::{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,Structural,TI,TList,
+///     GetField,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     impl_structural_dyn,
 /// };
@@ -80,12 +84,12 @@ use self::multi_fields::{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///     
-///     type Fields=TList![ TField<TI!(v a l u e),T> ];
+///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -112,13 +116,13 @@ pub trait GetField<FieldName>:StructuralDyn{
 /// Here is one way you can get the type of a field.
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,TI,ti};
+/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,TI!(n a m e)>
+/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(n a m e)>
 /// where
-///     T:GetField<TI!(n a m e)>
+///     T:GetField<FP!(n a m e)>
 /// {
-///     this.field_(ti!(name))
+///     this.field_(fp!(name))
 /// }
 ///
 ///
@@ -139,13 +143,13 @@ pub trait GetField<FieldName>:StructuralDyn{
 /// Another way `get_name` could have been written is like this:
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,TI,ti};
+/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
-///     T:GetField<TI!(n a m e), Ty=O>
+///     T:GetField<FP!(n a m e), Ty=O>
 /// {
-///     this.field_(ti!(name))
+///     this.field_(fp!(name))
 /// }
 /// ```
 /// A potential downside of adding another type parameter is that it 
@@ -166,14 +170,14 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{GetFieldMut,GetFieldExt,TI,ti};
+/// use structural::{GetFieldMut,GetFieldExt,FP,fp};
 /// 
 /// fn take_value<T,V>(this:&mut T)->V
 /// where
-///     T:GetFieldMut<TI!(v a l u e), Ty=V>,
+///     T:GetFieldMut<FP!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
-///     std::mem::replace( this.field_mut(ti!(value)), Default::default() )
+///     std::mem::replace( this.field_mut(fp!(value)), Default::default() )
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -197,7 +201,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///
 /// ```rust
 /// use structural::{
-///     GetField,GetFieldMut,Structural,TI,TList,
+///     GetField,GetFieldMut,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
@@ -210,12 +214,12 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<TI!(v a l u e),T> ];
+///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -223,14 +227,14 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     }
 /// }
 ///
-/// unsafe impl<T> GetFieldMut<TI!(v a l u e)> for Huh<T>{
+/// unsafe impl<T> GetFieldMut<FP!(v a l u e)> for Huh<T>{
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
 ///     }
 ///     structural::unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
 ///         field_name=value,
-///         name_generic=TI!(v a l u e)
+///         name_generic=FP!(v a l u e)
 ///     }
 /// }
 ///
@@ -240,60 +244,28 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
     /// Accesses the `FieldName` field by mutable reference.
     fn get_field_mut_(&mut self)->&mut Self::Ty;
 
-    /// Gets a mutable reference to the field.
+    /// Gets a MutRef to the field.
     /// 
     /// # Safety
     /// 
     /// For the `ptr` argument,you must pass the return value of the
     /// `as_mutref` method for this field.
     /// 
-    /// For the `getter` argument,you must pass the return value of the
-    /// `get_field_mutref_func` method for this field.
-    ///
-    /// The `getter` argument is necessary for boxed trait objects.
-    unsafe fn get_field_mutref(
-        ptr:MutRef<'_,()>,
-        getter:GetFieldMutRefFn<FieldName,Self::Ty>,
-    )->&mut Self::Ty
+    unsafe fn get_field_raw_mut(ptr:*mut (),_:PhantomData<FieldName>)->*mut Self::Ty
     where 
         Self:Sized;
 
-    /// Gets a pointer to the struct that contains this field.
-    /// 
-    /// Implementors must return a pointer to the same type that 
-    /// `GetFieldMut::get_field_mutref` casts the pointer to.
-    fn as_mutref(&mut self)->MutRef<'_,()>;
-
-    /// Gets the `get_field_mutref` associated function as a function pointer.
-    fn get_field_mutref_func(&self)->GetFieldMutRefFn<FieldName,Self::Ty>;
+    /// Gets the `get_field_raw_mut` associated function as a function pointer.
+    fn get_field_raw_mut_func(&self)->GetFieldMutRefFn<FieldName,Self::Ty>;
 }
 
 
 /////////////////////////////////////////////////
 
-#[repr(transparent)]
-pub struct GetFieldMutRefFn<FieldName,FieldTy>{
-    pub func:unsafe fn(MutRef<'_,()>,Self)->&mut FieldTy,
-    marker:PhantomData<FieldName>,
-}
 
-impl<FieldName,FieldTy> GetFieldMutRefFn<FieldName,FieldTy>{
-    pub fn new(func:unsafe fn(MutRef<'_,()>,Self)->&mut FieldTy)->Self{
-        Self{
-            func,
-            marker:PhantomData,
-        }
-    }
-}
-
-impl<FieldName,FieldTy> Copy for GetFieldMutRefFn<FieldName,FieldTy>{}
-
-impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
-    #[inline(always)]
-    fn clone(&self)->Self{
-        *self
-    }
-}
+/// TODO
+pub type GetFieldMutRefFn<FieldName,FieldTy>=
+    unsafe fn(*mut (),PhantomData<FieldName>)->*mut FieldTy;
 
 /////////////////////////////////////////////////
 
@@ -308,13 +280,13 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{IntoField,GetFieldExt,GetFieldType,TI,ti};
+/// use structural::{IntoField,GetFieldExt,GetFieldType,FP,fp};
 /// 
 /// fn into_value<T,V>(this:T)->V
 /// where
-///     T:IntoField<TI!(v a l u e), Ty=V>,
+///     T:IntoField<FP!(v a l u e), Ty=V>,
 /// {
-///     this.into_field(ti!(value))
+///     this.into_field(fp!(value))
 /// }
 ///
 /// #[derive(structural::Structural)]
@@ -337,7 +309,7 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///
 /// ```rust
 /// use structural::{
-///     GetField,IntoField,Structural,TI,TList,
+///     GetField,IntoField,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
 ///     impl_structural_dyn,
@@ -351,12 +323,12 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<TI!(v a l u e),T> ];
+///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// impl_structural_dyn!{ impl[T] Huh<T> }
 ///
-/// impl<T> GetField<TI!(v a l u e)> for Huh<T>{
+/// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
 ///     fn get_field_(&self)->&Self::Ty{
@@ -364,12 +336,12 @@ impl<FieldName,FieldTy> Clone for GetFieldMutRefFn<FieldName,FieldTy>{
 ///     }
 /// }
 ///
-/// impl<T> IntoField<TI!(v a l u e)> for Huh<T>{
+/// impl<T> IntoField<FP!(v a l u e)> for Huh<T>{
 ///     fn into_field_(self)->Self::Ty{
 ///         self.value
 ///     }
 ///
-///     structural::impl_box_into_field_method!{TI!(v a l u e)}
+///     structural::impl_box_into_field_method!{FP!(v a l u e)}
 /// }
 ///
 /// ```
@@ -405,24 +377,25 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.field_(ti!(0)), &1 );
-    /// assert_eq!( tup.field_(ti!(1)), &1 );
-    /// assert_eq!( tup.field_(ti!(2)), &2 );
-    /// assert_eq!( tup.field_(ti!(3)), &3 );
-    /// assert_eq!( tup.field_(ti!(4)), &5 );
-    /// assert_eq!( tup.field_(ti!(5)), &8 );
+    /// assert_eq!( tup.field_(fp!(0)), &1 );
+    /// assert_eq!( tup.field_(fp!(1)), &1 );
+    /// assert_eq!( tup.field_(fp!(2)), &2 );
+    /// assert_eq!( tup.field_(fp!(3)), &3 );
+    /// assert_eq!( tup.field_(fp!(4)), &5 );
+    /// assert_eq!( tup.field_(fp!(5)), &8 );
     ///
     /// ```
     #[inline(always)]
-    fn field_<FieldName>(&self,_:FieldName)->&Self::Ty
-    where 
-        Self:GetField<FieldName>
+    fn field_<'a,P>(&'a self,path:P)->RevFieldType<'a,P,Self>
+    where
+        P:IsFieldPath,
+        P:RevGetField<'a,Self>
     {
-        self.get_field_()
+        path.rev_get_field(self)
     }
 
     /// Gets multiple references to fields.
@@ -430,21 +403,21 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.fields(ti!(0,1)),  (&1,&1) );
-    /// assert_eq!( tup.fields(ti!(3,2)),  (&3,&2) );
-    /// assert_eq!( tup.fields(ti!(4,5,3)),(&5,&8,&3) );
+    /// assert_eq!( tup.fields(fp!(0,1)),  (&1,&1) );
+    /// assert_eq!( tup.fields(fp!(3,2)),  (&3,&2) );
+    /// assert_eq!( tup.fields(fp!(4,5,3)),(&5,&8,&3) );
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a,Fields>(&'a self,_:TStringSet<Fields>)->Fields::MultiTy
+    fn fields<'a,P>(&'a self,path:P)->RevFieldType<'a,P,Self>
     where
-        Fields:GetMultiField<'a,Self>
+        P:RevGetField<'a,Self>
     {
-        Fields::multi_get_field_(self)
+        path.rev_get_field(self)
     }
 
     /// Gets a mutable reference to the ´FieldName´ field.
@@ -452,51 +425,55 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let mut tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.field_mut(ti!(0)), &mut 1 );
-    /// assert_eq!( tup.field_mut(ti!(1)), &mut 1 );
-    /// assert_eq!( tup.field_mut(ti!(2)), &mut 2 );
-    /// assert_eq!( tup.field_mut(ti!(3)), &mut 3 );
-    /// assert_eq!( tup.field_mut(ti!(4)), &mut 5 );
-    /// assert_eq!( tup.field_mut(ti!(5)), &mut 8 );
+    /// assert_eq!( tup.field_mut(fp!(0)), &mut 1 );
+    /// assert_eq!( tup.field_mut(fp!(1)), &mut 1 );
+    /// assert_eq!( tup.field_mut(fp!(2)), &mut 2 );
+    /// assert_eq!( tup.field_mut(fp!(3)), &mut 3 );
+    /// assert_eq!( tup.field_mut(fp!(4)), &mut 5 );
+    /// assert_eq!( tup.field_mut(fp!(5)), &mut 8 );
     ///
     /// ```
     #[inline(always)]
-    fn field_mut<FieldName>(&mut self,_:FieldName)->&mut Self::Ty
+    fn field_mut<'a,P>(&'a mut self,path:P)->RevFieldMutType<'a,P,Self>
     where 
-        Self:GetFieldMut<FieldName>
+        P:IsFieldPath,
+        P:RevGetFieldMut<'a,Self>
     {
-        self.get_field_mut_()
+        path.rev_get_field_mut(self)
     }
 
     /// Gets multiple mutable references to fields.
     ///
-    /// This is safe since `TStringSet` requires its strings 
+    /// This is safe since `FieldPathSet` requires its strings 
     /// to be checked for uniqueness before being constructed
-    /// (the safety invariant of `TStringSet`).
+    /// (the safety invariant of `FieldPathSet`).
     ///
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let mut tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.fields_mut(ti!(0,1)), (&mut 1,&mut 1) );
-    /// assert_eq!( tup.fields_mut(ti!(3,2)), (&mut 3,&mut 2) );
-    /// assert_eq!( tup.fields_mut(ti!(4,5,3)), (&mut 5,&mut 8,&mut 3) );
+    /// assert_eq!( tup.fields_mut(fp!(0,1)), (&mut 1,&mut 1) );
+    /// assert_eq!( tup.fields_mut(fp!(3,2)), (&mut 3,&mut 2) );
+    /// assert_eq!( tup.fields_mut(fp!(4,5,3)), (&mut 5,&mut 8,&mut 3) );
     ///
     /// ```
     #[inline(always)]
-    fn fields_mut<'a,Fields>(&'a mut self,ms:TStringSet<Fields>)->Fields::MultiTy
-    where
-        Fields:GetMultiFieldMut<'a,Self>,
-        Self:Sized,
+    fn fields_mut<'a,P>(
+        &'a mut self,
+        path:P,
+    )->RevFieldMutType<'a,P,Self>
+    where 
+        P:IsFieldPathSet<PathUniqueness=UniquePaths>,
+        P:RevGetFieldMut<'a,Self>
     {
-        Fields::multi_get_field_mut_(self,ms)
+        path.rev_get_field_mut(self)
     }
 
     /// Converts ´self´ into the ´FieldName´ field.
@@ -504,24 +481,26 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let tup=(1,1,2,3,5,8);
     ///
-    /// assert_eq!( tup.clone().into_field(ti!(0)), 1 );
-    /// assert_eq!( tup.clone().into_field(ti!(1)), 1 );
-    /// assert_eq!( tup.clone().into_field(ti!(2)), 2 );
-    /// assert_eq!( tup.clone().into_field(ti!(3)), 3 );
-    /// assert_eq!( tup.clone().into_field(ti!(4)), 5 );
-    /// assert_eq!( tup.clone().into_field(ti!(5)), 8 );
+    /// assert_eq!( tup.clone().into_field(fp!(0)), 1 );
+    /// assert_eq!( tup.clone().into_field(fp!(1)), 1 );
+    /// assert_eq!( tup.clone().into_field(fp!(2)), 2 );
+    /// assert_eq!( tup.clone().into_field(fp!(3)), 3 );
+    /// assert_eq!( tup.clone().into_field(fp!(4)), 5 );
+    /// assert_eq!( tup.clone().into_field(fp!(5)), 8 );
     ///
     /// ```
     #[inline(always)]
-    fn into_field<FieldName>(self,_:FieldName)->Self::Ty
+    fn into_field<'a,P>(self,path:P)->RevIntoFieldType<'a,P,Self>
     where 
-        Self:IntoField<FieldName>+Sized,
+        P:IsFieldPath,
+        P:RevIntoField<'a,Self>,
+        Self:Sized,
     {
-        self.into_field_()
+        path.rev_into_field(self)
     }
 
     /// Converts a boxed ´self´ into the ´FieldName´ field.
@@ -529,25 +508,28 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,ti};
+    /// use structural::{GetFieldExt,fp};
     ///
     /// let tup=Box::new((1,1,2,3,5,8));
     ///
-    /// assert_eq!( tup.clone().box_into_field(ti!(0)), 1 );
-    /// assert_eq!( tup.clone().box_into_field(ti!(1)), 1 );
-    /// assert_eq!( tup.clone().box_into_field(ti!(2)), 2 );
-    /// assert_eq!( tup.clone().box_into_field(ti!(3)), 3 );
-    /// assert_eq!( tup.clone().box_into_field(ti!(4)), 5 );
-    /// assert_eq!( tup.clone().box_into_field(ti!(5)), 8 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(0)), 1 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(1)), 1 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(2)), 2 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(3)), 3 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(4)), 5 );
+    /// assert_eq!( tup.clone().box_into_field(fp!(5)), 8 );
     ///
     /// ```
     #[cfg(feature="alloc")]
     #[inline(always)]
-    fn box_into_field<FieldName>(self:crate::alloc::boxed::Box<Self>,_:FieldName)->Self::Ty
+    fn box_into_field<'a,P>(
+        self:crate::alloc::boxed::Box<Self>,
+        path:P,
+    )->RevIntoFieldType<'a,P,Self>
     where 
-        Self:IntoField<FieldName>,
+        P:RevIntoField<'a,Self>,
     {
-        self.box_into_field_()
+        path.rev_box_into_field(self)
     }
 }
 
@@ -608,20 +590,18 @@ macro_rules! unsized_impls {
 
             default_if!{
                 cfg(feature="specialization")
-                unsafe fn get_field_mutref(
-                    ptr:MutRef<'_,()>,
-                    get_field:GetFieldMutRefFn<FieldName,Self::Ty>
-                )->&mut Self::Ty{
-                    (get_field.func)(ptr,get_field)
+                unsafe fn get_field_raw_mut(
+                    this:*mut (),
+                    name:PhantomData<FieldName>
+                )->*mut Self::Ty{
+                    let this=this as *mut Self;
+                    let func=<T as GetFieldMut<FieldName>>::get_field_raw_mut_func(&**this);
+                    func( &mut **this as *mut T as *mut (), name )
                 }
             }
 
-            fn as_mutref(&mut self)->MutRef<'_,()>{
-                (**self).as_mutref()
-            }
-
-            fn get_field_mutref_func(&self)->GetFieldMutRefFn<FieldName,Ty>{
-                (**self).get_field_mutref_func()
+            fn get_field_raw_mut_func(&self)->GetFieldMutRefFn<FieldName,Ty>{
+                <Self as GetFieldMut<FieldName>>::get_field_raw_mut
             }
         }
 
@@ -631,11 +611,15 @@ macro_rules! unsized_impls {
         where
             T:GetFieldMut<FieldName,Ty=Ty>
         {
-            unsafe fn get_field_mutref(
+            unsafe fn get_field_raw_mut(
                 ptr:MutRef<'_,()>,
-                get_field:GetFieldMutRefFn<FieldName,Self::Ty>
+                name:PhantomData<FieldName>,
             )->&mut Self::Ty{
-                T::get_field_mutref(ptr,get_field)
+                let this=ptr.cast::<Self>();
+                T::get_field_raw_mut(
+                    MutRef::from_ptr(&mut **this.ptr as *mut T).cast::<()>(),
+                    name,
+                )
             }
         }
     };
@@ -663,3 +647,9 @@ mod alloc_impls{
     unsized_impls!{shared,Arc}
     unsized_impls!{shared,Rc}
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+

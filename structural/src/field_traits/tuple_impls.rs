@@ -1,33 +1,33 @@
 use crate::Structural;
 use crate::structural_trait::{FieldInfo,StructuralDyn,TField};
 
-use crate::type_level::ident::{TString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
+use crate::type_level::ident::{FieldPathString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
 macro_rules! impl_tuple {
-    (inner; ($field:tt,$field_ty:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{
+    (inner; ($field:tt,$delegating_to_type:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{
         impl_getter!{
             unsafe impl[$($tuple_param),*] 
-                IntoFieldMut< $field:$field_ty,$field_param > 
+                IntoFieldMut< $field:$delegating_to_type,$field_param > 
             for ($($tuple_param,)*)
         }
     };
     (
         [
-            $( ($field:tt,$field_ty:ident,$field_param:ty) ),*
+            $( ($field:tt,$delegating_to_type:ident,$field_param:ty) ),*
         ]
         $tuple_ty:tt        
     ) => {
-        impl<$($field_ty),*> Structural for $tuple_ty {
+        impl<$($delegating_to_type),*> Structural for $tuple_ty {
             const FIELDS:&'static[FieldInfo]=&[
                 $( FieldInfo::not_renamed(stringify!( $field )) ,)*
             ];
 
             type Fields=TList![
-                $(TField< $field_param,$field_ty >,)*
+                $(TField< $field_param,$delegating_to_type >,)*
             ];
         }
 
-        impl<$($field_ty),*> StructuralDyn for $tuple_ty{
+        impl<$($delegating_to_type),*> StructuralDyn for $tuple_ty{
             fn fields_info(&self)->&'static[FieldInfo]{
                 <Self as $crate::Structural>::FIELDS
             }
@@ -37,7 +37,7 @@ macro_rules! impl_tuple {
         $(
             impl_tuple!{
                 inner;
-                ($field,$field_ty,$field_param) $tuple_ty
+                ($field,$delegating_to_type,$field_param) $tuple_ty
             }
         )*
     }
@@ -73,139 +73,139 @@ fn main(){
 
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>)
+        (0,C0,FieldPathString<(_0,)>)
     ]
     (C0,)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>)
     ]
     (C0,C1)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>)
     ]
     (C0,C1,C2)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>)
     ]
     (C0,C1,C2,C3)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>)
     ]
     (C0,C1,C2,C3,C4)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>)
     ]
     (C0,C1,C2,C3,C4,C5)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>),
-        (7,C7,TString<(_7,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>),
+        (7,C7,FieldPathString<(_7,)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>),
-        (7,C7,TString<(_7,)>),
-        (8,C8,TString<(_8,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>),
+        (7,C7,FieldPathString<(_7,)>),
+        (8,C8,FieldPathString<(_8,)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>),
-        (7,C7,TString<(_7,)>),
-        (8,C8,TString<(_8,)>),
-        (9,C9,TString<(_9,)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>),
+        (7,C7,FieldPathString<(_7,)>),
+        (8,C8,FieldPathString<(_8,)>),
+        (9,C9,FieldPathString<(_9,)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>),
-        (7,C7,TString<(_7,)>),
-        (8,C8,TString<(_8,)>),
-        (9,C9,TString<(_9,)>),
-        (10,C10,TString<(_1,_0)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>),
+        (7,C7,FieldPathString<(_7,)>),
+        (8,C8,FieldPathString<(_8,)>),
+        (9,C9,FieldPathString<(_9,)>),
+        (10,C10,FieldPathString<(_1,_0)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10)
 }
 impl_tuple!{
     [
-        (0,C0,TString<(_0,)>),
-        (1,C1,TString<(_1,)>),
-        (2,C2,TString<(_2,)>),
-        (3,C3,TString<(_3,)>),
-        (4,C4,TString<(_4,)>),
-        (5,C5,TString<(_5,)>),
-        (6,C6,TString<(_6,)>),
-        (7,C7,TString<(_7,)>),
-        (8,C8,TString<(_8,)>),
-        (9,C9,TString<(_9,)>),
-        (10,C10,TString<(_1,_0)>),
-        (11,C11,TString<(_1,_1)>)
+        (0,C0,FieldPathString<(_0,)>),
+        (1,C1,FieldPathString<(_1,)>),
+        (2,C2,FieldPathString<(_2,)>),
+        (3,C3,FieldPathString<(_3,)>),
+        (4,C4,FieldPathString<(_4,)>),
+        (5,C5,FieldPathString<(_5,)>),
+        (6,C6,FieldPathString<(_6,)>),
+        (7,C7,FieldPathString<(_7,)>),
+        (8,C8,FieldPathString<(_8,)>),
+        (9,C9,FieldPathString<(_9,)>),
+        (10,C10,FieldPathString<(_1,_0)>),
+        (11,C11,FieldPathString<(_1,_1)>)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11)
 }
@@ -218,9 +218,9 @@ mod tests{
 
     fn get_field_1<T>(val:&T)->&u64
     where
-        T:GetField<TI!(1),Ty=u64>,
+        T:GetField<FP!(1),Ty=u64>,
     {
-        val.field_(ti!(1))
+        val.field_(fp!(1))
     }
 
 
@@ -241,7 +241,7 @@ mod tests{
     fn get_mut_many(){
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1)=tup.fields_mut(ti!(0,1));
+            let (e0,e1)=tup.fields_mut(fp!(0,1));
             *e0=101;
             *e1=102;
 
@@ -250,7 +250,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5);
-            let (e0,e1,e2)=tup.fields_mut(ti!(0,1,3));
+            let (e0,e1,e2)=tup.fields_mut(fp!(0,1,3));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -263,7 +263,7 @@ mod tests{
         }
         {
             let mut tup=(0,1,2,3,4,5,6,7,8);
-            let (e0,e1,e2,e3)=tup.fields_mut(ti!(0,1,2,8));
+            let (e0,e1,e2,e3)=tup.fields_mut(fp!(0,1,2,8));
             *e0=101;
             *e1=102;
             *e2=103;
@@ -293,14 +293,14 @@ mod tests{
     where
         This:Tuple4,
     {
-        assert_eq!(this.fields(ti!(0,1)),(&6,&5));
-        assert_eq!(this.fields(ti!(0,1,2)),(&6,&5,&4));
-        assert_eq!(this.fields(ti!(0,1,2,3)),(&6,&5,&4,&3));
+        assert_eq!(this.fields(fp!(0,1)),(&6,&5));
+        assert_eq!(this.fields(fp!(0,1,2)),(&6,&5,&4));
+        assert_eq!(this.fields(fp!(0,1,2,3)),(&6,&5,&4,&3));
 
 
-        assert_eq!(this.fields_mut(ti!(0,1)),(&mut 6,&mut 5));
-        assert_eq!(this.fields_mut(ti!(0,1,2)),(&mut 6,&mut 5,&mut 4));
-        assert_eq!(this.fields_mut(ti!(0,1,2,3)),(&mut 6,&mut 5,&mut 4,&mut 3));
+        assert_eq!(this.fields_mut(fp!(0,1)),(&mut 6,&mut 5));
+        assert_eq!(this.fields_mut(fp!(0,1,2)),(&mut 6,&mut 5,&mut 4));
+        assert_eq!(this.fields_mut(fp!(0,1,2,3)),(&mut 6,&mut 5,&mut 4,&mut 3));
     }
 
 
