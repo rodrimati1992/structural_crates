@@ -25,7 +25,7 @@ fields of another one in a function.
 For details on the [Structural derive macro look here](./docs/structural_macro/index.html).
 
 ```rust
-use structural::{GetFieldExt,Structural,ti};
+use structural::{GetFieldExt,Structural,fp};
 
 #[derive(Structural)]
 // Using the `#[struc(public)]` attribute tells the derive macro to 
@@ -44,7 +44,7 @@ where
     // aliasing the accessor traits for Point3D.
     S:Point3D_SI<u32>
 {
-    let (a,b,c)=point.fields(ti!(x,y,z));
+    let (a,b,c)=point.fields(fp!(x,y,z));
     
     assert_eq!(a,&0);
     assert_eq!(b,&11);
@@ -110,7 +110,7 @@ For more details you can look at the docs for the
 
 ```rust
 
-use structural::{GetFieldExt,Structural,structural_alias,ti};
+use structural::{GetFieldExt,Structural,structural_alias,fp};
 
 use std::borrow::Borrow;
 
@@ -125,7 +125,7 @@ where
     T:Person<S>,
     S:Borrow<str>,
 {
-    println!("Hello, {}!",this.field_(ti!(name)).borrow() )
+    println!("Hello, {}!",this.field_(fp!(name)).borrow() )
 }
 
 // most structural aliases are object safe
@@ -133,7 +133,7 @@ fn print_name_dyn<  S>(this:&dyn Person<S>)
 where
     S:Borrow<str>,
 {
-    println!("Hello, {}!",this.field_(ti!(name)).borrow() )
+    println!("Hello, {}!",this.field_(fp!(name)).borrow() )
 }
 
 
@@ -188,7 +188,7 @@ For more details you can look at the docs for the
 
 ```rust
 
-use structural::{GetFieldExt,make_struct,structural_alias,ti};
+use structural::{GetFieldExt,make_struct,structural_alias,fp};
 
 structural_alias!{
     trait Person<T>{
@@ -203,24 +203,24 @@ fn print_name<T>(mut this:T)
 where
     T:Person<Vec<String>>,
 {
-    println!("Hello, {}!",this.field_(ti!(name)) );
+    println!("Hello, {}!",this.field_(fp!(name)) );
 
     let list=vec!["what".into()];
-    *this.field_mut(ti!(value))=list.clone();
-    assert_eq!( this.field_(ti!(value)), &list );
-    assert_eq!( this.into_field(ti!(value)), list );
+    *this.field_mut(fp!(value))=list.clone();
+    assert_eq!( this.field_(fp!(value)), &list );
+    assert_eq!( this.into_field(fp!(value)), list );
 }
 
 */
 #![cfg_attr(feature="alloc",doc=r###"
 // most structural aliases are object safe
 fn print_name_dyn(mut this:Box<dyn Person<Vec<String>>>){
-    println!("Hello, {}!",this.field_(ti!(name)) );
+    println!("Hello, {}!",this.field_(fp!(name)) );
 
     let list=vec!["what".into()];
-    *this.field_mut(ti!(value))=list.clone();
-    assert_eq!( this.field_(ti!(value)), &list );
-    assert_eq!( this.box_into_field(ti!(value)), list );
+    *this.field_mut(fp!(value))=list.clone();
+    assert_eq!( this.field_(fp!(value)), &list );
+    assert_eq!( this.box_into_field(fp!(value)), list );
 }
 
 "###)]
@@ -265,7 +265,7 @@ struct Cents(u64);
 
 */
 #![cfg_attr(feature="nightly_specialization",feature(specialization))]
-#![cfg_attr(feature="nightly_better_ti",feature(proc_macro_hygiene))]
+#![cfg_attr(feature="nightly_better_macros",feature(proc_macro_hygiene))]
 
 #![cfg_attr(not(feature="alloc"),no_std)]
 
@@ -291,8 +291,9 @@ pub use structural_derive::Structural;
 
 #[doc(hidden)]
 pub use structural_derive::{
-    _ti_impl_,
-    _TI_impl_,
+    old_fp_impl_,
+    //new_fp_impl_,
+    _FP_impl_,
     structural_alias_impl,
     declare_name_aliases,
 };
@@ -301,46 +302,57 @@ pub use structural_derive::{
 #[macro_use]
 mod macros;
 
-// pub mod docs;
-// pub mod mut_ref;
-// pub mod field_traits;
-// pub mod structural_trait;
-// pub mod utils;
+pub mod docs;
+pub mod mut_ref;
+pub mod field_traits;
+pub mod structural_trait;
+pub mod utils;
 
-// #[cfg(test)]
-// pub mod tests{
-//     mod structural_derive;
-//     mod structural_alias;
-//     mod macro_tests;
-// }
+#[cfg(test)]
+pub mod tests{
+    mod nested_fields;
+    mod structural_derive;
+    mod structural_alias;
+    mod macro_tests;
+}
 
 
 pub mod type_level;
 pub mod chars;
 
-// pub use crate::{
-//     field_traits::{
-//         GetField,GetFieldMut,IntoField,IntoFieldMut,
-//         GetFieldExt,
-//         GetFieldType,
-//     },
-//     structural_trait::{Structural,StructuralDyn},
-// };
+pub use crate::{
+    field_traits::{
+        GetField,GetFieldMut,IntoField,IntoFieldMut,
+        GetFieldExt,
+        GetFieldType,
+    },
+    structural_trait::{Structural,StructuralDyn},
+};
 
 
 
 /// Reexports from the `core_extensions` crate.
 pub mod reexports{
-    pub use core_extensions::{MarkerType,SelfOps};
+    pub use core_extensions::{
+        type_asserts::AssertEq,
+        MarkerType,
+        SelfOps,
+        TIdentity,
+        TypeIdentity,
+    };
 }
 
 // pmr(proc macro reexports):
 // Reexports for the proc macros in structural_derive.
 #[doc(hidden)]
 pub mod pmr{
-    pub use crate::type_level::ident::*;
+    pub use crate::type_level::*;
+    pub use crate::type_level::ident::TString;
+    pub use crate::type_level::proc_macro_aliases::*;
+    pub use crate::type_level::collection_traits::*;
     pub use crate::chars::*;
-    pub use core_extensions::MarkerType;
+    pub use core_extensions::{MarkerType,TIdentity,TypeIdentity};
+    pub use crate::std_::marker::PhantomData;
 }
 
 

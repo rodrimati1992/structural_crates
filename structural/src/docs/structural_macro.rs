@@ -73,7 +73,7 @@ it'll mark the field as public for the purpose of generating accessor trait impl
 ### Basic example
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,ti};
+use structural::{Structural,GetFieldExt,structural_alias,fp};
 
 
 structural_alias!{
@@ -88,7 +88,7 @@ fn reads_pair<O>(pair:&O)
 where
     O:Pair<u32>
 {
-    let (a,b)=pair.fields(ti!(a,b));
+    let (a,b)=pair.fields(fp!(a,b));
     assert_eq!(a,&11);
     assert_eq!(b,&33);
 }
@@ -122,7 +122,7 @@ fn main(){
 ### Mutating fields
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,ti};
+use structural::{Structural,GetFieldExt,structural_alias,fp};
 
 
 structural_alias!{
@@ -137,11 +137,11 @@ fn mutates_pair<O>(pair:&mut O)
 where
     O:Tuple2<u32>
 {
-    let a=pair.field_mut(ti!(0));
+    let a=pair.field_mut(fp!(0));
     assert_eq!(a,&mut 14);
     *a*=2;
 
-    let b=pair.field_mut(ti!(1));
+    let b=pair.field_mut(fp!(1));
     assert_eq!(b,&mut 16);
     *b*=2;
 }
@@ -178,7 +178,7 @@ This example demonstrates how one disables the generation of the
 `<deriving_type>_SI` trait to declare it manually.
 
 ```rust
-use structural::{Structural,IntoFieldMut,GetFieldExt,structural_alias,ti,TI};
+use structural::{Structural,IntoFieldMut,GetFieldExt,FP};
 
 #[derive(Debug,Structural,PartialEq,Eq)]
 #[struc(no_trait)]
@@ -190,15 +190,15 @@ struct Hello{
 
 
 pub trait Hello_SI:
-    IntoFieldMut<TI!(h e l l o), Ty=u32>+
-    IntoFieldMut<TI!(w o r l d), Ty=String> 
+    IntoFieldMut<FP!(h e l l o), Ty=u32>+
+    IntoFieldMut<FP!(w o r l d), Ty=String> 
 {}
 
 impl<T> Hello_SI for T
 where
     T:?Sized+
-        IntoFieldMut<TI!(h e l l o), Ty=u32>+
-        IntoFieldMut<TI!(w o r l d), Ty=String> 
+        IntoFieldMut<FP!(h e l l o), Ty=u32>+
+        IntoFieldMut<FP!(w o r l d), Ty=String> 
 {}
 
 ```
