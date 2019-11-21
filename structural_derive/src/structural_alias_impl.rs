@@ -1,4 +1,5 @@
 use crate::{
+    parse_utils::ParseBufferExt,
     tokenizers::NamedModuleAndTokens,
     ident_or_index::{IdentOrIndex,IdentOrIndexRef},
 };
@@ -170,7 +171,7 @@ impl Access{
 
 impl Default for Access{
     fn default()->Self{
-        Access::Shared
+        Access::MutValue
     }
 }
 
@@ -198,24 +199,27 @@ impl Access {
 
 impl Parse for Access {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let mut this=Access::Shared;
-
-        for i in 0..2 {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(Token![ref]) {
-                let _:Result<Token![ref],_>=input.parse();
-            } else if lookahead.peek(Token![mut]) {
-                let _:Result<Token![mut],_>=input.parse();
-                this.mutable=true;
-            } else if lookahead.peek(Token![move]) {
-                let _:Result<Token![move],_>=input.parse();
-                this.value=true;
-            } else if i==0 {
-                return Err(lookahead.error());
+        if input.peek_parse(Token![ref]).is_some() {
+            if input.peek_parse(Token![move]).is_some() {
+                Ok(Access::Value)
+            }else if input.peek(Token![mut]) {
+                Err(input.error("Expected `move` or nothing."))
+            }else{
+                Ok(Access::Shared)
             }
+        }else if input.peek_parse(Token![mut]).is_some() {
+            if input.peek_parse(Token![move]).is_some() {
+                Ok(Access::MutValue)
+            }else if input.peek(Token![ref]) {
+                Err(input.error("Expected `move` or nothing."))
+            }else{
+                Ok(Access::Mutable)
+            }
+        }else if input.peek_parse(Token![move]).is_some() {
+            Ok(Access::Value)
+        }else{
+            Err(input.error("Expected one of: `ref` `ref move` `move` `mut` `mut move` "))
         }
-
-        Ok(this)
     }
 }
 

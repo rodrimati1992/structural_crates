@@ -40,10 +40,9 @@ fn test_FP_macro(){
 
 pub(crate) fn old_fp_impl(set: FieldPaths) -> Result<TokenStream2,syn::Error> {
     let const_name=Ident::new("VALUE",proc_macro2::Span::call_site());
-    let constant=set.constant_named(&const_name,FullPathForChars::No);
+    let constant=set.constant_named(&const_name,FullPathForChars::StructPmr);
 
     Ok(quote!(
-        use structural::pmr::*;
         #constant
     ))
 }

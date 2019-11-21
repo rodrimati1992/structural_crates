@@ -27,6 +27,40 @@ For details on the [Structural derive macro look here](./docs/structural_macro/i
 ```rust
 use structural::{GetFieldExt,Structural,fp};
 
+
+fn reads_point4<S>(point:&S)
+where
+    // The `Structural` derive generated the `Point3D_SI` trait for `Point3D`,
+    // aliasing the accessor traits for it.
+    S:Point3D_SI<u32>
+{
+    let (a,b,c)=point.fields(fp!(x,y,z));
+    
+    assert_eq!(a,&0);
+    assert_eq!(b,&11);
+    assert_eq!(c,&33);
+}
+
+fn main(){
+    reads_point4(&Point3D { x: 0, y: 11, z: 33 });
+
+    reads_point4(&Point4D {
+        x: 0,
+        y: 11,
+        z: 33,
+        a: 0xDEAD,
+    });
+
+    reads_point4(&Point5D {
+        x: 0,
+        y: 11,
+        z: 33,
+        a: 0xDEAD,
+        b: 0xBEEF,
+    });
+}
+
+
 #[derive(Structural)]
 // Using the `#[struc(public)]` attribute tells the derive macro to 
 // generate the accessor trait impls for non-`pub` fields.
@@ -37,30 +71,10 @@ struct Point3D<T>{
     z:T,
 }
 
-
-fn reads_point4<S>(point:&S)
-where
-    // The `Structural` derive macro generated the `Point3D_SI` trait,
-    // aliasing the accessor traits for Point3D.
-    S:Point3D_SI<u32>
-{
-    let (a,b,c)=point.fields(fp!(x,y,z));
-    
-    assert_eq!(a,&0);
-    assert_eq!(b,&11);
-    assert_eq!(c,&33);
-}
-
-//////////////////////////////////////////////////////////////////////////
-////        In another crate
-
 #[derive(Structural)]
+// By default only public fields get accessor trait impls,
+// using `#[struc(public)]` you can have impls to access private fields.
 #[struc(public)]
-// Using the `#[struc(access="mut move")]` attribute tells the derive macro to 
-// generate the accessor trait for accessing the 
-// fields by reference/mutable-reference/by value,
-// when by default it only impls the by-reference one.
-#[struc(access="mut move")]
 struct Point4D<T>{
     x:T,
     y:T,
@@ -69,35 +83,17 @@ struct Point4D<T>{
 }
 
 #[derive(Structural)]
-#[struc(public)]
-// Using the `#[struc(access="move")]` attribute tells the derive macro to 
-// generate the accessor trait for accessing the 
-// fields by reference/by value,when by default it only impls the by-reference one.
-#[struc(access="move")]
 struct Point5D<T>{
-    x:T,
-    y:T,
-    z:T,
-    a:T,
-    b:T,
+    pub x:T,
+    pub y:T,
+    pub z:T,
+    pub a:T,
+    pub b:T,
 }
 
 
-reads_point4(&Point3D { x: 0, y: 11, z: 33 });
 
-reads_point4(&Point4D {
-    x: 0,
-    y: 11,
-    z: 33,
-    a: 0xDEAD,
-});
-reads_point4(&Point5D {
-    x: 0,
-    y: 11,
-    z: 33,
-    a: 0xDEAD,
-    b: 0xBEEF,
-});
+
 
 ```
 
