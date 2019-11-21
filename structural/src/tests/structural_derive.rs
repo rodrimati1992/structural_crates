@@ -139,6 +139,18 @@ struct Privacies1{
 
 
 trait Privacies1Test:Privacies1_SI{
+    fn func()
+    where
+        Self:IntoFieldMut<FP!(a),Ty=u32>+
+            IntoFieldMut<FP!(b),Ty=u32>+
+            IntoFieldMut<FP!(e),Ty=u32>+
+            GetField<FP!(f),Ty=u32>+
+            GetFieldMut<FP!(g),Ty=u32>+
+            IntoFieldMut<FP!(h e l l o),Ty=u32>+
+            IntoField<FP!(w o r l d),Ty=u32>+
+            Sized,
+    {}
+
     type Dummy;
 }
 
@@ -147,9 +159,9 @@ trait Privacies1Test:Privacies1_SI{
 // I'm testing that `Privacies1` implements those traits inside the `privacies` test.
 impl<L> Privacies1Test for L
 where
-    L:GetField<FP!(a),Ty=u32>+
-        GetField<FP!(b),Ty=u32>+
-        GetField<FP!(e),Ty=u32>+
+    L:IntoFieldMut<FP!(a),Ty=u32>+
+        IntoFieldMut<FP!(b),Ty=u32>+
+        IntoFieldMut<FP!(e),Ty=u32>+
         GetField<FP!(f),Ty=u32>+
         GetFieldMut<FP!(g),Ty=u32>+
         IntoFieldMut<FP!(h e l l o),Ty=u32>+
@@ -164,8 +176,10 @@ where
 fn privacies(){
     let _:<Privacies1 as Privacies1Test>::Dummy;
 
-    let _=|this:Privacies0|{
-        let _=this.fields(fp!(a,b));
+    let _=|mut this:Privacies0|{
+        let _=this.fields_mut(fp!(a,b));
+        let _=this.clone().into_field(fp!(a));
+        let _=this.clone().into_field(fp!(b));
     };
     let _=generic_1::<Privacies1>;
 
@@ -207,11 +221,17 @@ where
     T:Privacies1_SI+Clone
 {
     let _=this.fields(fp!(a,b,e,f,g,hello));
-    let _=this.fields_mut(fp!(g,hello));
+    let _=this.fields_mut(fp!(a,b,e,g,hello));
+    let _=this.clone().into_field(fp!(a));
+    let _=this.clone().into_field(fp!(b));
+    let _=this.clone().into_field(fp!(e));
     let _=this.clone().into_field(fp!(hello));
     let _=this.clone().into_field(fp!(world));
     #[cfg(feature="alloc")]
     {
+        let _=Box::new(this.clone()).box_into_field(fp!(a));
+        let _=Box::new(this.clone()).box_into_field(fp!(b));
+        let _=Box::new(this.clone()).box_into_field(fp!(e));
         let _=Box::new(this.clone()).box_into_field(fp!(hello));
         let _=Box::new(this.clone()).box_into_field(fp!(world));
     }

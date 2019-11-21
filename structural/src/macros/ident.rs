@@ -17,71 +17,71 @@
 ///
 /// # Syntax 
 ///
-/// ### Splicing
-///
-/// You can use a `FieldPath` type (not a value) 
-/// inside the `fp` macro with the `( FooType )` syntax.
-/// 
-/// This will splice the `FieldPath` into the position it was used in.
-/// 
-/// An example:
-/// ```
-/// use structural::{fp,FP,field_path_aliases};
-/// use structural::reexports::AssertEq;
-/// 
-/// field_path_aliases!{
-///     wooo,
-///     chain=b.c.d,
-///     get_x=pos.x,
-/// }
-///
-/// # fn main(){
-///
-/// AssertEq::new( fp!( a.(wooo).e ) , fp!(a.wooo.e) );
-/// 
-/// AssertEq::new( fp!( a.(get_x).e ), fp!(a.pos.x.e) );
-///
-/// # }
-///
-/// ```
-/// 
-/// ### Inserting
-///
-/// You can use a `TString` type or a single-ident `FieldPath` type
-/// inside the `fp` macro with the `[ FooType ]` syntax.
-/// 
-/// This inserts the value of the `TString`or of the single identifier `FieldPath`
-/// into that position.
-/// 
-/// An example:
-/// ```
-/// use structural::{fp,FP,field_path_aliases};
-/// use structural::reexports::AssertEq;
-/// 
-/// field_path_aliases!{
-///     foo,
-///     bar=what,
-///     baz=the,
-/// }
-///
-/// // This can also be `type RectangleStr=FP!(rectangle);` from Rust 1.40 onwards
-/// type RectangleStr=FP!(r e c t a n g l e);
-///
-///
-/// # fn main(){
-/// let _:foo;
-/// let _:bar;
-/// let _:baz;
-///
-/// AssertEq::new( fp!( a[foo].e ), fp!(a.foo.e) );
-/// AssertEq::new( fp!( a[bar].e ), fp!(a.what.e) );
-/// AssertEq::new( fp!( a[baz].e ), fp!(a.the.e) );
-/// AssertEq::new( fp!( a[RectangleStr].e ), fp!(a.rectangle.e) );
-///
-/// # }
-///
-/// ```
-/// 
+// /// ### Splicing
+// ///
+// /// You can use a `FieldPath` type (not a value) 
+// /// inside the `fp` macro with the `( FooType )` syntax.
+// /// 
+// /// This will splice the `FieldPath` into the position it was used in.
+// /// 
+// /// An example:
+// /// ```
+// /// use structural::{fp,FP,field_path_aliases};
+// /// use structural::reexports::AssertEq;
+// /// 
+// /// field_path_aliases!{
+// ///     wooo,
+// ///     chain=b.c.d,
+// ///     get_x=pos.x,
+// /// }
+// ///
+// /// # fn main(){
+// ///
+// /// AssertEq::new( fp!( a.(wooo).e ) , fp!(a.wooo.e) );
+// /// 
+// /// AssertEq::new( fp!( a.(get_x).e ), fp!(a.pos.x.e) );
+// ///
+// /// # }
+// ///
+// /// ```
+// /// 
+// /// ### Inserting
+// ///
+// /// You can use a `TString` type or a single-ident `FieldPath` type
+// /// inside the `fp` macro with the `[ FooType ]` syntax.
+// /// 
+// /// This inserts the value of the `TString`or of the single identifier `FieldPath`
+// /// into that position.
+// /// 
+// /// An example:
+// /// ```
+// /// use structural::{fp,FP,field_path_aliases};
+// /// use structural::reexports::AssertEq;
+// /// 
+// /// field_path_aliases!{
+// ///     foo,
+// ///     bar=what,
+// ///     baz=the,
+// /// }
+// ///
+// /// // This can also be `type RectangleStr=FP!(rectangle);` from Rust 1.40 onwards
+// /// type RectangleStr=FP!(r e c t a n g l e);
+// ///
+// ///
+// /// # fn main(){
+// /// let _:foo;
+// /// let _:bar;
+// /// let _:baz;
+// ///
+// /// AssertEq::new( fp!( a[foo].e ), fp!(a.foo.e) );
+// /// AssertEq::new( fp!( a[bar].e ), fp!(a.what.e) );
+// /// AssertEq::new( fp!( a[baz].e ), fp!(a.the.e) );
+// /// AssertEq::new( fp!( a[RectangleStr].e ), fp!(a.rectangle.e) );
+// ///
+// /// # }
+// ///
+// /// ```
+// /// 
 ///
 ///
 /// 
@@ -148,11 +148,14 @@ macro_rules! fp {
 macro_rules! _delegate_fp {
     ($($everything:tt)*) => ({
         #[allow(unused_imports)]
-        mod dummy{
-            use super::*;
+        use structural::pmr as __struct_pmr;
+        
+        struct __Dummy;
+
+        impl __Dummy{
             $crate::old_fp_impl_!{$($everything)*}
         }
-        dummy::VALUE
+        __Dummy::VALUE
     })
 }
 

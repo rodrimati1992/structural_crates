@@ -612,12 +612,12 @@ macro_rules! unsized_impls {
             T:GetFieldMut<FieldName,Ty=Ty>
         {
             unsafe fn get_field_raw_mut(
-                ptr:MutRef<'_,()>,
+                ptr:*mut (),
                 name:PhantomData<FieldName>,
-            )->&mut Self::Ty{
-                let this=ptr.cast::<Self>();
+            )->*mut Self::Ty{
+                let this=ptr as *mut Self;
                 T::get_field_raw_mut(
-                    MutRef::from_ptr(&mut **this.ptr as *mut T).cast::<()>(),
+                    &mut **this as *mut T as *mut (),
                     name,
                 )
             }

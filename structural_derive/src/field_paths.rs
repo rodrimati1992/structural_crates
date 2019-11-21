@@ -161,30 +161,38 @@ impl Parse for FieldPath{
     fn parse(input: ParseStream) -> parse::Result<Self>{
         let mut list=Vec::<FieldPathComponent>::new();
         let mut contains_splice=false;
+        let mut is_first=IsFirst::Yes;
+        let mut next_is_period=false;
         while !input.peek(Token![,]) && !input.is_empty() {
-            let mut is_period=false;
-            if input.peek(syn::LitFloat) || 
-                input.peek_parse(Token!(.)).is_some().observe(|x| is_period=*x )&& 
-                input.peek(syn::LitFloat)
-            {
+            let is_period=
+                std::mem::replace(&mut next_is_period,false)||
+                input.peek_parse(Token!(.)).is_some();
+
+            if input.peek(syn::LitFloat) {
                 let f=input.parse::<syn::LitFloat>()?;
                 let digits=f.base10_digits();
                 let make_int=|digits:&str|{
                     syn::LitInt::new(digits,f.span())
                         .piped(FieldPathComponent::from_index)
                 };
+
+                let mut iter=digits.split('.');
                 if digits.starts_with('.') {
-                    list.push(make_int(digits.trim_start_matches('.')));
+                    let _=iter.next();
+                    list.push(make_int(iter.next().unwrap().trim_start_matches('.')));
+                }else if digits.ends_with('.') {
+                    list.push(make_int(iter.next().unwrap()));
+                    next_is_period=true;
                 }else{
-                    let mut iter=digits.split('.');
                     list.push(make_int(iter.next().unwrap()));
                     list.push(make_int(iter.next().unwrap()));
                 }
             }else{
-                let fpc=FieldPathComponent::parse(input)?;
+                let fpc=FieldPathComponent::parse(input,is_first,is_period)?;
                 contains_splice=contains_splice||matches!(FieldPathComponent::Splice{..}=fpc);
                 list.push(fpc);
             }
+            is_first=IsFirst::No;
         }
         
         Ok(FieldPath{list,contains_splice})
@@ -303,26 +311,32 @@ impl FieldPathComponent{
         }
     }
 
-    pub(crate)fn parse(input: ParseStream) -> parse::Result<Self>{
-        if input.peek(syn::token::Bracket) {
-            let content;
-            let _=syn::bracketed!(content in input);
-            content.parse::<syn::Type>()
-                .map(FieldPathComponent::Insert)
-        }else{
-            if input.peek(Token![.]) {
-                let _=input.parse::<Token![.]>()?;
-            }
-            if input.peek(syn::token::Paren) {
-                let content;
-                let _=syn::parenthesized!(content in input);
-                content.piped_ref(Self::parse_path_or_empty)
-                    .map(FieldPathComponent::Splice)
-            }else{
-                input.parse::<IdentOrIndex>()
-                    .map(FieldPathComponent::Ident)
-            }
-        }
+    pub(crate)fn parse(
+        input: ParseStream,
+        is_first:IsFirst,
+        is_period:bool,
+    ) -> parse::Result<Self>{
+        // if input.peek(syn::token::Bracket) {
+        //     let content;
+        //     let _=syn::bracketed!(content in input);
+        //     content.parse::<syn::Type>()
+        //         .map(FieldPathComponent::Insert)
+        // }else{
+        //     if is_first==IsFirst::No && !is_period {
+        //         return Err(input.error("expected a '.'"));
+        //     }
+        //     if input.peek(syn::token::Paren) {
+        //         let content;
+        //         let _=syn::parenthesized!(content in input);
+        //         content.piped_ref(Self::parse_path_or_empty)
+        //             .map(FieldPathComponent::Splice)
+        //     }else{
+        //         input.parse::<IdentOrIndex>()
+        //             .map(FieldPathComponent::Ident)
+        //     }
+        // }
+        input.parse::<IdentOrIndex>()
+            .map(FieldPathComponent::Ident)
     }
 
     pub(crate) fn is_splice(&self)->bool{
@@ -369,6 +383,14 @@ impl FieldPathComponent{
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug,Copy,Clone,PartialEq,Eq)]
+pub(crate) enum IsFirst{
+    Yes,
+    No,
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -1,32 +1,135 @@
+#[cfg(feature="better_macros")]
+#[allow(non_camel_case_types)]
+#[macro_use]
+mod for_better_macros{
+    use crate::{chars,type_level::TString};
+
+    pub type S_foo=TString<(chars::_f,chars::_o,chars::_o)>;
+    pub type S_bar=TString<(chars::_b,chars::_a,chars::_r)>;
+    pub type S_baz=TString<(chars::_b,chars::_a,chars::_z)>;
+    pub type S_a=TString<(chars::_a,)>;
+    pub type S_b=TString<(chars::_b,)>;
+    pub type S_c=TString<(chars::_c,)>;
+    pub type S_d=TString<(chars::_d,)>;
+    pub type S_0=TString<(chars::_0,)>;
+    pub type S_1=TString<(chars::_1,)>;
+    pub type S_2=TString<(chars::_2,)>;
+    pub type S_3=TString<(chars::_3,)>;
+    pub type S_4=TString<(chars::_4,)>;
+
+    pub fn assert_ty<T,U>(_ident:U)
+    where
+        T:core_extensions::TypeIdentity<Type=U>
+    {}
+
+    macro_rules! path_assertion {
+        (fp!( $($fp_params:tt)* ),$ty:ty $(,)?) => (
+            assert_ty::<
+                $ty,
+                FP!($($fp_params)*),
+            >(fp!($($fp_params)*));
+        )
+    }
+
+}
+
 /// Tests that the fp and FP macros are correct
 #[allow(non_camel_case_types)]
 #[cfg(feature="better_macros")]
 #[test]
 fn identifier_macros_equality(){
     use crate::{chars,type_level::{TString,FieldPath}};
+    use self::for_better_macros::*;
 
-    fn assert_ident<T,U>(_ident:U)
-    where
-        FieldPath<(T,)>:core_extensions::TypeIdentity<Type=U>
-    {}
+    type S_abcd=TString<(chars::_a,chars::_b,chars::_c,chars::_d)>;
+    type S_21=TString<(chars::_2,chars::_1)>;
+    type S_ab0=TString<(chars::_a,chars::_b,chars::_0)>;
 
-    {
-        type TheStr=TString<(chars::_a,chars::_b,chars::_c,chars::_d)>;
-        assert_ident::<TheStr,FP!(abcd)>(fp!(abcd));
+    path_assertion!(fp!(abcd),FieldPath<(S_abcd,)>);
+    path_assertion!(fp!(0),FieldPath<(S_0,)>);
+    path_assertion!(fp!(21),FieldPath<(S_21,)>);
+    path_assertion!(fp!(ab0),FieldPath<(S_ab0,)>);
+    path_assertion!(fp!(0.1),FieldPath<(S_0,S_1)>);
+    path_assertion!(fp!(0.1.2),FieldPath<(S_0,S_1,S_2)>);
+    path_assertion!(fp!(0.1.2.3),FieldPath<(S_0,S_1,S_2,S_3)>);
+    path_assertion!(fp!(0.1.2.3.4),FieldPath<(S_0,S_1,S_2,S_3,S_4)>);
+    path_assertion!(fp!(0.foo),FieldPath<(S_0,S_foo)>);
+    path_assertion!(fp!(0.foo.1),FieldPath<(S_0,S_foo,S_1)>);
+    path_assertion!(fp!(0.foo.1.bar),FieldPath<(S_0,S_foo,S_1,S_bar)>);
+
+    /*
+    path_assertion!(fp!(0[FP!(0)]),FieldPath<(S_0,S_0)>);
+    path_assertion!(fp!(0.[FP!(0)]),FieldPath<(S_0,S_0)>);
+    path_assertion!(fp!(0[FP!(1)].2),FieldPath<(S_0,S_1,S_2)>);
+    path_assertion!(fp!(0.[FP!(1)].2),FieldPath<(S_0,S_1,S_2)>);
+    path_assertion!(fp!([FP!(0)].2),FieldPath<(S_0,S_2)>);
+    path_assertion!(fp!([FP!(0)]),FieldPath<(S_0,)>);
+
+    path_assertion!(fp!(0.(FP!(0.1))),FieldPath<(S_0,S_0,S_1)>);
+    path_assertion!(fp!((FP!(0.1)).2),FieldPath<(S_0,S_1,S_2)>);
+    path_assertion!(fp!(0.(FP!(0.1)).2),FieldPath<(S_0,S_0,S_1,S_2)>);
+    path_assertion!(fp!((FP!(0.1))),FieldPath<(S_0,S_1)>);
+    
+    path_assertion!(fp!((FP!(0.1))[S_3]),FieldPath<(S_0,S_1,S_3)>);
+    path_assertion!(fp!([S_3].(FP!(0.1))),FieldPath<(S_3,S_0,S_1)>);
+    path_assertion!(fp!([S_3].(FP!(0.1)).[S_a]),FieldPath<(S_3,S_0,S_1,S_a)>);
+    */
+}
+
+#[allow(non_camel_case_types)]
+#[cfg(feature="better_macros")]
+#[test]
+fn field_paths_equality(){
+    use crate::{
+        chars,
+        type_level::{AliasedPaths,FieldPath,FieldPathSet,UniquePaths}
+    };
+
+    use self::for_better_macros::*;
+
+    path_assertion!{
+        fp!(foo,bar),
+        FieldPathSet<(FieldPath<(S_foo,)>,FieldPath<(S_bar,)>,),UniquePaths>
     }
-    {
-        type TheStr=TString<(chars::_0,)>;
-        assert_ident::<TheStr,FP!(0)>(fp!(0));
+
+    path_assertion!{
+        fp!(foo.bar,baz),
+        FieldPathSet<(FieldPath<(S_foo,S_bar)>,FieldPath<(S_baz,)>,),UniquePaths>,
     }
-    {
-        type TheStr=TString<(chars::_2,chars::_1)>;
-        assert_ident::<TheStr,FP!(21)>(fp!(21));
+
+    path_assertion!{
+        fp!(foo.bar,a.b),
+        FieldPathSet<(FieldPath<(S_foo,S_bar)>,FieldPath<(S_a,S_b)>,),UniquePaths>,
     }
-    {
-        type TheStr=TString<(chars::_a,chars::_b,chars::_0)>;
-        assert_ident::<TheStr ,FP!(ab0)>(fp!(ab0));
+
+    path_assertion!{
+        fp!(0,foo),
+        FieldPathSet<(FieldPath<(S_0,)>,FieldPath<(S_foo,)>,),UniquePaths>,
+    }
+
+    path_assertion!{
+        fp!(0.1,foo),
+        FieldPathSet<(FieldPath<(S_0,S_1)>,FieldPath<(S_foo,)>,),UniquePaths>,
+    }
+    path_assertion!{
+        fp!(0.1.2,foo),
+        FieldPathSet<(FieldPath<(S_0,S_1,S_2)>,FieldPath<(S_foo,)>,),UniquePaths>,
+    }
+    path_assertion!{
+        fp!(foo,0.1.2.3),
+        FieldPathSet<(FieldPath<(S_foo,)>,FieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
+    }
+    path_assertion!{
+        fp!(0.1.2.3.4,foo),
+        FieldPathSet<(FieldPath<(S_0,S_1,S_2,S_3,S_4)>,FieldPath<(S_foo,)>,),UniquePaths>,
     }
     
+    /*
+    path_assertion!{
+        fp!((FP!(a.b)).(FP!(c.d)),0),
+        FieldPathSet<(FieldPath<(S_a,S_b,S_c,S_d)>,FieldPath<(S_0,)>,),AliasedPaths>,
+    }
+    */
 
 }
 

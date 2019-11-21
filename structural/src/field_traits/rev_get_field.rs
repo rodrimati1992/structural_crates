@@ -79,6 +79,7 @@ macro_rules! impl_get_multi_field {
         all_field_tys( $($all_tys:ident)*)
         $( into_box_field_tys( $($ibf_prefix:ident)* ) )?
         $( into_box_impl( $($into_box_impl:tt)* ) )?
+        enable_specialization($($enable_specialization:tt)*)
     )=>{
         impl<'a,$($fname,)* $($all_tys,)* This> 
             RevGetField<'a,This>
@@ -119,7 +120,7 @@ macro_rules! impl_get_multi_field {
 
             default_if!{
                 #[inline]
-                cfg(feature="specialization")
+                cfg(all(feature="specialization", $($enable_specialization)*))
 
                 unsafe fn rev_get_field_raw_mut(
                     self,
@@ -139,7 +140,7 @@ macro_rules! impl_get_multi_field {
         }
 
         //TODO:justify why this is safe
-        #[cfg(feature="specialization")]
+        #[cfg(all(feature="specialization", $($enable_specialization)*))]
         unsafe impl<'a,$($fname,)* $($all_tys,)* This>
             RevGetFieldMut<'a,This>
         for FieldPath<($($fname,)*)> 
@@ -155,8 +156,9 @@ macro_rules! impl_get_multi_field {
                 self,
                 field:MutRef<'a,This>,
             )->Self::FieldMutRef{
-                $( let field=$prefix::get_field_raw_mut(field); )*
-                field
+                let field=field.ptr;
+                $( let field=$prefix::get_field_raw_mut(field as *mut (),PhantomData); )*
+                MutRef::from_ptr(field)
             }
         }
 
@@ -212,6 +214,7 @@ macro_rules! impl_get_multi_field {
             last=$last_fty,
             all_field_tys($($fty)* $last_fty)
             into_box_field_tys($($fty)*)
+            enable_specialization()
         }
     }
 }
@@ -230,6 +233,8 @@ impl_get_multi_field!{
             *field
         }
     )
+
+    enable_specialization(FALSE)
 }
 
 impl_get_multi_field!{
