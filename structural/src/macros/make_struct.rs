@@ -31,8 +31,8 @@
 ///
 /// structural_alias!{
 ///     pub trait Runner{
-///         mut move name:String,
-///         mut move stamina:u32,
+///         name:String,
+///         stamina:u32,
 ///     }
 /// }
 ///
@@ -51,17 +51,23 @@
 ///     stamina:100,
 /// });
 ///
-/// // Unfortunately,due to a rustc bug as of 2019-11-02,
-/// // you can't call the accessor methods provided by GetFieldExt
-/// // on the return value of this function.
-/// // Issue for the rustc bug: https://github.com/rust-lang/rust/issues/66057
-/// // fn get_runner()->impl Runner+Copy+Clone{
-/// //     make_struct!{
-/// //         #![derive(Copy,Clone)]
-/// //         name:"hello".into(),
-/// //         stamina:4_000_000_000,
-/// //     }
-/// // }
+///
+/// fn ret_get_runner()->impl Runner+Clone{
+///     make_struct!{
+///         #![derive(Clone)]
+///         name:"hello".into(),
+///         stamina:4_000_000_000,
+///     }
+/// }
+///
+/// {
+///     let runner=ret_get_runner();
+///     # let _=runner.field_(fp!(name));
+///     # let _=runner.field_(fp!(stamina));
+///     let (name,stamina)=runner.fields(fp!( name, stamina ));
+///     assert_eq!( name, "hello" );
+///     assert_eq!( *stamina, 4_000_000_000 );
+/// }
 ///
 #[cfg_attr(feature="alloc",doc=r###"
 fn get_dyn_runner()->Box<dyn Runner>{
@@ -88,10 +94,11 @@ macro_rules! make_struct {
         $( #![$inner_attrs:meta] )*
         $(
             $( #[$field_attrs:meta] )*
-            $field_name:ident : $field_value:expr,
-        )*
+            $field_name:ident $( : $field_value:expr )?
+        ),*
+        $(,)?
     ) => ({
-        $(let $field_name=$field_value;)*
+        $( $( let $field_name=$field_value; )? )*
 
         {
             #[allow(non_camel_case_types)]
@@ -133,5 +140,5 @@ macro_rules! make_struct {
                 $($field_name,)*
             }
         }
-    })
+    });
 }

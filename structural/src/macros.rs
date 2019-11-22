@@ -342,23 +342,23 @@ Inside the `{...}` is a list of fields,
 each of which get turned into supertraits on `Foo`:
 
 - `     a:u32`:
-    Corresponds to the `GetField<TString<(_a,)>,Ty=u32>` shared reference 
-    field accessor trait.
+    Corresponds to the `IntoFieldMut<FP!(a),Ty=u32>` trait,
+    allowing shared,mutable,and by value access to the field.
 
 - `ref  b:T`
-    Corresponds to the `GetField<TString<(_b,)>,Ty=T>` shared reference 
+    Corresponds to the `GetField<FP!(b),Ty=T>` shared reference 
     field accessor trait.
 
 - `mut  c:i64`:
-    Corresponds to the `GetFieldMut<TString<(_c,)>,Ty=i64>` mutable reference 
+    Corresponds to the `GetFieldMut<FP!(c),Ty=i64>` mutable reference 
     field accessor trait (which`itself implies `GetField`).
 
 - `move d:String`:
-    Corresponds to the `IntoField<TString<(_d,)>,Ty=String>` by value
+    Corresponds to the `IntoField<FP!(d),Ty=String>` by value
     field accessor trait (which itself implies `GetField`).
 
 - `mut move e:String`:
-    Corresponds to the `IntoFieldMut<TString<(_e,)>,Ty=String>` trait,
+    Corresponds to the `IntoFieldMut<FP!(e),Ty=String>` trait,
     allowing shared,mutable,and by value access to the field.
 
 # Examples
@@ -378,12 +378,6 @@ use core::{
     fmt::{Debug,Display},
 };
 
-structural_alias!{
-    trait Point<T>{
-        mut move x:T,
-        mut move y:T,
-    }
-}
 
 fn print_point<T,U>(value:&T)
 where
@@ -396,8 +390,26 @@ where
     println!("x={} y={}",x,y);
 }
 
+fn main(){
+
+    print_point(&Point3D{ x:100, y:200, z:6000 });
+
+    print_point(&Rectangle{ x:100, y:200, w:300, h:400 });
+
+    print_point(&Entity{ x:100.0, y:200.0, id:PersonId(0xDEAD) });
+
+}
+
+structural_alias!{
+    trait Point<T>{
+        // Using `ref` because we just want to read the fields
+        ref x:T,
+        ref y:T,
+    }
+}
+
+
 #[derive(Structural)]
-#[struc(access="mut move")]
 struct Point3D<T>{
     pub x:T,
     pub y:T,
@@ -405,7 +417,6 @@ struct Point3D<T>{
 }
 
 #[derive(Structural)]
-#[struc(access="mut move")]
 struct Rectangle<T>{
     pub x:T,
     pub y:T,
@@ -414,7 +425,6 @@ struct Rectangle<T>{
 }
 
 #[derive(Structural)]
-#[struc(access="mut move")]
 struct Entity{
     pub id:PersonId,
     pub x:f32,
@@ -424,16 +434,6 @@ struct Entity{
 # #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 # struct PersonId(u64);
 
-# fn main(){
-
-print_point(&Point3D{ x:100, y:200, z:6000 });
-
-print_point(&Rectangle{ x:100, y:200, w:300, h:400 });
-
-print_point(&Entity{ x:100.0, y:200.0, id:PersonId(0xDEAD) });
-
-
-# }
 
 ```
 
@@ -448,11 +448,11 @@ use structural::{
 
 structural_alias!{
     trait Person{
-        // shared access (a & reference to the field)
+        // shared,mutable,and by value access to the field)
         id:PersonId,
         
         // shared access (a & reference to the field)
-        name:String,
+        ref name:String,
 
         // mutable access (a &mut reference to the field),as well as shared access.
         mut friends:Vec<PersonId>,
@@ -460,7 +460,7 @@ structural_alias!{
         // by value access to the field (as well as shared)
         move candy:Candy,
 
-        // by value access to the field (as well as shared and mutable)
+        // shared,mutable,and by value access to the field)
         mut move snack:Snack,
     }
 }
