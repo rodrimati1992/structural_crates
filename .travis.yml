@@ -24,13 +24,15 @@ matrix:
         - cargo test --no-default-features --features alloc --features nightly_specialization
         - cargo test --no-default-features --features std nightly_specialization
         
-        - cargo test --no-default-features --features nightly_better_ti
-        - cargo test --no-default-features --features alloc --features nightly_better_ti
-        - cargo test --no-default-features --features std nightly_better_ti
+        - cargo test --no-default-features --features nightly_better_macros
+        - cargo test --no-default-features --features alloc --features nightly_better_macros
+        - cargo test --no-default-features --features std nightly_better_macros
         
-        - cargo test --no-default-features --features better_ti
-        - cargo test --no-default-features --features alloc --features better_ti
-        - cargo test --no-default-features --features std better_ti
+        - cargo test --no-default-features --features better_macros
+        - cargo test --no-default-features --features alloc --features better_macros
+        - cargo test --no-default-features --features std better_macros
+        
+        - cargo test --all-features
         
         - cargo clean
 
@@ -39,6 +41,7 @@ matrix:
         - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         - cargo miri test --no-default-features --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         - cargo miri test --no-default-features --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --all-features -- -- -Zunstable-options --exclude-should-panic
 
     - rust: 1.34.0
 
