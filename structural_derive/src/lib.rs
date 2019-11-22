@@ -16,6 +16,7 @@ extern crate proc_macro;
 
 
 mod declare_name_aliases_macro;
+mod field_access;
 mod parse_utils;
 mod structural_alias_impl;
 mod structural_derive;

@@ -1,5 +1,5 @@
 use crate::{
-    structural_alias_impl::Access,
+    field_access::Access,
     ident_or_index::IdentOrIndex,
 };
 
