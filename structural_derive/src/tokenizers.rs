@@ -23,6 +23,8 @@ pub(crate) enum FullPathForChars{
 pub(crate) fn struct_pmr_prefix()->TokenStream2{
     quote!( __struct_pmr:: )
 }
+
+#[allow(dead_code)]
 pub(crate) fn struct_pmr()->TokenStream2{
     quote!( __struct_pmr )
 }

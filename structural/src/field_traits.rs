@@ -21,7 +21,6 @@ pub mod multi_fields;
 use self::rev_get_field::{
     RevFieldType,
     RevFieldMutType,
-    RevFieldMutRefType,
     RevIntoFieldType,
     RevGetField,
     RevGetFieldMut,

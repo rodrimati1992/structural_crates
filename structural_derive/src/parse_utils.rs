@@ -14,7 +14,7 @@ where
     T:parse::Parse,
     P:parse::Parse,
 {
-    fn parse(input: parse::ParseStream) -> parse::Result<Self>{
+    fn parse(input: ParseStream) -> parse::Result<Self>{
         Ok(Self{
             list: Punctuated::parse_terminated(input)?
         })

@@ -8,13 +8,11 @@ use proc_macro2::{
     Span,
 };
 
-use quote::{quote,ToTokens};
+use quote::ToTokens;
 
 use syn::{
     parse::{Parse,ParseStream},
-    punctuated::Punctuated,
     Ident,
-    LitStr,
     Token,
 };
 
