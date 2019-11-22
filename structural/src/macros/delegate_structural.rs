@@ -18,7 +18,7 @@ borrowing from the same variable mutably.
 # Example with all syntax
 
 ```rust
-use structural::delegate_structural_with;
+use structural::z_delegate_structural_with;
 use structural::mut_ref::MutRef;
 
 # trait Trait{}
@@ -28,7 +28,7 @@ struct Foo<T>{
     value:T
 }
 
-delegate_structural_with!{
+z_delegate_structural_with!{
     impl[T] Foo<T>
     // This where clause is required syntax
     where[
@@ -89,7 +89,7 @@ use std::{
     mem::ManuallyDrop,
 };
 
-use structural::{GetFieldExt,GetFieldMut,delegate_structural_with,make_struct,fp};
+use structural::{GetFieldExt,GetFieldMut,z_delegate_structural_with,make_struct,fp};
 use structural::mut_ref::MutRef;
 
 struct Bar<T>{
@@ -105,7 +105,7 @@ impl<T> Bar<T>{
 }
 
 
-delegate_structural_with!{
+z_delegate_structural_with!{
     impl[T] Bar<T>
     where[
         // This requires T to implement Clone
@@ -187,7 +187,7 @@ delegate_structural_with!{
 
 */
 #[macro_export]
-macro_rules! delegate_structural_with {
+macro_rules! z_delegate_structural_with {
     (
         impl $impl_params:tt $self:ty
         where $where_clause:tt
@@ -209,7 +209,7 @@ macro_rules! delegate_structural_with {
         )?
     ) => (
         
-        $crate::delegate_structural_with!{
+        $crate::z_delegate_structural_with!{
             inner-structural;
             impl $impl_params $self
             where $where_clause
@@ -219,7 +219,7 @@ macro_rules! delegate_structural_with {
             GetField $get_field_closure
         }
 
-        $crate::delegate_structural_with!{
+        $crate::z_delegate_structural_with!{
             inner;
             impl $impl_params $self
             where $where_clause
@@ -230,7 +230,7 @@ macro_rules! delegate_structural_with {
         }
 
         $(
-            $crate::delegate_structural_with!{
+            $crate::z_delegate_structural_with!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
@@ -245,7 +245,7 @@ macro_rules! delegate_structural_with {
         )?
 
         $(
-            $crate::delegate_structural_with!{
+            $crate::z_delegate_structural_with!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
@@ -387,9 +387,11 @@ macro_rules! delegate_structural_with {
                 $crate::IntoField::<__FieldName>::into_field_(field)
             }
 
-            $crate::impl_box_into_field_method!{__FieldName}
+            $crate::z_impl_box_into_field_method!{__FieldName}
         }        
     };
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
