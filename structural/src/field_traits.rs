@@ -73,7 +73,7 @@ use self::rev_get_field::{
 /// use structural::{
 ///     GetField,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
-///     impl_structural_dyn,
+///     z_impl_structural_dyn,
 /// };
 ///
 /// struct Huh<T>{
@@ -86,7 +86,7 @@ use self::rev_get_field::{
 ///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
-/// impl_structural_dyn!{ impl[T] Huh<T> }
+/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
@@ -203,7 +203,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     GetField,GetFieldMut,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
-///     impl_structural_dyn,
+///     z_impl_structural_dyn,
 /// };
 ///
 /// struct Huh<T>{
@@ -216,7 +216,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
-/// impl_structural_dyn!{ impl[T] Huh<T> }
+/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
@@ -230,7 +230,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
 ///     }
-///     structural::unsafe_impl_get_field_raw_mut_method!{
+///     structural::z_unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
 ///         field_name=value,
 ///         name_generic=FP!(v a l u e)
@@ -311,7 +311,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 ///     GetField,IntoField,Structural,FP,TList,
 ///     structural_trait::{FieldInfo,TField},
 ///     mut_ref::MutRef,
-///     impl_structural_dyn,
+///     z_impl_structural_dyn,
 /// };
 ///
 /// struct Huh<T>{
@@ -325,7 +325,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 ///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
-/// impl_structural_dyn!{ impl[T] Huh<T> }
+/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
@@ -340,7 +340,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 ///         self.value
 ///     }
 ///
-///     structural::impl_box_into_field_method!{FP!(v a l u e)}
+///     structural::z_impl_box_into_field_method!{FP!(v a l u e)}
 /// }
 ///
 /// ```

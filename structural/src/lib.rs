@@ -279,13 +279,12 @@ where
 
 
 // most structural aliases are object safe
-fn print_name_dyn(mut this:&dyn Person<Vec<String>>){
+fn print_name_dyn(this:&mut dyn Person<Vec<String>>){
     println!("Hello, {}!",this.field_(fp!(name)) );
 
     let list=vec!["what".into()];
     *this.field_mut(fp!(value))=list.clone();
     assert_eq!( this.field_(fp!(value)), &list );
-    assert_eq!( this.box_into_field(fp!(value)), list );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -311,8 +310,8 @@ fn main(){
     print_name(worker.clone());
     print_name(student.clone());
 
-    print_name_dyn(&worker);
-    print_name_dyn(&student);
+    print_name_dyn(&mut worker.clone());
+    print_name_dyn(&mut student.clone());
 
     let person=make_person("Louis".into());
 

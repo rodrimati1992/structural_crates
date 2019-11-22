@@ -49,7 +49,7 @@ macro_rules! impl_getter{
                 &mut self.$field_name
             }
 
-            $crate::unsafe_impl_get_field_raw_mut_method!{
+            $crate::z_unsafe_impl_get_field_raw_mut_method!{
                 Self,
                 field_name=$field_name,
                 name_generic=$name_param
@@ -76,7 +76,7 @@ macro_rules! impl_getter{
             fn into_field_(self)->Self::Ty{
                 self.$field_name
             }
-            $crate::impl_box_into_field_method!{$name_param}
+            $crate::z_impl_box_into_field_method!{$name_param}
         }
     };
     ( 
@@ -98,7 +98,7 @@ macro_rules! impl_getter{
             fn into_field_(self)->Self::Ty{
                 self.$field_name
             }
-            $crate::impl_box_into_field_method!{$name_param}
+            $crate::z_impl_box_into_field_method!{$name_param}
         }
     };
 } 
@@ -140,7 +140,7 @@ macro_rules! default_if {
 /// [manual implementation example of the GetFieldMut trait
 /// ](./field_traits/trait.GetFieldMut.html)
 #[macro_export]
-macro_rules! unsafe_impl_get_field_raw_mut_method {
+macro_rules! z_unsafe_impl_get_field_raw_mut_method {
     ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
         unsafe fn get_field_raw_mut(
             this:*mut (),
@@ -168,7 +168,7 @@ macro_rules! unsafe_impl_get_field_raw_mut_method {
 /// [the documentation for IntoField](./field_traits/trait.IntoField.html)
 #[macro_export]
 #[cfg(not(feature="alloc"))]
-macro_rules! impl_box_into_field_method {
+macro_rules! z_impl_box_into_field_method {
     ($($anything:tt)*) => ()
 }
 
@@ -181,7 +181,7 @@ macro_rules! impl_box_into_field_method {
 /// [the documentation for IntoField](./field_traits/trait.IntoField.html)
 #[macro_export]
 #[cfg(feature="alloc")]
-macro_rules! impl_box_into_field_method {
+macro_rules! z_impl_box_into_field_method {
     ($field_name:ty) => (
         fn box_into_field_(self:structural::alloc::boxed::Box<Self>)->Self::Ty{
             $crate::IntoField::<$field_name>::into_field_(*self)
@@ -246,9 +246,9 @@ macro_rules! impl_structural{
 
 
 
-/// Implements StructuralDyn for some type,by delegating to Structural. 
+#[doc(hidden)]
 #[macro_export]
-macro_rules! impl_structural_dyn{
+macro_rules! z_impl_structural_dyn{
     (
         impl[$($typarams:tt)*] $self_:ty 
         $( where[$($where_:tt)*] )?

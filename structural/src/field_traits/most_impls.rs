@@ -96,13 +96,13 @@ impl<T> IntoField<Start_STR> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
-    impl_box_into_field_method!{Start_STR}
+    z_impl_box_into_field_method!{Start_STR}
 }
 impl<T> IntoField<End_STR> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
-    impl_box_into_field_method!{End_STR}
+    z_impl_box_into_field_method!{End_STR}
 }
 
 
@@ -110,7 +110,7 @@ impl<T> IntoField<End_STR> for RangeInclusive<T>{
 
 
 // This allows using all the field accessors in T from `ManuallyDrop<T>`
-delegate_structural_with!{
+z_delegate_structural_with!{
     impl[T] ManuallyDrop<T>
     where[]
     self_ident=this;
@@ -145,7 +145,7 @@ fn delegated_mdrop(){
 
 
 
-delegate_structural_with!{
+z_delegate_structural_with!{
     impl[P] Pin<P>
     where[
         P:Deref,
@@ -171,3 +171,70 @@ fn delegated_pin(){
 ///////////////////////////////////////////////////////
 
 
+z_delegate_structural_with!{
+    impl['a,T] &'a T
+    where [T:?Sized,]
+    self_ident=this;
+    delegating_to_type=T;
+    field_name_param=( fname_var : fname_ty );
+
+    GetField { &**this }
+
+}
+
+///////////////////////////////////////////////////////
+
+
+z_delegate_structural_with!{
+    impl['a,T] &'a mut T
+    where [T:?Sized,]
+    self_ident=this;
+    delegating_to_type=T;
+    field_name_param=( fname_var : fname_ty );
+
+    GetField { &**this }
+
+}
+
+unsafe impl<T,__FieldName> GetFieldMut<__FieldName> for &'_ mut T
+where
+    T:?Sized+GetFieldMut<__FieldName>,
+{
+    fn get_field_mut_(&mut self)->&mut Self::Ty{
+        <T as GetFieldMut<__FieldName>>::get_field_mut_(self)
+    }
+
+    default_if!{
+        cfg(feature="specialization")
+        
+        unsafe fn get_field_raw_mut(
+            this:*mut (),
+            fname:PhantomData<__FieldName>
+        )->*mut Self::Ty {
+            let this:*mut T=*(this as *mut *mut T);
+            let func=T::get_field_raw_mut_func(&*this);
+            
+            func( this as *mut (), fname )
+        }
+    }
+
+    fn get_field_raw_mut_func(
+        &self
+    )->GetFieldMutRefFn<__FieldName,Self::Ty>{
+        <Self as GetFieldMut<__FieldName>>::get_field_raw_mut
+    }
+}
+
+
+#[cfg(feature="specialization")]
+unsafe impl<T,__FieldName> GetFieldMut<__FieldName> for &'_ mut T
+where
+    T:GetFieldMut<__FieldName>,
+{
+    unsafe fn get_field_raw_mut(
+        this:*mut (),
+        fname:PhantomData<__FieldName>
+    )->*mut Self::Ty {
+        T::get_field_raw_mut( *(this as *mut *mut ()), fname )
+    }
+}
