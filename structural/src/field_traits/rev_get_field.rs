@@ -1,3 +1,7 @@
+/*!
+Contains traits implemented on field paths,taking the structural types as parameters.
+*/
+
 use crate::{
     mut_ref::MutRef,
     type_level::{FieldPath,FieldPath1},
@@ -9,15 +13,19 @@ use std_::marker::PhantomData;
 /////////////////////////////////////////////////////////////////////////////
 
 
+/// Gets the type used to access the `FieldName` field(s) in `This` by reference.
 pub type RevFieldType<'a,FieldName,This>=
     <FieldName as RevGetField<'a,This>>::Field;
 
+/// Gets the type used to access the `FieldName` field(s) in `This` by mutable reference.
 pub type RevFieldMutType<'a,FieldName,This>=
     <FieldName as RevGetFieldMut<'a,This>>::Field;
 
+/// Gets the type used to access the `FieldName` field(s) in `This` by `MutRef`.
 pub type RevFieldMutRefType<'a,FieldName,This>=
     <FieldName as RevGetFieldMut<'a,This>>::FieldMutRef;
 
+/// Gets the type used to access the `FieldName` field(s) in `This` by value.
 pub type RevIntoFieldType<'a,FieldName,This>=
     <FieldName as RevIntoField<'a,This>>::Field;
 
@@ -27,8 +35,10 @@ pub type RevIntoFieldType<'a,FieldName,This>=
 /// Like GetField,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 pub trait RevGetField<'a,This:?Sized>{
+    /// The reference-containing type this returns.
     type Field:'a;
 
+    /// Accesses the field(s) `self` represents inside of `this` by reference.
     fn rev_get_field(self,this:&'a This)->Self::Field;
 }
 
@@ -42,11 +52,15 @@ pub trait RevGetField<'a,This:?Sized>{
 ///
 /// TODO
 pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
+    /// The mutable-reference-containing type this returns.
     type Field:'a;
+    /// The `MUtRef`-containing type this returns.
     type FieldMutRef:'a;
 
+    /// Accesses the field(s) `self` represents inside of `this` by mutable reference.
     fn rev_get_field_mut(self,this:&'a mut This)->Self::Field;
 
+    /// Accesses the field(s) `self` represents inside of `this` by `MutRef`.
     unsafe fn rev_get_field_raw_mut(
         self,
         field:MutRef<'a,This>,
@@ -59,11 +73,14 @@ pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
 /// Like IntoField,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 pub trait RevIntoField<'a,This:?Sized>{
+    /// The type this returns.
     type Field:'a;
 
+    /// Accesses the field(s) `self` represents inside of `this` by value.
     fn rev_into_field(self,this:This)->Self::Field
     where This:Sized;
 
+    /// Accesses the field(s) `self` represents inside of `this` by value.
     #[cfg(feature="alloc")]
     fn rev_box_into_field(self,this:Box<This>)->Self::Field;
 }

@@ -278,10 +278,8 @@ where
 }
 
 
-*/
-#![cfg_attr(feature="alloc",doc=r###"
 // most structural aliases are object safe
-fn print_name_dyn(mut this:Box<dyn Person<Vec<String>>>){
+fn print_name_dyn(mut this:&dyn Person<Vec<String>>){
     println!("Hello, {}!",this.field_(fp!(name)) );
 
     let list=vec!["what".into()];
@@ -290,8 +288,6 @@ fn print_name_dyn(mut this:Box<dyn Person<Vec<String>>>){
     assert_eq!( this.box_into_field(fp!(value)), list );
 }
 
-"###)]
-/*!
 //////////////////////////////////////////////////////////////////////////
 ////          The stuff here could be defined in a separate crate
 
@@ -315,12 +311,8 @@ fn main(){
     print_name(worker.clone());
     print_name(student.clone());
 
-*/
-#![cfg_attr(feature="alloc",doc=r###"
-    print_name_dyn(Box::new(worker));
-    print_name_dyn(Box::new(student));
-"###)]
-/*!
+    print_name_dyn(&worker);
+    print_name_dyn(&student);
 
     let person=make_person("Louis".into());
 
@@ -390,6 +382,8 @@ pub mod tests{
 
 
 pub mod type_level;
+
+#[doc(hidden)]
 pub mod chars;
 
 pub use crate::{

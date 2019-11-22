@@ -48,7 +48,7 @@ matrix:
 script:
   
   - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
-  - cargo test
+  - cargo test --features testing
 
   - cd "${TRAVIS_BUILD_DIR}/structural/"
   - cargo test
