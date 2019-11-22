@@ -34,7 +34,7 @@ where
     // aliasing the accessor traits for it.
     S:Point3D_SI<u32>
 {
-    let (a,b,c)=point.fields(fp!(x,y,z));
+    let (a,b,c)=point.fields(fp!( x, y, z ));
     
     assert_eq!(a,&0);
     assert_eq!(b,&11);
@@ -99,7 +99,8 @@ struct Point5D<T>{
 
 ### Structural alias
 
-This demonstrates how you can define a trait alias for a single read-only field accessor.
+This demonstrates how you can define a trait aliasing field accessors,
+using a fields-in-traits syntax.
 
 For more details you can look at the docs for the 
 [`structural_alias`](./macro.structural_alias.html) macro.
@@ -110,31 +111,91 @@ use structural::{GetFieldExt,Structural,structural_alias,fp};
 
 use std::borrow::Borrow;
 
-structural_alias!{
-    trait Person<S>{
-        name:S,
+
+fn print_name<T,H>(this:&T)
+where
+    T:?Sized+Person<H>,
+    H:House,
+{
+    let (name,house_dim)=this.fields(fp!( name, house.dim ));
+    println!("Hello, {}!", name);
+
+    let (w,h,d)=house_dim.fields(fp!( width, height, depth ));
+
+    if w*h*d >= 1_000_000 {
+        println!("Your house is enormous.");
+    }else{
+        println!("Your house is normal sized.");
     }
 }
 
-fn print_name<T,S>(this:&T)
-where
-    T:Person<S>,
-    S:Borrow<str>,
-{
-    println!("Hello, {}!",this.field_(fp!(name)).borrow() )
-}
-
 // most structural aliases are object safe
-fn print_name_dyn<  S>(this:&dyn Person<S>)
+fn print_name_dyn<H>(this:&dyn Person<H>)
 where
-    S:Borrow<str>,
+    H:House,
 {
-    println!("Hello, {}!",this.field_(fp!(name)).borrow() )
+    print_name(this)
 }
 
+
+
+structural_alias!{
+    trait Person<H:House>{
+        name:String,
+        house:H,
+    }
+
+    trait House{
+        dim:Dimension3D,
+    }
+}
+
+#[derive(Structural)]
+#[struc(public)]
+struct Dimension3D{
+    width:u32,
+    height:u32,
+    depth:u32,
+}
 
 //////////////////////////////////////////////////////////////////////////
 ////          The stuff here could be defined in a separate crate
+
+
+fn main(){
+    let worker=Worker{
+        name:"John Doe".into(),
+        salary:Cents(1_000_000_000_000_000),
+        house:Mansion{
+            dim:Dimension3D{
+                width:300,
+                height:300,
+                depth:300,
+            },
+            money_vault_location:"In the basement".into(),
+        }
+    };
+
+    let student=Student{
+        name:"Jake English".into(),
+        birth_year:1995,
+        house:SmallHouse{
+            dim:Dimension3D{
+                width:30,
+                height:30,
+                depth:30,
+            },
+            residents:10,
+        }
+    };
+
+    print_name(&worker);
+    print_name(&student);
+
+    print_name_dyn(&worker);
+    print_name_dyn(&student);
+}
+
 
 #[derive(Structural)]
 // Using the `#[struc(public)]` attribute tells the derive macro to 
@@ -143,6 +204,7 @@ where
 struct Worker{
     name:String,
     salary:Cents,
+    house:Mansion,
 }
 
 #[derive(Structural)]
@@ -150,27 +212,24 @@ struct Worker{
 struct Student{
     name:String,
     birth_year:u32,
+    house:SmallHouse,
 }
 
 # #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 # struct Cents(u64);
 
-fn main(){
-    let worker=Worker{
-        name:"John Doe".into(),
-        salary:Cents(1_000_000_000_000_000),
-    };
+#[derive(Structural)]
+#[struc(public)]
+struct Mansion{
+    dim:Dimension3D,
+    money_vault_location:String,
+}
 
-    let student=Student{
-        name:"Jake English".into(),
-        birth_year:1995,
-    };
-
-    print_name(&worker);
-    print_name(&student);
-
-    print_name_dyn(&worker);
-    print_name_dyn(&student);
+#[derive(Structural)]
+#[struc(public)]
+struct SmallHouse{
+    dim:Dimension3D,
+    residents:u32,
 }
 
 ```
@@ -189,9 +248,11 @@ use structural::{GetFieldExt,make_struct,structural_alias,fp};
 structural_alias!{
     trait Person<T>{
         // We only have shared access (`&String`) to the field.
-        name:String,
+        ref name:String,
+
         // We have shared,mutable,and by value access to the field.
-        mut move value:T,
+        // This is equivalent to writing `mut move value:T,`
+        value:T,
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::{
+    field_access::Access,
     parse_utils::ParseBufferExt,
     tokenizers::NamedModuleAndTokens,
     ident_or_index::{IdentOrIndex,IdentOrIndexRef},
@@ -16,7 +17,7 @@ use proc_macro2::{
     Span,
 };
 
-use quote::{quote,ToTokens};
+use quote::{quote,ToTokens,TokenStreamExt};
 
 use syn::{
     parse::{Parse,ParseStream},
@@ -40,7 +41,9 @@ mod tests;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+pub(crate) struct StructuralAliases{
+    pub(crate) list: Vec<StructuralAlias>,
+}
 
 pub(crate) struct StructuralAlias {
     pub(crate) attrs: Vec<Attribute>,
@@ -65,6 +68,16 @@ pub(crate) struct StructuralAliasFieldRef<'a>{
     pub(crate) ty: &'a syn::Type,
 }
 
+
+impl Parse for StructuralAliases {
+    fn parse(input: ParseStream) -> Result<Self,syn::Error> {
+        let mut list=Vec::<StructuralAlias>::new();
+        while !input.is_empty() {
+            list.push(input.parse()?);
+        }
+        Ok(Self{list})
+    }
+}
 
 impl Parse for StructuralAlias {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
@@ -120,7 +133,7 @@ impl Parse for StructuralAlias {
 impl Parse for StructuralAliasField {
     /// Parses a named (braced struct) field.
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let access= Access::parse_in_field(input);
+        let access= input.parse::<Access>()?;
         let ident= input.parse()?;
         let _:Token![:]= input.parse()?;
         let ty= input.parse()?;
@@ -142,100 +155,6 @@ impl StructuralAliasField{
     }
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-/// Whether a field can be accessed by reference/mutable-reference/value.
-#[derive(Debug,Copy,Clone,PartialEq,Eq)]
-pub(crate) struct Access{
-    mutable:bool,
-    value:bool,
-}
-
-#[allow(non_upper_case_globals)]
-impl Access{
-    /// A field gets a GetField impl.
-    pub(crate) const Shared:Self=Self{ mutable:false, value:false };
-
-    /// A field gets GetField,and GetFieldMut impls.
-    pub(crate) const Mutable:Self=Self{ mutable:true, value:false };
-
-    /// A field gets GetField,and IntoField impls.
-    pub(crate) const Value:Self=Self{ mutable:false, value:true };
-
-    /// A field gets GetField,GetFieldMut,and IntoField impls.
-    pub(crate) const MutValue:Self=Self{ mutable:true, value:true };
-}
-
-
-impl Default for Access{
-    fn default()->Self{
-        Access::MutValue
-    }
-}
-
-
-impl Access {
-    fn parse_in_field(input: ParseStream) -> Self {
-        let mut this=Access::Shared;
-
-        for _ in 0..2 {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(Token![ref]) {
-                let _:Result<Token![ref],_>=input.parse();
-            } else if lookahead.peek(Token![mut]) {
-                let _:Result<Token![mut],_>=input.parse();
-                this.mutable=true;
-            } else if lookahead.peek(Token![move]) {
-                let _:Result<Token![move],_>=input.parse();
-                this.value=true;
-            }
-        }
-
-        this
-    }
-}
-
-impl Parse for Access {
-    fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        if input.peek_parse(Token![ref]).is_some() {
-            if input.peek_parse(Token![move]).is_some() {
-                Ok(Access::Value)
-            }else if input.peek(Token![mut]) {
-                Err(input.error("Expected `move` or nothing."))
-            }else{
-                Ok(Access::Shared)
-            }
-        }else if input.peek_parse(Token![mut]).is_some() {
-            if input.peek_parse(Token![move]).is_some() {
-                Ok(Access::MutValue)
-            }else if input.peek(Token![ref]) {
-                Err(input.error("Expected `move` or nothing."))
-            }else{
-                Ok(Access::Mutable)
-            }
-        }else if input.peek_parse(Token![move]).is_some() {
-            Ok(Access::Value)
-        }else{
-            Err(input.error("Expected one of: `ref` `ref move` `move` `mut` `mut move` "))
-        }
-    }
-}
-
-
-impl ToTokens for Access{
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match *self {
-            Access::Shared=>Ident::new("GetField",Span::call_site()),
-            Access::Mutable=>Ident::new("GetFieldMut",Span::call_site()),
-            Access::Value=>Ident::new("IntoField",Span::call_site()),
-            Access::MutValue=>Ident::new("IntoFieldMut",Span::call_site()),
-        }.to_tokens(tokens);
-    }
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
@@ -245,24 +164,35 @@ pub(crate) fn derive_from_str(saf:&str)->Result<TokenStream2,syn::Error> {
 
 
 
-pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
-    let names_module_definition=NamedModuleAndTokens::new(
-        &saf.ident,
-        saf.fields.iter().map(|f| &f.ident )
-    );
-    
-    for_delegation(
-        &saf.attrs,
-        format!("A trait alias for the following traits:\n"),
-        &saf.vis,
-        &saf.trait_token,
-        &saf.ident,
-        &saf.generics,
-        &saf.supertraits,
-        &names_module_definition,
-        saf.fields.iter().map(StructuralAliasField::borrowed)
-    )
+pub(crate) fn macro_impl(aliases:StructuralAliases)->Result<TokenStream2,syn::Error> {
 
+    let list=aliases.list;
+    
+    if list.is_empty() {
+        return Ok(quote!());
+    }
+
+    
+    let mut out=TokenStream2::new();
+    for saf in list {
+        let names_module_definition=NamedModuleAndTokens::new(
+            &saf.ident,
+            saf.fields.iter().map(|f| &f.ident ),
+        );
+
+        for_delegation(
+            &saf.attrs,
+            format!("A trait alias for the following traits:\n"),
+            &saf.vis,
+            &saf.trait_token,
+            &saf.ident,
+            &saf.generics,
+            &saf.supertraits,
+            &names_module_definition,
+            saf.fields.iter().map(StructuralAliasField::borrowed)
+        )?.piped(|x|out.append_all(x));
+    }
+    Ok(out)
 }
 
 /// This allows both `structural_alias` and `#[derive(Structural)]` to generate
