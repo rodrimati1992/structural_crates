@@ -1,5 +1,6 @@
 #[cfg(feature="better_macros")]
 #[allow(non_camel_case_types)]
+#[allow(dead_code)]
 #[macro_use]
 mod for_better_macros{
     use crate::{chars,type_level::TString};
@@ -80,10 +81,7 @@ fn identifier_macros_equality(){
 #[cfg(feature="better_macros")]
 #[test]
 fn field_paths_equality(){
-    use crate::{
-        chars,
-        type_level::{AliasedPaths,FieldPath,FieldPathSet,UniquePaths}
-    };
+    use crate::type_level::{FieldPath,FieldPathSet,UniquePaths};
 
     use self::for_better_macros::*;
 

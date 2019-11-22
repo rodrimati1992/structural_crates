@@ -25,17 +25,19 @@ pub(crate) fn impl_(parsed: NameAliases) -> Result<TokenStream2,syn::Error> {
     let char_verbosity=FullPathForChars::Yes;
 
     let aliases_names_a=parsed.aliases.iter().map(|x|&x.name);
+    let aliases_names_b=aliases_names_a.clone();
+    let aliases_names_c=aliases_names_a.clone();
     let field_name=parsed.aliases.iter()
         .map(|x| x.value.type_tokens(char_verbosity) );
-    let constants=parsed.aliases.iter()
-        .map(|x| x.value.constant_named(&x.name,char_verbosity) );
+    let values=parsed.aliases.iter().map(|x| x.value.inferred_expression_tokens() );
 
     Ok(quote!(
         #(
             #[allow(non_camel_case_types)]
             pub type #aliases_names_a=#field_name;
             #[allow(non_upper_case_globals)]
-            #constants
+            pub const #aliases_names_b:#aliases_names_c=#values;
+            
         )*
     ))
 }

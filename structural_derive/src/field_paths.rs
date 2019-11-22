@@ -105,22 +105,17 @@ impl FieldPaths{
         }
     }
 
-    /// Gets a tokenizer that outputs a let binding with the type-level identifier.
-    pub(crate) fn variable_named(
-        &self,
-        name:&syn::Ident,
-        char_path:FullPathForChars,
-    )->TokenStream2{
-        let type_=self.type_tokens(char_path);
+    /// Gets a tokenizer that outputs a type-level FieldPath(Set) value.
+    pub(crate) fn inferred_expression_tokens(&self)->TokenStream2{
         if self.is_set() {
             quote!(
-                let #name=unsafe{
-                    <#type_>::new_unchecked() 
-                }; 
+                unsafe{
+                    structural::pmr::FieldPathSet::new_unchecked() 
+                }
             )
         }else{
             quote!(
-                let #name:#type_=structural::pmr::MarkerType::MTVAL; 
+                structural::pmr::MarkerType::MTVAL
             )
         }
     }
@@ -200,12 +195,6 @@ impl Parse for FieldPath{
 }
 
 impl FieldPath{
-    pub(crate) fn empty()->Self{
-        Self{
-            list:Vec::new(),
-            contains_splice:false,
-        }
-    }
     pub(crate) fn from_ident(ident:Ident)->Self{
         Self{
             list:vec![ FieldPathComponent::from_ident(ident) ],
@@ -279,6 +268,7 @@ pub(crate) enum FieldPathComponent{
     ///
     /// - `FP!( foo[Bar].baz )` is equivalent to `FP!(foo.bbb.baz)`.
     ///
+    #[allow(dead_code)]
     Insert(syn::Type),
     /// This is for splicing a `FieldPath<_>` type into that position.
     /// Examples:
@@ -288,6 +278,7 @@ pub(crate) enum FieldPathComponent{
     /// - `FP!( (Foo).bar )` is equivalent to `TP!(a.b.c.bar)`.
     /// - `FP!( (Foo).bar.baz )` is equivalent to `TP!(a.b.c.bar.baz)`.
     /// - `FP!( foo.(Bar).baz )` is equivalent to `TP!(foo.d.e.f.baz)`.
+    #[allow(dead_code)]
     Splice(syn::Type),
 }
 
@@ -301,6 +292,7 @@ impl FieldPathComponent{
         FieldPathComponent::Ident(x)
     }
 
+    #[allow(dead_code)]
     fn parse_path_or_empty(input: ParseStream)-> parse::Result<syn::Type>{
         if input.is_empty() {
             quote!( structural::pmr::FieldPath<()> )
@@ -313,8 +305,8 @@ impl FieldPathComponent{
 
     pub(crate)fn parse(
         input: ParseStream,
-        is_first:IsFirst,
-        is_period:bool,
+        _is_first:IsFirst,
+        _is_period:bool,
     ) -> parse::Result<Self>{
         // if input.peek(syn::token::Bracket) {
         //     let content;

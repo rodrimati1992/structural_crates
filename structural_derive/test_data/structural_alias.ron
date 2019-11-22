@@ -11,7 +11,7 @@
         ( replacements: { "#r0":"ooh" }, error_count: 1 ),
         ( 
           replacements: { "#r0":"" },
-          find_all:[str("GetField"),not(str("GetFieldMut")),not(str("IntoField"))], 
+          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
           error_count: 0,
         ),
         ( 
@@ -28,12 +28,6 @@
         ( 
           replacements: { "#r0":"move" },
           find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),regex("IntoField *<")], 
-          error_count: 0,
-        ),
-        // Mutable and by value access
-        ( 
-          replacements: { "#r0":"move mut " },
-          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
           error_count: 0,
         ),
         ( 

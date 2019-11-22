@@ -42,6 +42,7 @@ macro_rules! impl_get_multi_field {
                 )*
             );
 
+            #[allow(unused_variables)]
             fn rev_get_field(self,this:&'a This)->Self::Field{
                 (
                     $(
@@ -93,6 +94,7 @@ macro_rules! impl_get_multi_field {
                 }
             }
 
+            #[allow(unused_variables)]
             unsafe fn rev_get_field_raw_mut(
                 self,
                 this:MutRef<'a,This>,

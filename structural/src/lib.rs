@@ -315,13 +315,6 @@ fn main(){
     print_name(worker.clone());
     print_name(student.clone());
 
-
-    {
-        let person=make_person("Louis".into());
-
-        assert_eq!( person.field_(fp!(name)), "Louis" );
-    }
-
 */
 #![cfg_attr(feature="alloc",doc=r###"
     print_name_dyn(Box::new(worker));
@@ -329,6 +322,10 @@ fn main(){
 "###)]
 /*!
 
+    let person=make_person("Louis".into());
+
+    assert_eq!( person.field_(fp!(name)), "Louis" );
+    assert_eq!( person.field_(fp!(value)), &() );
 }
 
 #[derive(Debug,Copy,Clone,PartialEq,Eq)]

@@ -22,11 +22,13 @@ pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2,syn::Error> {
 
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 pub(crate) fn FP_from_str(input: &str) -> Result<TokenStream2,syn::Error> {
     syn::parse_str(input).and_then(FP_impl)
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn test_FP_macro(){
     use as_derive_utils::test_framework::Tests;
 

@@ -1,9 +1,9 @@
-use crate::*;
-use crate::type_level::{AliasedPaths,UniquePaths,FieldPath,FieldPathSet};
+use crate::GetFieldExt;
 
 use core_extensions::SelfOps;
 
 
+#[cfg(feature="alloc")]
 #[test]
 fn boxed_fields() {
     let mut f = Box::new((0, 1, Box::new((20, 21)), 3));
@@ -81,8 +81,11 @@ fn deeply_nested(){
 
 #[test]
 fn identity_getters(){
-    let mut this=Box::new((0,1));
-    let ()=this.fields_mut(fp!());
+    #[cfg(feature="alloc")]
+    {
+        let mut this=Box::new((0,1));
+        let ()=this.fields_mut(fp!());
+    }
     /*
     {
         let other=this.field_mut(fp!(()));

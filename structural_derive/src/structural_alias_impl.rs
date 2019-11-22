@@ -1,6 +1,5 @@
 use crate::{
     field_access::Access,
-    parse_utils::ParseBufferExt,
     tokenizers::NamedModuleAndTokens,
     ident_or_index::{IdentOrIndex,IdentOrIndexRef},
 };
@@ -14,7 +13,6 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{
     TokenStream as TokenStream2,
-    Span,
 };
 
 use quote::{quote,ToTokens,TokenStreamExt};
