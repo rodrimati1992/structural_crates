@@ -251,10 +251,19 @@ structural_alias!{
         ref name:String,
 
         // We have shared,mutable,and by value access to the field.
-        // This is equivalent to writing `mut move value:T,`
+        // Not specifying any of `mut`/`ref`/`move` is equivalent to `mut move value:T,`
         value:T,
     }
 }
+
+
+fn make_person(name:String)->impl Person<()> {
+    make_struct!{
+        name,
+        value: (),
+    }
+}
+
 
 fn print_name<T>(mut this:T)
 where
@@ -267,6 +276,7 @@ where
     assert_eq!( this.field_(fp!(value)), &list );
     assert_eq!( this.into_field(fp!(value)), list );
 }
+
 
 */
 #![cfg_attr(feature="alloc",doc=r###"
@@ -304,6 +314,14 @@ fn main(){
 
     print_name(worker.clone());
     print_name(student.clone());
+
+
+    {
+        let person=make_person("Louis".into());
+
+        assert_eq!( person.field_(fp!(name)), "Louis" );
+    }
+
 */
 #![cfg_attr(feature="alloc",doc=r###"
     print_name_dyn(Box::new(worker));

@@ -15,7 +15,7 @@ mod with_super_traits{
 
     impl<This> AssertImplies for This
     where
-        This:Copy+GetField<FP!(a),Ty=u8>
+        This:Copy+IntoFieldMut<FP!(a),Ty=u8>
     {}
 
     /// This function ensures that the supertraits and field accessors in Trait
@@ -54,7 +54,7 @@ mod with_where_clause{
     impl<This,T> AssertImplies<T> for This
     where
         T:Clone+Debug,
-        This:Copy+GetField<FP!(a),Ty=T>
+        This:Copy+IntoFieldMut<FP!(a),Ty=T>
     {}
 }
 
