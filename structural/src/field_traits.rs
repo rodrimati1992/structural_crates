@@ -15,7 +15,7 @@ use std_::marker::PhantomData;
 mod tuple_impls;
 mod most_impls;
 pub mod rev_get_field;
-pub mod multi_fields;
+mod multi_fields;
 
 
 use self::rev_get_field::{

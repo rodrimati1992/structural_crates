@@ -16,6 +16,13 @@ include = [
     "../MIT_license"
 ]
 
+[features]
+# A private internal feature,this is required to run tests in this crate,
+# because declaring a crate as both a `[dependency]` and a `[dev-dependency]` causes 
+# their features to be combined,
+# causing the optional crates of `as_derive_utils` that are only for testing
+# to be enabled in regular builds.
+testing=["as_derive_utils/testing"]
 
 [badges]
 travis-ci = { repository =  "rodrimati1992/structural_crates/" }
@@ -42,11 +49,4 @@ features=["full","extra-traits"]
 
 [dependencies.as_derive_utils]
 version="0.8.1"
-#path="../../abi_stable_crates/as_derive_utils"
-
-[dev-dependencies.as_derive_utils]
-version="0.8.1"
-#path="../../abi_stable_crates/as_derive_utils"
-features=["testing"]
-
-
+default-features=false

@@ -50,8 +50,13 @@ impl<T,U> IsFieldPathSet for FieldPathSet<T,U>{
 
 /// A type-level string,represented as a tuple of type-level bytes.
 ///
+/// This is an implementation detail of structural,
+/// so that it's possible to replace it with `pub struct TString<const NAME:&'static str>`
+///
 /// This cannot be converted to a `&'static str` constant
 /// (if you can figure out a cheap way to do that please create an issue/pull request).
+///
+#[doc(hidden)]
 pub struct TString<T>(PhantomData<T>);
 
 impl<T> TString<T>{
