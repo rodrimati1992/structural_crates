@@ -9,14 +9,13 @@ pub mod ident;
 pub mod list;
 
 #[doc(hidden)]
-pub use self::ident::FieldPathString;
+pub use self::ident::{FieldPathString,TString};
 
 pub use self::{
     ident::{
         IsFieldPath,IsFieldPathSet,
         FieldPath,FieldPath1,FieldPathSet,
         UniquePaths,AliasedPaths,
-        TString,
     },
     list::{TList,TNil},
 };

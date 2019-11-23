@@ -2,7 +2,7 @@
 
 use super::*;
 
-use crate::structural_trait::{FieldInfo,StructuralDyn,TField};
+use crate::structural_trait::{FieldInfo,StructuralDyn};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -61,11 +61,6 @@ impl<T> Structural for RangeInclusive<T>{
     const FIELDS:&'static[FieldInfo]=&[
         FieldInfo::not_renamed("start"),
         FieldInfo::not_renamed("end"),
-    ];
-
-    type Fields=TList![
-        TField<Start_STR,T>,
-        TField<End_STR,T>,
     ];
 }
 

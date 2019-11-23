@@ -72,7 +72,7 @@ use self::rev_get_field::{
 /// ```rust
 /// use structural::{
 ///     GetField,Structural,FP,TList,
-///     structural_trait::{FieldInfo,TField},
+///     structural_trait::{FieldInfo},
 ///     z_impl_structural_dyn,
 /// };
 ///
@@ -83,11 +83,11 @@ use self::rev_get_field::{
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///     
-///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
+/// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
@@ -119,6 +119,7 @@ pub trait GetField<FieldName>:StructuralDyn{
 ///
 /// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(n a m e)>
 /// where
+///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
 ///     T:GetField<FP!(n a m e)>
 /// {
 ///     this.field_(fp!(name))
@@ -146,6 +147,7 @@ pub trait GetField<FieldName>:StructuralDyn{
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
+///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
 ///     T:GetField<FP!(n a m e), Ty=O>
 /// {
 ///     this.field_(fp!(name))
@@ -161,6 +163,27 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 
 /// Allows accessing the `FieldName` field mutably.
 ///
+/// # Safety
+/// 
+/// These are requirements for manual implementations.
+/// 
+/// It is recommended that you use the `z_unsafe_impl_get_field_raw_mut_method` macro 
+/// if you only borrow a field of the type.
+/// 
+/// Your implementation of `GetFieldMut::get_field_raw_mut` must ensure these properties:
+/// 
+/// - It must be side-effect free,
+///
+/// - The field you borrow must always be the same one.
+/// 
+/// - That no implementation of `GetFieldMut::get_field_raw_mut`
+/// returns a pointer to a field that other ones also return,
+/// 
+/// Your implementation of the `get_field_raw_mut_func` method must only return a
+/// function pointer for the `GetFieldMut::get_field_raw_mut` method from the same 
+/// implementation of the `GetFieldMut` trait.
+/// 
+///
 /// # Usage as Bound Example
 ///
 /// This example demonstrates how you can use this trait as a bound.
@@ -173,6 +196,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// 
 /// fn take_value<T,V>(this:&mut T)->V
 /// where
+///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 ///     T:GetFieldMut<FP!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
@@ -201,7 +225,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// ```rust
 /// use structural::{
 ///     GetField,GetFieldMut,Structural,FP,TList,
-///     structural_trait::{FieldInfo,TField},
+///     structural_trait::{FieldInfo},
 ///     mut_ref::MutRef,
 ///     z_impl_structural_dyn,
 /// };
@@ -213,11 +237,11 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
+/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
@@ -226,6 +250,7 @@ pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 ///     }
 /// }
 ///
+/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// unsafe impl<T> GetFieldMut<FP!(v a l u e)> for Huh<T>{
 ///     fn get_field_mut_(&mut self)->&mut Self::Ty{
 ///         &mut self.value
@@ -243,13 +268,11 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
     /// Accesses the `FieldName` field by mutable reference.
     fn get_field_mut_(&mut self)->&mut Self::Ty;
 
-    /// Gets a MutRef to the field.
+    /// Gets a mutable pointer for the field.
     /// 
     /// # Safety
     /// 
-    /// For the `ptr` argument,you must pass the return value of the
-    /// `as_mutref` method for this field.
-    /// 
+    /// You must pass a pointer casted from `*mut Self` to `*mut ()`.
     unsafe fn get_field_raw_mut(ptr:*mut (),_:PhantomData<FieldName>)->*mut Self::Ty
     where 
         Self:Sized;
@@ -262,7 +285,7 @@ pub unsafe trait GetFieldMut<FieldName>:GetField<FieldName>{
 /////////////////////////////////////////////////
 
 
-/// TODO
+/// The type of `GetFieldMut::get_field_raw_mut`
 pub type GetFieldMutRefFn<FieldName,FieldTy>=
     unsafe fn(*mut (),PhantomData<FieldName>)->*mut FieldTy;
 
@@ -283,6 +306,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 /// 
 /// fn into_value<T,V>(this:T)->V
 /// where
+///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 ///     T:IntoField<FP!(v a l u e), Ty=V>,
 /// {
 ///     this.into_field(fp!(value))
@@ -309,7 +333,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 /// ```rust
 /// use structural::{
 ///     GetField,IntoField,Structural,FP,TList,
-///     structural_trait::{FieldInfo,TField},
+///     structural_trait::{FieldInfo},
 ///     mut_ref::MutRef,
 ///     z_impl_structural_dyn,
 /// };
@@ -322,11 +346,11 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 /// impl<T> Structural for Huh<T>{
 ///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
 ///
-///     type Fields=TList![ TField<FP!(v a l u e),T> ];
 /// }
 ///
 /// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
+/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetField<FP!(v a l u e)> for Huh<T>{
 ///     type Ty=T;
 ///
@@ -335,6 +359,7 @@ pub type GetFieldMutRefFn<FieldName,FieldTy>=
 ///     }
 /// }
 ///
+/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> IntoField<FP!(v a l u e)> for Huh<T>{
 ///     fn into_field_(self)->Self::Ty{
 ///         self.value
@@ -368,7 +393,7 @@ where
 
 /// An extension trait,which defines methods for accessing fields generically.
 pub trait GetFieldExt{
-    /// Gets a reference to the ´FieldName´ field.
+    /// Gets a reference to a field,determined by `path`.
     ///
     /// This is named `field_` instead of `field`
     /// because `field` collides with the `DebugTuple`/`DebugStruct` method
@@ -397,7 +422,7 @@ pub trait GetFieldExt{
         path.rev_get_field(self)
     }
 
-    /// Gets multiple references to fields.
+    /// Gets references to multiple fields,determined by `path`.
     ///
     /// # Example
     ///
@@ -419,7 +444,7 @@ pub trait GetFieldExt{
         path.rev_get_field(self)
     }
 
-    /// Gets a mutable reference to the ´FieldName´ field.
+    /// Gets a mutable reference to a field,determined by `path`.
     ///
     /// # Example
     ///
@@ -445,11 +470,7 @@ pub trait GetFieldExt{
         path.rev_get_field_mut(self)
     }
 
-    /// Gets multiple mutable references to fields.
-    ///
-    /// This is safe since `FieldPathSet` requires its strings 
-    /// to be checked for uniqueness before being constructed
-    /// (the safety invariant of `FieldPathSet`).
+    /// Gets mutable references to multiple field,determined by `path`.
     ///
     /// # Example
     ///
@@ -475,7 +496,7 @@ pub trait GetFieldExt{
         path.rev_get_field_mut(self)
     }
 
-    /// Converts ´self´ into the ´FieldName´ field.
+    /// Converts ´self´ into a field,determined by `path`.
     ///
     /// # Example
     ///
@@ -502,7 +523,7 @@ pub trait GetFieldExt{
         path.rev_into_field(self)
     }
 
-    /// Converts a boxed ´self´ into the ´FieldName´ field.
+    /// Converts a boxed ´self´ into a field,determined by `path`.
     ///
     /// # Example
     ///
@@ -546,11 +567,10 @@ macro_rules! unsized_impls {
 
         impl<T> Structural for $ptr<T>
         where
-            T:Structural
+            T:Structural+?Sized
         {
             const FIELDS:&'static [FieldInfo]=T::FIELDS;
 
-            type Fields=T::Fields;
         }
 
         impl<T> StructuralDyn for $ptr<T>

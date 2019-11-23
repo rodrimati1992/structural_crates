@@ -274,9 +274,6 @@ macro_rules! z_delegate_structural_with {
         {
             const FIELDS:&'static[$crate::structural_trait::FieldInfo]=
                 <$delegating_to_type as $crate::Structural>::FIELDS;
-
-            type Fields=
-                <$delegating_to_type as $crate::Structural>::Fields;
         }
 
         impl<$($impl_params)*> $crate::StructuralDyn for $self
