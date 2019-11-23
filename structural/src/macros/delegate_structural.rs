@@ -41,10 +41,18 @@ z_delegate_structural_with!{
     // This is the type of the variable we delegate to,
     // this is required because Rust doesn't have a `typeof`/`decltype` construct.
     delegating_to_type=T;
-    field_name_param=( fname_var : fname_ty );
+
+    // `field_name` is the name for a `PhantomData` parameter in 
+    // `GetFieldMut::get_field_raw_mut`
+    // (usable from `as_delegating_raw{}` in this macro),
+    // with the name of the field being accessed
+    //
+    // `FieldName` is the name of the type parameter that represents the 
+    // name of the field being accessed.
+    field_name_param=( field_name : FieldName );
 
     // This block of code is used to get the reference to the delegating variable 
-    // in GetField and other traits.
+    // in GetField.
     GetField {
         &this.value 
     }
@@ -63,6 +71,8 @@ z_delegate_structural_with!{
     ]{
         &mut this.value
     }
+
+    // This gets a raw mutable pointer to the variable this delegates to.
     as_delegating_raw{
         &mut (*this).value as *mut T
     }
@@ -114,7 +124,7 @@ z_delegate_structural_with!{
     ]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname_var : fname_ty );
+    field_name_param=( field_name : FieldName );
 
     GetField {
 #       // This ensures that the `T:Clone` bound is put on the impl block.

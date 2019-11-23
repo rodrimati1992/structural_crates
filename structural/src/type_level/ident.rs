@@ -8,8 +8,7 @@ use core_extensions::MarkerType;
 
 use std_::marker::PhantomData;
 
-pub use crate::chars::*;
-pub use crate::type_level::collection_traits::{
+use crate::type_level::collection_traits::{
     Append,Append_,
     PushBack,PushBack_,
     ToTList,ToTList_,
@@ -99,6 +98,7 @@ impl<T> ToTString_ for TString<T>{
 pub struct FieldPath<T>(PhantomData<T>);
 
 /// A FieldPath for accesing a single `Str` field.
+#[doc(hidden)]
 pub type FieldPath1<Str>=FieldPath<(Str,)>;
 
 
@@ -125,6 +125,7 @@ impl<T> FieldPath<T>{
 
 unsafe impl<T> MarkerType for FieldPath<T>{}
 
+#[doc(hidden)]
 impl<S> ToTString_ for FieldPath<(TString<S>,)>{
     type Output=TString<S>;
 }
@@ -136,6 +137,7 @@ where
     type Output=ToTList<T>;
 }
 
+#[doc(hidden)]
 impl<T,S> PushBack_<TString<S>> for FieldPath<T>
 where
     T:PushBack_<TString<S>>
@@ -160,6 +162,10 @@ where
 
 
 impl<T> FieldPath<T>{
+    /// Constructs a new FieldPath with `_other` appended at the end.
+    ///
+    /// Currently this can only be a single element FieldPath
+    /// (ie:`fp!(a)`/`fp!(foo)`/`fp!(bar)`)
     #[inline(always)]
     pub fn push<U,V>(self,_other:U)->FieldPath<V>
     where
@@ -168,6 +174,7 @@ impl<T> FieldPath<T>{
         MarkerType::MTVAL
     }
 
+    /// Constructs a new FieldPath with `_other` appended at the end.
     #[inline(always)]
     pub fn append<U>(self,_other:FieldPath<U>)->FieldPath<Append<T,U>>
     where
@@ -176,6 +183,7 @@ impl<T> FieldPath<T>{
         MarkerType::MTVAL
     }
 
+    /// Converts this `FieldPath` to a `FieldPathSet`.
     #[inline(always)]
     pub const fn to_set(self)->FieldPathSet<(Self,),UniquePaths>{
         unsafe{
@@ -185,6 +193,7 @@ impl<T> FieldPath<T>{
 }
 
 impl<S> FieldPath<(TString<S>,)>{
+    #[doc(hidden)]
     pub const fn to_tstr(self)->TString<S>{
         MarkerType::MTVAL
     }
@@ -237,7 +246,6 @@ unsafe impl<T> MarkerType for FieldPathSet<T,AliasedPaths>{}
 
 impl<T,U> FieldPathSet<T,U>{
     // The constructor function used by proc macros,
-    // this avoids having to use .
     #[doc(hidden)]
     #[inline(always)]
     pub const unsafe fn new_unchecked()->Self{
@@ -249,8 +257,8 @@ impl<T> FieldPathSet<T,UniquePaths>{
     ///
     /// # Safety
     ///
-    /// `T` must be a tuple of `TString<_>`s,
-    /// where no `TString<_>` type is repeated within the tuple.
+    /// `T` must be a tuple of `FieldPaths<_>`s,
+    /// where none of them is a subset of each other.
     #[inline(always)]
     pub const unsafe fn new()->Self{
         FieldPathSet(PhantomData)
@@ -284,6 +292,8 @@ impl<T> FieldPathSet<T,AliasedPaths>{
 }
 
 impl<T,U> FieldPathSet<(FieldPath<T>,),U> {
+    /// Converts a `FieldPathSet` containing a single `FieldPath` 
+    /// into that `FieldPath`.
     #[inline(always)]
     pub const fn to_path(self)->FieldPath<T>{
         MarkerType::MTVAL
@@ -292,6 +302,15 @@ impl<T,U> FieldPathSet<(FieldPath<T>,),U> {
 
 
 impl<T,U> FieldPathSet<T,U>{
+    /// Constructs a new FieldPathSet with `_other` appended at the end.
+    ///
+    /// Currently this accepts:
+    ///
+    /// - A FieldPath
+    /// (ie:`fp!(a)`/`fp!(foo)`/`fp!(bar)`)
+    ///
+    /// - A FieldPathSet containing a single FieldPath
+    /// (ie:`fp!(a).to_set()`/`fp!(foo).to_set()`/`fp!(bar).to_set()`)
     #[inline(always)]
     pub fn push<O,Out>(self,_other:O)->FieldPathSet<Out,AliasedPaths>
     where
@@ -300,6 +319,8 @@ impl<T,U> FieldPathSet<T,U>{
         MarkerType::MTVAL
     }
 
+    /// Constructs a new FieldPathSet with the `_other` FieldPathSet
+    /// appended at the end.
     #[inline(always)]
     pub fn append<T2,U2>(
         self,
@@ -346,7 +367,7 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+#[doc(hidden)]
 impl<S> From<FieldPath<(TString<S>,)>> for TString<S>{
     #[inline(always)]
     fn from(_this:FieldPath<(TString<S>,)>)->Self{
@@ -354,6 +375,7 @@ impl<S> From<FieldPath<(TString<S>,)>> for TString<S>{
     }
 }
 
+#[doc(hidden)]
 impl<S> From<TString<S>> for FieldPath<(TString<S>,)>{
     #[inline(always)]
     fn from(_this:TString<S>)->Self{

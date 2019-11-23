@@ -6,18 +6,21 @@ Contains types representing values.
 
 pub mod collection_traits;
 pub mod ident;
+#[doc(hidden)]
 pub mod list;
 
 #[doc(hidden)]
-pub use self::ident::{FieldPathString,TString};
+pub use self::{
+    ident::{FieldPathString,FieldPath1,TString},
+    list::{TList,TNil},
+};
 
 pub use self::{
     ident::{
         IsFieldPath,IsFieldPathSet,
-        FieldPath,FieldPath1,FieldPathSet,
+        FieldPath,FieldPathSet,
         UniquePaths,AliasedPaths,
     },
-    list::{TList,TNil},
 };
 
 

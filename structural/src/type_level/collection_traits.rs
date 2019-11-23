@@ -1,3 +1,7 @@
+/*!
+Traits for type-level collections.
+*/
+
 mod push_back;
 mod tuple_impls;
 
@@ -17,12 +21,14 @@ pub type PushBack<This,Type>=
 ///////////////////////////////////////////////////////////
 
 /// Gets the `TList` equivalent of `Self`.
+#[doc(hidden)]
 pub trait ToTList_{
     type Output;
 }
 
 
 /// Gets the `TList` type equivalent of `This`.
+#[doc(hidden)]
 pub type ToTList<This>=
     <This as ToTList_>::Output;
 
@@ -30,11 +36,13 @@ pub type ToTList<This>=
 ///////////////////////////////////////////////////////////
 
 /// Gets the `TString` equivalent of `Self`.
+#[doc(hidden)]
 pub trait ToTString_{
     type Output;
 }
 
 /// Gets the `TString` equivalent of `This`.
+#[doc(hidden)]
 pub type ToTString<This>=
     <This as ToTString_>::Output;
 
@@ -68,5 +76,6 @@ pub trait Flatten_{
     type Output;
 }
 
+/// Flattens a collection of collection.
 pub type Flatten<This>=
     <This as Flatten_>::Output;
