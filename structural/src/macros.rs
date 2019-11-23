@@ -359,18 +359,21 @@ each of which get turned into supertraits on `Foo`:
 ### Defining a Point trait alias
 
 ```rust
-use structural::{
-    structural_alias,
-    fp,
-    GetFieldExt,
-    Structural,
-};
+use structural::{structural_alias,fp,GetFieldExt,Structural};
 
 use core::{
     cmp::PartialEq,
     fmt::{Debug,Display},
 };
 
+
+structural_alias!{
+    trait Point<T>{
+        // Using `ref` because we just want to read the fields
+        ref x:T,
+        ref y:T,
+    }
+}
 
 fn print_point<T,U>(value:&T)
 where
@@ -393,13 +396,6 @@ fn main(){
 
 }
 
-structural_alias!{
-    trait Point<T>{
-        // Using `ref` because we just want to read the fields
-        ref x:T,
-        ref y:T,
-    }
-}
 
 
 #[derive(Structural)]

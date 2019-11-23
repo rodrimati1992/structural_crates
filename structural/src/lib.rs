@@ -111,6 +111,17 @@ use structural::{GetFieldExt,Structural,structural_alias,fp};
 
 use std::borrow::Borrow;
 
+structural_alias!{
+    trait Person<H:House>{
+        name:String,
+        house:H,
+    }
+
+    trait House{
+        dim:Dimension3D,
+    }
+}
+
 
 fn print_name<T,H>(this:&T)
 where
@@ -138,17 +149,6 @@ where
 }
 
 
-
-structural_alias!{
-    trait Person<H:House>{
-        name:String,
-        house:H,
-    }
-
-    trait House{
-        dim:Dimension3D,
-    }
-}
 
 #[derive(Structural)]
 #[struc(public)]
