@@ -2,32 +2,11 @@
 Contains the Structural trait with info about the fields that have accessor trait impls.
 */
 
-use std_::marker::PhantomData;
-
-
 
 /// Indicates and provides information about the fields that implement accessor traits.
 pub trait Structural{
     /// Information about fields that have accessor trait implemented for them.
     const FIELDS:&'static[FieldInfo];
-
-    /// A type-level list of field name,field type pairs.
-    ///
-    /// Those lists can be manually constructed like this:
-    ///
-    /// ```
-    /// use structural::{
-    ///     TList,FP,
-    ///     structural_trait::TField,
-    /// };
-    /// 
-    /// type TheList=TList![
-    ///     TField<FP!(f o o),String>,
-    ///     TField<FP!(b a r),Vec<u8>>,
-    /// ];
-    /// 
-    /// ```
-    type Fields;
 }
 
 
@@ -61,18 +40,13 @@ impl FieldInfo{
     }
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// A type-level value representing a field's name and type.
-pub struct TField<Name,Ty>(PhantomData<(Name,Ty)>);
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-/// The names that `T`'s fields have in their accessor trait impls.
+/// An iterator over the name parameters for `T`'s accessor trait impls,
+///
+/// These may be different than the names of the fields because 
+/// you can rename their accessor trait name parameter with `#[struc(raname="new_name")]`.
 pub fn accessor_names<T>()->impl ExactSizeIterator<Item=&'static str>+Clone
 where
     T:Structural

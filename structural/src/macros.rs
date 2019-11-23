@@ -222,15 +222,6 @@ macro_rules! impl_structural{
                     )*
                 ]
             };
-
-            type Fields=$crate::TList![
-                $(
-                    $crate::structural_trait::TField<
-                        $name_param_ty,
-                        $field_ty,
-                    >,
-                )*
-            ];
         }
 
         impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_

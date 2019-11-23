@@ -348,13 +348,6 @@ Declares a module with aliases for type-level idents,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
 
-These aliases *cannot* be combined to pass to
-`GetFieldExt::fields` or `GetFieldExt::fields_mut`.
-When macros take in identifiers those must be the
-literal identifiers for the fields(you can't pass aliases),
-since they must check that the field names passed to the macro don't repeat
-within the macro invocation.
-
 # Example
 
 ```rust
@@ -439,8 +432,6 @@ macro_rules! field_path_aliases_module {
 Declares aliases for type-level idents,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
-
-TODO:document whether this will work on 1.40
 
 # Example
 

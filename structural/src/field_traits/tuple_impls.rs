@@ -1,5 +1,5 @@
 use crate::Structural;
-use crate::structural_trait::{FieldInfo,StructuralDyn,TField};
+use crate::structural_trait::{FieldInfo,StructuralDyn};
 
 use crate::type_level::ident::{FieldPathString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
@@ -20,10 +20,6 @@ macro_rules! impl_tuple {
         impl<$($delegating_to_type),*> Structural for $tuple_ty {
             const FIELDS:&'static[FieldInfo]=&[
                 $( FieldInfo::not_renamed(stringify!( $field )) ,)*
-            ];
-
-            type Fields=TList![
-                $(TField< $field_param,$delegating_to_type >,)*
             ];
         }
 

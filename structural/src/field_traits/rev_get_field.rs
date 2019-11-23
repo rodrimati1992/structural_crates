@@ -1,5 +1,5 @@
 /*!
-Contains traits implemented on field paths,taking the structural types as parameters.
+Contains traits implemented on field paths,taking Structural types as parameters.
 */
 
 use crate::{
@@ -38,7 +38,7 @@ pub trait RevGetField<'a,This:?Sized>{
     /// The reference-containing type this returns.
     type Field:'a;
 
-    /// Accesses the field(s) `self` represents inside of `this` by reference.
+    /// Accesses the field(s) that `self` represents inside of `this`,by reference.
     fn rev_get_field(self,this:&'a This)->Self::Field;
 }
 
@@ -50,17 +50,25 @@ pub trait RevGetField<'a,This:?Sized>{
 ///
 /// # Safety
 ///
-/// TODO
+/// The implementation must assign virtually the same type to both
+/// the `Field` and `FieldMutRef` associated types.
+///
+/// - If `Field` is a single mutable references,
+/// `FieldMutRef` must be a `MutRef` pointing to the same type.
+///
+/// - If `Field` is a collection of mutable references,
+/// `FieldMutRef` must be the same collection with the 
+/// mutable references replaced with the `MutRef` type.
 pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
     /// The mutable-reference-containing type this returns.
     type Field:'a;
     /// The `MUtRef`-containing type this returns.
     type FieldMutRef:'a;
 
-    /// Accesses the field(s) `self` represents inside of `this` by mutable reference.
+    /// Accesses the field(s) that `self` represents inside of `this`,by mutable reference.
     fn rev_get_field_mut(self,this:&'a mut This)->Self::Field;
 
-    /// Accesses the field(s) `self` represents inside of `this` by `MutRef`.
+    /// Accesses the field(s) that `self` represents inside of `this`,by `MutRef`.
     unsafe fn rev_get_field_raw_mut(
         self,
         field:MutRef<'a,This>,
@@ -76,11 +84,11 @@ pub trait RevIntoField<'a,This:?Sized>{
     /// The type this returns.
     type Field:'a;
 
-    /// Accesses the field(s) `self` represents inside of `this` by value.
+    /// Accesses the field(s) that `self` represents inside of `this`,by value.
     fn rev_into_field(self,this:This)->Self::Field
     where This:Sized;
 
-    /// Accesses the field(s) `self` represents inside of `this` by value.
+    /// Accesses the field(s) that `self` represents inside of `this`,by value.
     #[cfg(feature="alloc")]
     fn rev_box_into_field(self,this:Box<This>)->Self::Field;
 }
@@ -116,7 +124,6 @@ macro_rules! impl_get_multi_field {
                 field
             }
         }
-        //TODO:justify why this is safe
         unsafe impl<'a,$($fname,)* $($all_tys,)* This>
             RevGetFieldMut<'a,This>
         for FieldPath<($($fname,)*)> 
@@ -156,7 +163,6 @@ macro_rules! impl_get_multi_field {
             }
         }
 
-        //TODO:justify why this is safe
         #[cfg(all(feature="specialization", $($enable_specialization)*))]
         unsafe impl<'a,$($fname,)* $($all_tys,)* This>
             RevGetFieldMut<'a,This>

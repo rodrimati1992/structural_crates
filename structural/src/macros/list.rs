@@ -21,6 +21,7 @@ type StringsTypes<'a>=TList![ String,&'a str,Cow<'a,str> ];
 
 */
 #[macro_export]
+#[doc(hidden)]
 macro_rules! TList {
     () => { $crate::type_level::TNil };
     (..$rest:ty) => { $rest };
@@ -109,6 +110,7 @@ fn main(){
 
 */
 #[macro_export]
+#[doc(hidden)]
 macro_rules! tlist {
     ($($all:tt)*) => {
         <TList!($($all)*)>::NEW
