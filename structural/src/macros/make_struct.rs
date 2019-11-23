@@ -8,6 +8,7 @@
 /// ```
 /// # use structural::make_struct;
 ///
+/// # let foo=();
 /// # let _=
 /// make_struct!{
 ///     // This is an inner attribute,which is applied to the struct declaration.

@@ -13,7 +13,16 @@
 /// `FieldPathSet` must be constructed with syntactically unique paths,
 /// since there is no cheap way to check for equality of type-level strings yet.
 ///
-/// # Syntax 
+/// ### Nested fields
+///
+/// You can construct field paths to access nested fields with `fp!(a.b.c)`,
+/// where doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
+///
+/// ### Multiple fields
+/// 
+/// You can access multiple fields simultaneously with `fp!(0,1,2)`
+/// where doing `this.fields_mut(fp!(a,b,c))` 
+/// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
 // /// ### Splicing
 // ///
@@ -86,11 +95,17 @@
 /// # Example
 ///
 /// ```
-/// use structural::{GetFieldExt,fp};
+/// use structural::{GetFieldExt,fp,structural_alias};
 ///
-/// {
-///     let tup=("I","you","they");
-///    
+/// structural_alias!{
+///     trait Tuple3<A,B,C>{
+///         0:A,
+///         1:B,
+///         2:C,
+///     }
+/// }
+///
+/// fn with_tuple3<'a>(tup:impl Tuple3<&'a str,&'a str,&'a str>){
 ///     assert_eq!( tup.field_(fp!(0)), &"I" );
 ///     assert_eq!( tup.field_(fp!(1)), &"you" );
 ///     assert_eq!( tup.field_(fp!(2)), &"they" );
@@ -100,36 +115,66 @@
 ///     assert_eq!( tup.fields(fp!(0,1,2)), (&"I",&"you",&"they") );
 /// }
 ///
-/// #[derive(structural::Structural)]
+/// fn main(){
+///     with_tuple3(("I","you","they"));
+///     with_tuple3(("I","you","they","this is not used"));
+///     with_tuple3(("I","you","they","_","this isn't used either"));
+/// }
+/// ```
+///
+/// # Example
+///
+/// An example which accesses nested fields.
+///
+/// ```
+/// use structural::{GetFieldExt,Structural,fp,make_struct};
+///
+/// #[derive(Structural)]
 /// #[struc(public)]
-/// #[struc(access="mut move")]
 /// struct Foo{
-///     bar:u32,
+///     bar:Bar,
 ///     baz:u32,
 ///     ooo:(u32,u32),
 /// }
 ///
-/// {
-///     let mut foo=Foo{
-///         bar:0,
-///         baz:44,
-///         ooo:(66,99),
-///     };
-///     
-///     assert_eq!( foo.field_(fp!(bar)), &0 );
+/// #[derive(Debug,Clone,PartialEq,Structural)]
+/// #[struc(public)]
+/// struct Bar{
+///     ooo:(u32,u32),
+/// }
+///
+///
+/// fn with_foo(foo:&mut dyn Foo_SI){
+///     let bar=Bar{ooo: (300,301) };
+///     assert_eq!( foo.field_(fp!(bar)), &bar );
+///     assert_eq!(
+///         foo.fields_mut(fp!( bar.ooo, ooo.0, ooo.1 )),
+///         ( &mut (300,301), &mut 66, &mut 99 )
+///     );
+///     assert_eq!( foo.field_(fp!(bar.ooo)), &(300,301) );
+///     assert_eq!( foo.field_(fp!(bar.ooo.0)), &300 );
+///     assert_eq!( foo.field_(fp!(bar.ooo.1)), &301 );
 ///     assert_eq!( foo.field_(fp!(baz)), &44 );
 ///     assert_eq!( foo.field_(fp!(ooo)), &(66,99) );
 ///     assert_eq!( foo.field_(fp!(ooo.0)), &66 );
 ///     assert_eq!( foo.field_(fp!(ooo.1)), &99 );
-///
-///     assert_eq!( foo.fields(fp!(ooo,bar)), (&(66,99),&0) );
-///     assert_eq!( foo.fields(fp!(bar,ooo,baz)), (&0,&(66,99),&44) );
-///
-///     assert_eq!( foo.fields_mut(fp!(ooo,bar)), (&mut (66,99), &mut 0) );
-///     assert_eq!( foo.fields_mut(fp!(bar,ooo,baz)), (&mut 0, &mut (66,99), &mut 44) );
-///         
 /// }
 ///
+/// fn main(){
+///     let bar=Bar{ooo: (300,301) };
+///     with_foo(&mut Foo{
+///         bar:bar.clone(),
+///         baz:44,
+///         ooo:(66,99),
+///     });
+/// 
+///     with_foo(&mut make_struct!{
+///         bar:bar.clone(),
+///         baz:44,
+///         ooo:(66,99),
+///     });
+/// 
+/// }
 /// ```
 ///
 #[macro_export]
@@ -403,6 +448,60 @@ fn main(){
 
 ```
 
+# Example
+
+This demonstrates defining and using aliases for nested fields.
+
+```rust
+use structural::{field_path_aliases_module,make_struct,structural_alias,GetFieldExt};
+
+field_path_aliases_module!{
+    pub mod names{
+        a=0.0, // This is for accessing the `.0.0` nested field.
+        b=0.1, // This is for accessing the `.0.1` nested field.
+        c=foo.boo, // This is for accessing the `.foo.bar` nested field.
+        d=foo.bar.baz, // This is for accessing the `.foo.bar.baz` nested field.
+    }
+}
+
+structural_alias!{
+    trait Foo<T>{
+        foo:T,
+    }
+
+    trait Bar<T>{
+        boo:u32,
+        bar:T,
+    }
+
+    trait Baz<T>{
+        baz:T,
+    }
+}
+
+fn assert_nested<A,B,C>(this:&A)
+where
+    A:Foo<B>,
+    B:Bar<C>,
+    C:Baz<u32>,
+{
+    assert_eq!( this.field_(names::c), &100 );
+    assert_eq!( this.field_(names::d), &101 );
+}
+
+fn main(){
+    assert_nested(&make_struct!{
+        foo:make_struct!{
+            boo:100,
+            bar:make_struct!{
+                baz:101,
+            }
+        }
+    });
+}
+
+```
+
 
 */
 #[macro_export]
@@ -456,6 +555,7 @@ field_path_aliases!{
     h=(a,b,c),
 
     j=(p), // The identifier can also be parenthesised
+
 }
 
 
@@ -476,6 +576,44 @@ fn main(){
     assert_fields(&(2,3,5,8));
     assert_fields(&(2,3,5,8,13));
     assert_fields(&(2,3,5,8,13,21));
+}
+```
+
+# Example
+
+This demonstrates defining and using aliases for nested fields.
+
+```rust
+use structural::{field_path_aliases,structural_alias,GetFieldExt};
+
+
+field_path_aliases!{
+    nested_a=0.0, // This is for accessing the `.0.0` nested field.
+    nested_b=0.1, // This is for accessing the `.0.1` nested field.
+    nested_c=foo.bar, // This is for accessing the `.foo.bar` nested field.
+    nested_d=foo.bar.baz, // This is for accessing the `.foo.bar.baz` nested field.
+}
+
+structural_alias!{
+    trait Tuple2<T>{
+        ref 0:(T,T),
+        ref 1:(T,T),
+    }
+}
+
+fn assert_nested<T>(this:&T)
+where
+    T:Tuple2<u32>
+{
+    assert_eq!( this.field_(nested_a), &100 );
+    assert_eq!( this.field_(nested_b), &101 );
+}
+
+fn main(){
+    assert_nested(&(
+        (100,101),
+        (200,201),
+    ));
 }
 
 ```
