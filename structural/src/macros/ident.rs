@@ -1,8 +1,6 @@
 
 
-/// Constructs field path(s) (TString/TStringSet).
-///
-/// The arguments to this macro can be a single or multiple identifiers.
+/// Constructs a FieldPath(Set) value.
 ///
 /// When passed a single argument,this instantiates a `FieldPath`,
 /// which can be passed to the
@@ -10,9 +8,9 @@
 /// to access a field.
 ///
 /// When passed multiple arguments,this instantiates a `FieldPathSet`.
-/// It can then be passed to the `GetFieldExt::fields` method,
+/// It can then be passed to the `GetFieldExt::fields` method.<br>
 /// To be passed to `GetFieldExt::fields_mut`,
-/// `FieldPathSet` must  constructed with syntactically unique paths,
+/// `FieldPathSet` must be constructed with syntactically unique paths,
 /// since there is no cheap way to check for equality of type-level strings yet.
 ///
 /// # Syntax 
@@ -171,13 +169,18 @@ macro_rules! _delegate_fp {
 
 
 
-/// Constructs a type-level identifier for use as a generic parameter.
+/// Constructs a FieldPath(Set) for use as a generic parameter.
 ///
 /// # Improved macro
 ///
-/// To get an improved version of this macro (it requires Rust nightly or Rust 1.40) 
-/// which can use the same syntax as the `fp` macro,
-/// you can use either the `nightly_better_macros` or `better_macros` cargo features.
+/// To get an improved version of this macro which can use the same syntax 
+/// as the `fp` macro,you can do any of:
+/// 
+/// - Use Rust 1.40 or greater
+///
+/// - Use the `nightly_better_macros` cargo feature.
+///
+/// - Use the `better_macros` cargo feature.
 ///
 ///
 /// # Examples
@@ -199,10 +202,7 @@ macro_rules! _delegate_fp {
 /// 
 /// # Example
 /// 
-/// This demonstrates the improved version of this macro,which requires either the 
-/// the `nightly_better_macros` or `better_macros` cargo features.
-/// Once proc-macros in types reaches stable this will be usable automatically
-/// for Rust versions since.
+/// This demonstrates [the improved version of this macro](#improved-macro).
 /// 
 #[cfg_attr(feature="better_macros",doc=" ```rust")]
 #[cfg_attr(not(feature="better_macros"),doc=" ```ignore")]

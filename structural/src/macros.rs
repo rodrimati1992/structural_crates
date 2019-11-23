@@ -138,7 +138,7 @@ macro_rules! default_if {
 /// For an example where this macro is used,
 /// you can look at the
 /// [manual implementation example of the GetFieldMut trait
-/// ](./field_traits/trait.GetFieldMut.html)
+/// ](./field_traits/trait.GetFieldMut.html#manual-implementation-example)
 #[macro_export]
 macro_rules! z_unsafe_impl_get_field_raw_mut_method {
     ( $Self:ident,field_name=$field_name:tt,name_generic=$name_param:ty ) => (
@@ -165,7 +165,8 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoField](./field_traits/trait.IntoField.html)
+/// [the documentation for IntoField
+/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
 #[macro_export]
 #[cfg(not(feature="alloc"))]
 macro_rules! z_impl_box_into_field_method {
@@ -178,7 +179,8 @@ macro_rules! z_impl_box_into_field_method {
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoField](./field_traits/trait.IntoField.html)
+/// [the documentation for IntoField
+/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
 #[macro_export]
 #[cfg(feature="alloc")]
 macro_rules! z_impl_box_into_field_method {

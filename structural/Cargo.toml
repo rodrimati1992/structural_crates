@@ -26,6 +26,7 @@ default = ["std"]
 std=["alloc"]
 alloc=[]
 rust_1_36=[]
+rust_1_40=["better_macros"]
 
 specialization=[]
 nightly_specialization=["specialization"]

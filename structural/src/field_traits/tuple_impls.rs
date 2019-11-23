@@ -1,7 +1,8 @@
 use crate::Structural;
 use crate::structural_trait::{FieldInfo,StructuralDyn};
 
-use crate::type_level::ident::{FieldPathString,_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
+use crate::type_level::ident::FieldPathString;
+use crate::chars::{_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
 
 macro_rules! impl_tuple {
     (inner; ($field:tt,$delegating_to_type:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{

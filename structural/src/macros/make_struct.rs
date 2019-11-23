@@ -1,5 +1,5 @@
 /// Constructs an anonymous struct,
-/// which implements the `IntoFieldMut` accessor trait for all its field.
+/// which implements all the accessor traits for its field.
 ///
 /// # Syntax
 ///
@@ -18,6 +18,7 @@
 ///     #[doc="you must put attributes for the first field after the inner attributes"]
 ///     size_cm:0,
 ///     place:"Anctartica",
+///     foo, // This initializes a `foo` field with the `foo` variable.
 /// }
 /// # ;
 /// ```
@@ -52,16 +53,16 @@
 /// });
 ///
 ///
-/// fn ret_get_runner()->impl Runner+Clone{
+/// fn ret_get_runner(name:String)->impl Runner+Clone{
 ///     make_struct!{
 ///         #![derive(Clone)]
-///         name:"hello".into(),
+///         name,
 ///         stamina:4_000_000_000,
 ///     }
 /// }
 ///
 /// {
-///     let runner=ret_get_runner();
+///     let runner=ret_get_runner("hello".into());
 ///     # let _=runner.field_(fp!(name));
 ///     # let _=runner.field_(fp!(stamina));
 ///     let (name,stamina)=runner.fields(fp!( name, stamina ));
