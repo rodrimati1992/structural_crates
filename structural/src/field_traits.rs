@@ -160,6 +160,27 @@ pub trait GetField<FieldName>:StructuralDyn{
 ///
 pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 
+/// Queries the type of a double nested field (eg:`.a.b`).
+pub type GetFieldType2<This,FieldName,FieldName2>=
+    GetFieldType<
+        GetFieldType<This,FieldName>,
+        FieldName2
+    >;
+
+/// Queries the type of a triple nested field (eg:`.a.b.c`).
+pub type GetFieldType3<This,FieldName,FieldName2,FieldName3>=
+    GetFieldType<
+        GetFieldType2<This,FieldName,FieldName2>,
+        FieldName3
+    >;
+
+/// Queries the type of a quadruple nested field (eg:`.a.b.c.d`).
+pub type GetFieldType4<This,FieldName,FieldName2,FieldName3,FieldName4>=
+    GetFieldType2<
+        GetFieldType2<This,FieldName,FieldName2>,
+        FieldName3,FieldName4,
+    >;
+
 
 /// Allows accessing the `FieldName` field mutably.
 ///

@@ -384,12 +384,21 @@ These are the cargo features in structural:
 - `better_macros`:
     This enables the `FP` macro to take in the same syntax as the `fp` macro.
     This requires proc macros in type position,
-    which is as of 2019-11-02 stabilizes on Rust 1.40.
+    which is as of 2019-11-23 stabilizes on Rust 1.40.
 
 - `nightly_better_macros`
     Equivalent to the "better_macros" feature,
     as well as enable the nightly features required before it was 
-    marked as stable for Rust 1.40 (as of 2019-11-02).
+    marked as stable for Rust 1.40 (as of 2019-11-23).
+
+- `impl_fields`:
+    This allows using `field_name:impl Foo` fields in the `structural_alias` macro,
+    which as of 2019-11-23 requires the `associated_type_bounds` Rust nightly feature.
+
+- `nightly_impl_fields`
+    Equivalent to the `impl_fields` feature,
+    as well as enabling the `associated_type_bounds` nightly features required
+    for using the feature as of 2019-11-23.
 
 
 

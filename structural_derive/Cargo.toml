@@ -23,6 +23,7 @@ include = [
 # causing the optional crates of `as_derive_utils` that are only for testing
 # to be enabled in regular builds.
 testing=["as_derive_utils/testing"]
+impl_fields=[]
 
 [badges]
 travis-ci = { repository =  "rodrimati1992/structural_crates/" }

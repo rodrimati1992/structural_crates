@@ -57,14 +57,27 @@ pub(crate) struct StructuralAlias {
 pub(crate) struct StructuralAliasField{
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndex,
-    pub(crate) ty: syn::Type,
+    pub(crate) ty: FieldType,
 }
 
 pub(crate) struct StructuralAliasFieldRef<'a>{
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
-    pub(crate) ty: &'a syn::Type,
+    pub(crate) ty: FieldTypeRef<'a>,
 }
+
+pub(crate) enum FieldType{
+    Ty(syn::Type),
+    Impl(TypeParamBounds)
+}
+
+pub(crate) enum FieldTypeRef<'a>{
+    Ty(&'a syn::Type),
+    Impl(&'a TypeParamBounds)
+}
+
+pub(crate) type TypeParamBounds=
+    Punctuated<syn::TypeParamBound, token::Add>;
 
 
 impl Parse for StructuralAliases {
@@ -148,10 +161,48 @@ impl StructuralAliasField{
         StructuralAliasFieldRef{
             access: self.access,
             ident: self.ident.borrowed(),
-            ty: &self.ty,
+            ty: self.ty.borrowed(),
         }
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+impl Parse for FieldType {
+    fn parse(input: ParseStream) -> Result<Self,syn::Error> {
+        const ASSOC_TY_BOUNDS:bool=cfg!(feature="impl_fields");
+
+        use syn::Type;
+        
+        match input.parse::<syn::Type>()? {
+            Type::ImplTrait(x)=>
+                if ASSOC_TY_BOUNDS {
+                    Ok(FieldType::Impl(x.bounds))
+                }else{
+                    use syn::spanned::Spanned;
+                    Err(syn::Error::new(
+                        x.span(),
+                        "\
+                            Cannot use an `impl Trait` field without enabling the \
+                            \"nightly_impl_fields\" or \"impl_fields\" feature.\
+                        ",
+                    ))
+                },
+            x=>Ok(FieldType::Ty(x)),
+        }
+    }
+}
+
+impl FieldType{
+    fn borrowed(&self)->FieldTypeRef<'_>{
+        match self {
+            FieldType::Ty(x)=>FieldTypeRef::Ty(x),
+            FieldType::Impl(x)=>FieldTypeRef::Impl(x),
+        }
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -190,6 +241,7 @@ pub(crate) fn macro_impl(aliases:StructuralAliases)->Result<TokenStream2,syn::Er
             saf.fields.iter().map(StructuralAliasField::borrowed)
         )?.piped(|x|out.append_all(x));
     }
+    // panic!("{}", out);
     Ok(out)
 }
 
@@ -211,6 +263,8 @@ where
     A::Item:ToTokens,
     I:IntoIterator<Item=StructuralAliasFieldRef<'a>>+Clone,
 {
+    use self::FieldTypeRef as FTR;
+
     let attrs=attrs.into_iter();
 
     let names_module=&names_module_definition.names_module;
@@ -221,16 +275,36 @@ where
             .zip(alias_names)
             .map(|(field,alias_names)|{
                 let trait_=field.access;
-                let field_ty=&field.ty;
+                let assoc_ty=match field.ty {
+                    FTR::Ty(ty)=>quote!(Ty=#ty),
+                    FTR::Impl(bounds)=>quote!(Ty:#bounds),
+                };
                 quote!(
                     structural::#trait_<
                         #names_module::#alias_names,
-                        Ty= #field_ty,
+                        #assoc_ty
                     >
                 )
             });
 
         quote!( #( #x+ )* )
+    };
+    
+    let assoc_ty_bounds={
+        let x=fields.clone().into_iter()
+            .zip(alias_names)
+            .filter_map(|(field,alias_names)|{
+                let bounds=match field.ty {
+                    FTR::Ty(_)=>return None,
+                    FTR::Impl(bounds)=>bounds,
+                };
+                Some(quote!(
+                    ::structural::GetFieldType<Self,#names_module::#alias_names>:
+                        #bounds,
+                ))
+            });
+        
+        quote!( #( #x )* )
     };
 
     use std::fmt::Write;
@@ -244,12 +318,21 @@ where
             Access::Value=>("IntoField","shared, and by value"),
             Access::MutValue=>("IntoFieldMut","shared,mutable and by value"),
         };
+        let assoc_ty=match field.ty {
+            FTR::Ty(ty)=>format!("Ty= {}",ty.to_token_stream()),
+            FTR::Impl(bounds)=>format!("Ty: {}",bounds.to_token_stream()),
+        };
+        let field_ty=match field.ty {
+            FTR::Ty(ty)=>format!("{}",ty.to_token_stream()),
+            FTR::Impl(bounds)=>format!("impl {}",bounds.to_token_stream()),
+        };
         let _=writeln!(
             docs,
-            "- `{0}<\"{1}\",Ty={2}>`\n:{3} access to a `{1}:{2}` field.",
+            "- `{0}<\"{1}\",Ty={2}>`\n:{4} access to a `{1}:{3}` field.",
             the_trait,
             field.ident,
-            field.ty.to_token_stream(),
+            assoc_ty,
+            field_ty,
             access_desc,
         );
     }
@@ -277,7 +360,9 @@ where
     let (_, ty_generics, where_clause) = generics.split_for_impl();
 
     let empty_preds=Punctuated::new();
-    let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates).into_iter();
+    let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates);
+    let where_preds_a=where_preds.into_iter();
+    let where_preds_b=where_preds.into_iter();
 
     Ok(quote!(
         #names_module_definition
@@ -288,7 +373,9 @@ where
         #trait_token #ident #generics : 
             #( #supertraits_a+ )* 
             #field_bounds
-        #where_clause
+        where
+            #(#where_preds_a,)*
+            #assoc_ty_bounds
         {}
 
 
@@ -298,7 +385,8 @@ where
             __This:
                 #( #supertraits_b+ )* 
                 #field_bounds,
-            #(#where_preds,)*
+            #assoc_ty_bounds
+            #(#where_preds_b,)*
         {}
     ))
 
