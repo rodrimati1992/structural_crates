@@ -34,6 +34,9 @@ nightly_specialization=["specialization"]
 better_macros=[]
 nightly_better_macros=["better_macros"]
 
+impl_fields=["structural_derive/impl_fields"]
+nightly_impl_fields=["impl_fields"]
+
 
 [dependencies]
 structural_derive={version="0.1.0",path="../structural_derive"}

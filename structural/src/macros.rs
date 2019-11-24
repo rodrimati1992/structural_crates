@@ -322,6 +322,15 @@ structural_alias!{
         mut  c:i64,
         move d:String,
         mut move e:String,
+        # /*
+        i:impl Bar,
+        # */
+    }
+
+    pub trait Bar{
+        x:u32,
+        y:u32,
+        z:u32,
     }
 }
 
@@ -353,6 +362,72 @@ each of which get turned into supertraits on `Foo`:
 - `mut move e:String`:
     Corresponds to the `IntoFieldMut<FP!(e),Ty=String>` trait,
     allowing shared,mutable,and by value access to the field.
+
+- `i:impl Bar`:
+    Corresponds to the `IntoFieldMut<FP!(i),Ty:Bar>` trait,
+    allowing shared,mutable,and by value access to 
+    a field that implements the Bar trait.<br>
+    This requires the `nightly_impl_fields` or `impl_fields` cargo feature.
+
+# impl Trait fields
+
+This requires the `nightly_impl_fields` cargo feature
+(or `impl_fields` if associated type bounds stabilized after the latest release).
+
+You can declare a field with `impl Bar` as its type to declare that the field 
+implements Bar,without specifying a particular type.
+
+Using `impl Trait` fields makes a `Foo` structural alias unusable as a `dyn Foo`.
+
+### Example
+
+This demonstrates using impl trait fields.
+
+*/
+#[cfg_attr(not(feature="nightly_impl_fields"),doc="```ignore")]
+#[cfg_attr(feature="nightly_impl_fields",doc="```rust")]
+/**
+// Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`) 
+// work without it.
+#![feature(associated_type_bounds)]
+
+use structural::{structural_alias,fp,make_struct,GetFieldExt};
+
+structural_alias!{
+    trait Foo{
+        foo:impl Bar,
+    }
+
+    trait Bar{
+        dimension:impl Dim<u32>
+    }
+
+    trait Dim<T>{
+        width:T,
+        height:T,
+    }
+}
+
+fn with_foo(this:&impl Foo){
+    let dim=this.field_(fp!(foo.dimension));
+    assert_eq!( dim.field_(fp!(width)), &200 );
+    assert_eq!( dim.field_(fp!(height)), &201 );
+}
+
+
+fn main(){
+    with_foo(&make_struct!{
+        foo:make_struct!{
+            dimension:make_struct!{
+                width:200,
+                height:201,
+            }
+        }
+    });
+}
+
+
+```
 
 # Examples
 

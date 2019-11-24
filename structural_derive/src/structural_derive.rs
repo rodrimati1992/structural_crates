@@ -1,6 +1,6 @@
 use crate::{
     tokenizers::NamedModuleAndTokens,
-    structural_alias_impl::StructuralAliasFieldRef,
+    structural_alias_impl::{FieldTypeRef,StructuralAliasFieldRef},
     ident_or_index::IdentOrIndexRef,
 };
 
@@ -140,7 +140,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                     StructuralAliasFieldRef{
                         access:field_config.access,
                         ident:field.ident().piped(IdentOrIndexRef::Ident),
-                        ty:field.ty,
+                        ty:FieldTypeRef::Ty(&field.ty),
                     }
                 }),
         )?.piped(Some);

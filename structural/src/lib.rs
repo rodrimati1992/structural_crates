@@ -327,6 +327,7 @@ struct Cents(u64);
 
 
 */
+#![cfg_attr(feature="nightly_impl_fields",feature(associated_type_bounds))]
 #![cfg_attr(feature="nightly_specialization",feature(specialization))]
 #![cfg_attr(feature="nightly_better_macros",feature(proc_macro_hygiene))]
 
@@ -389,7 +390,7 @@ pub use crate::{
     field_traits::{
         GetField,GetFieldMut,IntoField,IntoFieldMut,
         GetFieldExt,
-        GetFieldType,
+        GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
     },
     structural_trait::{Structural,StructuralDyn},
 };

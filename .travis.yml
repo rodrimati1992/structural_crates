@@ -32,6 +32,10 @@ matrix:
         - cargo test --no-default-features --features alloc --features better_macros
         - cargo test --no-default-features --features std better_macros
         
+        - cargo test --no-default-features --features nightly_impl_fields
+        - cargo test --no-default-features --features alloc --features nightly_impl_fields
+        - cargo test --no-default-features --features std nightly_impl_fields
+        
         - cargo test --all-features
         
         - cargo clean
