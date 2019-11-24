@@ -1,9 +1,10 @@
 use crate::{
-    structural_trait::accessor_names,
+    structural_trait::{accessor_names,FieldInfo},
     GetField,GetFieldMut,IntoField,IntoFieldMut,
     GetFieldExt,
     GetFieldType,
     Structural,
+    StructuralDyn,
 };
 
 #[cfg(feature="alloc")]
@@ -282,4 +283,52 @@ fn renamed(){
     let _:GetFieldType<Renamed,FP!(b)>;
     let _:GetFieldType<Renamed,FP!(e)>;
 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#[derive(Structural,Clone)]
+struct Foo<T>{
+    #[struc(delegate_to)]
+    value:T
+}
+
+fn get_fields_assoc_const<T>(_:&T)->&'static [FieldInfo]
+where
+    T:Structural
+{
+    T::FIELDS
+}
+
+#[test]
+fn delegate_to_test(){
+    let mut this=Foo{value:(3,5,8,13,21)};
+
+    let fields=&[
+        FieldInfo::not_renamed("0"),
+        FieldInfo::not_renamed("1"),
+        FieldInfo::not_renamed("2"),
+        FieldInfo::not_renamed("3"),
+        FieldInfo::not_renamed("4"),
+    ];
+
+    assert_eq!( this.fields_info(), &fields[..] );
+    assert_eq!( get_fields_assoc_const(&this), &fields[..] );
+
+    assert_eq!(
+        this.fields(fp!(1,3,0,2,4)),
+        (&5,&13,&3,&8,&21),
+    );
+    assert_eq!(
+        this.fields_mut(fp!(1,3,0,2,4)),
+        (&mut 5,&mut 13,&mut 3,&mut 8,&mut 21),
+    );
+
+    assert_eq!( this.clone().into_field(fp!(0)), 3 );
+    assert_eq!( this.clone().into_field(fp!(1)), 5 );
+    assert_eq!( this.clone().into_field(fp!(2)), 8 );
+    assert_eq!( this.clone().into_field(fp!(3)), 13 );
+    assert_eq!( this.clone().into_field(fp!(4)), 21 );
 }

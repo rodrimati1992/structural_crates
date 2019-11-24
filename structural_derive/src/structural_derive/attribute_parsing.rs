@@ -32,6 +32,7 @@ pub(crate) struct StructuralOptions<'a>{
 
     pub(crate) debug_print:bool,
     pub(crate) with_trait_alias:bool,
+    pub(crate) delegate_to:Option<&'a Field<'a>>,
 
     _marker:PhantomData<&'a ()>,
 }
@@ -46,6 +47,7 @@ impl<'a> StructuralOptions<'a>{
             fields,
             debug_print,
             with_trait_alias,
+            delegate_to,
             errors:_,
             _marker,
         }=this;
@@ -54,6 +56,7 @@ impl<'a> StructuralOptions<'a>{
             fields,
             debug_print,
             with_trait_alias,
+            delegate_to,
             _marker,
         })
     }
@@ -86,6 +89,7 @@ struct StructuralAttrs<'a>{
 
     debug_print:bool,
     with_trait_alias:bool,
+    delegate_to:Option<&'a Field<'a>>,
 
     errors:LinearResult<()>,
     
@@ -228,6 +232,15 @@ fn parse_sabi_attr<'a>(
                 this.fields[field].is_pub=true;
             }else if path.equals_str("not_public")||path.equals_str("private") {
                 this.fields[field].is_pub=false;
+            }else if path.equals_str("delegate_to") {
+                if this.delegate_to.is_some() {
+                    return_spanned_err!{
+                        path,
+                        "Cannot use the `#[struc(delegate_to)]` attribute on multiple fields."
+                    };
+                }
+                this.with_trait_alias=false;
+                this.delegate_to=Some(field)
             }else{
                 return Err(make_err(&path))?;
             }

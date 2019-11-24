@@ -389,7 +389,7 @@ macro_rules! TChar{
 
 /**
 
-Declares a module with aliases for type-level idents,used to access fields.
+Declares a module with aliases for field paths,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
 
@@ -528,7 +528,7 @@ macro_rules! field_path_aliases_module {
 
 /**
 
-Declares aliases for type-level idents,used to access fields.
+Declares aliases for field paths,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
 

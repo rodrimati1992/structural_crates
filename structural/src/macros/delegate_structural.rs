@@ -29,7 +29,7 @@ struct Foo<T>{
 }
 
 z_delegate_structural_with!{
-    impl[T] Foo<T>
+    impl[T,] Foo<T>
     // This where clause is required syntax
     where[
         T:Trait,
@@ -116,7 +116,8 @@ impl<T> Bar<T>{
 
 
 z_delegate_structural_with!{
-    impl[T] Bar<T>
+    // You must write a trailing comma.
+    impl[T,] Bar<T>
     where[
         // This requires T to implement Clone
         // for `Bar<T>` to implement the accessor traits
@@ -307,7 +308,7 @@ macro_rules! z_delegate_structural_with {
 
         GetField $get_field_closure:block
     )=>{
-        impl<$($($impl_params)* , )?__FieldName> 
+        impl<$($($impl_params)* )?__FieldName> 
             $crate::GetField<__FieldName>
             for $self
         where
@@ -336,7 +337,7 @@ macro_rules! z_delegate_structural_with {
         unsafe GetFieldMut $unsafe_get_field_mut_closure:block
         as_delegating_raw $as_field_mutref_closure:block
     )=>{
-        unsafe impl<$( $($impl_params)* , )?__FieldName> 
+        unsafe impl<$( $($impl_params)* )?__FieldName> 
             $crate::GetFieldMut<__FieldName>
             for $self
         where
@@ -380,7 +381,7 @@ macro_rules! z_delegate_structural_with {
 
         IntoField $into_field_closure:block
     )=>{
-        impl<$( $($impl_params)* , )?__FieldName> 
+        impl<$( $($impl_params)* )?__FieldName> 
             $crate::IntoField<__FieldName>
             for $self
         where

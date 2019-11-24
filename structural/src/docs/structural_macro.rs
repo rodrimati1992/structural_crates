@@ -18,7 +18,7 @@ with a blanket implementation for all types with the same fields.
 (by reference/by mutable reference/by value accessor traits) 
 will be implemented for `pub` fields,
 requiring use of the `#[struc(access="...")]` 
-attribute to override which ones get implemented.
+attribute to override which traits get implemented.
 
 # Container Attributes
 
@@ -46,7 +46,18 @@ Changes the `<deriving_type>_SI` trait (which aliases the accessor traits for th
 not to refer to the type of this field,
 instead it will be required to implement the bounds passed to this attribute.
 
+Note that these bounds are only added to the `<deriving_type>_SI` trait.
+
 [Here is the example for this attribute.](#impl-trait-fields)
+
+### `#[struc(delegate_to)]`
+
+Delegates the implementation of the Structural and accessor traits to this field.
+
+You can only delegate the implementation and Structural and accessor traits
+to a single field.
+
+Using this attribute will disable the generation of the `<deriving_type>_SI` trait.
 
 # Container/Field Attributes
 
@@ -269,6 +280,78 @@ takes_person(&Person{
     name:"bob".to_string(),
     height_nm: 1_500_000_000_u64, 
 });
+
+```
+
+### Delegation
+
+This is an example of using the `#[struc(delegate_to)]` attribute.
+
+```
+use structural::{fp,make_struct,GetFieldExt,Structural};
+
+
+#[derive(Structural,Clone)]
+struct Foo<T>{
+    #[struc(delegate_to)]
+    value:T
+}
+
+# // ensuring that Foo_SI wasn't generated
+# trait Foo_SI{}
+
+#[derive(Structural,Clone)]
+#[struc(public,access="ref")]
+struct AnimalCounts{
+    cows:u32,
+    chickens:u32,
+    pigs:u32,
+}
+
+
+fn total_count(animals:&dyn AnimalCounts_SI)->u64{
+    *animals.field_(fp!(cows)) as u64+
+    *animals.field_(fp!(chickens)) as u64+
+    *animals.field_(fp!(pigs)) as u64
+}
+
+{
+    let count=total_count(&Foo{
+        value:make_struct!{
+            cows:100,
+            chickens:200,
+            pigs:300,
+        }
+    });
+
+    assert_eq!( count, 600 );
+}
+
+{
+    let count=total_count(&Foo{
+        value:AnimalCounts{
+            cows:0,
+            chickens:500,
+            pigs:0,
+        }
+    });
+
+    assert_eq!( count, 500 );
+}
+
+{
+    let count=total_count(&AnimalCounts{
+        cows:0,
+        chickens:500,
+        pigs:1_000_000_000,
+    });
+    
+    assert_eq!( count, 1_000_000_500 );
+}
+
+
+
+
 
 ```
 
