@@ -37,6 +37,16 @@ Disables the generation of the `<deriving_type>_SI` trait.
 
 Changes the name for the field in the accessor trait impls.
 
+### `#[struc(impl="<trait bounds>")]`
+
+This requires the `nightly_impl_fields` cargo feature
+(or `impl_fields` if associated type bounds stabilized after the latest release).
+
+Changes the `<deriving_type>_SI` trait (which aliases the accessor traits for this type)
+not to refer to the type of this field,
+instead it will be required to implement the bounds passed to this attribute.
+
+[Here is the example for this attribute.](#impl-trait-fields)
 
 # Container/Field Attributes
 
@@ -206,7 +216,61 @@ where
 
 ```
 
+### Impl trait fields
 
+This is an example of using the `#[struc(impl="<trait_bounds>")]` attribute
+
+This requires the `nightly_impl_fields` cargo feature
+(or `impl_fields` if associated type bounds stabilized after the latest release).
+
+*/
+#![cfg_attr(not(feature="nightly_impl_fields"),doc="```ignore")]
+#![cfg_attr(feature="nightly_impl_fields",doc="```rust")]
+/*!
+
+// Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`) 
+// work without it.
+#![feature(associated_type_bounds)]
+
+use std::borrow::Borrow;
+
+use structural::{Structural,fp,make_struct,GetFieldExt};
+
+
+#[derive(Structural)]
+#[struc(public)]
+struct Person{
+    #[struc(impl="Borrow<str>")]
+    name:String,
+    
+    #[struc(impl="Copy+Into<u64>")]
+    height_nm:u64
+}
+
+
+fn takes_person(this:&impl Person_SI){
+    let (name,height)=this.fields(fp!(name,height_nm));
+    assert_eq!( name.borrow(), "bob" );
+
+    assert_eq!( (*height).into(), 1_500_000_000 );
+}
+
+
+// Notice how `name` is a `&'static str`,and `height_nm` is a `u32`?
+//
+// This is possible because the concrete types of the fields weren't used in
+// the `Person_SI` trait.
+takes_person(&make_struct!{
+    name:"bob",
+    height_nm: 1_500_000_000_u32,
+});
+
+takes_person(&Person{
+    name:"bob".to_string(),
+    height_nm: 1_500_000_000_u64, 
+});
+
+```
 
 
 */
