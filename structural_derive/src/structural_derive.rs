@@ -140,7 +140,10 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                     StructuralAliasFieldRef{
                         access:field_config.access,
                         ident:field.ident().piped(IdentOrIndexRef::Ident),
-                        ty:FieldTypeRef::Ty(&field.ty),
+                        ty:match &field_config.is_impl {
+                            Some(yes)=>FieldTypeRef::Impl(yes),
+                            None=>FieldTypeRef::Ty(&field.ty),
+                        },
                     }
                 }),
         )?.piped(Some);

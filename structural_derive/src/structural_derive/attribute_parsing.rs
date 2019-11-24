@@ -1,6 +1,8 @@
 use crate::{
     field_access::Access,
     ident_or_index::IdentOrIndex,
+    parse_utils::ParsePunctuated,
+    structural_alias_impl::TypeParamBounds,
 };
 
 use as_derive_utils::{
@@ -8,6 +10,7 @@ use as_derive_utils::{
     datastructure::{DataStructure,Field,FieldMap},
     utils::{LinearResult,SynResultExt,SynPathExt},
     spanned_err,
+    return_spanned_err,
 };
 
 use quote::ToTokens;
@@ -63,6 +66,8 @@ impl<'a> StructuralOptions<'a>{
 pub(crate) struct FieldConfig{
     pub(crate) access:Access,
     pub(crate) renamed:Option<IdentOrIndex>,
+    /// Whether the type is replaced with bounds in the `<deriving_type>_SI` trait.
+    pub(crate) is_impl:Option<TypeParamBounds>,
     
     /// Determines whether the field is considered public.
     /// 
@@ -110,6 +115,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
         FieldConfig{
             access:Default::default(),
             renamed:Default::default(),
+            is_impl:None,
             is_pub:field.is_public(),
         }
     });
@@ -200,6 +206,19 @@ fn parse_sabi_attr<'a>(
                 let fa=&mut this.fields[field];
                 fa.access=access;
                 fa.is_pub=true;
+            }else if path.equals_str("impl") {
+                if !cfg!(feature="impl_fields") {
+                    return_spanned_err!{
+                        path,
+                        "\
+                            Cannot use the `#[struc(impl=\"Trait\")]` \
+                            attribute without enabling the \
+                            \"nightly_impl_fields\" or \"impl_fields\" feature.\
+                        ",
+                    }
+                }
+                let bounds:TypeParamBounds=value.parse::<ParsePunctuated<_,_>>()?.list;
+                this.fields[field].is_impl=Some(bounds)
             }else{
                 return Err(make_err(&path))?;
             }
