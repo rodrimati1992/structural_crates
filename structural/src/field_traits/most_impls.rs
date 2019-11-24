@@ -106,7 +106,7 @@ impl<T> IntoField<End_STR> for RangeInclusive<T>{
 
 // This allows using all the field accessors in T from `ManuallyDrop<T>`
 z_delegate_structural_with!{
-    impl[T] ManuallyDrop<T>
+    impl[T,] ManuallyDrop<T>
     where[]
     self_ident=this;
     delegating_to_type=T;
@@ -141,7 +141,7 @@ fn delegated_mdrop(){
 
 
 z_delegate_structural_with!{
-    impl[P] Pin<P>
+    impl[P,] Pin<P>
     where[
         P:Deref,
         P::Target:Sized,
@@ -167,7 +167,7 @@ fn delegated_pin(){
 
 
 z_delegate_structural_with!{
-    impl['a,T] &'a T
+    impl['a,T,] &'a T
     where [T:?Sized,]
     self_ident=this;
     delegating_to_type=T;
@@ -181,7 +181,7 @@ z_delegate_structural_with!{
 
 
 z_delegate_structural_with!{
-    impl['a,T] &'a mut T
+    impl['a,T,] &'a mut T
     where [T:?Sized,]
     self_ident=this;
     delegating_to_type=T;

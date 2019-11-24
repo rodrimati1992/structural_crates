@@ -51,13 +51,73 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
         DataVariant::Struct=>{}            
     }
 
+    let options=attribute_parsing::parse_attrs_for_structural(ds)?;
+    let debug_print=options.debug_print;
+
+    match options.delegate_to {
+        Some(to)=>delegating_structural(ds,options,to),
+        None=>deriving_structural(ds,options),
+    }?
+    .observe(|tokens|{
+        if debug_print{
+            panic!("\n\n\n{}\n\n\n",tokens);
+        }
+    })
+    .piped(Ok)
+    
+}    
+
+
+fn delegating_structural<'a>(
+    ds:&'a DataStructure<'a>,
+    _options:StructuralOptions<'a>,
+    delegate_to:&'a Field<'a>,
+)-> Result<TokenStream2,syn::Error> {
+    let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
+
+    let impl_generics=GenParamsIn::new(ds.generics,InWhat::ImplHeader);
+
+    let tyname=ds.name;
+
+    let the_field=delegate_to.ident();
+    let fieldty=delegate_to.ty;
+
+    let empty_preds=Punctuated::new();
+    let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates).into_iter();
+
+
+    quote!(
+        ::structural::z_delegate_structural_with!{
+            impl[#impl_generics] #tyname #ty_generics
+            where[ #(#where_preds,)* ] 
+
+            self_ident=this;
+            delegating_to_type= #fieldty;
+            field_name_param=( _field_name : __FieldName );
+
+            GetField { &this.#the_field }
+
+            unsafe GetFieldMut { &mut this.#the_field }
+
+            as_delegating_raw{
+                &mut (*this).#the_field as *mut #fieldty 
+            }
+            IntoField { this.#the_field }
+        }
+    ).piped(Ok)
+}
+
+
+fn deriving_structural<'a>(
+    ds:&'a DataStructure<'a>,
+    options:StructuralOptions<'a>,
+)-> Result<TokenStream2,syn::Error> {
     let StructuralOptions{
         fields:ref config_fields,
-        debug_print,
         with_trait_alias,
         ..
-    }=attribute_parsing::parse_attrs_for_structural(ds)?;
-    
+    }=options;
+
     let struct_=&ds.variants[0];
 
     let fields=config_fields.values()
@@ -89,11 +149,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
 
     let field_tys=fields.iter().cloned().map(|f| &f.ty );
 
-    let impl_generics=GenParamsIn::with_after_types(
-        ds.generics,
-        InWhat::ImplHeader,
-        quote!(),
-    );
+    let impl_generics=GenParamsIn::new(ds.generics,InWhat::ImplHeader);
 
     let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
 
@@ -166,7 +222,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
 
         ::structural::impl_getters_for_derive!{
             impl[#impl_generics] #tyname #ty_generics
-            where[ #(#where_preds)* ] 
+            where[ #(#where_preds,)* ] 
             {
                 #((
                     #getter_trait< 
@@ -177,11 +233,5 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2,syn::Error> {
                 ))*
             }
         }
-    )
-    .observe(|tokens|{
-        if debug_print{
-            panic!("\n\n\n{}\n\n\n",tokens);
-        }
-    })
-    .piped(Ok)
+    ).piped(Ok)
 }

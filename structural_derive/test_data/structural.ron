@@ -16,6 +16,27 @@
       ],
     ),
     (
+      name:"delegate_to",
+      code:r##"
+        struct Huh<T,U>{
+            #[struc(#r0)]
+            pub a:T,
+            #[struc(#r1)]
+            pub b:U,
+        }
+      "##,
+      subcase: [
+        ( replacements: { "#r0":"", "#r1":"" }, error_count: 0 ),
+        ( replacements: { "#r0":"delegate_to", "#r1":"" }, error_count: 0 ),
+        ( replacements: { "#r0":"", "#r1":"delegate_to" }, error_count: 0 ),
+        (
+          replacements: { "#r0":"delegate_to", "#r1":"delegate_to" }, 
+          find_all:[regex("Cannot.*delegate_to.*field")], 
+          error_count: 1
+        ),
+      ],
+    ),
+    (
       name:"rename attribute",
       code:r##"
         struct Huh{
