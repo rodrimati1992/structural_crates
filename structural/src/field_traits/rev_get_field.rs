@@ -14,7 +14,7 @@ use std_::marker::PhantomData;
 
 
 /// Gets the type used to access the `FieldName` field(s) in `This` by reference.
-pub type RevFieldType<'a,FieldName,This>=
+pub type RevFieldRefType<'a,FieldName,This>=
     <FieldName as RevGetField<'a,This>>::Field;
 
 /// Gets the type used to access the `FieldName` field(s) in `This` by mutable reference.
@@ -28,6 +28,62 @@ pub type RevFieldMutRefType<'a,FieldName,This>=
 /// Gets the type used to access the `FieldName` field(s) in `This` by value.
 pub type RevIntoFieldType<'a,FieldName,This>=
     <FieldName as RevIntoField<'a,This>>::Field;
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/// Allows querying the type of a nested field in This,
+/// what field is queried is determined by `FieldName`,
+/// 
+/// # Example
+/// 
+/// ```
+/// use structural::{
+///     GetFieldType3,GetFieldExt,RevGetFieldType,Structural,
+///     field_path_aliases,
+/// };
+/// 
+/// field_path_aliases!{
+///     foo_bar_baz= foo.bar.baz,
+///     foo_bar_strand= foo.bar.strand,
+/// }
+/// 
+/// fn main(){
+///     let this=TopLevel::default();
+///     
+///     let baz: &RevGetFieldType<foo_bar_baz, TopLevel>=
+///         this.field_(foo_bar_baz);
+///     assert_eq!( *baz, Vec::new() );
+///     
+///     let strand: &RevGetFieldType<foo_bar_strand, TopLevel>= 
+///         this.field_(foo_bar_strand);
+///     assert_eq!( *strand, String::new() );
+/// }
+/// 
+/// #[derive(Debug,Default,Structural)]
+/// struct TopLevel{
+///     pub foo:Foo,
+/// }
+/// 
+/// #[derive(Debug,Default,Structural)]
+/// struct Foo{
+///     pub bar:Bar,
+/// }
+/// 
+/// #[derive(Debug,Default,Structural)]
+/// struct Bar{
+///     pub baz:Vec<()>,
+///     pub strand:String,
+/// }
+/// ```
+pub type RevGetFieldType<FieldName,This>=
+    <FieldName as RevGetFieldType_<This>>::Output;
+
+/// Allows querying the type of nested field in This,
+/// what field is queried is determined by `Self`,
+pub trait RevGetFieldType_<This:?Sized>{
+    type Output;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -106,6 +162,20 @@ macro_rules! impl_get_multi_field {
         $( into_box_impl( $($into_box_impl:tt)* ) )?
         enable_specialization($($enable_specialization:tt)*)
     )=>{
+        impl<$($fname,)* $($all_tys,)* This> 
+            RevGetFieldType_<This>
+        for FieldPath<($($fname,)*)> 
+        where
+            This:?Sized,
+            $(
+                $prefix:GetField<FieldPath1<$fname>,Ty=$all_tys>,
+            )*
+            $lastty:Sized,
+        {
+            type Output=$lastty;
+        }
+
+
         impl<'a,$($fname,)* $($all_tys,)* This> 
             RevGetField<'a,This>
         for FieldPath<($($fname,)*)> 

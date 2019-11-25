@@ -1,6 +1,7 @@
 use crate::GetFieldExt;
 
-use core_extensions::SelfOps;
+use core_extensions::{SelfOps,Void};
+use core_extensions::type_asserts::AssertEq;
 
 
 #[cfg(feature="alloc")]
@@ -109,3 +110,57 @@ fn identity_getters(){
     */
 }
 
+
+
+field_path_aliases!{
+    FP_0_0=0.0,
+    FP_0_1=0.1,
+    FP_0_2_0=0.2.0,
+    FP_0_2_1=0.2.1,
+    FP_0_2_1_0=0.2.1.0,
+    FP_0_2_1_1=0.2.1.1,
+}
+
+#[test]
+fn get_nested_field_types(){
+    use crate::{
+        GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
+        RevGetFieldType,
+    };
+
+
+    type FP0=FP!(0);
+    type FP1=FP!(1);
+    type FP2=FP!(2);
+
+    type Unary<T>=(T,);
+
+    {
+        type Tuple=Unary<String>;
+        let _:AssertEq<GetFieldType<Tuple,FP0>,String>;
+    }
+    {
+        type Tuple=Unary<(Void,String)>;
+        let _:AssertEq<GetFieldType2<Tuple,FP0,FP0>,Void>;
+        let _:AssertEq<GetFieldType2<Tuple,FP0,FP1>,String>;
+
+        let _:AssertEq<RevGetFieldType<FP_0_0,Tuple>,Void>;
+        let _:AssertEq<RevGetFieldType<FP_0_1,Tuple>,String>;
+    }
+    {
+        type Tuple=Unary<((),(),(u64,String))>;
+        let _:AssertEq<GetFieldType3<Tuple,FP0,FP2,FP0>,u64>;
+        let _:AssertEq<GetFieldType3<Tuple,FP0,FP2,FP1>,String>;
+
+        let _:AssertEq<RevGetFieldType<FP_0_2_0,Tuple>,u64>;
+        let _:AssertEq<RevGetFieldType<FP_0_2_1,Tuple>,String>;
+    }
+    {
+        type Tuple=Unary<((),(),((),(String,Vec<()>)))>;
+        let _:AssertEq<GetFieldType4<Tuple,FP0,FP2,FP1,FP0>,String>;
+        let _:AssertEq<GetFieldType4<Tuple,FP0,FP2,FP1,FP1>,Vec<()>>;
+
+        let _:AssertEq<RevGetFieldType<FP_0_2_1_0,Tuple>,String>;
+        let _:AssertEq<RevGetFieldType<FP_0_2_1_1,Tuple>,Vec<()>>;
+    }
+}
