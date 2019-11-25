@@ -427,16 +427,31 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
+    /// use structural::{GetFieldExt,fp,structural_alias};
     ///
-    /// let tup=(1,1,2,3,5,8);
+    /// structural_alias!{
+    ///     trait EvenFields<A,B,C>{
+    ///         0:A,
+    ///         2:B,
+    ///         4:C,
+    ///     }
+    /// }
     ///
-    /// assert_eq!( tup.field_(fp!(0)), &1 );
-    /// assert_eq!( tup.field_(fp!(1)), &1 );
-    /// assert_eq!( tup.field_(fp!(2)), &2 );
-    /// assert_eq!( tup.field_(fp!(3)), &3 );
-    /// assert_eq!( tup.field_(fp!(4)), &5 );
-    /// assert_eq!( tup.field_(fp!(5)), &8 );
+    /// fn with_even<T>(this:&T)
+    /// where
+    ///     T:EvenFields<u32,u32,u32>
+    /// {
+    ///     assert_eq!( this.field_(fp!(0)), &1 );
+    ///     assert_eq!( this.field_(fp!(2)), &2 );
+    ///     assert_eq!( this.field_(fp!(4)), &5 );
+    /// }
+    ///
+    /// fn main(){
+    ///     with_even( &(1,0,2,0,5) );
+    ///     with_even( &(1,0,2,0,5,0) );
+    ///     with_even( &(1,0,2,0,5,0,0) );
+    ///     with_even( &(1,0,2,0,5,0,0,0) );
+    /// }
     ///
     /// ```
     #[inline(always)]
@@ -453,13 +468,26 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
+    /// use structural::{GetFieldExt,fp,structural_alias};
     ///
-    /// let tup=(1,1,2,3,5,8);
+    /// structural_alias!{
+    ///     trait OddFields<A,B,C>{
+    ///         1:A,
+    ///         3:B,
+    ///         5:C,
+    ///     }
+    /// }
     ///
-    /// assert_eq!( tup.fields(fp!(0,1)),  (&1,&1) );
-    /// assert_eq!( tup.fields(fp!(3,2)),  (&3,&2) );
-    /// assert_eq!( tup.fields(fp!(4,5,3)),(&5,&8,&3) );
+    /// fn with_even(this:&impl OddFields<u32,u32,u32>){
+    ///     assert_eq!( this.fields(fp!(1,3,5)), (&22,&44,&77) );
+    /// }
+    ///
+    /// fn main(){
+    ///     with_even( &(0,22,0,44,0,77) );
+    ///     with_even( &(0,22,0,44,0,77,0) );
+    ///     with_even( &(0,22,0,44,0,77,0,0) );
+    ///     with_even( &(0,22,0,44,0,77,0,0,0) );
+    /// }
     ///
     /// ```
     #[inline(always)]
@@ -472,21 +500,52 @@ pub trait GetFieldExt{
 
     /// Gets a mutable reference to a field,determined by `path`.
     ///
-    /// # Example
+     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
+    /// use structural::{GetFieldExt,fp,make_struct,Structural};
     ///
-    /// let mut tup=(1,1,2,3,5,8);
+    /// #[derive(Structural)]
+    /// struct Human{
+    ///     pub x:i32,
+    ///     pub y:i32,
+    ///     pub health:u32,
+    ///     flags:u32,
+    /// }
     ///
-    /// assert_eq!( tup.field_mut(fp!(0)), &mut 1 );
-    /// assert_eq!( tup.field_mut(fp!(1)), &mut 1 );
-    /// assert_eq!( tup.field_mut(fp!(2)), &mut 2 );
-    /// assert_eq!( tup.field_mut(fp!(3)), &mut 3 );
-    /// assert_eq!( tup.field_mut(fp!(4)), &mut 5 );
-    /// assert_eq!( tup.field_mut(fp!(5)), &mut 8 );
+    /// // The `Human_SI` trait was declared by the `Structural` derive on `Human`.
+    /// fn move_human( this:&mut dyn Human_SI, dx:i32, dy:i32 ){
+    ///     *this.field_mut(fp!(x))+=dx;
+    ///     *this.field_mut(fp!(y))+=dy;
+    /// }
+    ///
+    /// {
+    ///     let mut entity=make_struct!{
+    ///         x: 0, 
+    ///         y: 0, 
+    ///         health: 100,
+    ///     };
+    ///     move_human(&mut entity,-100,300);
+    ///     assert_eq!( entity.fields(fp!(x,y,health)), (&-100,&300,&100) )
+    /// }
+    /// {
+    ///     let mut entity=Human{
+    ///         x: -1000,
+    ///         y: 1000,
+    ///         health: 1,
+    ///         flags: 0b11111,
+    ///     };
+    ///     
+    ///     move_human(&mut entity,500,-200);
+    ///
+    ///     assert_eq!( entity.x, -500 );
+    ///     assert_eq!( entity.y, 800 );
+    ///     assert_eq!( entity.health, 1 );
+    ///     assert_eq!( entity.flags, 0b11111 );
+    /// }
     ///
     /// ```
+    ///
     #[inline(always)]
     fn field_mut<'a,P>(&'a mut self,path:P)->RevFieldMutType<'a,P,Self>
     where 
@@ -501,13 +560,52 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
+    /// use structural::{
+    ///     GetFieldExt,GetFieldMut,GetFieldType,Structural,
+    ///     fp,field_path_aliases_module,
+    /// };
     ///
-    /// let mut tup=(1,1,2,3,5,8);
+    /// field_path_aliases_module!{ 
+    ///     mod names{x,y}
+    /// }
     ///
-    /// assert_eq!( tup.fields_mut(fp!(0,1)), (&mut 1,&mut 1) );
-    /// assert_eq!( tup.fields_mut(fp!(3,2)), (&mut 3,&mut 2) );
-    /// assert_eq!( tup.fields_mut(fp!(4,5,3)), (&mut 5,&mut 8,&mut 3) );
+    /// fn swap_coordinates<T,U>(this:&mut T)
+    /// where
+    ///     T:GetFieldMut<names::x,Ty=U>,
+    ///     T:GetFieldMut<names::y,Ty=U>,
+    /// {
+    ///     let (x,y)=this.fields_mut(fp!(x,y));
+    ///     std::mem::swap(x,y);
+    /// }
+    /// 
+    /// {
+    ///     let mut this=Point2D{ x:100, y:300 };
+    ///     swap_coordinates(&mut this);
+    ///     assert_eq!( this.x, 300 );
+    ///     assert_eq!( this.y, 100 );
+    /// }
+    /// 
+    /// {
+    ///     let mut this=Point3D{ x:30, y:0, z:500 };
+    ///     swap_coordinates(&mut this);
+    ///     assert_eq!( this.x, 0 );
+    ///     assert_eq!( this.y, 30 );
+    ///     assert_eq!( this.z, 500 );
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// struct Point2D<T>{
+    ///     pub x:T,
+    ///     pub y:T,
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// struct Point3D<T>{
+    ///     pub x:T,
+    ///     pub y:T,
+    ///     pub z:T,
+    /// }
+    ///
     ///
     /// ```
     ///
@@ -541,17 +639,7 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
-    ///
-    /// let tup=(1,1,2,3,5,8);
-    ///
-    /// assert_eq!( tup.clone().into_field(fp!(0)), 1 );
-    /// assert_eq!( tup.clone().into_field(fp!(1)), 1 );
-    /// assert_eq!( tup.clone().into_field(fp!(2)), 2 );
-    /// assert_eq!( tup.clone().into_field(fp!(3)), 3 );
-    /// assert_eq!( tup.clone().into_field(fp!(4)), 5 );
-    /// assert_eq!( tup.clone().into_field(fp!(5)), 8 );
-    ///
+    /// TODO
     /// ```
     #[inline(always)]
     fn into_field<'a,P>(self,path:P)->RevIntoFieldType<'a,P,Self>
@@ -568,17 +656,7 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp};
-    ///
-    /// let tup=Box::new((1,1,2,3,5,8));
-    ///
-    /// assert_eq!( tup.clone().box_into_field(fp!(0)), 1 );
-    /// assert_eq!( tup.clone().box_into_field(fp!(1)), 1 );
-    /// assert_eq!( tup.clone().box_into_field(fp!(2)), 2 );
-    /// assert_eq!( tup.clone().box_into_field(fp!(3)), 3 );
-    /// assert_eq!( tup.clone().box_into_field(fp!(4)), 5 );
-    /// assert_eq!( tup.clone().box_into_field(fp!(5)), 8 );
-    ///
+    /// TODO
     /// ```
     #[cfg(feature="alloc")]
     #[inline(always)]
