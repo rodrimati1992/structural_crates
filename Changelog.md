@@ -1,5 +1,91 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
+### 0.2.0
+
+Replaced field identifiers with field paths,
+which can represent both nested fields `.a.b.c`(with the FieldPath type),
+as well as accessing multiple fields `.a, .b, .foo.c` (with the FieldPathSet type).
+
+Replaced `ti` and `TI` macros with `fp` and `FP` macros.
+
+Simplified the definition of GetFieldMut,removing the `as_mutref` method.
+Also replaced `get_field_mutref` with `get_field_raw_mut`,
+which takes in an erased raw pointer,and returns a raw pointer to a field.
+
+Removed `GetMultiField*` traits,replacing them with `RevField*` traits,
+used for both nested field access (when `FieldPath` implements it),
+as well as multiple field access (when `FieldPathSet` implements it).
+
+Renamed "better_ti" and "nightly_better_ti" cargo features to
+"better_macros" and "nightly_better_macros"
+
+Fixed `make_struct` to allow nested invocations of the macro,
+like `make_struct!{ foo:make_struct!{ bar:() } }`.
+
+Added field initialization shorthand syntax to `make_struct`,
+eg:`let foo=0; make_struct!{ foo }`.
+
+Changed default field access to mutable,and by value.
+(before it was defaulted to shared access).
+
+Changed `structural_alias` to allow declaring multiple traits.
+
+Renamed implementation macros to include a `z_` prefix,
+including these:
+- `z_delegate_structural_with`
+- `z_impl_box_into_field_method`
+- `z_unsafe_impl_get_field_raw_mut_method`
+
+Added impls of accessor traits for `&` and `&mut`,
+so that the GetFieldExt methods can be called on trait object references 
+without dereferencing them.
+
+Removed the `Structural::Fields` associated type,since it was serving no purpose.
+
+Added a "rust_1_40" features,which enables the "better macros" feature,
+and is automatically enabled by the build script.
+
+Added `impl Trait` fields in `structural_alias` macro,
+with "impl_fields" and "nightly_impl_fields" cargo features to enable them.
+
+Added `#[struc(impl=">trait_bounds>")]` helper attribute to Structural derive macro,
+which affects the generated `<deriving_type>_SI` trait,
+this is equivalent to using an `impl Trait` field in the `structural_alias` macro
+(including requiring the "impl_fields" to enable support for the attribute).
+
+Added a `#[struc(delegate_to)]` helper attribute in `Structural`,
+for delegating the implementation of the Structural and accessor trait impls to a field.
+
+Added `GetFieldType2`,`GetFieldType3`,`GetFieldType4` type aliases to access
+nested fields.
+
+Added `RevGetFieldType_` trait,and `RevGetFieldType` type alias,
+to query the type of a nested field.
+
+Rewrote many examples that operate on concrete types to operate on a generic type,
+inside a function.
+
+Changes to `z_delegate_structural_with`:
+    
+    - Requires a trailing comma in `impl[T,]`
+
+    - Renamed `field_ty` argument to `delegating_to_type`
+
+    - Added `field_name_param=( field_name : FieldName );` argument.
+
+    - Added `as_delegating_raw{ ..... }` argument,
+      to get a raw pointer to the delegated to variable.
+
+
+Hid {TString,TList,TNil,chars},turning them into an implementation detail of `structural`.
+For `TString` this is so that it can be replaced with 
+`pub struct TString<const STR:&'static str>;`.
+
+For advanced users:
+Added traits and types for manipulating field paths on the type-level,
+inside of `structural::type_level::collection_traits`.
+
+
 ### 0.1.0
 
 Declared per-field accessor traits (GetField/GetFieldMut/intoField/IntoFieldMut) and 
