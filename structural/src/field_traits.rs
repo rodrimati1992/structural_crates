@@ -18,8 +18,10 @@ pub mod rev_get_field;
 mod multi_fields;
 
 
-use self::rev_get_field::{
-    RevFieldType,
+pub use self::rev_get_field::{
+    RevGetFieldType,
+    RevGetFieldType_,
+    RevFieldRefType,
     RevFieldMutType,
     RevIntoFieldType,
     RevGetField,
@@ -160,6 +162,8 @@ pub trait GetField<FieldName>:StructuralDyn{
 ///
 pub type GetFieldType<This,FieldName>=<This as GetField<FieldName>>::Ty;
 
+
+
 /// Queries the type of a double nested field (eg:`.a.b`).
 pub type GetFieldType2<This,FieldName,FieldName2>=
     GetFieldType<
@@ -180,6 +184,7 @@ pub type GetFieldType4<This,FieldName,FieldName2,FieldName3,FieldName4>=
         GetFieldType2<This,FieldName,FieldName2>,
         FieldName3,FieldName4,
     >;
+
 
 
 /// Allows accessing the `FieldName` field mutably.
@@ -435,7 +440,7 @@ pub trait GetFieldExt{
     ///
     /// ```
     #[inline(always)]
-    fn field_<'a,P>(&'a self,path:P)->RevFieldType<'a,P,Self>
+    fn field_<'a,P>(&'a self,path:P)->RevFieldRefType<'a,P,Self>
     where
         P:IsFieldPath,
         P:RevGetField<'a,Self>
@@ -458,7 +463,7 @@ pub trait GetFieldExt{
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a,P>(&'a self,path:P)->RevFieldType<'a,P,Self>
+    fn fields<'a,P>(&'a self,path:P)->RevFieldRefType<'a,P,Self>
     where
         P:RevGetField<'a,Self>
     {
@@ -491,7 +496,7 @@ pub trait GetFieldExt{
         path.rev_get_field_mut(self)
     }
 
-    /// Gets mutable references to multiple field,determined by `path`.
+    /// Gets mutable references to multiple fields,determined by `path`.
     ///
     /// # Example
     ///
@@ -503,6 +508,20 @@ pub trait GetFieldExt{
     /// assert_eq!( tup.fields_mut(fp!(0,1)), (&mut 1,&mut 1) );
     /// assert_eq!( tup.fields_mut(fp!(3,2)), (&mut 3,&mut 2) );
     /// assert_eq!( tup.fields_mut(fp!(4,5,3)), (&mut 5,&mut 8,&mut 3) );
+    ///
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// An example of how this method does not allow multiple mutable borrows 
+    /// of the same field.
+    ///
+    /// ```compile_fail
+    /// use structural::{GetFieldExt,fp};
+    ///
+    /// let mut tup=(1,1,2,3,5,8);
+    ///
+    /// let _=tup.fields_mut(fp!(4,4));
     ///
     /// ```
     #[inline(always)]

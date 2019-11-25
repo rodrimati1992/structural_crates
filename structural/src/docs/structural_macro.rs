@@ -14,11 +14,7 @@ By default,this derive generates:
 - A trait named `<deriving_type>_SI`,aliasing the accessor traits for the type,
 with a blanket implementation for all types with the same fields.
 
-- Implementation of the `GetField`/`GetFieldMut`/`IntoField` traits 
-(by reference/by mutable reference/by value accessor traits) 
-will be implemented for `pub` fields,
-requiring use of the `#[struc(access="...")]` 
-attribute to override which traits get implemented.
+All of these can be overriden.
 
 # Container Attributes
 
@@ -30,6 +26,7 @@ Prints the output of the derive macro by panicking.
 
 Disables the generation of the `<deriving_type>_SI` trait.
 
+[Here is an example using this attribute](#disabling-the-trait-alias)
 
 # Field Attributes
 
@@ -214,6 +211,8 @@ pub trait Hello_SI:
     // IntoFieldMut<FP!(hello), Ty=u32>+
     // IntoFieldMut<FP!(world), Ty=String>
     // ```
+    // Alternatively,you could use the `field_path_aliases` macro,
+    // and use those aliases here instead of using `FP!`.
     IntoFieldMut<FP!(h e l l o), Ty=u32>+
     IntoFieldMut<FP!(w o r l d), Ty=String> 
 {}

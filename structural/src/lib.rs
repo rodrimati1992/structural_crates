@@ -391,6 +391,7 @@ pub use crate::{
         GetField,GetFieldMut,IntoField,IntoFieldMut,
         GetFieldExt,
         GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
+        RevGetFieldType,RevGetFieldType_,
     },
     structural_trait::{Structural,StructuralDyn},
 };
