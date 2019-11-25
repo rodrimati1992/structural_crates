@@ -6,19 +6,19 @@
 [api-docs]: https://docs.rs/structural
 
 
-This library provides abstractions over fields,emulating structural types.
+This library provides field accessor traits,and emulation of structural types.
 
 # Features
 
 These are the features this library provides:
 
-- Derivation of per-field accessor traits (GetField/GetFieldMut/IntoField/IntoFieldMut)
-with the `Structural` derive macro.
+- [Derivation of the 3 accessor traits for every public field](https://docs.rs/structural/0.2/structural/docs/structural_macro/index.html)
+(GetField/GetFieldMut/IntoField).
 
-- Declaration of trait aliases for the field accessor traits,
-with the `structural_alias` macro.
+- [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax,with the `structural_alias` macro.
+](https://docs.rs/structural/0.2/structural/macro.structural_alias.html).
 
-- Construction of anonymous structs with the `make_struct` macro.
+- [Construction of anonymous structs with `make_struct`](https://docs.rs/structural/0.2/structural/macro.make_struct.html)
 
 # Changelog
 
@@ -42,7 +42,7 @@ use structural::{GetFieldExt,Structural,fp};
 
 fn reads_point4<S>(point:&S)
 where
-    // The `Structural` derive generated the `Point3D_SI` trait for `Point3D`,
+    // The `Structural` derive macro generated the `Point3D_SI` trait for `Point3D`,
     // aliasing the accessor traits for it.
     S:Point3D_SI<u32>
 {
@@ -383,17 +383,17 @@ These are the cargo features in structural:
 
 - `better_macros`:
     This enables the `FP` macro to take in the same syntax as the `fp` macro.
-    This requires proc macros in type position,
-    which is as of 2019-11-23 stabilizes on Rust 1.40.
+    This requires proc macros in type position,which stabilizes in Rust 1.40.
 
 - `nightly_better_macros`
     Equivalent to the "better_macros" feature,
     as well as enable the nightly features required before it was 
-    marked as stable for Rust 1.40 (as of 2019-11-23).
+    stabilized in Rust 1.40.
 
 - `impl_fields`:
     This allows using `field_name:impl Foo` fields in the `structural_alias` macro,
-    which as of 2019-11-23 requires the `associated_type_bounds` Rust nightly feature.
+    which as of 2019-11-23 requires the `associated_type_bounds` Rust nightly feature.<br>
+    If this doesn't work,try using the "nightly_impl_fields" feature in Rust nightly instead.
 
 - `nightly_impl_fields`
     Equivalent to the `impl_fields` feature,

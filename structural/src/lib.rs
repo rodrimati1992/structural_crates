@@ -1,15 +1,15 @@
 /*!
 
-This library provides abstractions over fields,emulating structural types.
+This library provides field accessor traits,and emulation of structural types.
 
 # Features
 
 These are the features this library provides:
 
-- [Derivation of per-field accessor traits](./docs/structural_macro/index.html)
+- [Derivation of the 3 accessor traits for every public field](./docs/structural_macro/index.html)
 (GetField/GetFieldMut/IntoField).
 
-- [Declaration of trait aliases for the field accessor traits
+- [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
 ](./macro.structural_alias.html).
 
 - [Construction of anonymous structs with make_struct](./macro.make_struct.html)
