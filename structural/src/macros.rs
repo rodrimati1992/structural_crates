@@ -369,6 +369,92 @@ each of which get turned into supertraits on `Foo`:
     a field that implements the Bar trait.<br>
     This requires the `nightly_impl_fields` or `impl_fields` cargo feature.
 
+# Supertraits
+
+### Structural aliases as supertraits
+
+Structural aliases are regular traits,
+so you can use them as supertraits in your own traits.
+
+```
+use structural::{GetFieldExt,structural_alias,fp};
+
+structural_alias!{
+    trait Fields{
+        ref foo:usize,
+        ref bar:String,
+    }
+}
+
+trait MyTrait:Fields{
+    fn multiply_foo(&self,n:usize)->usize{
+        n * self.field_(fp!(foo))
+    }
+    fn print_bar(&self){
+        println!("{}", self.field_(fp!(bar)) );
+    }
+}
+
+
+# fn main(){}
+
+```
+
+### Same field names
+
+Structural aliases can have other structural aliases as supertraits,
+even ones with the same fields.
+
+In this example:
+
+```rust
+use structural::structural_alias;
+
+structural_alias!{
+    trait Point<T>{
+        move x:T,
+        move y:T,
+    }
+
+    trait Rectangle<T>:Point<T>{
+        ref x:T,
+        ref y:T,
+        ref w:T,
+        ref h:T,
+    }
+}
+
+# fn main(){}
+```
+It is legal to repeat the `x` and `y` fields in subtraits,
+and those fields get the most permissive access specified,
+which here is shared and by value access to both `x` and `y`.
+
+
+<br>
+
+It is not legal is to redeclare the field with an incompatible type:
+
+```compile_fail
+use structural::structural_alias;
+
+structural_alias!{
+    trait Point<T>{
+        x:T,
+        y:T,
+    }
+
+    trait Rectangle<T>:Point<T>{
+        x:usize,
+        y:T,
+        w:T,
+        h:T,
+    }
+}
+
+# fn main(){}
+
+
 # impl Trait fields
 
 This requires the `nightly_impl_fields` cargo feature

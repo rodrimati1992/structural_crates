@@ -639,7 +639,50 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// // TODO
+    /// use structural::{GetFieldExt,Structural,fp,make_struct};
+    /// 
+    /// 
+    /// #[derive(Structural,Clone)]
+    /// struct MetaVars<T>{
+    ///     pub foo:T,
+    ///     pub bar:T,
+    ///     pub baz:T,
+    /// }
+    /// 
+    /// // The `MetaVars_SI` trait was declared by the `Structural` derive on `MetaVars`.
+    /// fn pick_metavar<T>(this:impl MetaVars_SI<T>,which_one:u32)->T{
+    ///     match which_one % 3 {
+    ///         0=>this.into_field(fp!(foo)),
+    ///         1=>this.into_field(fp!(bar)),
+    ///         _=>this.into_field(fp!(baz)),
+    ///     }
+    /// }
+    /// 
+    /// {
+    ///     let metavars=MetaVars{
+    ///         foo:13,
+    ///         bar:21,
+    ///         baz:34,
+    ///     };
+    ///     
+    ///     assert_eq!( pick_metavar(metavars.clone(),0), 13 );
+    ///     assert_eq!( pick_metavar(metavars.clone(),1), 21 );
+    ///     assert_eq!( pick_metavar(metavars        ,2), 34 );
+    /// }
+    /// 
+    /// {
+    ///     let metavars=make_struct!{
+    ///         #![derive(Clone)]
+    ///         foo:13,
+    ///         bar:21,
+    ///         baz:34,
+    ///     };
+    ///     
+    ///     assert_eq!( pick_metavar(metavars.clone(),0), 13 );
+    ///     assert_eq!( pick_metavar(metavars.clone(),1), 21 );
+    ///     assert_eq!( pick_metavar(metavars        ,2), 34 );
+    /// }
+    /// 
     /// ```
     #[inline(always)]
     fn into_field<'a,P>(self,path:P)->RevIntoFieldType<'a,P,Self>
@@ -656,7 +699,33 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// // TODO
+    /// use structural::{GetFieldExt,Structural,fp,make_struct,structural_alias};
+    /// 
+    /// structural_alias!{
+    ///     trait Pair<T>{
+    ///         left :T,
+    ///         right:T,
+    ///     }
+    /// }
+    /// 
+    /// fn pick_from_pair<T>(this:Box<dyn Pair<T>>,which_one:u32)->T{
+    ///     match which_one%2 {
+    ///         0=>this.box_into_field(fp!(left )),
+    ///         _=>this.box_into_field(fp!(right)),
+    ///     }
+    /// }
+    /// 
+    /// fn main(){
+    ///     let this=Box::new(make_struct!{
+    ///         #![derive(Clone)]
+    ///         left: "foo".to_string(),
+    ///         right: "bar".to_string(),
+    ///     });
+    /// 
+    ///     assert_eq!( pick_from_pair(this.clone(),0), "foo" );
+    ///     assert_eq!( pick_from_pair(this        ,1), "bar" );
+    /// }
+    /// 
     /// ```
     #[cfg(feature="alloc")]
     #[inline(always)]
