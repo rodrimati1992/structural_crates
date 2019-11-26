@@ -423,3 +423,5 @@ pub mod pmr{
 }
 
 
+#[cfg(all(test,not(feature="testing")))]
+compile_error!{ "tests must be run with the \"testing\" feature" }

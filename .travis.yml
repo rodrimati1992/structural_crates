@@ -56,5 +56,5 @@ script:
 
   - cd "${TRAVIS_BUILD_DIR}/structural/"
   - cargo test --features testing
-  - cargo test --features testing --no-default-features 
-  - cargo test --features testing --no-default-features --features alloc
+  - cargo test --no-default-features --features testing  
+  - cargo test --no-default-features --features "testing alloc"
