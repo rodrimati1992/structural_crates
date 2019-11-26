@@ -129,7 +129,7 @@ impl Parse for StructuralAlias {
         
         // let equal:Token![;]= input.parse()?;
 
-        let span:Span=trait_token.span.join(braces.span).unwrap();
+        let span:Span=trait_token.span.join(braces.span).unwrap_or(trait_token.span);
 
         Ok(Self {
             span,
