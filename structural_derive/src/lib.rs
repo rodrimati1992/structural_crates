@@ -15,7 +15,7 @@ An implementation detail of structural.
 extern crate proc_macro;
 
 
-mod declare_name_aliases_macro;
+mod field_path_aliases_macro;
 mod field_access;
 mod parse_utils;
 mod structural_alias_impl;
@@ -80,8 +80,8 @@ pub fn new_fp_impl_(input: TokenStream1) -> TokenStream1 {
 
 #[proc_macro]
 #[doc(hidden)]
-pub fn declare_name_aliases(input: TokenStream1) -> TokenStream1 {
-    parse_or_compile_err(input,declare_name_aliases_macro::impl_).into()
+pub fn _field_path_aliases_impl(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input,field_path_aliases_macro::impl_).into()
 }
 
 

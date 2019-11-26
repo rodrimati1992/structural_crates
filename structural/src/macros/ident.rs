@@ -140,28 +140,30 @@
 /// #[derive(Debug,Clone,PartialEq,Structural)]
 /// #[struc(public)]
 /// struct Bar{
-///     ooo:(u32,u32),
+///     aaa:(u32,u32),
 /// }
 ///
 ///
 /// fn with_foo(foo:&mut dyn Foo_SI){
-///     let bar=Bar{ooo: (300,301) };
-///     assert_eq!( foo.field_(fp!(bar)), &bar );
+///     let expected_bar=Bar{aaa: (300,301) };
+///
+///     assert_eq!( foo.field_(fp!(bar)), &expected_bar );
+///
+///     assert_eq!( foo.field_(fp!(bar.aaa)), &(300,301) );
+///
+///     assert_eq!( foo.field_(fp!(bar.aaa.0)), &300 );
+///
+///     assert_eq!( foo.field_(fp!(bar.aaa.1)), &301 );
+///
 ///     assert_eq!(
-///         foo.fields_mut(fp!( bar.ooo, ooo.0, ooo.1 )),
+///         foo.fields_mut(fp!( bar.aaa, ooo.0, ooo.1 )),
 ///         ( &mut (300,301), &mut 66, &mut 99 )
 ///     );
-///     assert_eq!( foo.field_(fp!(bar.ooo)), &(300,301) );
-///     assert_eq!( foo.field_(fp!(bar.ooo.0)), &300 );
-///     assert_eq!( foo.field_(fp!(bar.ooo.1)), &301 );
-///     assert_eq!( foo.field_(fp!(baz)), &44 );
-///     assert_eq!( foo.field_(fp!(ooo)), &(66,99) );
-///     assert_eq!( foo.field_(fp!(ooo.0)), &66 );
-///     assert_eq!( foo.field_(fp!(ooo.1)), &99 );
 /// }
 ///
 /// fn main(){
-///     let bar=Bar{ooo: (300,301) };
+///     let bar=Bar{aaa: (300,301) };
+///
 ///     with_foo(&mut Foo{
 ///         bar:bar.clone(),
 ///         baz:44,
@@ -237,6 +239,10 @@ macro_rules! _delegate_fp {
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
+///     // From 1.40 onwards you can also write `FP!(name)`.
+///     //
+///     // Before 1.40, you can use `field_path_aliases!{ name }` before this function,
+///     // then write this as `This:GetField<name,Ty=S>`
 ///     This:GetField<FP!(n a m e),Ty=S>,
 ///     S:AsRef<str>,
 /// {
@@ -516,9 +522,17 @@ macro_rules! field_path_aliases_module {
         #[allow(non_upper_case_globals)]
         #[allow(unused_imports)]
         $(#[$attr])*
+        /// Type aliases and constants for FieldPath and FieldPathSet 
+        /// (from the structural crate).
+        ///
+        /// The source code for this module can only be accessed from 
+        /// the type aliases and constants.<br>
+        /// As of writing this documentation,`cargo doc` links 
+        /// to the inplementation of the `field_path_aliases_module` macro
+        /// instead of where this module is declared.
         $vis mod $mod_name{
             use super::*;
-            $crate::declare_name_aliases!{
+            $crate::_field_path_aliases_impl!{
                 $($mod_contents)*
             }
         }
@@ -531,6 +545,11 @@ macro_rules! field_path_aliases_module {
 Declares aliases for field paths,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
+
+As of Rust 1.39,this macro cannot be invoked within a function,
+you *can* use 
+[`field_path_aliases_module`](./macro.field_path_aliases_module.html)
+within functions though.
 
 # Example
 
@@ -625,7 +644,7 @@ macro_rules! field_path_aliases {
     (
         $($mod_contents:tt)*
     ) => (
-        $crate::declare_name_aliases!{
+        $crate::_field_path_aliases_impl!{
             $($mod_contents)*
         }
     );
