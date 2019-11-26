@@ -42,9 +42,9 @@ matrix:
 
         # I need to pass each individual feature with --features featurename
         # because otherwise it gets parsed as a test file.
-        - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        - cargo miri test --no-default-features --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        - cargo miri test --no-default-features --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
         - cargo miri test --all-features -- -- -Zunstable-options --exclude-should-panic
 
     - rust: 1.34.0
