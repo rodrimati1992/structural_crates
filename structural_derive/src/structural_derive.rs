@@ -182,6 +182,7 @@ fn deriving_structural<'a>(
 
     if with_trait_alias {
         structural_alias_trait=crate::structural_alias_impl::for_delegation(
+            tyname.span(),
             std::iter::empty::<Ident>(),
             docs,
             ds.vis,

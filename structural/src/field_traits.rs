@@ -500,7 +500,7 @@ pub trait GetFieldExt{
 
     /// Gets a mutable reference to a field,determined by `path`.
     ///
-     /// # Example
+    /// # Example
     ///
     /// ```
     /// use structural::{GetFieldExt,fp,make_struct,Structural};
@@ -639,7 +639,7 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// TODO
+    /// // TODO
     /// ```
     #[inline(always)]
     fn into_field<'a,P>(self,path:P)->RevIntoFieldType<'a,P,Self>
@@ -656,7 +656,7 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// TODO
+    /// // TODO
     /// ```
     #[cfg(feature="alloc")]
     #[inline(always)]

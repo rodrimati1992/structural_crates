@@ -28,6 +28,9 @@ alloc=[]
 rust_1_36=[]
 rust_1_40=["better_macros"]
 
+# An internal cargo feature,used by tests
+testing=["structural_derive/test_asserts"]
+
 specialization=[]
 nightly_specialization=["specialization"]
 

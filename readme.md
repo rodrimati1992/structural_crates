@@ -369,7 +369,7 @@ These are the cargo features in structural:
     while this library supports Rust back to 1.34.
 
 - `rust_1_40`:
-    For enabling support of Rust versions from 1.36 onwards ,
+    For enabling support of Rust versions from 1.40 onwards ,
     this is automatically enabled by `structural`'s build script.
     This automatically enables the "better_macros" feature.
 

@@ -17,7 +17,7 @@ use syn::{
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub(crate)struct FieldPaths{
     paths:Vec<FieldPath>,
     path_uniqueness:PathUniqueness,
@@ -69,6 +69,27 @@ impl FieldPaths{
 
     pub(crate) fn is_set(&self)->bool{
         self.paths.len()!=1
+    }
+
+    /// Outputs the inside of `fp!`/`FP!` invocation that constructed this FieldPaths.
+    pub(crate) fn write_fp_inside(&self,buff:&mut String){
+        #[cfg(feature="test_asserts")]
+        let start=buff.len();
+
+        for (i,path) in self.paths.iter().enumerate() {
+            path.write_str(buff);
+            if i+1 != self.paths.len() {
+                buff.push_str(", ")
+            }
+        }
+
+        #[cfg(feature="test_asserts")]
+        {
+            match syn::parse_str::<Self>(&buff[start..]) {
+                Ok(x)=>assert_eq!(*self, x),
+                Err(e)=>panic!("Could not parse `{}` as {:#?}", e, self),
+            }
+        }
     }
 
     /// Gets a tokenizer that outputs the type-level identifier.
@@ -146,7 +167,7 @@ impl Parse for FieldPaths{
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub(crate) struct FieldPath{
     list:Vec<FieldPathComponent>,
     contains_splice:bool,
@@ -205,6 +226,12 @@ impl FieldPath{
         Self{
             list:vec![ FieldPathComponent::Chars(chars) ],
             contains_splice:false,
+        }
+    }
+
+    pub(crate) fn write_str(&self,buff:&mut String){
+        for fpc in &self.list {
+            fpc.write_str(buff);
         }
     }
 
@@ -302,6 +329,29 @@ impl FieldPathComponent{
             input.parse::<syn::Type>()
         }
     }
+
+    pub(crate) fn write_str(&self,buff:&mut String){
+        use self::FieldPathComponent as FPC;
+        use std::fmt::Write;
+
+        match self {
+            FPC::Chars(list)=>{
+                for c in list{
+                    let _=write!(buff,"{} ",c);
+                }
+            }
+            FPC::Ident(ident)=>{
+                let _=write!(buff,".{}",ident);
+            }
+            FPC::Insert(ty)=>{
+                let _=write!(buff,"[{}]",ty.to_token_stream());
+            }
+            FPC::Splice(ty)=>{
+                let _=write!(buff,".({})",ty.to_token_stream());
+            }
+        }
+    }
+
 
     pub(crate)fn parse(
         input: ParseStream,

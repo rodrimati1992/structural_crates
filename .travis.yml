@@ -20,21 +20,21 @@ matrix:
         - rustup component add miri
         - cargo miri setup
 
-        - cargo test --no-default-features --features nightly_specialization
-        - cargo test --no-default-features --features alloc --features nightly_specialization
-        - cargo test --no-default-features --features std nightly_specialization
+        - cargo test --no-default-features --features testing --features nightly_specialization
+        - cargo test --no-default-features --features testing --features alloc --features nightly_specialization
+        - cargo test --no-default-features --features testing --features std nightly_specialization
         
-        - cargo test --no-default-features --features nightly_better_macros
-        - cargo test --no-default-features --features alloc --features nightly_better_macros
-        - cargo test --no-default-features --features std nightly_better_macros
+        - cargo test --no-default-features --features testing --features nightly_better_macros
+        - cargo test --no-default-features --features testing --features alloc --features nightly_better_macros
+        - cargo test --no-default-features --features testing --features std nightly_better_macros
         
-        - cargo test --no-default-features --features better_macros
-        - cargo test --no-default-features --features alloc --features better_macros
-        - cargo test --no-default-features --features std better_macros
+        - cargo test --no-default-features --features testing --features better_macros
+        - cargo test --no-default-features --features testing --features alloc --features better_macros
+        - cargo test --no-default-features --features testing --features std better_macros
         
-        - cargo test --no-default-features --features nightly_impl_fields
-        - cargo test --no-default-features --features alloc --features nightly_impl_fields
-        - cargo test --no-default-features --features std nightly_impl_fields
+        - cargo test --no-default-features --features testing --features nightly_impl_fields
+        - cargo test --no-default-features --features testing --features alloc --features nightly_impl_fields
+        - cargo test --no-default-features --features testing --features std nightly_impl_fields
         
         - cargo test --all-features
         
@@ -55,6 +55,6 @@ script:
   - cargo test --features testing
 
   - cd "${TRAVIS_BUILD_DIR}/structural/"
-  - cargo test
-  - cargo test --no-default-features 
-  - cargo test --no-default-features --features alloc
+  - cargo test --features testing
+  - cargo test --features testing --no-default-features 
+  - cargo test --features testing --no-default-features --features alloc

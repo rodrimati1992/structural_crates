@@ -23,6 +23,9 @@ include = [
 # causing the optional crates of `as_derive_utils` that are only for testing
 # to be enabled in regular builds.
 testing=["as_derive_utils/testing"]
+
+# A private internal feature that enables some assertions used in `structural` tests.
+test_asserts=[]
 impl_fields=[]
 
 [badges]

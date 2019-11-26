@@ -357,9 +357,9 @@ pub use structural_derive::Structural;
 pub use structural_derive::{
     old_fp_impl_,
     //new_fp_impl_,
+    _field_path_aliases_impl,
     _FP_impl_,
     structural_alias_impl,
-    declare_name_aliases,
 };
 
 

@@ -94,6 +94,7 @@ impl NamedModuleAndTokens{
 
         let mod_tokens=quote!(
             pub(crate) mod #names_module{
+                use super::*;
                 use structural::pmr::*;
 
                 #(#aliases_names)*
