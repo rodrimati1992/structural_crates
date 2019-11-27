@@ -13,6 +13,7 @@ use std_::marker::PhantomData;
 
 
 pub mod for_arrays;
+pub mod for_tuples;
 mod tuple_impls;
 mod most_impls;
 pub mod rev_get_field;

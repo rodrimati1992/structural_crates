@@ -70,7 +70,7 @@ macro_rules! declare_array_paths {
         )*
     ) => (
         field_path_aliases_module!{
-            mod names{
+            pub(crate) mod names{
                 $( $index_name = $index ,)*
             }
         }
