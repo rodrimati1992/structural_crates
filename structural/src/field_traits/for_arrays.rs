@@ -22,6 +22,18 @@ use std_::{
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pub mod array_traits;
+
+pub use self::array_traits::{
+    Array0,Array1,Array2,Array3,Array4,Array5,Array6,Array7,
+    Array8,Array9,Array10,Array11,Array12,Array13,Array14,Array15,
+    Array16,Array17,Array18,Array19,Array20,Array21,Array22,Array23,
+    Array24,Array25,Array26,Array27,Array28,Array29,Array30,Array31,
+    Array32,
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 mod sealed{
     pub trait Sealed{}
 }
@@ -334,9 +346,12 @@ struct Foo0;
 
 #[cfg(test)]
 mod tests{
+    use super::*;
+
     use crate::GetFieldExt;
 
     use std_::mem;
+    use std_::convert::TryFrom;
 
     #[test]
     fn get_field(){
@@ -433,5 +448,138 @@ mod tests{
             drop(cnt);
             assert_eq!(counter.get(), 0);
         }
+    }
+
+    #[test]
+    fn structural_aliases(){
+
+        let mut array=[0i32;32];
+        (0..=31).for_each(|x| array[x as usize]=100+x );
+
+        macro_rules! structural_alias_test {
+            (
+                $size:literal,$trait_:ident,[$(($field:ident,$index:literal)),* $(,)* ]
+            ) => ({
+                fn constraint<T>(_:&impl $trait_<T>){}
+                
+                let arr=<&[i32;$size]>::try_from(&array[0..$size]).unwrap().clone();
+                constraint(&arr);
+                $(
+                    assert_eq!( arr.field_($field), &array[$index] );
+                )*
+            })
+        }
+
+
+        structural_alias_test!(1,Array1,[
+            (I0,0),
+        ]);
+
+        structural_alias_test!(7,Array7,[
+            (I0,0),
+            (I1,1),
+            (I2,2),
+            (I3,3),
+            (I4,4),
+            (I5,5),
+            (I6,6),
+        ]);
+
+        structural_alias_test!(8,Array8,[
+            (I0,0),
+            (I6,6),
+            (I7,7),
+        ]);
+
+        structural_alias_test!(9,Array9,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+        ]);
+
+        structural_alias_test!(15,Array15,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I9,9),
+            (I14,14),
+        ]);
+
+        structural_alias_test!(16,Array16,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+        ]);
+
+        structural_alias_test!(17,Array17,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+        ]);
+
+        structural_alias_test!(23,Array23,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+            (I22,22),
+        ]);
+
+        structural_alias_test!(24,Array24,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+            (I22,22),
+            (I23,23),
+        ]);
+
+        structural_alias_test!(30,Array30,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+            (I22,22),
+            (I23,23),
+            (I29,29),
+        ]);
+
+        structural_alias_test!(31,Array31,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+            (I22,22),
+            (I23,23),
+            (I29,29),
+            (I30,30),
+        ]);
+
+        structural_alias_test!(32,Array32,[
+            (I0,0),
+            (I7,7),
+            (I8,8),
+            (I14,14),
+            (I15,15),
+            (I16,16),
+            (I22,22),
+            (I23,23),
+            (I29,29),
+            (I30,30),
+            (I31,31),
+        ]);
     }
 }

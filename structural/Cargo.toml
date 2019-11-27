@@ -1,6 +1,6 @@
 [package]
 name = "structural"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -42,7 +42,7 @@ nightly_impl_fields=["impl_fields"]
 
 
 [dependencies]
-structural_derive={version="0.1.0",path="../structural_derive"}
+structural_derive={version="0.2.0",path="../structural_derive"}
 core_extensions={version="0.1.11",default_features=false}
 
 

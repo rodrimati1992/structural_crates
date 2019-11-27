@@ -77,6 +77,11 @@ Changes to `z_delegate_structural_with`:
       to get a raw pointer to the delegated to variable.
 
 
+Implements accessor traits for arrays up to 32 elements.
+
+Added type-level integers and std::cmp::{Ordering,Ord} equivalents,
+for use by array impls of accessor traits.
+
 Hid {TString,TList,TNil,chars},turning them into an implementation detail of `structural`.
 For `TString` this is so that it can be replaced with 
 `pub struct TString<const STR:&'static str>;`.
