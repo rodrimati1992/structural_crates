@@ -4,8 +4,10 @@ Contains types representing values.
 
 // pub use core_extensions::type_level_bool::{self,True,False,Boolean};
 
+pub mod cmp;
 pub mod collection_traits;
 pub mod ident;
+pub mod integer;
 #[doc(hidden)]
 pub mod list;
 
