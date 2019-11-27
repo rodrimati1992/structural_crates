@@ -1,5 +1,69 @@
 /*!
-Traits related to arrays
+Traits related to arrays.
+
+# `Array*` traits
+
+The `Array*` traits alias the accessor traits for arrays,
+with shared,mutable,and by value access to every element of the array.
+
+These traits can be used with any array at least as large as the size indicated
+by the trait.<br>
+You can,for example,use `Array3` with any array type from `[T;3]` to `[T;32]` inclusive.
+
+
+### Homogeneous tuples
+
+You can pass homogeneous tuples to functions expecting `Array*` implementing types.
+
+
+```
+use structural::field_traits::for_arrays::Array4;
+use structural::{GetFieldExt,fp};
+
+fn takes_array(array:impl Array4<u32>){
+    assert_eq!( array.field_(fp!(0)), &3 );
+    assert_eq!( array.field_(fp!(1)), &5 );
+    assert_eq!( array.field_(fp!(2)), &8 );
+    assert_eq!( array.field_(fp!(3)), &13 );
+}
+
+takes_array( (3,5,8,13) );
+
+// Tuples only have to be homogeneous up to the size of the expected array.
+takes_array( (3,5,8,13,"foo") ); 
+takes_array( (3,5,8,13,"foo",vec!["bar"]) );
+
+```
+
+# `Array*` Example
+
+```
+use structural::field_traits::for_arrays::Array3;
+use structural::{GetFieldExt,fp};
+
+use std::fmt::Debug;
+
+fn print_first_3<T>(array:impl Array3<T>)
+where
+    T:Debug,
+{
+    println!("{:?}",array.fields(fp!(0,1,2)))
+}
+
+print_first_3( [3,5,8] );
+print_first_3( [3,5,8,13] );
+print_first_3( [3,5,8,13,21]); 
+print_first_3( [3,5,8,13,21,34] );
+print_first_3( ["foo";7] );
+print_first_3( ["bar";31] );
+print_first_3( ["baz";32] );
+
+
+
+```
+
+
+
 */
 
 use crate::{

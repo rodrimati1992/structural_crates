@@ -79,6 +79,8 @@ Changes to `z_delegate_structural_with`:
 
 Implements accessor traits for arrays up to 32 elements.
 
+Added structural aliases for arrays up to 32 elements,and tuples up to 12 elements.
+
 Added type-level integers and std::cmp::{Ordering,Ord} equivalents,
 for use by array impls of accessor traits.
 
