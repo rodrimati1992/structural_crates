@@ -347,7 +347,7 @@ each of which get turned into supertraits on `Foo`:
     Corresponds to the `IntoFieldMut<FP!(a),Ty=u32>` trait,
     allowing shared,mutable,and by value access to the field.
 
-- `ref  b:T`
+- `ref  b:T`:
     Corresponds to the `GetField<FP!(b),Ty=T>` shared reference 
     field accessor trait.
 
@@ -453,6 +453,7 @@ structural_alias!{
 }
 
 # fn main(){}
+```
 
 
 # impl Trait fields

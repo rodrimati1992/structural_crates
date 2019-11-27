@@ -373,6 +373,9 @@ pub mod structural_trait;
 pub mod utils;
 
 #[cfg(test)]
+pub mod test_utils;
+
+#[cfg(test)]
 pub mod tests{
     mod multi_nested_fields;
     mod structural_derive;

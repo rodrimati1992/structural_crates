@@ -22,7 +22,7 @@ pub trait StructuralDyn{
 
 
 /// Information about a field with accessor trait impls.
-#[derive(Debug,Clone,PartialEq,Eq,Hash)]
+#[derive(Debug,Copy,Clone,PartialEq,Eq,Hash)]
 pub struct FieldInfo{
     /// The original name of the field.
     pub original_name:&'static str,
