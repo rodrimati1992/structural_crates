@@ -34,7 +34,14 @@ macro_rules! impl_tuple {
             )*
         {}
 
-        impl<$($field_ty),*> $the_trait<$($field_ty),*> for $tuple_ty{}
+        impl<$($field_ty,)* This> $the_trait<$($field_ty),*> for This
+        where
+            This:
+                $(
+                    IntoFieldMut<$field_param,Ty=$field_ty>+
+                )*
+        {}
+
 
         impl<$($field_ty),*> StructuralDyn for $tuple_ty{
             fn fields_info(&self)->&'static[FieldInfo]{
