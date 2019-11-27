@@ -304,7 +304,7 @@ macro_rules! impl_getters_for_derive{
 
 /**
 
-The `structural_alias` defines a trait alias for multiple field accessors.
+The `structural_alias` macro defines a trait alias for multiple field accessors.
 
 # The entire syntax
 

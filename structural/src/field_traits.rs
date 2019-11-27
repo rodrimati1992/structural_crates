@@ -418,7 +418,7 @@ where
 
 
 
-/// An extension trait,which defines methods for accessing fields generically.
+/// A trait defining the primary way to call methods from structural traits.
 pub trait GetFieldExt{
     /// Gets a reference to a field,determined by `path`.
     ///

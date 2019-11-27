@@ -1,6 +1,7 @@
 
 
-/// Constructs a FieldPath(Set) value.
+/// Constructs a FieldPath(Set) value,
+/// which determines the fields accessed in [GetFieldExt] methods.
 ///
 /// When passed a single argument,this instantiates a `FieldPath`,
 /// which can be passed to the

@@ -389,10 +389,12 @@ pub mod type_level;
 #[doc(hidden)]
 pub mod chars;
 
+#[doc(inline)]
+pub use crate::field_traits::GetFieldExt;
+
 pub use crate::{
     field_traits::{
         GetField,GetFieldMut,IntoField,IntoFieldMut,
-        GetFieldExt,
         GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
         RevGetFieldType,RevGetFieldType_,
     },
