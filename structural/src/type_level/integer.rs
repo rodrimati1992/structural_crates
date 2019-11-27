@@ -42,6 +42,7 @@ pub struct Bit1;
 /*
 fn main() {
     for i in 0..=33{
+        println!("An unsigned {}",i);
         print!("pub type U{}=Unsigned<(",i);
         for bit_ind in (0..6).rev() {
             let bit=1 << bit_ind;
@@ -52,39 +53,107 @@ fn main() {
 }
 */
 
+
+/// A type-level 0 (unsigned)
 pub type U0=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit0,Bit0,)>;
+
+/// A type-level 1 (unsigned)
 pub type U1=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit0,Bit1,)>;
+
+/// A type-level 2 (unsigned)
 pub type U2=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit1,Bit0,)>;
+
+/// A type-level 3 (unsigned)
 pub type U3=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit1,Bit1,)>;
+
+/// A type-level 4 (unsigned)
 pub type U4=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit0,Bit0,)>;
+
+/// A type-level 5 (unsigned)
 pub type U5=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit0,Bit1,)>;
+
+/// A type-level 6 (unsigned)
 pub type U6=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit1,Bit0,)>;
+
+/// A type-level 7 (unsigned)
 pub type U7=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit1,Bit1,)>;
+
+/// A type-level 8 (unsigned)
 pub type U8=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit0,Bit0,)>;
+
+/// A type-level 9 (unsigned)
 pub type U9=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit0,Bit1,)>;
+
+/// A type-level 10 (unsigned)
 pub type U10=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit1,Bit0,)>;
+
+/// A type-level 11 (unsigned)
 pub type U11=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit1,Bit1,)>;
+
+/// A type-level 12 (unsigned)
 pub type U12=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit0,Bit0,)>;
+
+/// A type-level 13 (unsigned)
 pub type U13=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit0,Bit1,)>;
+
+/// A type-level 14 (unsigned)
 pub type U14=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit1,Bit0,)>;
+
+/// A type-level 15 (unsigned)
 pub type U15=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit1,Bit1,)>;
+
+/// A type-level 16 (unsigned)
 pub type U16=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit0,Bit0,)>;
+
+/// A type-level 17 (unsigned)
 pub type U17=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit0,Bit1,)>;
+
+/// A type-level 18 (unsigned)
 pub type U18=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit1,Bit0,)>;
+
+/// A type-level 19 (unsigned)
 pub type U19=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit1,Bit1,)>;
+
+/// A type-level 20 (unsigned)
 pub type U20=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit0,Bit0,)>;
+
+/// A type-level 21 (unsigned)
 pub type U21=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit0,Bit1,)>;
+
+/// A type-level 22 (unsigned)
 pub type U22=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit1,Bit0,)>;
+
+/// A type-level 23 (unsigned)
 pub type U23=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit1,Bit1,)>;
+
+/// A type-level 24 (unsigned)
 pub type U24=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit0,Bit0,)>;
+
+/// A type-level 25 (unsigned)
 pub type U25=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit0,Bit1,)>;
+
+/// A type-level 26 (unsigned)
 pub type U26=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit1,Bit0,)>;
+
+/// A type-level 27 (unsigned)
 pub type U27=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit1,Bit1,)>;
+
+/// A type-level 28 (unsigned)
 pub type U28=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit0,Bit0,)>;
+
+/// A type-level 29 (unsigned)
 pub type U29=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit0,Bit1,)>;
+
+/// A type-level 30 (unsigned)
 pub type U30=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit1,Bit0,)>;
+
+/// A type-level 31 (unsigned)
 pub type U31=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit1,Bit1,)>;
+
+/// A type-level 32 (unsigned)
 pub type U32=Unsigned<(Bit1,Bit0,Bit0,Bit0,Bit0,Bit0,)>;
+
+/// A type-level 33 (unsigned)
 pub type U33=Unsigned<(Bit1,Bit0,Bit0,Bit0,Bit0,Bit1,)>;
 
 

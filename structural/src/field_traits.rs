@@ -12,6 +12,7 @@ use crate::{
 use std_::marker::PhantomData;
 
 
+pub mod for_arrays;
 mod tuple_impls;
 mod most_impls;
 pub mod rev_get_field;
