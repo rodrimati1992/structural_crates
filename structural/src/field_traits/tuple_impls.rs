@@ -1,30 +1,42 @@
-use crate::Structural;
+use crate::{Structural,IntoFieldMut};
 use crate::structural_trait::{FieldInfo,StructuralDyn};
 
-use crate::type_level::ident::FieldPathString;
-use crate::chars::{_0,_1,_2,_3,_4,_5,_6,_7,_8,_9};
+use crate::field_traits::for_arrays::names;
 
 macro_rules! impl_tuple {
-    (inner; ($field:tt,$delegating_to_type:ident,$field_param:ty) ($($tuple_param:ident),* $(,)* ) )=>{
+    (inner; 
+        ($field:tt,$field_ty:ident,$field_param:ty) 
+        ($($tuple_param:ident),* $(,)* ) 
+    )=>{
         impl_getter!{
             unsafe impl[$($tuple_param),*] 
-                IntoFieldMut< $field:$delegating_to_type,$field_param > 
+                IntoFieldMut< $field:$field_ty,$field_param > 
             for ($($tuple_param,)*)
         }
     };
     (
+        $the_trait:ident,
         [
-            $( ($field:tt,$delegating_to_type:ident,$field_param:ty) ),*
+            $( ($field:tt,$field_ty:ident,$field_param:ty) ),*
         ]
         $tuple_ty:tt        
     ) => {
-        impl<$($delegating_to_type),*> Structural for $tuple_ty {
+        impl<$($field_ty),*> Structural for $tuple_ty {
             const FIELDS:&'static[FieldInfo]=&[
                 $( FieldInfo::not_renamed(stringify!( $field )) ,)*
             ];
         }
 
-        impl<$($delegating_to_type),*> StructuralDyn for $tuple_ty{
+        /// A structural alias for a tuple of the size.
+        pub trait $the_trait<$($field_ty),*>:
+            $(
+                IntoFieldMut<$field_param,Ty=$field_ty>+
+            )*
+        {}
+
+        impl<$($field_ty),*> $the_trait<$($field_ty),*> for $tuple_ty{}
+
+        impl<$($field_ty),*> StructuralDyn for $tuple_ty{
             fn fields_info(&self)->&'static[FieldInfo]{
                 <Self as $crate::Structural>::FIELDS
             }
@@ -34,7 +46,7 @@ macro_rules! impl_tuple {
         $(
             impl_tuple!{
                 inner;
-                ($field,$delegating_to_type,$field_param) $tuple_ty
+                ($field,$field_ty,$field_param) $tuple_ty
             }
         )*
     }
@@ -48,16 +60,18 @@ Code used to generate the macro invocations
 use itertools::Itertools; 
 
 fn main(){
-    for x in 0..12 {
+    for x in 1..=12 {
         let range=0..x;
         println!(
             "impl_tuple!{{\n\
+                {I4}Tuple{},\n\
                 {I4}[\n\
                 {I8}{}\n\
                 {I4}]\n\
-                {I4}({})\n\
+                {I4}({},)\n\
             }}",
-            range.clone().map(|x|format!("({0},C{0},U{0})",x)).join(",\n        "),
+            x,
+            range.clone().map(|x|format!("({0},C{0},names::I{0})",x)).join(",\n        "),
             range.clone().map(|x|format!("C{0}",x)).join(","),
             I4="    ",
             I8="        ",
@@ -69,143 +83,157 @@ fn main(){
 
 
 impl_tuple!{
+    Tuple1,
     [
-        (0,C0,FieldPathString<(_0,)>)
+        (0,C0,names::I0)
     ]
     (C0,)
 }
 impl_tuple!{
+    Tuple2,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1)
     ]
-    (C0,C1)
+    (C0,C1,)
 }
 impl_tuple!{
+    Tuple3,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2)
     ]
-    (C0,C1,C2)
+    (C0,C1,C2,)
 }
 impl_tuple!{
+    Tuple4,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3)
     ]
-    (C0,C1,C2,C3)
+    (C0,C1,C2,C3,)
 }
 impl_tuple!{
+    Tuple5,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4)
     ]
-    (C0,C1,C2,C3,C4)
+    (C0,C1,C2,C3,C4,)
 }
 impl_tuple!{
+    Tuple6,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5)
     ]
-    (C0,C1,C2,C3,C4,C5)
+    (C0,C1,C2,C3,C4,C5,)
 }
 impl_tuple!{
+    Tuple7,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6)
     ]
-    (C0,C1,C2,C3,C4,C5,C6)
+    (C0,C1,C2,C3,C4,C5,C6,)
 }
 impl_tuple!{
+    Tuple8,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>),
-        (7,C7,FieldPathString<(_7,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6),
+        (7,C7,names::I7)
     ]
-    (C0,C1,C2,C3,C4,C5,C6,C7)
+    (C0,C1,C2,C3,C4,C5,C6,C7,)
 }
 impl_tuple!{
+    Tuple9,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>),
-        (7,C7,FieldPathString<(_7,)>),
-        (8,C8,FieldPathString<(_8,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6),
+        (7,C7,names::I7),
+        (8,C8,names::I8)
     ]
-    (C0,C1,C2,C3,C4,C5,C6,C7,C8)
+    (C0,C1,C2,C3,C4,C5,C6,C7,C8,)
 }
 impl_tuple!{
+    Tuple10,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>),
-        (7,C7,FieldPathString<(_7,)>),
-        (8,C8,FieldPathString<(_8,)>),
-        (9,C9,FieldPathString<(_9,)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6),
+        (7,C7,names::I7),
+        (8,C8,names::I8),
+        (9,C9,names::I9)
     ]
-    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9)
+    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,)
 }
 impl_tuple!{
+    Tuple11,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>),
-        (7,C7,FieldPathString<(_7,)>),
-        (8,C8,FieldPathString<(_8,)>),
-        (9,C9,FieldPathString<(_9,)>),
-        (10,C10,FieldPathString<(_1,_0)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6),
+        (7,C7,names::I7),
+        (8,C8,names::I8),
+        (9,C9,names::I9),
+        (10,C10,names::I10)
     ]
-    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10)
+    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,)
 }
 impl_tuple!{
+    Tuple12,
     [
-        (0,C0,FieldPathString<(_0,)>),
-        (1,C1,FieldPathString<(_1,)>),
-        (2,C2,FieldPathString<(_2,)>),
-        (3,C3,FieldPathString<(_3,)>),
-        (4,C4,FieldPathString<(_4,)>),
-        (5,C5,FieldPathString<(_5,)>),
-        (6,C6,FieldPathString<(_6,)>),
-        (7,C7,FieldPathString<(_7,)>),
-        (8,C8,FieldPathString<(_8,)>),
-        (9,C9,FieldPathString<(_9,)>),
-        (10,C10,FieldPathString<(_1,_0)>),
-        (11,C11,FieldPathString<(_1,_1)>)
+        (0,C0,names::I0),
+        (1,C1,names::I1),
+        (2,C2,names::I2),
+        (3,C3,names::I3),
+        (4,C4,names::I4),
+        (5,C5,names::I5),
+        (6,C6,names::I6),
+        (7,C7,names::I7),
+        (8,C8,names::I8),
+        (9,C9,names::I9),
+        (10,C10,names::I10),
+        (11,C11,names::I11)
     ]
-    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11)
+    (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,)
 }
+
+
 
 
 
