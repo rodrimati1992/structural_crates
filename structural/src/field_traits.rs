@@ -640,48 +640,39 @@ pub trait GetFieldExt{
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp,make_struct};
+    /// use structural::{GetFieldExt,Structural,fp};
     /// 
     /// 
     /// #[derive(Structural,Clone)]
-    /// struct MetaVars<T>{
-    ///     pub foo:T,
-    ///     pub bar:T,
-    ///     pub baz:T,
-    /// }
+    /// #[struc(public,access="move")]
+    /// struct Tupled<T>(T,T,T,T);
     /// 
-    /// // The `MetaVars_SI` trait was declared by the `Structural` derive on `MetaVars`.
-    /// fn pick_metavar<T>(this:impl MetaVars_SI<T>,which_one:u32)->T{
-    ///     match which_one % 3 {
-    ///         0=>this.into_field(fp!(foo)),
-    ///         1=>this.into_field(fp!(bar)),
-    ///         _=>this.into_field(fp!(baz)),
+    /// // The `Tupled_SI` trait was declared by the `Structural` derive on `Tupled`.
+    /// fn pick_index<T>(this:impl Tupled_SI<T>,which_one:u32)->T{
+    ///     match which_one % 4 {
+    ///         0=>this.into_field(fp!(0)),
+    ///         1=>this.into_field(fp!(1)),
+    ///         2=>this.into_field(fp!(2)),
+    ///         _=>this.into_field(fp!(3)),
     ///     }
     /// }
     /// 
     /// {
-    ///     let metavars=MetaVars{
-    ///         foo:13,
-    ///         bar:21,
-    ///         baz:34,
-    ///     };
+    ///     let tup=Tupled(13,21,34,55);
     ///     
-    ///     assert_eq!( pick_metavar(metavars.clone(),0), 13 );
-    ///     assert_eq!( pick_metavar(metavars.clone(),1), 21 );
-    ///     assert_eq!( pick_metavar(metavars        ,2), 34 );
+    ///     assert_eq!( pick_index(tup.clone(),0), 13 );
+    ///     assert_eq!( pick_index(tup.clone(),1), 21 );
+    ///     assert_eq!( pick_index(tup.clone(),2), 34 );
+    ///     assert_eq!( pick_index(tup        ,3), 55 );
     /// }
     /// 
     /// {
-    ///     let metavars=make_struct!{
-    ///         #![derive(Clone)]
-    ///         foo:13,
-    ///         bar:21,
-    ///         baz:34,
-    ///     };
+    ///     let array=[13,21,34,55];
     ///     
-    ///     assert_eq!( pick_metavar(metavars.clone(),0), 13 );
-    ///     assert_eq!( pick_metavar(metavars.clone(),1), 21 );
-    ///     assert_eq!( pick_metavar(metavars        ,2), 34 );
+    ///     assert_eq!( pick_index(array.clone(),0), 13 );
+    ///     assert_eq!( pick_index(array.clone(),1), 21 );
+    ///     assert_eq!( pick_index(array.clone(),2), 34 );
+    ///     assert_eq!( pick_index(array        ,3), 55 );
     /// }
     /// 
     /// ```
