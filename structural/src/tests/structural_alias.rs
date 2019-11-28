@@ -15,7 +15,7 @@ mod with_super_traits{
 
     impl<This> AssertImplies for This
     where
-        This:Copy+GetField<TI!(a),Ty=u8>
+        This:Copy+IntoFieldMut<FP!(a),Ty=u8>
     {}
 
     /// This function ensures that the supertraits and field accessors in Trait
@@ -23,7 +23,7 @@ mod with_super_traits{
     #[allow(dead_code)]
     fn func<T:Trait>(v:T){
         let _copy=v;
-        let _:&u8=v.field_(ti!(a));
+        let _:&u8=v.field_(fp!(a));
     }
 }
 
@@ -54,7 +54,7 @@ mod with_where_clause{
     impl<This,T> AssertImplies<T> for This
     where
         T:Clone+Debug,
-        This:Copy+GetField<TI!(a),Ty=T>
+        This:Copy+IntoFieldMut<FP!(a),Ty=T>
     {}
 }
 
@@ -85,10 +85,10 @@ mod all_access{
         fn well<This,T>()
         where
             This:
-                GetField<TI!(a), Ty=u32>+
-                GetField<TI!(b), Ty=T>+
-                GetFieldMut<TI!(c), Ty=i64>+
-                IntoField<TI!(d), Ty=&'static str>,
+                GetField<FP!(a), Ty=u32>+
+                GetField<FP!(b), Ty=T>+
+                GetFieldMut<FP!(c), Ty=i64>+
+                IntoField<FP!(d), Ty=&'static str>,
         {}
     }
 

@@ -1,5 +1,5 @@
 /// Constructs an anonymous struct,
-/// which implements the `IntoFieldMut` accessor trait for all its field.
+/// which implements all the accessor traits for its field.
 ///
 /// # Syntax
 ///
@@ -8,6 +8,7 @@
 /// ```
 /// # use structural::make_struct;
 ///
+/// # let foo=();
 /// # let _=
 /// make_struct!{
 ///     // This is an inner attribute,which is applied to the struct declaration.
@@ -18,6 +19,7 @@
 ///     #[doc="you must put attributes for the first field after the inner attributes"]
 ///     size_cm:0,
 ///     place:"Anctartica",
+///     foo, // This initializes a `foo` field with the `foo` variable.
 /// }
 /// # ;
 /// ```
@@ -25,14 +27,14 @@
 /// # Example
 ///
 /// ```rust
-/// use structural::{GetFieldExt,make_struct,structural_alias,ti};
+/// use structural::{GetFieldExt,make_struct,structural_alias,fp};
 ///
 /// use std::fmt::Debug;
 ///
 /// structural_alias!{
 ///     pub trait Runner{
-///         mut move name:String,
-///         mut move stamina:u32,
+///         name:String,
+///         stamina:u32,
 ///     }
 /// }
 ///
@@ -41,8 +43,8 @@
 /// # fn main(){
 ///
 /// fn get_runner(this:&(impl Runner+Debug) ){
-///     assert_eq!( this.field_(ti!(name)).as_str(), "hello","{:?}",this);
-///     assert_eq!( this.field_(ti!(stamina)), &100,"{:?}",this);
+///     assert_eq!( this.field_(fp!(name)).as_str(), "hello","{:?}",this);
+///     assert_eq!( this.field_(fp!(stamina)), &100,"{:?}",this);
 /// }
 ///
 /// get_runner(&make_struct!{
@@ -51,17 +53,23 @@
 ///     stamina:100,
 /// });
 ///
-/// // Unfortunately,due to a rustc bug as of 2019-11-02,
-/// // you can't call the accessor methods provided by GetFieldExt
-/// // on the return value of this function.
-/// // Issue for the rustc bug: https://github.com/rust-lang/rust/issues/66057
-/// // fn get_runner()->impl Runner+Copy+Clone{
-/// //     make_struct!{
-/// //         #![derive(Copy,Clone)]
-/// //         name:"hello".into(),
-/// //         stamina:4_000_000_000,
-/// //     }
-/// // }
+///
+/// fn ret_get_runner(name:String)->impl Runner+Clone{
+///     make_struct!{
+///         #![derive(Clone)]
+///         name,
+///         stamina:4_000_000_000,
+///     }
+/// }
+///
+/// {
+///     let runner=ret_get_runner("hello".into());
+///     # let _=runner.field_(fp!(name));
+///     # let _=runner.field_(fp!(stamina));
+///     let (name,stamina)=runner.fields(fp!( name, stamina ));
+///     assert_eq!( name, "hello" );
+///     assert_eq!( *stamina, 4_000_000_000 );
+/// }
 ///
 #[cfg_attr(feature="alloc",doc=r###"
 fn get_dyn_runner()->Box<dyn Runner>{
@@ -73,8 +81,8 @@ fn get_dyn_runner()->Box<dyn Runner>{
 
 {
     let runner=get_dyn_runner();
-    assert_eq!( runner.field_(ti!(name)).as_str(), "hello" );
-    assert_eq!( runner.field_(ti!(stamina)), &4_000_000_000 );
+    assert_eq!( runner.field_(fp!(name)).as_str(), "hello" );
+    assert_eq!( runner.field_(fp!(stamina)), &4_000_000_000 );
 }
 
 "###)]
@@ -88,48 +96,51 @@ macro_rules! make_struct {
         $( #![$inner_attrs:meta] )*
         $(
             $( #[$field_attrs:meta] )*
-            $field_name:ident : $field_value:expr,
-        )*
+            $field_name:ident $( : $field_value:expr )?
+        ),*
+        $(,)?
     ) => ({
-        #[allow(non_camel_case_types)]
-        mod _anonyous_struct_{
+        $( $( let $field_name=$field_value; )? )*
+
+        {
+            #[allow(non_camel_case_types)]
             #[allow(unused_imports)]
-            use super::*;
+            mod _anonyous_struct_{
+                #[allow(unused_imports)]
+                use super::*;
 
-            $crate::declare_names_module!{
                 pub mod _names_module_{
-                    $( $field_name, )*
+                    use super::*;
+                    $crate::field_path_aliases!{
+                        $( $field_name, )*
+                    }
+                }
+
+                $( #[$inner_attrs] )*
+                pub struct __Anonymous_Struct<$($field_name),*>{
+                    $(
+                        $( #[$field_attrs] )*
+                        pub $field_name:$field_name,
+                    )*
+                }
+                
+                $crate::impl_getters_for_derive!{
+                    impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*> 
+                    where[]
+                    {
+                        $((
+                            IntoFieldMut<
+                                $field_name : $field_name,
+                                _names_module_::$field_name,
+                                stringify!($field_name),
+                            >
+                        ))*
+                    }
                 }
             }
-
-            $( #[$inner_attrs] )*
-            pub struct __Anonymous_Struct<$($field_name),*>{
-                $(
-                    $( #[$field_attrs] )*
-                    pub $field_name:$field_name,
-                )*
-            }
-            
-            $crate::impl_getters_for_derive!{
-                impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*> 
-                where[]
-                {
-                    $((
-                        IntoFieldMut<
-                            $field_name : $field_name,
-                            _names_module_::$field_name,
-                            stringify!($field_name),
-                        >
-                    ))*
-                }
+            _anonyous_struct_::__Anonymous_Struct{
+                $($field_name,)*
             }
         }
-        use _anonyous_struct_::__Anonymous_Struct;
-        
-
-
-        __Anonymous_Struct{
-            $($field_name:$field_value,)*
-        }
-    })
+    });
 }

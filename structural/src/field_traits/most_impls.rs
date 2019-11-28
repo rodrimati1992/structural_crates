@@ -2,21 +2,21 @@
 
 use super::*;
 
-use crate::structural_trait::{FieldInfo,StructuralDyn,TField};
+use crate::structural_trait::{FieldInfo,StructuralDyn};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
 use core::{
     ops::{Range,RangeFrom,RangeTo,RangeInclusive,RangeToInclusive},
-    marker::Unpin,
+    //marker::Unpin,
     mem::ManuallyDrop,
-    ops::{Deref,DerefMut},
+    ops::Deref,
     pin::Pin,
 };
 
 
-type Start_STR=TI!(s t a r t);
-type End_STR=TI!(e n d);
+type Start_STR=FP!(s t a r t);
+type End_STR=FP!(e n d);
 
 ///////////////////////////////////////////////////////
 
@@ -62,11 +62,6 @@ impl<T> Structural for RangeInclusive<T>{
         FieldInfo::not_renamed("start"),
         FieldInfo::not_renamed("end"),
     ];
-
-    type Fields=TList![
-        TField<Start_STR,T>,
-        TField<End_STR,T>,
-    ];
 }
 
 impl<T> StructuralDyn for RangeInclusive<T>{
@@ -96,13 +91,13 @@ impl<T> IntoField<Start_STR> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
-    impl_box_into_field_method!{Start_STR}
+    z_impl_box_into_field_method!{Start_STR}
 }
 impl<T> IntoField<End_STR> for RangeInclusive<T>{
     fn into_field_(self)->Self::Ty{
         self.into_inner().0
     }
-    impl_box_into_field_method!{End_STR}
+    z_impl_box_into_field_method!{End_STR}
 }
 
 
@@ -110,15 +105,17 @@ impl<T> IntoField<End_STR> for RangeInclusive<T>{
 
 
 // This allows using all the field accessors in T from `ManuallyDrop<T>`
-delegate_structural_with!{
-    impl[T] ManuallyDrop<T>
+z_delegate_structural_with!{
+    impl[T,] ManuallyDrop<T>
     where[]
     self_ident=this;
-    field_ty=T;
+    delegating_to_type=T;
+    field_name_param=( fname : fname_ty );
 
     GetField { this }
     
     unsafe GetFieldMut { this }
+    as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
     
     IntoField { ManuallyDrop::into_inner(this) }
 }
@@ -127,14 +124,14 @@ delegate_structural_with!{
 fn delegated_mdrop(){
     let tup=(2,3,5,8);
     let mut mdrop=ManuallyDrop::new(tup);
-    assert_eq!( mdrop.fields(ti!(0,1,2,3)), (&2,&3,&5,&8) );
+    assert_eq!( mdrop.fields(fp!(0,1,2,3)), (&2,&3,&5,&8) );
     
-    assert_eq!( mdrop.fields_mut(ti!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
+    assert_eq!( mdrop.fields_mut(fp!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
     
-    assert_eq!( mdrop.clone().into_field(ti!(0)), 2 );
-    assert_eq!( mdrop.clone().into_field(ti!(1)), 3 );
-    assert_eq!( mdrop.clone().into_field(ti!(2)), 5 );
-    assert_eq!( mdrop.clone().into_field(ti!(3)), 8 );
+    assert_eq!( mdrop.clone().into_field(fp!(0)), 2 );
+    assert_eq!( mdrop.clone().into_field(fp!(1)), 3 );
+    assert_eq!( mdrop.clone().into_field(fp!(2)), 5 );
+    assert_eq!( mdrop.clone().into_field(fp!(3)), 8 );
 }
 
 
@@ -143,29 +140,96 @@ fn delegated_mdrop(){
 
 
 
-delegate_structural_with!{
-    impl[P] Pin<P>
-    where[ P:Deref,P::Target:Sized ]
+z_delegate_structural_with!{
+    impl[P,] Pin<P>
+    where[
+        P:Deref,
+        P::Target:Sized,
+    ]
     self_ident=this;
-    field_ty=P::Target;
+    delegating_to_type=P::Target;
+    field_name_param=( fname : fname_ty );
 
-    GetField { {this} }
-    
-    unsafe GetFieldMut
-    where[ P:DerefMut,P::Target:Unpin, ]
-    { {this} }
+    GetField { &*this }
 }
 
 
 #[test]
 fn delegated_pin(){
-    let mut tup=(2,3,5,8);
-    let mut pin=Pin::new(&mut tup);
-    assert_eq!( pin.fields(ti!(0,1,2,3)), (&2,&3,&5,&8) );
-    assert_eq!( pin.fields_mut(ti!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
+    let tup=(2,3,5,8);
+    let pin=Pin::new(&tup);
+    assert_eq!( pin.fields(fp!(0,1,2,3)), (&2,&3,&5,&8) );
+    //assert_eq!( pin.fields_mut(fp!(0,1,2,3)), (&mut 2,&mut 3,&mut 5,&mut 8) );
 }
 
 
 ///////////////////////////////////////////////////////
 
 
+z_delegate_structural_with!{
+    impl['a,T,] &'a T
+    where [T:?Sized,]
+    self_ident=this;
+    delegating_to_type=T;
+    field_name_param=( fname_var : fname_ty );
+
+    GetField { &**this }
+
+}
+
+///////////////////////////////////////////////////////
+
+
+z_delegate_structural_with!{
+    impl['a,T,] &'a mut T
+    where [T:?Sized,]
+    self_ident=this;
+    delegating_to_type=T;
+    field_name_param=( fname_var : fname_ty );
+
+    GetField { &**this }
+
+}
+
+unsafe impl<T,__FieldName> GetFieldMut<__FieldName> for &'_ mut T
+where
+    T:?Sized+GetFieldMut<__FieldName>,
+{
+    fn get_field_mut_(&mut self)->&mut Self::Ty{
+        <T as GetFieldMut<__FieldName>>::get_field_mut_(self)
+    }
+
+    default_if!{
+        cfg(feature="specialization")
+        
+        unsafe fn get_field_raw_mut(
+            this:*mut (),
+            fname:PhantomData<__FieldName>
+        )->*mut Self::Ty {
+            let this:*mut T=*(this as *mut *mut T);
+            let func=T::get_field_raw_mut_func(&*this);
+            
+            func( this as *mut (), fname )
+        }
+    }
+
+    fn get_field_raw_mut_func(
+        &self
+    )->GetFieldMutRefFn<__FieldName,Self::Ty>{
+        <Self as GetFieldMut<__FieldName>>::get_field_raw_mut
+    }
+}
+
+
+#[cfg(feature="specialization")]
+unsafe impl<T,__FieldName> GetFieldMut<__FieldName> for &'_ mut T
+where
+    T:GetFieldMut<__FieldName>,
+{
+    unsafe fn get_field_raw_mut(
+        this:*mut (),
+        fname:PhantomData<__FieldName>
+    )->*mut Self::Ty {
+        T::get_field_raw_mut( *(this as *mut *mut ()), fname )
+    }
+}

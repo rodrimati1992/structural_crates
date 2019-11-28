@@ -20,34 +20,41 @@ matrix:
         - rustup component add miri
         - cargo miri setup
 
-        - cargo test --no-default-features --features nightly_specialization
-        - cargo test --no-default-features --features alloc --features nightly_specialization
-        - cargo test --no-default-features --features std nightly_specialization
+        - cargo test --no-default-features --features testing --features nightly_specialization
+        - cargo test --no-default-features --features testing --features alloc --features nightly_specialization
+        - cargo test --no-default-features --features testing --features std nightly_specialization
         
-        - cargo test --no-default-features --features nightly_better_ti
-        - cargo test --no-default-features --features alloc --features nightly_better_ti
-        - cargo test --no-default-features --features std nightly_better_ti
+        - cargo test --no-default-features --features testing --features nightly_better_macros
+        - cargo test --no-default-features --features testing --features alloc --features nightly_better_macros
+        - cargo test --no-default-features --features testing --features std nightly_better_macros
         
-        - cargo test --no-default-features --features better_ti
-        - cargo test --no-default-features --features alloc --features better_ti
-        - cargo test --no-default-features --features std better_ti
+        - cargo test --no-default-features --features testing --features better_macros
+        - cargo test --no-default-features --features testing --features alloc --features better_macros
+        - cargo test --no-default-features --features testing --features std better_macros
+        
+        - cargo test --no-default-features --features testing --features nightly_impl_fields
+        - cargo test --no-default-features --features testing --features alloc --features nightly_impl_fields
+        - cargo test --no-default-features --features testing --features std nightly_impl_fields
+        
+        - cargo test --all-features
         
         - cargo clean
 
         # I need to pass each individual feature with --features featurename
         # because otherwise it gets parsed as a test file.
-        - cargo miri test --no-default-features --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        - cargo miri test --no-default-features --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
-        - cargo miri test --no-default-features --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features alloc --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --no-default-features --features testing --features std --features nightly_specialization -- -- -Zunstable-options --exclude-should-panic
+        - cargo miri test --all-features -- -- -Zunstable-options --exclude-should-panic
 
     - rust: 1.34.0
 
 script:
   
   - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
-  - cargo test
+  - cargo test --features testing
 
   - cd "${TRAVIS_BUILD_DIR}/structural/"
-  - cargo test
-  - cargo test --no-default-features 
-  - cargo test --no-default-features --features alloc
+  - cargo test --features testing
+  - cargo test --no-default-features --features testing  
+  - cargo test --no-default-features --features "testing alloc"

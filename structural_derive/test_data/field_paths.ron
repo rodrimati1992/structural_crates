@@ -1,0 +1,11 @@
+(
+  cases:[
+    (
+      name:"access attribute",
+      code:r##""##,
+      subcase: [
+        ( error_count: 0 ),
+      ],
+    ),
+  ]
+)
