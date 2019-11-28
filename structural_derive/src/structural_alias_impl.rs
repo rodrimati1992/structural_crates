@@ -1,6 +1,7 @@
 use crate::{
+    field_access::Access,
     tokenizers::NamedModuleAndTokens,
-    str_or_ident::{IdentOrIndex,IdentOrIndexRef},
+    ident_or_index::{IdentOrIndex,IdentOrIndexRef},
 };
 
 use as_derive_utils::{
@@ -15,7 +16,7 @@ use proc_macro2::{
     Span,
 };
 
-use quote::{quote,ToTokens};
+use quote::{quote,quote_spanned,ToTokens,TokenStreamExt};
 
 use syn::{
     parse::{Parse,ParseStream},
@@ -39,9 +40,12 @@ mod tests;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+pub(crate) struct StructuralAliases{
+    pub(crate) list: Vec<StructuralAlias>,
+}
 
 pub(crate) struct StructuralAlias {
+    pub(crate) span:Span,
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: syn::Visibility,
     pub(crate) trait_token: Token!(trait),
@@ -55,15 +59,38 @@ pub(crate) struct StructuralAlias {
 pub(crate) struct StructuralAliasField{
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndex,
-    pub(crate) ty: syn::Type,
+    pub(crate) ty: FieldType,
 }
 
 pub(crate) struct StructuralAliasFieldRef<'a>{
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
-    pub(crate) ty: &'a syn::Type,
+    pub(crate) ty: FieldTypeRef<'a>,
 }
 
+pub(crate) enum FieldType{
+    Ty(syn::Type),
+    Impl(TypeParamBounds)
+}
+
+pub(crate) enum FieldTypeRef<'a>{
+    Ty(&'a syn::Type),
+    Impl(&'a TypeParamBounds)
+}
+
+pub(crate) type TypeParamBounds=
+    Punctuated<syn::TypeParamBound, token::Add>;
+
+
+impl Parse for StructuralAliases {
+    fn parse(input: ParseStream) -> Result<Self,syn::Error> {
+        let mut list=Vec::<StructuralAlias>::new();
+        while !input.is_empty() {
+            list.push(input.parse()?);
+        }
+        Ok(Self{list})
+    }
+}
 
 impl Parse for StructuralAlias {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
@@ -93,7 +120,7 @@ impl Parse for StructuralAlias {
         // let equal:Token![=]= input.parse()?;
 
         let content;
-        let _ = syn::braced!(content in input);
+        let braces = syn::braced!(content in input);
         let mut fields = Vec::<StructuralAliasField>::new();
         while !content.is_empty() {
             fields.push(content.parse()?);
@@ -102,7 +129,10 @@ impl Parse for StructuralAlias {
         
         // let equal:Token![;]= input.parse()?;
 
+        let span:Span=trait_token.span.join(braces.span).unwrap_or(trait_token.span);
+
         Ok(Self {
+            span,
             attrs,
             vis,
             trait_token,
@@ -119,7 +149,7 @@ impl Parse for StructuralAlias {
 impl Parse for StructuralAliasField {
     /// Parses a named (braced struct) field.
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let access= Access::parse_in_field(input);
+        let access= input.parse::<Access>()?;
         let ident= input.parse()?;
         let _:Token![:]= input.parse()?;
         let ty= input.parse()?;
@@ -136,98 +166,45 @@ impl StructuralAliasField{
         StructuralAliasFieldRef{
             access: self.access,
             ident: self.ident.borrowed(),
-            ty: &self.ty,
+            ty: self.ty.borrowed(),
         }
     }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// Whether a field can be accessed by reference/mutable-reference/value.
-#[derive(Debug,Copy,Clone,PartialEq,Eq)]
-pub(crate) struct Access{
-    mutable:bool,
-    value:bool,
-}
-
-#[allow(non_upper_case_globals)]
-impl Access{
-    /// A field gets a GetField impl.
-    pub(crate) const Shared:Self=Self{ mutable:false, value:false };
-
-    /// A field gets GetField,and GetFieldMut impls.
-    pub(crate) const Mutable:Self=Self{ mutable:true, value:false };
-
-    /// A field gets GetField,and IntoField impls.
-    pub(crate) const Value:Self=Self{ mutable:false, value:true };
-
-    /// A field gets GetField,GetFieldMut,and IntoField impls.
-    pub(crate) const MutValue:Self=Self{ mutable:true, value:true };
-}
-
-
-impl Default for Access{
-    fn default()->Self{
-        Access::Shared
-    }
-}
-
-
-impl Access {
-    fn parse_in_field(input: ParseStream) -> Self {
-        let mut this=Access::Shared;
-
-        for _ in 0..2 {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(Token![ref]) {
-                let _:Result<Token![ref],_>=input.parse();
-            } else if lookahead.peek(Token![mut]) {
-                let _:Result<Token![mut],_>=input.parse();
-                this.mutable=true;
-            } else if lookahead.peek(Token![move]) {
-                let _:Result<Token![move],_>=input.parse();
-                this.value=true;
-            }
-        }
-
-        this
-    }
-}
-
-impl Parse for Access {
+impl Parse for FieldType {
     fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let mut this=Access::Shared;
+        const ASSOC_TY_BOUNDS:bool=cfg!(feature="impl_fields");
 
-        for i in 0..2 {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(Token![ref]) {
-                let _:Result<Token![ref],_>=input.parse();
-            } else if lookahead.peek(Token![mut]) {
-                let _:Result<Token![mut],_>=input.parse();
-                this.mutable=true;
-            } else if lookahead.peek(Token![move]) {
-                let _:Result<Token![move],_>=input.parse();
-                this.value=true;
-            } else if i==0 {
-                return Err(lookahead.error());
-            }
+        use syn::Type;
+        
+        match input.parse::<syn::Type>()? {
+            Type::ImplTrait(x)=>
+                if ASSOC_TY_BOUNDS {
+                    Ok(FieldType::Impl(x.bounds))
+                }else{
+                    use syn::spanned::Spanned;
+                    Err(syn::Error::new(
+                        x.span(),
+                        "\
+                            Cannot use an `impl Trait` field without enabling the \
+                            \"nightly_impl_fields\" or \"impl_fields\" feature.\
+                        ",
+                    ))
+                },
+            x=>Ok(FieldType::Ty(x)),
         }
-
-        Ok(this)
     }
 }
 
-
-impl ToTokens for Access{
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match *self {
-            Access::Shared=>Ident::new("GetField",Span::call_site()),
-            Access::Mutable=>Ident::new("GetFieldMut",Span::call_site()),
-            Access::Value=>Ident::new("IntoField",Span::call_site()),
-            Access::MutValue=>Ident::new("IntoFieldMut",Span::call_site()),
-        }.to_tokens(tokens);
+impl FieldType{
+    fn borrowed(&self)->FieldTypeRef<'_>{
+        match self {
+            FieldType::Ty(x)=>FieldTypeRef::Ty(x),
+            FieldType::Impl(x)=>FieldTypeRef::Impl(x),
+        }
     }
 }
 
@@ -241,29 +218,43 @@ pub(crate) fn derive_from_str(saf:&str)->Result<TokenStream2,syn::Error> {
 
 
 
-pub(crate) fn macro_impl(saf:StructuralAlias)->Result<TokenStream2,syn::Error> {
-    let names_module_definition=NamedModuleAndTokens::new(
-        &saf.ident,
-        saf.fields.iter().map(|f| &f.ident )
-    );
-    
-    for_delegation(
-        &saf.attrs,
-        format!("A trait alias for the following traits:\n"),
-        &saf.vis,
-        &saf.trait_token,
-        &saf.ident,
-        &saf.generics,
-        &saf.supertraits,
-        &names_module_definition,
-        saf.fields.iter().map(StructuralAliasField::borrowed)
-    )
+pub(crate) fn macro_impl(aliases:StructuralAliases)->Result<TokenStream2,syn::Error> {
 
+    let list=aliases.list;
+    
+    if list.is_empty() {
+        return Ok(quote!());
+    }
+
+    
+    let mut out=TokenStream2::new();
+    for saf in list {
+        let names_module_definition=NamedModuleAndTokens::new(
+            &saf.ident,
+            saf.fields.iter().map(|f| &f.ident ),
+        );
+
+        for_delegation(
+            saf.span,
+            &saf.attrs,
+            format!("A trait alias generated by `structural::structural_alias`,for the following traits:\n"),
+            &saf.vis,
+            &saf.trait_token,
+            &saf.ident,
+            &saf.generics,
+            &saf.supertraits,
+            &names_module_definition,
+            saf.fields.iter().map(StructuralAliasField::borrowed)
+        )?.piped(|x|out.append_all(x));
+    }
+    // panic!("{}", out);
+    Ok(out)
 }
 
 /// This allows both `structural_alias` and `#[derive(Structural)]` to generate
 /// the trait alias and its impl.
 pub(crate) fn for_delegation<'a,A,I>(
+    span:Span,
     attrs: A,
     mut docs:String,
     vis: &syn::Visibility,
@@ -279,6 +270,8 @@ where
     A::Item:ToTokens,
     I:IntoIterator<Item=StructuralAliasFieldRef<'a>>+Clone,
 {
+    use self::FieldTypeRef as FTR;
+
     let attrs=attrs.into_iter();
 
     let names_module=&names_module_definition.names_module;
@@ -289,16 +282,36 @@ where
             .zip(alias_names)
             .map(|(field,alias_names)|{
                 let trait_=field.access;
-                let field_ty=&field.ty;
+                let assoc_ty=match field.ty {
+                    FTR::Ty(ty)=>quote!(Ty=#ty),
+                    FTR::Impl(bounds)=>quote!(Ty:#bounds),
+                };
                 quote!(
                     structural::#trait_<
                         #names_module::#alias_names,
-                        Ty= #field_ty,
+                        #assoc_ty
                     >
                 )
             });
 
         quote!( #( #x+ )* )
+    };
+    
+    let assoc_ty_bounds={
+        let x=fields.clone().into_iter()
+            .zip(alias_names)
+            .filter_map(|(field,alias_names)|{
+                let bounds=match field.ty {
+                    FTR::Ty(_)=>return None,
+                    FTR::Impl(bounds)=>bounds,
+                };
+                Some(quote!(
+                    ::structural::GetFieldType<Self,#names_module::#alias_names>:
+                        #bounds,
+                ))
+            });
+        
+        quote!( #( #x )* )
     };
 
     use std::fmt::Write;
@@ -312,12 +325,23 @@ where
             Access::Value=>("IntoField","shared, and by value"),
             Access::MutValue=>("IntoFieldMut","shared,mutable and by value"),
         };
+        let assoc_ty=match field.ty {
+            FTR::Ty(ty)=>format!("Ty= {}",ty.to_token_stream()),
+            FTR::Impl(bounds)=>format!("Ty: {}",bounds.to_token_stream()),
+        };
+        let field_ty=match field.ty {
+            FTR::Ty(ty)=>format!("{}",ty.to_token_stream()),
+            FTR::Impl(bounds)=>format!("impl {}",bounds.to_token_stream()),
+        };
         let _=writeln!(
             docs,
-            "- `{0}<\"{1}\",Ty={2}>`\n:{3} access to a `{1}:{2}` field.",
+            "`{0}<FP!( {1} ),{2}>`\n<br>\
+             The &nbsp; `{1}: {3}` &nbsp; field,with {4} access.
+            \n",
             the_trait,
             field.ident,
-            field.ty.to_token_stream(),
+            assoc_ty,
+            field_ty,
             access_desc,
         );
     }
@@ -326,7 +350,7 @@ where
         for supertrait in supertraits {
             let _=writeln!(
                 docs,
-                "- `{}`",
+                "`{}`",
                 supertrait.to_token_stream(),
             );
         }
@@ -345,9 +369,11 @@ where
     let (_, ty_generics, where_clause) = generics.split_for_impl();
 
     let empty_preds=Punctuated::new();
-    let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates).into_iter();
+    let where_preds=where_clause.as_ref().map_or(&empty_preds,|x|&x.predicates);
+    let where_preds_a=where_preds.into_iter();
+    let where_preds_b=where_preds.into_iter();
 
-    Ok(quote!(
+    Ok(quote_spanned!(span=>
         #names_module_definition
 
         #[doc=#docs]
@@ -356,7 +382,9 @@ where
         #trait_token #ident #generics : 
             #( #supertraits_a+ )* 
             #field_bounds
-        #where_clause
+        where
+            #(#where_preds_a,)*
+            #assoc_ty_bounds
         {}
 
 
@@ -366,7 +394,8 @@ where
             __This:
                 #( #supertraits_b+ )* 
                 #field_bounds,
-            #(#where_preds,)*
+            #assoc_ty_bounds
+            #(#where_preds_b,)*
         {}
     ))
 

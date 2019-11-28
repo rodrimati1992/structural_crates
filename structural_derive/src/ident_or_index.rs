@@ -2,73 +2,20 @@ use std::fmt::{self,Display};
 
 use proc_macro2::{
     TokenStream as TokenStream2,
-    Span,
 };
 
 use quote::ToTokens;
 
 use syn::{
-    parse::{self,ParseStream,Parse},
-    spanned::Spanned,
+    parse::{ParseStream,Parse},
     Ident,
 };
-
-
-pub(crate) enum StrOrIdent{
-    Str(syn::LitStr),
-    Ident(IdentOrIndex)
-}
-
-
-impl parse::Parse for StrOrIdent{
-    fn parse(input: parse::ParseStream) -> parse::Result<Self>{
-        let lookahead = input.lookahead1();
-        if lookahead.peek(syn::LitStr) {
-            input.parse().map(StrOrIdent::Str)
-        } else {
-            input.parse().map(StrOrIdent::Ident)
-        }
-    }
-}
-
-
-impl ToTokens for StrOrIdent{
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match self {
-            StrOrIdent::Str(x)=>x.to_tokens(tokens),
-            StrOrIdent::Ident(x)=>x.to_tokens(tokens),
-        }
-    }
-}
-
-impl StrOrIdent {
-    pub(crate) fn value(&self)->String{
-        match self {
-            StrOrIdent::Str(x)=>x.value(),
-            StrOrIdent::Ident(x)=>x.to_string(),
-        }
-    }
-
-    pub(crate) fn span(&self)->Span{
-        Spanned::span(self)
-    }
-}
-
-impl Display for StrOrIdent{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
-        match self {
-            StrOrIdent::Str(x) => Display::fmt(&x.value(),f),
-            StrOrIdent::Ident(x) => Display::fmt(x,f),
-        }
-    }
-}
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#[derive(Debug)]
+#[derive(Debug,Eq,PartialEq)]
 pub(crate) enum IdentOrIndex{
     Ident(Ident),
     Index(syn::LitInt),

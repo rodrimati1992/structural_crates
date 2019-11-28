@@ -1,122 +1,138 @@
 /*!
 Contains traits for accessing multiple fields at once.
 */
+#![allow(non_snake_case)]
 
 use super::*;
 
-/// This trait allows a TStringSet to borrow the fields it names.
-pub trait GetMultiField<'a,This:?Sized>{
-    type MultiTy:'a;
+/*
+pub trait RevGetField<'a,This:?Sized>{
+    type Field:'a;
 
-    fn multi_get_field_(this:&'a This)->Self::MultiTy;
+    fn rev_get_field(self,this:&'a This)->&'a Self::Field;
 }
 
-/// This trait allows a TStringSet to borrow the fields it names mutably.
-pub trait GetMultiFieldMut<'a,This:?Sized>:Sized{
-    type MultiTy:'a;
+pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
+    type Field:'a;
 
-    fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy;
+    fn rev_get_field_mut(self,this:&'a mut This)->&'a mut Self::Field;
+
+    unsafe fn rev_get_field_raw_mut(
+        self,
+        field:MutRef<'a,This>,
+    )->MutRef<'a,Self::Field>;
 }
+*/
 
 
 macro_rules! impl_get_multi_field {
-    ( $($fname:ident)* ) => (
-        impl<'a,This:?Sized,$($fname,)*> GetMultiField<'a,This> for ($($fname,)*)
+    ( $(($fpath:ident $fty:ident))* ) => (
+        impl<'a,This:?Sized,$($fpath,)* $($fty,)* U> 
+            RevGetField<'a,This> 
+        for FieldPathSet<($(FieldPath<$fpath>,)*),U>
         where
             $(
-                This:GetField<$fname>,
-                GetFieldType<This,$fname>:'a,
+                FieldPath<$fpath>:RevGetField<'a,This,Field=&'a $fty>,
+                $fty:'a,
             )*
         {
-            type MultiTy=(
+            type Field=(
                 $(
-                    &'a GetFieldType<This,$fname>,
+                    &'a $fty,
                 )*
             );
 
-            fn multi_get_field_(this:&'a This)->Self::MultiTy{
+            #[allow(unused_variables)]
+            fn rev_get_field(self,this:&'a This)->Self::Field{
                 (
                     $(
-                        GetField::<$fname>::get_field_(this),
+                        FieldPath::<$fpath>::NEW.rev_get_field(this),
                     )*
                 )
             }
         }        
 
-        impl<'a,This:?Sized,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
+        unsafe impl<'a,This:?Sized,$($fpath,)* $($fty,)*>
+            RevGetFieldMut<'a,This> 
+        for FieldPathSet<($(FieldPath<$fpath>,)*),UniquePaths> 
         where
             $(
-                This:GetFieldMut<$fname>,
-                GetFieldType<This,$fname>:'a,
+                FieldPath<$fpath>:RevGetFieldMut<
+                    'a,
+                    This,
+                    Field=&'a mut $fty,
+                    FieldMutRef=MutRef<'a,$fty>,
+                >,
+                $fty:'a,
+                // RevFieldMutType<'a,FieldPath<$fpath>,This>:'a,
             )*
         {
-            type MultiTy=(
+            type Field=(
                 $(
-                    &'a mut GetFieldType<This,$fname>,
+                    &'a mut $fty,
+                )*
+            );
+            type FieldMutRef=(
+                $(
+                    MutRef<'a,$fty>,
                 )*
             );
 
-            default_if!{
-                #[allow(non_snake_case)]
-                cfg(feature="specialization")
-
-                fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy{
-                    $(
-                        let $fname:GetFieldMutRefFn<$fname,GetFieldType<This,$fname>>=
-                            this.get_field_mutref_func();
-                    )*
-                    let this=GetFieldMut::<F0>::as_mutref(this);
-                    // unsafe:
-                    // This is passing the pointer obtained from the `as_mutref` function,
-                    // which ought be the same for all impls of GetFieldMut on the same type.
-                    unsafe{
-                        (
-                            $(
-                                ($fname.func)(this.clone(),$fname),
-                            )*
-                        )
-                    }
-                }
-            }
-
-        }
-
-
-        #[cfg(feature="specialization")]
-        impl<'a,This,$($fname,)*> GetMultiFieldMut<'a,This> for ($($fname,)*)
-        where
-            $(
-                This:GetFieldMut<$fname>,
-                GetFieldType<This,$fname>:'a,
-            )*
-        {
-            #[allow(non_snake_case)]
-            fn multi_get_field_mut_(this:&'a mut This,_:TStringSet<Self>)->Self::MultiTy{
-                $(
-                    let $fname:GetFieldMutRefFn<$fname,GetFieldType<This,$fname>>=
-                        this.get_field_mutref_func();
-                )*
-                let this=GetFieldMut::<F0>::as_mutref(this);
+            fn rev_get_field_mut(self,this:&'a mut This)->Self::Field{
                 unsafe{
+                    let ($($fpath,)*)={
+                        let this=MutRef::new(this);
+
+                        self.rev_get_field_raw_mut(this)
+                    };
+
                     (
                         $(
-                            <This as GetFieldMut<$fname>>::get_field_mutref(this.clone(),$fname),
+                            &mut *$fpath.ptr,
                         )*
                     )
                 }
             }
-        }
 
+            #[allow(unused_variables)]
+            unsafe fn rev_get_field_raw_mut(
+                self,
+                this:MutRef<'a,This>,
+            )->Self::FieldMutRef{
+                (
+                    $(
+                        FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),
+                    )*
+                )
+            }
+        }
     )
 }
 
 
-impl_get_multi_field!{F0}
-impl_get_multi_field!{F0 F1}
-impl_get_multi_field!{F0 F1 F2}
-impl_get_multi_field!{F0 F1 F2 F3}
-impl_get_multi_field!{F0 F1 F2 F3 F4}
-impl_get_multi_field!{F0 F1 F2 F3 F4 F5}
-impl_get_multi_field!{F0 F1 F2 F3 F4 F5 F6}
-impl_get_multi_field!{F0 F1 F2 F3 F4 F5 F6 F7}
+impl_get_multi_field!{}
+impl_get_multi_field!{
+    (F0 T0)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2) (F3 T3)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5) (F6 T6)
+}
+impl_get_multi_field!{
+    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5) (F6 T6) (F7 T7)
+}
 

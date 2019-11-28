@@ -1,6 +1,8 @@
 use crate::{
-    structural_alias_impl::Access,
-    str_or_ident::IdentOrIndex,
+    field_access::Access,
+    ident_or_index::IdentOrIndex,
+    parse_utils::ParsePunctuated,
+    structural_alias_impl::TypeParamBounds,
 };
 
 use as_derive_utils::{
@@ -8,6 +10,7 @@ use as_derive_utils::{
     datastructure::{DataStructure,Field,FieldMap},
     utils::{LinearResult,SynResultExt,SynPathExt},
     spanned_err,
+    return_spanned_err,
 };
 
 use quote::ToTokens;
@@ -29,6 +32,7 @@ pub(crate) struct StructuralOptions<'a>{
 
     pub(crate) debug_print:bool,
     pub(crate) with_trait_alias:bool,
+    pub(crate) delegate_to:Option<&'a Field<'a>>,
 
     _marker:PhantomData<&'a ()>,
 }
@@ -43,6 +47,7 @@ impl<'a> StructuralOptions<'a>{
             fields,
             debug_print,
             with_trait_alias,
+            delegate_to,
             errors:_,
             _marker,
         }=this;
@@ -51,6 +56,7 @@ impl<'a> StructuralOptions<'a>{
             fields,
             debug_print,
             with_trait_alias,
+            delegate_to,
             _marker,
         })
     }
@@ -63,6 +69,8 @@ impl<'a> StructuralOptions<'a>{
 pub(crate) struct FieldConfig{
     pub(crate) access:Access,
     pub(crate) renamed:Option<IdentOrIndex>,
+    /// Whether the type is replaced with bounds in the `<deriving_type>_SI` trait.
+    pub(crate) is_impl:Option<TypeParamBounds>,
     
     /// Determines whether the field is considered public.
     /// 
@@ -81,6 +89,7 @@ struct StructuralAttrs<'a>{
 
     debug_print:bool,
     with_trait_alias:bool,
+    delegate_to:Option<&'a Field<'a>>,
 
     errors:LinearResult<()>,
     
@@ -110,6 +119,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
         FieldConfig{
             access:Default::default(),
             renamed:Default::default(),
+            is_impl:None,
             is_pub:field.is_public(),
         }
     });
@@ -200,6 +210,19 @@ fn parse_sabi_attr<'a>(
                 let fa=&mut this.fields[field];
                 fa.access=access;
                 fa.is_pub=true;
+            }else if path.equals_str("impl") {
+                if !cfg!(feature="impl_fields") {
+                    return_spanned_err!{
+                        path,
+                        "\
+                            Cannot use the `#[struc(impl=\"Trait\")]` \
+                            attribute without enabling the \
+                            \"nightly_impl_fields\" or \"impl_fields\" feature.\
+                        ",
+                    }
+                }
+                let bounds:TypeParamBounds=value.parse::<ParsePunctuated<_,_>>()?.list;
+                this.fields[field].is_impl=Some(bounds)
             }else{
                 return Err(make_err(&path))?;
             }
@@ -209,6 +232,15 @@ fn parse_sabi_attr<'a>(
                 this.fields[field].is_pub=true;
             }else if path.equals_str("not_public")||path.equals_str("private") {
                 this.fields[field].is_pub=false;
+            }else if path.equals_str("delegate_to") {
+                if this.delegate_to.is_some() {
+                    return_spanned_err!{
+                        path,
+                        "Cannot use the `#[struc(delegate_to)]` attribute on multiple fields."
+                    };
+                }
+                this.with_trait_alias=false;
+                this.delegate_to=Some(field)
             }else{
                 return Err(make_err(&path))?;
             }

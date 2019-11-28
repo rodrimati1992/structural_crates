@@ -8,4 +8,8 @@ fn main() {
     if Version::new(1, 36, 0) <= rver {
         println!("cargo:rustc-cfg=feature=\"rust_1_36\"");
     }
+    if Version::new(1, 40, 0) <= rver {
+        println!("cargo:rustc-cfg=feature=\"rust_1_40\"");
+        println!("cargo:rustc-cfg=feature=\"better_macros\"");
+    }
 }
