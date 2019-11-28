@@ -1,5 +1,6 @@
 /*!
-Contains type-level strings,and multi-strings.
+Type-level representatins of a chain of field accesses (`FieldPath`),
+and multiple field accesses (`FieldPathSet`).
 */
 
 #![allow(non_snake_case, non_camel_case_types)]
@@ -7,6 +8,8 @@ Contains type-level strings,and multi-strings.
 use core_extensions::MarkerType;
 
 use std_::marker::PhantomData;
+
+use crate::type_level::_private::TString;
 
 use crate::type_level::collection_traits::{
     Append,Append_,
@@ -47,16 +50,6 @@ impl<T,U> IsFieldPathSet for FieldPathSet<T,U>{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A type-level string,represented as a tuple of type-level bytes.
-///
-/// This is an implementation detail of structural,
-/// so that it's possible to replace it with `pub struct TString<const NAME:&'static str>`
-///
-/// This cannot be converted to a `&'static str` constant
-/// (if you can figure out a cheap way to do that please create an issue/pull request).
-///
-#[doc(hidden)]
-pub struct TString<T>(PhantomData<T>);
 
 impl<T> TString<T>{
     /// Constructs the TString.
@@ -93,18 +86,13 @@ impl<T> ToTString_ for TString<T>{
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// U type-level representation of a chain of field accesses,like `.a.b.c.d`.
+/// A type-level representation of a chain of field accesses,like `.a.b.c.d`.
 ///
 pub struct FieldPath<T>(PhantomData<T>);
 
 /// A FieldPath for accesing a single `Str` field.
 #[doc(hidden)]
 pub type FieldPath1<Str>=FieldPath<(Str,)>;
-
-
-/// A FieldPath constructed in the same way that TString is.
-#[doc(hidden)]
-pub type FieldPathString<Str>=FieldPath<(TString<Str>,)>;
 
 impl<T> Copy for FieldPath<T>{}
 impl<T> Clone for FieldPath<T>{
