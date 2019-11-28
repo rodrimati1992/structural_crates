@@ -3,7 +3,7 @@
 #[allow(dead_code)]
 #[macro_use]
 mod for_better_macros{
-    use crate::{chars,type_level::TString};
+    use crate::{chars,type_level::_private::TString};
 
     pub type S_foo=TString<(chars::_f,chars::_o,chars::_o)>;
     pub type S_bar=TString<(chars::_b,chars::_a,chars::_r)>;
@@ -39,7 +39,8 @@ mod for_better_macros{
 #[cfg(feature="better_macros")]
 #[test]
 fn identifier_macros_equality(){
-    use crate::{chars,type_level::{TString,FieldPath}};
+    use crate::chars;
+    use crate::type_level::{_private::TString,FieldPath};
     use self::for_better_macros::*;
 
     type S_abcd=TString<(chars::_a,chars::_b,chars::_c,chars::_d)>;

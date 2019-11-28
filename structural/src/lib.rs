@@ -416,11 +416,13 @@ pub mod reexports{
 
 // pmr(proc macro reexports):
 // Reexports for the proc macros in structural_derive.
+// 
+// Importing stuff from this module anywhere other than `structural_derive` is
+// explicitly disallowed,and is likely to break.
 #[doc(hidden)]
 pub mod pmr{
     pub use crate::type_level::*;
-    pub use crate::type_level::ident::TString;
-    pub use crate::type_level::proc_macro_aliases::*;
+    pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::chars::*;
     pub use core_extensions::{MarkerType,TIdentity,TypeIdentity};

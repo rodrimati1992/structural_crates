@@ -55,7 +55,7 @@ where
             };
             syn::Ident::new(&buffer, Span::call_site())
         });
-    quote!( ::structural::type_level::TString<( #( #path_prefix #bytes,)* )> )
+    quote!( ::structural::pmr::TString<( #( #path_prefix #bytes,)* )> )
 }
 
 
