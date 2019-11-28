@@ -339,12 +339,7 @@ struct Cents(u64);
 
 # Future plans
 
-### 0.2
-
-This will improve the ergonomics of accessing nested fields,
-using `value.field_(fp!(a.b.c))` to access `&value.a.b.c`,
-where the equivalent in `0.1` is `value.field_(ti!(a)).field_(ti!(b)).field_(ti!(c))`.
-
+None right now.
 
 # no-std support
 
