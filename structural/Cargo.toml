@@ -43,7 +43,11 @@ nightly_impl_fields=["impl_fields"]
 
 [dependencies]
 structural_derive={version="0.2.1",path="../structural_derive"}
-core_extensions={version="0.1.11",default_features=false}
+
+[dependencies.core_extensions]
+version="0.1.13"
+default_features=false
+features=["colltraits","alloc"]
 
 
 [build-dependencies]
