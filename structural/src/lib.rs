@@ -331,7 +331,7 @@ struct Cents(u64);
 #![cfg_attr(feature="nightly_specialization",feature(specialization))]
 #![cfg_attr(feature="nightly_better_macros",feature(proc_macro_hygiene))]
 
-#![cfg_attr(not(feature="alloc"),no_std)]
+#![cfg_attr(not(feature="std"),no_std)]
 
 #[doc(hidden)]
 pub extern crate core as std_;
@@ -406,6 +406,7 @@ pub use crate::{
 /// Reexports from the `core_extensions` crate.
 pub mod reexports{
     pub use core_extensions::{
+        collection_traits::{Cloned,IntoArray},
         type_asserts::AssertEq,
         MarkerType,
         SelfOps,

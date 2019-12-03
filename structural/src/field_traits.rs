@@ -9,6 +9,8 @@ use crate::{
     StructuralDyn,
 };
 
+use core_extensions::collection_traits::Cloned;
+
 use std_::marker::PhantomData;
 
 
@@ -498,6 +500,65 @@ pub trait GetFieldExt{
         P:RevGetField<'a,Self>
     {
         path.rev_get_field(self)
+    }
+
+    /// Gets clones of multiple fields,determined by `path`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp,make_struct};
+    /// use structural::reexports::IntoArray;
+    /// 
+    /// // The `Fruits_SI` trait was declared by the `Structural` derive on `Fruits`.
+    /// fn total_fruit_count(fruits:&dyn Fruits_SI)->u32{
+    ///     fruits
+    ///         .cloned_fields(fp!( apples, oranges, tangerines, tomatoes ))
+    ///         .into_array() // Converts a homogeneous tuple to an array
+    ///         .iter()
+    ///         .sum()
+    /// }
+    /// 
+    /// {
+    ///     let fruits=Fruits{
+    ///         apples:1,
+    ///         oranges:2,
+    ///         tangerines:3,
+    ///         tomatoes:5,
+    ///     };
+    ///     
+    ///     assert_eq!( total_fruit_count(&fruits), 11 );
+    /// }
+    /// 
+    /// {
+    ///     let fruits=make_struct!{
+    ///         apples:8,
+    ///         oranges:13,
+    ///         tangerines:21,
+    ///         tomatoes:34,
+    ///     };
+    ///     
+    ///     assert_eq!( total_fruit_count(&fruits), 76 );
+    /// }
+    /// 
+    /// #[derive(Structural)]
+    /// // We only get read access to the fields.
+    /// #[struc(public,access="ref")]
+    /// struct Fruits{
+    ///     apples:u32,
+    ///     oranges:u32,
+    ///     tangerines:u32,
+    ///     tomatoes:u32,
+    /// }
+    /// 
+    /// ```
+    fn cloned_fields<'a,P>(&'a self,path:P)-> <RevFieldRefType<'a,P,Self> as Cloned>::Cloned
+    where
+        P:RevGetField<'a,Self>,
+        RevFieldRefType<'a,P,Self>:Cloned,
+    {
+        path.rev_get_field(self)
+            .cloned_()
     }
 
     /// Gets a mutable reference to a field,determined by `path`.

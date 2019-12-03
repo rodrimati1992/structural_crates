@@ -116,7 +116,7 @@ using a fields-in-traits syntax.
 
 For more details you can look at the docs for the 
 [`structural_alias`
-](https://docs.rs/structural/0.2/structural/docs/structural_macro/index.html) macro.
+](https://docs.rs/structural/0.2/structural/macro.structural_alias.html) macro.
 
 ```rust
 
