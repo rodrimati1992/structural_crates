@@ -19,6 +19,7 @@ use crate::alloc::{
 
 #[test]
 fn derive_inside_function(){
+    #[allow(dead_code)]
     #[derive(Structural)]
     pub struct Bar{
         pub b:u32,
