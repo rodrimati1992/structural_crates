@@ -1,5 +1,8 @@
 use crate::GetFieldExt;
 
+#[cfg(feature="alloc")]
+use crate::pmr::Box;
+
 use core_extensions::{SelfOps,Void};
 use core_extensions::type_asserts::AssertEq;
 

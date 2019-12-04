@@ -8,6 +8,9 @@ use crate::{
     GetField,GetFieldMut,IntoField,
 };
 
+#[cfg(feature="alloc")]
+use crate::pmr::Box;
+
 use std_::marker::PhantomData;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -280,7 +283,7 @@ macro_rules! impl_get_multi_field {
 
             $(
                 #[cfg(feature="alloc")]
-                fn rev_box_into_field(self,field:Box<This>)->Self::Field{
+                fn rev_box_into_field(self,field:$crate::pmr::Box<This>)->Self::Field{
                     let field=IntoField::box_into_field_(field);
                     $(
                         let field=$ibf_prefix::into_field_(field); 

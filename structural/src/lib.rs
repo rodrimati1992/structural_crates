@@ -427,7 +427,13 @@ pub mod pmr{
     pub use crate::type_level::collection_traits::*;
     pub use crate::chars::*;
     pub use core_extensions::{MarkerType,TIdentity,TypeIdentity};
+
     pub use crate::std_::marker::PhantomData;
+    
+    #[cfg(feature="alloc")]
+    pub use crate::alloc::{
+        boxed::Box,
+    };
 }
 
 
