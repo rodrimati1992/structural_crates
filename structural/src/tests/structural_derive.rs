@@ -9,6 +9,7 @@ use crate::{
 
 #[cfg(feature="alloc")]
 use crate::alloc::{
+    boxed::Box,
     rc::Rc,
     sync::Arc,
 };
