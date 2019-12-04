@@ -331,7 +331,13 @@ struct Cents(u64);
 #![cfg_attr(feature="nightly_specialization",feature(specialization))]
 #![cfg_attr(feature="nightly_better_macros",feature(proc_macro_hygiene))]
 
-#![cfg_attr(not(feature="std"),no_std)]
+#![no_std]
+
+#[cfg(any(
+    all(feature="alloc",not(feature="rust_1_36")),
+    feature="std",
+))]
+pub extern crate std;
 
 #[doc(hidden)]
 pub extern crate core as std_;
