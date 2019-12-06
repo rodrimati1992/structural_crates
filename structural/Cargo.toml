@@ -24,7 +24,7 @@ travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 [features]
 default = ["std"]
 std=["alloc"]
-alloc=[]
+alloc=["core_extensions/alloc"]
 rust_1_36=[]
 rust_1_40=["better_macros"]
 
@@ -47,7 +47,7 @@ structural_derive={version="0.2.1",path="../structural_derive"}
 [dependencies.core_extensions]
 version="0.1.13"
 default_features=false
-features=["colltraits","alloc"]
+features=["colltraits"]
 
 
 [build-dependencies]
