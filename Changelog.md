@@ -1,5 +1,11 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
+### 0.2.2
+
+Added `GetFieldExt::cloned_fields` method.
+
+Fixed support of alloc crate.
+
 ### 0.2.0
 
 Replaced field identifiers with field paths,
