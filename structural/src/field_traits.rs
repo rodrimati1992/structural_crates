@@ -506,6 +506,10 @@ pub trait GetFieldExt{
     ///
     /// # Example
     ///
+    /// This example also uses the reexported `IntoArray` trait,
+    /// which allows converting homogeneous tuples to arrays,
+    /// in this case it's used to iterate over the fields.
+    ///
     /// ```
     /// use structural::{GetFieldExt,Structural,fp,make_struct};
     /// use structural::reexports::IntoArray;
@@ -514,7 +518,7 @@ pub trait GetFieldExt{
     /// fn total_fruit_count(fruits:&dyn Fruits_SI)->u32{
     ///     fruits
     ///         .cloned_fields(fp!( apples, oranges, tangerines, tomatoes ))
-    ///         .into_array() // Converts a homogeneous tuple to an array
+    ///         .into_array()
     ///         .iter()
     ///         .sum()
     /// }
