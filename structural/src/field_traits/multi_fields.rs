@@ -24,21 +24,22 @@ pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
 }
 */
 
-
 macro_rules! impl_get_multi_field {
-    ( $(($fpath:ident $fty:ident))* ) => (
-        impl<'a,This:?Sized,$($fpath,)* $($fty,)* U> 
-            RevGetField<'a,This> 
+    ( $(($fpath:ident $err:ident $fty:ident))* ) => (
+        impl<'a,This:?Sized,$($fpath,$err,$fty,)* U>
+            RevGetField<'a,This>
         for FieldPathSet<($(FieldPath<$fpath>,)*),U>
         where
             $(
-                FieldPath<$fpath>:RevGetField<'a,This,Field=&'a $fty>,
+                FieldPath<$fpath>:RevGetField<'a,This,Field=Result<&'a $fty,$err>>,
+                Result<&'a $fty,$err>:NormalizeFields,
                 $fty:'a,
+                $err:'a,
             )*
         {
             type Field=(
                 $(
-                    &'a $fty,
+                    Result<&'a $fty,$err>,
                 )*
             );
 
@@ -50,31 +51,34 @@ macro_rules! impl_get_multi_field {
                     )*
                 )
             }
-        }        
+        }
 
-        unsafe impl<'a,This:?Sized,$($fpath,)* $($fty,)*>
-            RevGetFieldMut<'a,This> 
-        for FieldPathSet<($(FieldPath<$fpath>,)*),UniquePaths> 
+        unsafe impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
+            RevGetFieldMut<'a,This>
+        for FieldPathSet<($(FieldPath<$fpath>,)*),UniquePaths>
         where
             $(
                 FieldPath<$fpath>:RevGetFieldMut<
                     'a,
                     This,
-                    Field=&'a mut $fty,
-                    FieldMutRef=MutRef<'a,$fty>,
+                    Field=Result<&'a mut $fty,$err>,
+                    FieldMutRef=Result<MutRef<'a,$fty>,$err>,
                 >,
+                Result<&'a mut $fty,$err>:NormalizeFields,
+                Result<MutRef<'a,$fty>,$err>:NormalizeFields,
                 $fty:'a,
+                $err:'a,
                 // RevFieldMutType<'a,FieldPath<$fpath>,This>:'a,
             )*
         {
             type Field=(
                 $(
-                    &'a mut $fty,
+                    Result<&'a mut $fty,$err>,
                 )*
             );
             type FieldMutRef=(
                 $(
-                    MutRef<'a,$fty>,
+                    Result<MutRef<'a,$fty>,$err>,
                 )*
             );
 
@@ -88,7 +92,10 @@ macro_rules! impl_get_multi_field {
 
                     (
                         $(
-                            &mut *$fpath.ptr,
+                            match $fpath {
+                                Ok($fpath)=>Ok(&mut *$fpath.ptr),
+                                Err(e)=>Err(e),
+                            },
                         )*
                     )
                 }
@@ -109,30 +116,28 @@ macro_rules! impl_get_multi_field {
     )
 }
 
-
-impl_get_multi_field!{}
-impl_get_multi_field!{
-    (F0 T0)
+impl_get_multi_field! {}
+impl_get_multi_field! {
+    (F0 E0 T0)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2) (F3 T3)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5) (F6 T6)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6)
 }
-impl_get_multi_field!{
-    (F0 T0) (F1 T1) (F2 T2) (F3 T3) (F4 T4) (F5 T5) (F6 T6) (F7 T7)
+impl_get_multi_field! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
 }
-

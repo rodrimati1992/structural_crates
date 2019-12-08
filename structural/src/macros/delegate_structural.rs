@@ -6,12 +6,12 @@ it doesn't provide a way to do so for only a list of fields.
 
 # Safety
 
-The unsafety of implementing GetFieldMut with this macro comes from the methods
+The unsafety of implementing GetFieldMutImpl with this macro comes from the methods
 used to do multiple mutable borrows.
 
-You must ensure that the variable that you delegate GetField to is the same as the one
-you delegate GetFieldMut to,
-as well as ensuring that there are no other impls of the GetFieldMut trait 
+You must ensure that the variable that you delegate GetFieldImpl to is the same as the one
+you delegate GetFieldMutImpl to,
+as well as ensuring that there are no other impls of the GetFieldMutImpl trait
 borrowing from the same variable mutably.
 
 
@@ -34,40 +34,40 @@ z_delegate_structural_with!{
     where[
         T:Trait,
     ]
-    
+
     // This is the identifier used for `self` in the blocks bellow.
     self_ident=this;
-    
+
     // This is the type of the variable we delegate to,
     // this is required because Rust doesn't have a `typeof`/`decltype` construct.
     delegating_to_type=T;
 
-    // `field_name` is the name for a `PhantomData` parameter in 
-    // `GetFieldMut::get_field_raw_mut`
+    // `field_name` is the name for a `PhantomData` parameter in
+    // `GetFieldMutImpl::get_field_raw_mut`
     // (usable from `as_delegating_raw{}` in this macro),
     // with the name of the field being accessed
     //
-    // `FieldName` is the name of the type parameter that represents the 
+    // `FieldName` is the name of the type parameter that represents the
     // name of the field being accessed.
     field_name_param=( field_name : FieldName );
 
-    // This block of code is used to get the reference to the delegating variable 
-    // in GetField.
-    GetField {
-        &this.value 
+    // This block of code is used to get the reference to the delegating variable
+    // in GetFieldImpl.
+    GetFieldImpl {
+        &this.value
     }
-    
+
     // This block of code is used to get a mutable reference to the delegating variable
-    // in GetFieldMut
+    // in GetFieldMutImpl
     //
     // This is `unsafe` because this block must always evaluate to a mutable reference
     // for the same variable,
-    // and it must not be the same variable as other implementations of the GetFieldMut trait
-    unsafe GetFieldMut 
-    where [ 
+    // and it must not be the same variable as other implementations of the GetFieldMutImpl trait
+    unsafe GetFieldMutImpl
+    where [
         // This is an optional where clause
         // The last where predicate must have a trailing comma.
-        T:Trait, 
+        T:Trait,
     ]{
         &mut this.value
     }
@@ -76,15 +76,15 @@ z_delegate_structural_with!{
     as_delegating_raw{
         &mut (*this).value as *mut T
     }
-    
-    // This block of code is used to get the delegating variable by value in IntoField.
-    IntoField 
+
+    // This block of code is used to get the delegating variable by value in IntoFieldImpl.
+    IntoFieldImpl
     where [
         // This is an optional where clause
         // The last where predicate must have a trailing comma.
         T:Trait,
     ]{
-        this.value 
+        this.value
     }
 }
 ```
@@ -99,7 +99,7 @@ use std::{
     mem::ManuallyDrop,
 };
 
-use structural::{GetFieldExt,GetFieldMut,z_delegate_structural_with,make_struct,fp};
+use structural::{GetFieldExt,GetFieldMutImpl,z_delegate_structural_with,make_struct,fp};
 use structural::mut_ref::MutRef;
 
 struct Bar<T>{
@@ -121,32 +121,32 @@ z_delegate_structural_with!{
     where[
         // This requires T to implement Clone
         // for `Bar<T>` to implement the accessor traits
-        T:Clone 
+        T:Clone
     ]
     self_ident=this;
     delegating_to_type=T;
     field_name_param=( field_name : FieldName );
 
-    GetField {
+    GetFieldImpl {
 #       // This ensures that the `T:Clone` bound is put on the impl block.
 #       T::clone;
-        &*this.value 
+        &*this.value
     }
 
-    unsafe GetFieldMut 
+    unsafe GetFieldMutImpl
     where [T:Debug,]
     {
 #       // This ensures that the `T:Clone+Debug` bounds are put on the impl block.
 #       T::clone;
 #       <T as Debug>::fmt;
-        &mut *this.value 
+        &mut *this.value
     }
     as_delegating_raw{
         &mut (*this).value as *mut ManuallyDrop<T> as *mut T
     }
 
 
-    IntoField 
+    IntoFieldImpl
     where [T:Debug,]
     {
 #       // This ensures that the `T:Clone+Debug` bounds are put on the impl block.
@@ -206,20 +206,20 @@ macro_rules! z_delegate_structural_with {
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
-        GetField $get_field_closure:block
+        GetFieldImpl $get_field_closure:block
         $(
-            unsafe GetFieldMut 
+            unsafe GetFieldMutImpl
             $( where[ $($mut_where_clause:tt)* ] )?
             $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
         )?
         $(
-            IntoField 
+            IntoFieldImpl
             $( where[ $($into_where_clause:tt)* ] )?
             $into_field_closure:block
         )?
     ) => (
-        
+
         $crate::z_delegate_structural_with!{
             inner-structural;
             impl $impl_params $self
@@ -227,7 +227,7 @@ macro_rules! z_delegate_structural_with {
             self_ident=$this;
             delegating_to_type=$delegating_to_type;
             field_name_param=( $fname_var : $fname_ty );
-            GetField $get_field_closure
+            GetFieldImpl $get_field_closure
         }
 
         $crate::z_delegate_structural_with!{
@@ -237,7 +237,7 @@ macro_rules! z_delegate_structural_with {
             self_ident=$this;
             delegating_to_type=$delegating_to_type;
             field_name_param=( $fname_var : $fname_ty );
-            GetField $get_field_closure
+            GetFieldImpl $get_field_closure
         }
 
         $(
@@ -249,8 +249,8 @@ macro_rules! z_delegate_structural_with {
                 self_ident=$this;
                 delegating_to_type=$delegating_to_type;
                 field_name_param=( $fname_var : $fname_ty );
-                GetField $get_field_closure
-                unsafe GetFieldMut $unsafe_get_field_mut_closure
+                GetFieldImpl $get_field_closure
+                unsafe GetFieldMutImpl $unsafe_get_field_mut_closure
                 as_delegating_raw $as_field_mutref_closure
             }
         )?
@@ -264,7 +264,7 @@ macro_rules! z_delegate_structural_with {
                 self_ident=$this;
                 delegating_to_type=$delegating_to_type;
                 field_name_param=( $fname_var : $fname_ty );
-                IntoField $into_field_closure
+                IntoFieldImpl $into_field_closure
             }
         )?
     );
@@ -276,9 +276,9 @@ macro_rules! z_delegate_structural_with {
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
-        GetField $get_field_closure:block
+        GetFieldImpl $get_field_closure:block
     )=>{
-        impl<$($impl_params)*> $crate::Structural for $self 
+        impl<$($impl_params)*> $crate::Structural for $self
         where
             $delegating_to_type:$crate::Structural,
             $($where_clause)*
@@ -306,21 +306,22 @@ macro_rules! z_delegate_structural_with {
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
-        GetField $get_field_closure:block
+        GetFieldImpl $get_field_closure:block
     )=>{
-        impl<$($($impl_params)* )?__FieldName> 
-            $crate::GetField<__FieldName>
+        impl<$($($impl_params)* )?__FieldName>
+            $crate::GetFieldImpl<__FieldName>
             for $self
         where
-            $delegating_to_type:$crate::GetField<__FieldName>,
+            $delegating_to_type:$crate::GetFieldImpl<__FieldName>,
             $($where_clause)*
         {
             type Ty=$crate::GetFieldType<$delegating_to_type,__FieldName>;
+            type Err=$crate::field_traits::GetFieldErr<$delegating_to_type,__FieldName>;
 
-            fn get_field_(&self)->&Self::Ty{
+            fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
                 let $this=self;
                 let field:&$delegating_to_type=$get_field_closure;
-                $crate::GetField::<__FieldName>::get_field_(field)
+                $crate::GetFieldImpl::<__FieldName>::get_field_(field)
             }
         }
     };
@@ -332,42 +333,42 @@ macro_rules! z_delegate_structural_with {
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
-        GetField $get_field_closure:block
+        GetFieldImpl $get_field_closure:block
 
-        unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+        unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
         as_delegating_raw $as_field_mutref_closure:block
     )=>{
-        unsafe impl<$( $($impl_params)* )?__FieldName> 
-            $crate::GetFieldMut<__FieldName>
+        unsafe impl<$( $($impl_params)* )?__FieldName>
+            $crate::GetFieldMutImpl<__FieldName>
             for $self
         where
-            $delegating_to_type:$crate::GetFieldMut<__FieldName>,
+            $delegating_to_type:$crate::GetFieldMutImpl<__FieldName>,
             $($mut_where_clause)*
             $($where_clause)*
         {
-            fn get_field_mut_(&mut self)->&mut Self::Ty{
+            fn get_field_mut_(&mut self)->Result<&mut Self::Ty,Self::Err>{
                 let $this=self;
                 let field:&mut $delegating_to_type=$unsafe_get_field_mut_closure;
-                <$delegating_to_type as $crate::GetFieldMut<__FieldName>>::get_field_mut_(field)
+                <$delegating_to_type as $crate::GetFieldMutImpl<__FieldName>>::get_field_mut_(field)
             }
             unsafe fn get_field_raw_mut(
                 $this:*mut (),
                 $fname_var:$crate::pmr::PhantomData<__FieldName>
-            )->*mut Self::Ty
-            where 
+            )->Result<*mut Self::Ty,Self::Err>
+            where
                 Self:Sized
             {
                 let $this=$this as *mut Self;
                 let $this:*mut $delegating_to_type=
                     $as_field_mutref_closure;
-                
+
                 <$delegating_to_type>::get_field_raw_mut( $this as *mut (),$fname_var )
             }
 
             fn get_field_raw_mut_func(
                 &self
-            )->$crate::field_traits::GetFieldMutRefFn<__FieldName,Self::Ty>{
-                <Self as $crate::GetFieldMut<__FieldName>>::get_field_raw_mut
+            )->$crate::field_traits::GetFieldMutRefFn<__FieldName,Self::Ty,Self::Err>{
+                <Self as $crate::GetFieldMutImpl<__FieldName>>::get_field_raw_mut
             }
         }
     };
@@ -379,27 +380,25 @@ macro_rules! z_delegate_structural_with {
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
-        IntoField $into_field_closure:block
+        IntoFieldImpl $into_field_closure:block
     )=>{
-        impl<$( $($impl_params)* )?__FieldName> 
-            $crate::IntoField<__FieldName>
+        impl<$( $($impl_params)* )?__FieldName>
+            $crate::IntoFieldImpl<__FieldName>
             for $self
         where
-            $delegating_to_type:$crate::IntoField<__FieldName>,
+            $delegating_to_type:$crate::IntoFieldImpl<__FieldName>,
             $($into_where_clause)*
             $($where_clause)*
         {
-            fn into_field_(self)->Self::Ty{
+            fn into_field_(self)->Result<Self::Ty,Self::Err>{
                 let $this=self;
                 let field:$delegating_to_type=$into_field_closure;
-                $crate::IntoField::<__FieldName>::into_field_(field)
+                $crate::IntoFieldImpl::<__FieldName>::into_field_(field)
             }
 
             $crate::z_impl_box_into_field_method!{__FieldName}
-        }        
+        }
     };
 }
-
-
 
 //////////////////////////////////////////////////////////////////////////////

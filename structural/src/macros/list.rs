@@ -4,7 +4,7 @@ Type macro for a type-list.
 
 This macro creates an ordered sequence of types,
 
-# Example 
+# Example
 
 This example is equivalent to `TList<String,TList<&'a str,TList<Cow<'a,str>,Nil>>>`.
 
@@ -85,12 +85,12 @@ macro_rules! TList {
     };
 }
 
-/** 
+/**
 
 Instantiates a type-list,
 which is a zero-sized-type which does not contain instances of the types it lists.
 
-# Example 
+# Example
 
 ```
 use structural::{tlist,TList};

@@ -1,28 +1,24 @@
-use std::fmt::{self,Display};
+use std::fmt::{self, Display};
 
-use proc_macro2::{
-    TokenStream as TokenStream2,
-};
+use proc_macro2::TokenStream as TokenStream2;
 
 use quote::ToTokens;
 
 use syn::{
-    parse::{ParseStream,Parse},
+    parse::{Parse, ParseStream},
     Ident,
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#[derive(Debug,Eq,PartialEq)]
-pub(crate) enum IdentOrIndex{
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum IdentOrIndex {
     Ident(Ident),
     Index(syn::LitInt),
 }
 
-impl IdentOrIndex{
-    pub(crate) fn borrowed(&self)->IdentOrIndexRef<'_>{
+impl IdentOrIndex {
+    pub(crate) fn borrowed(&self) -> IdentOrIndexRef<'_> {
         match self {
             IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(x),
             IdentOrIndex::Index(x) => IdentOrIndexRef::Index(x),
@@ -30,9 +26,9 @@ impl IdentOrIndex{
     }
 }
 
-impl Parse for IdentOrIndex{
-    fn parse(input: ParseStream) -> Result<Self,syn::Error> {
-        let lookahead=input.lookahead1();
+impl Parse for IdentOrIndex {
+    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+        let lookahead = input.lookahead1();
         if lookahead.peek(syn::Ident) {
             Ok(IdentOrIndex::Ident(input.parse()?))
         } else if lookahead.peek(syn::LitInt) {
@@ -43,7 +39,7 @@ impl Parse for IdentOrIndex{
     }
 }
 
-impl ToTokens for IdentOrIndex{
+impl ToTokens for IdentOrIndex {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         match self {
             IdentOrIndex::Ident(x) => x.to_tokens(tokens),
@@ -52,24 +48,23 @@ impl ToTokens for IdentOrIndex{
     }
 }
 
-impl Display for IdentOrIndex{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+impl Display for IdentOrIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IdentOrIndex::Ident(x) => Display::fmt(x,f),
-            IdentOrIndex::Index(x) => Display::fmt(x,f),
+            IdentOrIndex::Ident(x) => Display::fmt(x, f),
+            IdentOrIndex::Index(x) => Display::fmt(x, f),
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-pub(crate) enum IdentOrIndexRef<'a>{
+pub(crate) enum IdentOrIndexRef<'a> {
     Ident(&'a Ident),
     Index(&'a syn::LitInt),
 }
 
-impl ToTokens for IdentOrIndexRef<'_>{
+impl ToTokens for IdentOrIndexRef<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         match self {
             IdentOrIndexRef::Ident(x) => x.to_tokens(tokens),
@@ -78,11 +73,11 @@ impl ToTokens for IdentOrIndexRef<'_>{
     }
 }
 
-impl Display for IdentOrIndexRef<'_>{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+impl Display for IdentOrIndexRef<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IdentOrIndexRef::Ident(x) => Display::fmt(x,f),
-            IdentOrIndexRef::Index(x) => Display::fmt(x,f),
+            IdentOrIndexRef::Ident(x) => Display::fmt(x, f),
+            IdentOrIndexRef::Index(x) => Display::fmt(x, f),
         }
     }
 }

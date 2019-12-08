@@ -71,7 +71,9 @@
 ///     assert_eq!( *stamina, 4_000_000_000 );
 /// }
 ///
-#[cfg_attr(feature="alloc",doc=r###"
+#[cfg_attr(
+    feature = "alloc",
+    doc = r###"
 fn get_dyn_runner()->Box<dyn Runner>{
     Box::new(make_struct!{
        name:"hello".into(),
@@ -85,7 +87,8 @@ fn get_dyn_runner()->Box<dyn Runner>{
     assert_eq!( runner.field_(fp!(stamina)), &4_000_000_000 );
 }
 
-"###)]
+"###
+)]
 ///
 /// # }
 ///
@@ -123,9 +126,9 @@ macro_rules! make_struct {
                         pub $field_name:$field_name,
                     )*
                 }
-                
-                $crate::impl_getters_for_derive!{
-                    impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*> 
+
+                $crate::impl_getters_for_derive_struct!{
+                    impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*>
                     where[]
                     {
                         $((
@@ -133,6 +136,7 @@ macro_rules! make_struct {
                                 $field_name : $field_name,
                                 _names_module_::$field_name,
                                 stringify!($field_name),
+                                opt=false,
                             >
                         ))*
                     }

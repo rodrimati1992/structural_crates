@@ -3,15 +3,12 @@
 Structural aliases for even array size up to 32.
 */
 
-
 use super::names::{
-    I0,I1,I2,I3,I4,I5,I6,I7,
-    I8,I9,I10,I11,I12,I13,I14,I15,
-    I16,I17,I18,I19,I20,I21,I22,I23,
-    I24,I25,I26,I27,I28,I29,I30,I31,
+    I0, I1, I10, I11, I12, I13, I14, I15, I16, I17, I18, I19, I2, I20, I21, I22, I23, I24, I25,
+    I26, I27, I28, I29, I3, I30, I31, I4, I5, I6, I7, I8, I9,
 };
+use crate::field_traits::NonOptField;
 use crate::IntoFieldMut;
-
 
 /*
 
@@ -22,7 +19,7 @@ fn main() {
     const S:&'static str="    ";
 
     let mut reg=String::new();
-    
+
     const MAX:usize=32;
     const CHUNK_SIZE:usize=8;
     const CHUNK_COUNT:usize=MAX/CHUNK_SIZE;
@@ -65,10 +62,9 @@ fn main() {
 
 */
 
-
 macro_rules! declare_array_traits {
     (
-        $(( 
+        $((
             $trait_name:ident
             [$($super_trait:ident)*]
             [$($field:ident)*]
@@ -77,21 +73,21 @@ macro_rules! declare_array_traits {
         $(
             /// A structural alias for an array of this size
             pub trait $trait_name<T>:
-                $($super_trait<T>+)* 
-                $(IntoFieldMut<$field,Ty=T> +)*
+                $($super_trait<T>+)*
+                $(IntoFieldMut<$field,Ty=T,Err=NonOptField> +)*
             {}
 
-            impl<This,T>  $trait_name<T> for This 
-            where 
+            impl<This,T>  $trait_name<T> for This
+            where
                 Self:
-                    $($super_trait<T>+)* 
-                    $(IntoFieldMut<$field,Ty=T> +)*
+                    $($super_trait<T>+)*
+                    $(IntoFieldMut<$field,Ty=T,Err=NonOptField> +)*
             {}
         )*
     )
 }
 
-declare_array_traits!{
+declare_array_traits! {
     (Array_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
     (Array_8_16 [Array_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
     (Array_16_24 [Array_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )

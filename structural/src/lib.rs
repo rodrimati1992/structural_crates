@@ -7,7 +7,7 @@ This library provides field accessor traits,and emulation of structural types.
 These are the features this library provides:
 
 - [Derivation of the 3 accessor traits for every public field](./docs/structural_macro/index.html)
-(GetField/GetFieldMut/IntoField).
+(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl).
 
 - [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
 ](./macro.structural_alias.html).
@@ -35,7 +35,7 @@ where
     S:Point3D_SI<u32>
 {
     let (a,b,c)=point.fields(fp!( x, y, z ));
-    
+
     assert_eq!(a,&0);
     assert_eq!(b,&11);
     assert_eq!(c,&33);
@@ -62,7 +62,7 @@ fn main(){
 
 
 #[derive(Structural)]
-// Using the `#[struc(public)]` attribute tells the derive macro to 
+// Using the `#[struc(public)]` attribute tells the derive macro to
 // generate the accessor trait impls for non-`pub` fields.
 #[struc(public)]
 struct Point3D<T>{
@@ -102,7 +102,7 @@ struct Point5D<T>{
 This demonstrates how you can define a trait aliasing field accessors,
 using a fields-in-traits syntax.
 
-For more details you can look at the docs for the 
+For more details you can look at the docs for the
 [`structural_alias`](./macro.structural_alias.html) macro.
 
 ```rust
@@ -198,7 +198,7 @@ fn main(){
 
 
 #[derive(Structural)]
-// Using the `#[struc(public)]` attribute tells the derive macro to 
+// Using the `#[struc(public)]` attribute tells the derive macro to
 // generate the accessor trait impls for non-`pub` fields.
 #[struc(public)]
 struct Worker{
@@ -238,7 +238,7 @@ struct SmallHouse{
 
 This demonstrates how you can construct an anonymous struct.
 
-For more details you can look at the docs for the 
+For more details you can look at the docs for the
 [`make_struct`](./macro.make_struct.html) macro.
 
 ```rust
@@ -301,7 +301,7 @@ fn main(){
 
     let student=make_struct!{
         // This derives clone for the anonymous struct
-        #![derive(Clone)] 
+        #![derive(Clone)]
         name:"Jake English".into(),
         birth_year:1995,
         value:vec![],
@@ -327,33 +327,28 @@ struct Cents(u64);
 
 
 */
-#![cfg_attr(feature="nightly_impl_fields",feature(associated_type_bounds))]
-#![cfg_attr(feature="nightly_specialization",feature(specialization))]
-#![cfg_attr(feature="nightly_better_macros",feature(proc_macro_hygiene))]
-
+#![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
+#![cfg_attr(feature = "nightly_specialization", feature(specialization))]
+#![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
 #![no_std]
 
-#[cfg(any(
-    all(feature="alloc",not(feature="rust_1_36")),
-    feature="std",
-))]
+#[cfg(any(all(feature = "alloc", not(feature = "rust_1_36")), feature = "std",))]
 pub extern crate std;
 
 #[doc(hidden)]
 pub extern crate core as std_;
 
 #[doc(hidden)]
-#[cfg(all(feature="alloc",feature="rust_1_36"))]
+#[cfg(all(feature = "alloc", feature = "rust_1_36"))]
 pub extern crate alloc as alloc_;
 
 #[doc(hidden)]
-#[cfg(all(feature="alloc",feature="rust_1_36"))]
+#[cfg(all(feature = "alloc", feature = "rust_1_36"))]
 pub use alloc_ as alloc;
 
 #[doc(hidden)]
-#[cfg(all(feature="alloc",not(feature="rust_1_36")))]
+#[cfg(all(feature = "alloc", not(feature = "rust_1_36")))]
 pub use std as alloc;
-
 
 extern crate self as structural;
 
@@ -361,20 +356,19 @@ pub use structural_derive::Structural;
 
 #[doc(hidden)]
 pub use structural_derive::{
-    old_fp_impl_,
+    _FP_impl_,
     //new_fp_impl_,
     _field_path_aliases_impl,
-    _FP_impl_,
+    old_fp_impl_,
     structural_alias_impl,
 };
-
 
 #[macro_use]
 mod macros;
 
 pub mod docs;
-pub mod mut_ref;
 pub mod field_traits;
+pub mod mut_ref;
 pub mod structural_trait;
 pub mod utils;
 
@@ -382,13 +376,12 @@ pub mod utils;
 pub mod test_utils;
 
 #[cfg(test)]
-pub mod tests{
-    mod multi_nested_fields;
-    mod structural_derive;
-    mod structural_alias;
+pub mod tests {
     mod macro_tests;
+    mod multi_nested_fields;
+    mod structural_alias;
+    mod structural_derive;
 }
-
 
 pub mod type_level;
 
@@ -400,48 +393,45 @@ pub use crate::field_traits::GetFieldExt;
 
 pub use crate::{
     field_traits::{
-        GetField,GetFieldMut,IntoField,IntoFieldMut,
-        GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
-        RevGetFieldType,RevGetFieldType_,
+        GetFieldImpl, GetFieldMutImpl, GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4,
+        IntoFieldImpl, IntoFieldMut, NonOptGetField, NonOptGetFieldMut, NonOptIntoField,
+        OptGetField, OptGetFieldMut, OptIntoField, RevGetFieldType, RevGetFieldType_,
     },
-    structural_trait::{Structural,StructuralDyn},
+    structural_trait::{Structural, StructuralDyn},
 };
 
-
-
 /// Reexports from the `core_extensions` crate.
-pub mod reexports{
+pub mod reexports {
     pub use core_extensions::{
-        collection_traits::{Cloned,IntoArray},
+        collection_traits::{Cloned, IntoArray},
         type_asserts::AssertEq,
-        MarkerType,
-        SelfOps,
-        TIdentity,
-        TypeIdentity,
+        MarkerType, SelfOps, TIdentity, TypeIdentity,
     };
 }
 
 // pmr(proc macro reexports):
 // Reexports for the proc macros in structural_derive.
-// 
+//
 // Importing stuff from this module anywhere other than `structural_derive` is
 // explicitly disallowed,and is likely to break.
 #[doc(hidden)]
-pub mod pmr{
-    pub use crate::type_level::*;
+pub mod pmr {
+    pub use crate::chars::*;
+    pub use crate::field_traits::*;
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
-    pub use crate::chars::*;
-    pub use core_extensions::{MarkerType,TIdentity,TypeIdentity};
+    pub use crate::type_level::*;
+    pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
     pub use crate::std_::marker::PhantomData;
-    
-    #[cfg(feature="alloc")]
-    pub use crate::alloc::{
-        boxed::Box,
-    };
+
+    #[cfg(feature = "alloc")]
+    pub use crate::alloc::boxed::Box;
 }
 
+#[cfg(all(test, not(feature = "testing")))]
+compile_error! { "tests must be run with the \"testing\" feature" }
 
-#[cfg(all(test,not(feature="testing")))]
-compile_error!{ "tests must be run with the \"testing\" feature" }
+// fn foo() {
+//     (0, 1, 2).field_(fp!(a));
+// }

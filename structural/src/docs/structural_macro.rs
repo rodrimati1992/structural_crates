@@ -1,7 +1,7 @@
 /*!
 
 The Structural derive macro implements the Structural trait,
-as well as accessor traits(GetField/GetFieldMut/IntoField) for fields.
+as well as accessor traits(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl) for fields.
 
 # Default Behavior
 
@@ -9,7 +9,7 @@ By default,this derive generates:
 
 - Implementation of the structural trait for the deriving type.
 
-- Implementations of the accessor traits (GetField/GetFieldMut/IntoField) for pub fields.
+- Implementations of the accessor traits (GetFieldImpl/GetFieldMutImpl/IntoFieldImpl) for pub fields.
 
 - A trait named `<deriving_type>_SI`,aliasing the accessor traits for the type,
 with a blanket implementation for all types with the same fields.
@@ -59,7 +59,7 @@ Using this attribute will disable the generation of the `<deriving_type>_SI` tra
 # Container/Field Attributes
 
 Unless stated otherwise,
-when these attributes are put on the container it will have the same effect as 
+when these attributes are put on the container it will have the same effect as
 being put on the field,and are overriden by attributes directly on the field.
 
 ### `#[struc(public)]`
@@ -75,16 +75,16 @@ Marks the fields as private,not generating the accessor traits for the field.
 Changes the implemented accessor traits for the field(s).
 
 `#[struc(access="ref")]`:
-Generates impls of the `GetField` trait for the field(s).
+Generates impls of the `GetFieldImpl` trait for the field(s).
 
 `#[struc(access="mut")]`:
-Generates impls of the `GetField`+`GetFieldMut` traits for the field(s).
+Generates impls of the `GetFieldImpl`+`GetFieldMutImpl` traits for the field(s).
 
 `#[struc(access="move")]`:
-Generates impls of the `GetField`+`IntoField` traits for the field(s).
+Generates impls of the `GetFieldImpl`+`IntoFieldImpl` traits for the field(s).
 
 `#[struc(access="mut move")]`:
-Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field(s).
+Generates impls of the `GetFieldImpl`+`GetFieldMutImpl`+`IntoFieldImpl` traits for the field(s).
 
 When this attribute is used on a non-pub field,
 it'll mark the field as public for the purpose of generating accessor trait impls.
@@ -190,7 +190,7 @@ fn main(){
 
 ### Disabling the trait alias
 
-This example demonstrates how one disables the generation of the 
+This example demonstrates how one disables the generation of the
 `<deriving_type>_SI` trait to declare it manually.
 
 ```rust
@@ -214,14 +214,14 @@ pub trait Hello_SI:
     // Alternatively,you could use the `field_path_aliases` macro,
     // and use those aliases here instead of using `FP!`.
     IntoFieldMut<FP!(h e l l o), Ty=u32>+
-    IntoFieldMut<FP!(w o r l d), Ty=String> 
+    IntoFieldMut<FP!(w o r l d), Ty=String>
 {}
 
 impl<T> Hello_SI for T
 where
     T:?Sized+
         IntoFieldMut<FP!(h e l l o), Ty=u32>+
-        IntoFieldMut<FP!(w o r l d), Ty=String> 
+        IntoFieldMut<FP!(w o r l d), Ty=String>
 {}
 
 ```
@@ -238,7 +238,7 @@ This requires the `nightly_impl_fields` cargo feature
 #![cfg_attr(feature="nightly_impl_fields",doc="```rust")]
 /*!
 
-// Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`) 
+// Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`)
 // work without it.
 #![feature(associated_type_bounds)]
 
@@ -252,7 +252,7 @@ use structural::{Structural,fp,make_struct,GetFieldExt};
 struct Person{
     #[struc(impl="Borrow<str>")]
     name:String,
-    
+
     #[struc(impl="Copy+Into<u64>")]
     height_nm:u64
 }
@@ -277,7 +277,7 @@ takes_person(&make_struct!{
 
 takes_person(&Person{
     name:"bob".to_string(),
-    height_nm: 1_500_000_000_u64, 
+    height_nm: 1_500_000_000_u64,
 });
 
 ```
@@ -344,7 +344,7 @@ fn total_count(animals:&dyn AnimalCounts_SI)->u64{
         chickens:500,
         pigs:1_000_000_000,
     });
-    
+
     assert_eq!( count, 1_000_000_500 );
 }
 
