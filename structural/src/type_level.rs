@@ -9,7 +9,7 @@ pub mod collection_traits;
 
 #[doc(hidden)]
 #[deprecated]
-pub mod ident{
+pub mod ident {
     pub use crate::type_level::field_path::*;
 }
 
@@ -22,27 +22,22 @@ pub mod list;
 #[doc(hidden)]
 pub use self::{
     field_path::FieldPath1,
-    list::{TList,TNil},
+    list::{TList, TNil},
 };
 
-pub use self::{
-    field_path::{
-        IsFieldPath,IsFieldPathSet,
-        FieldPath,FieldPathSet,
-        UniquePaths,AliasedPaths,
-    },
+pub use self::field_path::{
+    AliasedPaths, FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths,
 };
 
-
-// Importing stuff from this module anywhere other than 
+// Importing stuff from this module anywhere other than
 // `structural_derive` or `structural`  is
 // explicitly disallowed,and is likely to break.
 #[doc(hidden)]
-pub mod _private{
+pub mod _private {
 
     use crate::std_::marker::PhantomData;
-    use crate::type_level::FieldPath;
     use crate::type_level::collection_traits::Flatten;
+    use crate::type_level::FieldPath;
 
     /// A type-level string,represented as a tuple of type-level bytes.
     ///
@@ -54,7 +49,5 @@ pub mod _private{
     ///
     pub struct TString<T>(pub(crate) PhantomData<T>);
 
-    pub type FlattenedFieldPath<Tuple>=
-        FieldPath<Flatten<Tuple>>;
-
+    pub type FlattenedFieldPath<Tuple> = FieldPath<Flatten<Tuple>>;
 }

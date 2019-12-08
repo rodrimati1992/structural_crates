@@ -1,5 +1,3 @@
-
-
 /// Constructs a FieldPath(Set) value,
 /// which determines the fields accessed in [GetFieldExt] methods.
 ///
@@ -20,23 +18,23 @@
 /// where doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
 ///
 /// ### Multiple fields
-/// 
+///
 /// You can access multiple fields simultaneously with `fp!(0,1,2)`
-/// where doing `this.fields_mut(fp!(a,b,c))` 
+/// where doing `this.fields_mut(fp!(a,b,c))`
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
 // /// ### Splicing
 // ///
-// /// You can use a `FieldPath` type (not a value) 
+// /// You can use a `FieldPath` type (not a value)
 // /// inside the `fp` macro with the `( FooType )` syntax.
-// /// 
+// ///
 // /// This will splice the `FieldPath` into the position it was used in.
-// /// 
+// ///
 // /// An example:
 // /// ```
 // /// use structural::{fp,FP,field_path_aliases};
 // /// use structural::reexports::AssertEq;
-// /// 
+// ///
 // /// field_path_aliases!{
 // ///     wooo,
 // ///     chain=b.c.d,
@@ -46,26 +44,26 @@
 // /// # fn main(){
 // ///
 // /// AssertEq::new( fp!( a.(wooo).e ) , fp!(a.wooo.e) );
-// /// 
+// ///
 // /// AssertEq::new( fp!( a.(get_x).e ), fp!(a.pos.x.e) );
 // ///
 // /// # }
 // ///
 // /// ```
-// /// 
+// ///
 // /// ### Inserting
 // ///
 // /// You can use a `TString` type or a single-ident `FieldPath` type
 // /// inside the `fp` macro with the `[ FooType ]` syntax.
-// /// 
+// ///
 // /// This inserts the value of the `TString`or of the single identifier `FieldPath`
 // /// into that position.
-// /// 
+// ///
 // /// An example:
 // /// ```
 // /// use structural::{fp,FP,field_path_aliases};
 // /// use structural::reexports::AssertEq;
-// /// 
+// ///
 // /// field_path_aliases!{
 // ///     foo,
 // ///     bar=what,
@@ -89,10 +87,10 @@
 // /// # }
 // ///
 // /// ```
-// /// 
+// ///
 ///
 ///
-/// 
+///
 /// # Example
 ///
 /// ```
@@ -170,13 +168,13 @@
 ///         baz:44,
 ///         ooo:(66,99),
 ///     });
-/// 
+///
 ///     with_foo(&mut make_struct!{
 ///         bar:bar.clone(),
 ///         baz:44,
 ///         ooo:(66,99),
 ///     });
-/// 
+///
 /// }
 /// ```
 ///
@@ -187,7 +185,6 @@ macro_rules! fp {
     }};
 }
 
-
 #[macro_export]
 #[doc(hidden)]
 //#[cfg(not(feature="better_macros"))]
@@ -195,7 +192,7 @@ macro_rules! _delegate_fp {
     ($($everything:tt)*) => ({
         #[allow(unused_imports)]
         use structural::pmr as __struct_pmr;
-        
+
         struct __Dummy;
 
         impl __Dummy{
@@ -214,16 +211,13 @@ macro_rules! _delegate_fp {
 //     )
 // }
 
-
-
-
 /// Constructs a FieldPath(Set) for use as a generic parameter.
 ///
 /// # Improved macro
 ///
-/// To get an improved version of this macro which can use the same syntax 
+/// To get an improved version of this macro which can use the same syntax
 /// as the `fp` macro,you can do any of:
-/// 
+///
 /// - Use Rust 1.40 or greater
 ///
 /// - Use the `nightly_better_macros` cargo feature.
@@ -236,33 +230,33 @@ macro_rules! _delegate_fp {
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,fp,FP};
+/// use structural::{NonOptGetField,GetFieldExt,fp,FP};
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
 ///     // From 1.40 onwards you can also write `FP!(name)`.
 ///     //
 ///     // Before 1.40, you can use `field_path_aliases!{ name }` before this function,
-///     // then write this as `This:GetField<name,Ty=S>`
-///     This:GetField<FP!(n a m e),Ty=S>,
+///     // then write this as `This:NonOptGetField<name,Ty=S>`
+///     This:NonOptGetField<FP!(n a m e),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
 /// }
 ///
 /// ```
-/// 
+///
 /// # Example
-/// 
+///
 /// This demonstrates [the improved version of this macro](#improved-macro).
-/// 
-#[cfg_attr(feature="better_macros",doc=" ```rust")]
-#[cfg_attr(not(feature="better_macros"),doc=" ```ignore")]
-/// use structural::{GetField,GetFieldExt,fp,FP};
+///
+#[cfg_attr(feature = "better_macros", doc = " ```rust")]
+#[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
+/// use structural::{NonOptGetField,GetFieldExt,fp,FP};
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
-///     This:GetField<FP!(name),Ty=S>,
+///     This:NonOptGetField<FP!(name),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
@@ -280,10 +274,9 @@ macro_rules! FP {
     };
 }
 
-
 #[macro_export]
 #[doc(hidden)]
-#[cfg(not(feature="better_macros"))]
+#[cfg(not(feature = "better_macros"))]
 macro_rules! _delegate_FP {
     ($($char:tt)*) => (
         $crate::pmr::FieldPath<(
@@ -294,13 +287,12 @@ macro_rules! _delegate_FP {
 
 #[macro_export]
 #[doc(hidden)]
-#[cfg(feature="better_macros")]
+#[cfg(feature = "better_macros")]
 macro_rules! _delegate_FP {
     ($($everything:tt)*) => (
         $crate::_FP_impl_!($($everything)*)
     )
 }
-
 
 /*
 
@@ -319,80 +311,202 @@ fn main() {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! TChar{
-    (0)=>( $crate::chars::_0 );
-    (1)=>( $crate::chars::_1 );
-    (2)=>( $crate::chars::_2 );
-    (3)=>( $crate::chars::_3 );
-    (4)=>( $crate::chars::_4 );
-    (5)=>( $crate::chars::_5 );
-    (6)=>( $crate::chars::_6 );
-    (7)=>( $crate::chars::_7 );
-    (8)=>( $crate::chars::_8 );
-    (9)=>( $crate::chars::_9 );
-    (A)=>( $crate::chars::_A );
-    (B)=>( $crate::chars::_B );
-    (C)=>( $crate::chars::_C );
-    (D)=>( $crate::chars::_D );
-    (E)=>( $crate::chars::_E );
-    (F)=>( $crate::chars::_F );
-    (G)=>( $crate::chars::_G );
-    (H)=>( $crate::chars::_H );
-    (I)=>( $crate::chars::_I );
-    (J)=>( $crate::chars::_J );
-    (K)=>( $crate::chars::_K );
-    (L)=>( $crate::chars::_L );
-    (M)=>( $crate::chars::_M );
-    (N)=>( $crate::chars::_N );
-    (O)=>( $crate::chars::_O );
-    (P)=>( $crate::chars::_P );
-    (Q)=>( $crate::chars::_Q );
-    (R)=>( $crate::chars::_R );
-    (S)=>( $crate::chars::_S );
-    (T)=>( $crate::chars::_T );
-    (U)=>( $crate::chars::_U );
-    (V)=>( $crate::chars::_V );
-    (W)=>( $crate::chars::_W );
-    (X)=>( $crate::chars::_X );
-    (Y)=>( $crate::chars::_Y );
-    (Z)=>( $crate::chars::_Z );
-    (_)=>( $crate::chars::__ );
-    (a)=>( $crate::chars::_a );
-    (b)=>( $crate::chars::_b );
-    (c)=>( $crate::chars::_c );
-    (d)=>( $crate::chars::_d );
-    (e)=>( $crate::chars::_e );
-    (f)=>( $crate::chars::_f );
-    (g)=>( $crate::chars::_g );
-    (h)=>( $crate::chars::_h );
-    (i)=>( $crate::chars::_i );
-    (j)=>( $crate::chars::_j );
-    (k)=>( $crate::chars::_k );
-    (l)=>( $crate::chars::_l );
-    (m)=>( $crate::chars::_m );
-    (n)=>( $crate::chars::_n );
-    (o)=>( $crate::chars::_o );
-    (p)=>( $crate::chars::_p );
-    (q)=>( $crate::chars::_q );
-    (r)=>( $crate::chars::_r );
-    (s)=>( $crate::chars::_s );
-    (t)=>( $crate::chars::_t );
-    (u)=>( $crate::chars::_u );
-    (v)=>( $crate::chars::_v );
-    (w)=>( $crate::chars::_w );
-    (x)=>( $crate::chars::_x );
-    (y)=>( $crate::chars::_y );
-    (z)=>( $crate::chars::_z );
-    ($byte:ident)=>{
+macro_rules! TChar {
+    (0) => {
+        $crate::chars::_0
+    };
+    (1) => {
+        $crate::chars::_1
+    };
+    (2) => {
+        $crate::chars::_2
+    };
+    (3) => {
+        $crate::chars::_3
+    };
+    (4) => {
+        $crate::chars::_4
+    };
+    (5) => {
+        $crate::chars::_5
+    };
+    (6) => {
+        $crate::chars::_6
+    };
+    (7) => {
+        $crate::chars::_7
+    };
+    (8) => {
+        $crate::chars::_8
+    };
+    (9) => {
+        $crate::chars::_9
+    };
+    (A) => {
+        $crate::chars::_A
+    };
+    (B) => {
+        $crate::chars::_B
+    };
+    (C) => {
+        $crate::chars::_C
+    };
+    (D) => {
+        $crate::chars::_D
+    };
+    (E) => {
+        $crate::chars::_E
+    };
+    (F) => {
+        $crate::chars::_F
+    };
+    (G) => {
+        $crate::chars::_G
+    };
+    (H) => {
+        $crate::chars::_H
+    };
+    (I) => {
+        $crate::chars::_I
+    };
+    (J) => {
+        $crate::chars::_J
+    };
+    (K) => {
+        $crate::chars::_K
+    };
+    (L) => {
+        $crate::chars::_L
+    };
+    (M) => {
+        $crate::chars::_M
+    };
+    (N) => {
+        $crate::chars::_N
+    };
+    (O) => {
+        $crate::chars::_O
+    };
+    (P) => {
+        $crate::chars::_P
+    };
+    (Q) => {
+        $crate::chars::_Q
+    };
+    (R) => {
+        $crate::chars::_R
+    };
+    (S) => {
+        $crate::chars::_S
+    };
+    (T) => {
+        $crate::chars::_T
+    };
+    (U) => {
+        $crate::chars::_U
+    };
+    (V) => {
+        $crate::chars::_V
+    };
+    (W) => {
+        $crate::chars::_W
+    };
+    (X) => {
+        $crate::chars::_X
+    };
+    (Y) => {
+        $crate::chars::_Y
+    };
+    (Z) => {
+        $crate::chars::_Z
+    };
+    (_) => {
+        $crate::chars::__
+    };
+    (a) => {
+        $crate::chars::_a
+    };
+    (b) => {
+        $crate::chars::_b
+    };
+    (c) => {
+        $crate::chars::_c
+    };
+    (d) => {
+        $crate::chars::_d
+    };
+    (e) => {
+        $crate::chars::_e
+    };
+    (f) => {
+        $crate::chars::_f
+    };
+    (g) => {
+        $crate::chars::_g
+    };
+    (h) => {
+        $crate::chars::_h
+    };
+    (i) => {
+        $crate::chars::_i
+    };
+    (j) => {
+        $crate::chars::_j
+    };
+    (k) => {
+        $crate::chars::_k
+    };
+    (l) => {
+        $crate::chars::_l
+    };
+    (m) => {
+        $crate::chars::_m
+    };
+    (n) => {
+        $crate::chars::_n
+    };
+    (o) => {
+        $crate::chars::_o
+    };
+    (p) => {
+        $crate::chars::_p
+    };
+    (q) => {
+        $crate::chars::_q
+    };
+    (r) => {
+        $crate::chars::_r
+    };
+    (s) => {
+        $crate::chars::_s
+    };
+    (t) => {
+        $crate::chars::_t
+    };
+    (u) => {
+        $crate::chars::_u
+    };
+    (v) => {
+        $crate::chars::_v
+    };
+    (w) => {
+        $crate::chars::_w
+    };
+    (x) => {
+        $crate::chars::_x
+    };
+    (y) => {
+        $crate::chars::_y
+    };
+    (z) => {
+        $crate::chars::_z
+    };
+    ($byte:ident) => {
         $crate::chars::$byte
-    }
-} 
-
-
-
+    };
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-
 
 /**
 
@@ -403,7 +517,7 @@ Every one of these aliases are types and constants of the same name.
 # Example
 
 ```rust
-use structural::{field_path_aliases_module,GetField,GetFieldExt};
+use structural::{field_path_aliases_module,NonOptGetField,GetFieldExt};
 
 field_path_aliases_module!{
     pub mod names{
@@ -435,9 +549,9 @@ field_path_aliases_module!{
 
 fn assert_fields<T>(this:&T)
 where
-    T:GetField<names::zero,Ty=i32>+
-        GetField<names::one,Ty=i32>+
-        GetField<names::two,Ty=i32>
+    T:NonOptGetField<names::zero,Ty=i32>+
+        NonOptGetField<names::one,Ty=i32>+
+        NonOptGetField<names::two,Ty=i32>
 {
     assert_eq!( this.field_(names::zero), &2 );
     assert_eq!( this.field_(names::one), &3 );
@@ -523,12 +637,12 @@ macro_rules! field_path_aliases_module {
         #[allow(non_upper_case_globals)]
         #[allow(unused_imports)]
         $(#[$attr])*
-        /// Type aliases and constants for FieldPath and FieldPathSet 
+        /// Type aliases and constants for FieldPath and FieldPathSet
         /// (from the structural crate).
         ///
-        /// The source code for this module can only be accessed from 
+        /// The source code for this module can only be accessed from
         /// the type aliases and constants.<br>
-        /// As of writing this documentation,`cargo doc` links 
+        /// As of writing this documentation,`cargo doc` links
         /// to the inplementation of the `field_path_aliases_module` macro
         /// instead of where this module is declared.
         $vis mod $mod_name{
@@ -540,7 +654,6 @@ macro_rules! field_path_aliases_module {
     );
 }
 
-
 /**
 
 Declares aliases for field paths,used to access fields.
@@ -548,14 +661,14 @@ Declares aliases for field paths,used to access fields.
 Every one of these aliases are types and constants of the same name.
 
 As of Rust 1.39,this macro cannot be invoked within a function,
-you *can* use 
+you *can* use
 [`field_path_aliases_module`](./macro.field_path_aliases_module.html)
 within functions though.
 
 # Example
 
 ```rust
-use structural::{field_path_aliases,GetField,GetFieldExt};
+use structural::{field_path_aliases,NonOptGetField,GetFieldExt};
 
 field_path_aliases!{
     // Equivalent to hello=hello
@@ -581,9 +694,9 @@ field_path_aliases!{
 
 fn assert_fields<T>(this:&T)
 where
-    T:GetField<zero,Ty=i32>+
-        GetField<one,Ty=i32>+
-        GetField<two,Ty=i32>
+    T:NonOptGetField<zero,Ty=i32>+
+        NonOptGetField<one,Ty=i32>+
+        NonOptGetField<two,Ty=i32>
 {
     assert_eq!( this.field_(zero), &2 );
     assert_eq!( this.field_(one), &3 );
@@ -650,5 +763,3 @@ macro_rules! field_path_aliases {
         }
     );
 }
-
-

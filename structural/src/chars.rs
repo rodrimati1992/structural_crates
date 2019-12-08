@@ -11,14 +11,14 @@ This module is declared at the root so that error messages will print a shorter 
 This is code used to generate the macro invocation.
 
 fn main() {
-    let mut list=(0..=255u8) 
+    let mut list=(0..=255u8)
         .map(|b|{
             let c=b as char;
             if (c.is_alphanumeric() || c=='_') && b<128 {
                 format!("(_{1},B{0}),",b,b as char)
             }else{
                 format!("(B{0}),",b)
-            }        
+            }
         })
         .collect::<Vec<_>>();
     for chunk in list.chunks(8) {
@@ -32,12 +32,11 @@ fn main() {
 
 */
 
-
 macro_rules! create_unit_struct {
     (inner; ($struct_:ident ,$alias:ident ) )=>{
         #[derive(Debug)]
         pub struct $struct_;
-        
+
         pub type $alias=$struct_;
     };
     (inner; ($struct_:ident) )=>{
@@ -50,7 +49,6 @@ macro_rules! create_unit_struct {
         )*
     }
 }
-
 
 create_unit_struct! {
     (B0),(B1),(B2),(B3),(B4),(B5),(B6),(B7),

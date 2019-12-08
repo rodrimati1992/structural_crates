@@ -2,28 +2,26 @@
 Small,type-level integers.
 */
 
-use crate::type_level::cmp::{Compare_,TLess,TEqual,TGreater};
+use crate::type_level::cmp::{Compare_, TEqual, TGreater, TLess};
 
 use std_::marker::PhantomData;
-
 
 #[cfg(test)]
 mod tests;
 
 /////////////////////////////////////////////////////////////////////
 
-mod sealed{
-    pub trait Sealed{}
+mod sealed {
+    pub trait Sealed {}
 }
 
 use self::sealed::Sealed;
 
 /// A marker trait for type-level unsigned integers.
-pub trait IsUnsigned:Sealed{}
+pub trait IsUnsigned: Sealed {}
 
-impl<T> Sealed for Unsigned<T>{}
-impl<T> IsUnsigned for Unsigned<T>{}
-
+impl<T> Sealed for Unsigned<T> {}
+impl<T> IsUnsigned for Unsigned<T> {}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -35,7 +33,6 @@ pub struct Bit0;
 
 /// Represents a `1` bit inside of `Unsigned`
 pub struct Bit1;
-
 
 /////////////////////////////////////////////////////////////////////
 
@@ -53,136 +50,132 @@ fn main() {
 }
 */
 
-
 /// A type-level 0 (unsigned)
-pub type U0=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit0,Bit0,)>;
+pub type U0 = Unsigned<(Bit0, Bit0, Bit0, Bit0, Bit0, Bit0)>;
 
 /// A type-level 1 (unsigned)
-pub type U1=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit0,Bit1,)>;
+pub type U1 = Unsigned<(Bit0, Bit0, Bit0, Bit0, Bit0, Bit1)>;
 
 /// A type-level 2 (unsigned)
-pub type U2=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit1,Bit0,)>;
+pub type U2 = Unsigned<(Bit0, Bit0, Bit0, Bit0, Bit1, Bit0)>;
 
 /// A type-level 3 (unsigned)
-pub type U3=Unsigned<(Bit0,Bit0,Bit0,Bit0,Bit1,Bit1,)>;
+pub type U3 = Unsigned<(Bit0, Bit0, Bit0, Bit0, Bit1, Bit1)>;
 
 /// A type-level 4 (unsigned)
-pub type U4=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit0,Bit0,)>;
+pub type U4 = Unsigned<(Bit0, Bit0, Bit0, Bit1, Bit0, Bit0)>;
 
 /// A type-level 5 (unsigned)
-pub type U5=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit0,Bit1,)>;
+pub type U5 = Unsigned<(Bit0, Bit0, Bit0, Bit1, Bit0, Bit1)>;
 
 /// A type-level 6 (unsigned)
-pub type U6=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit1,Bit0,)>;
+pub type U6 = Unsigned<(Bit0, Bit0, Bit0, Bit1, Bit1, Bit0)>;
 
 /// A type-level 7 (unsigned)
-pub type U7=Unsigned<(Bit0,Bit0,Bit0,Bit1,Bit1,Bit1,)>;
+pub type U7 = Unsigned<(Bit0, Bit0, Bit0, Bit1, Bit1, Bit1)>;
 
 /// A type-level 8 (unsigned)
-pub type U8=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit0,Bit0,)>;
+pub type U8 = Unsigned<(Bit0, Bit0, Bit1, Bit0, Bit0, Bit0)>;
 
 /// A type-level 9 (unsigned)
-pub type U9=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit0,Bit1,)>;
+pub type U9 = Unsigned<(Bit0, Bit0, Bit1, Bit0, Bit0, Bit1)>;
 
 /// A type-level 10 (unsigned)
-pub type U10=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit1,Bit0,)>;
+pub type U10 = Unsigned<(Bit0, Bit0, Bit1, Bit0, Bit1, Bit0)>;
 
 /// A type-level 11 (unsigned)
-pub type U11=Unsigned<(Bit0,Bit0,Bit1,Bit0,Bit1,Bit1,)>;
+pub type U11 = Unsigned<(Bit0, Bit0, Bit1, Bit0, Bit1, Bit1)>;
 
 /// A type-level 12 (unsigned)
-pub type U12=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit0,Bit0,)>;
+pub type U12 = Unsigned<(Bit0, Bit0, Bit1, Bit1, Bit0, Bit0)>;
 
 /// A type-level 13 (unsigned)
-pub type U13=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit0,Bit1,)>;
+pub type U13 = Unsigned<(Bit0, Bit0, Bit1, Bit1, Bit0, Bit1)>;
 
 /// A type-level 14 (unsigned)
-pub type U14=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit1,Bit0,)>;
+pub type U14 = Unsigned<(Bit0, Bit0, Bit1, Bit1, Bit1, Bit0)>;
 
 /// A type-level 15 (unsigned)
-pub type U15=Unsigned<(Bit0,Bit0,Bit1,Bit1,Bit1,Bit1,)>;
+pub type U15 = Unsigned<(Bit0, Bit0, Bit1, Bit1, Bit1, Bit1)>;
 
 /// A type-level 16 (unsigned)
-pub type U16=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit0,Bit0,)>;
+pub type U16 = Unsigned<(Bit0, Bit1, Bit0, Bit0, Bit0, Bit0)>;
 
 /// A type-level 17 (unsigned)
-pub type U17=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit0,Bit1,)>;
+pub type U17 = Unsigned<(Bit0, Bit1, Bit0, Bit0, Bit0, Bit1)>;
 
 /// A type-level 18 (unsigned)
-pub type U18=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit1,Bit0,)>;
+pub type U18 = Unsigned<(Bit0, Bit1, Bit0, Bit0, Bit1, Bit0)>;
 
 /// A type-level 19 (unsigned)
-pub type U19=Unsigned<(Bit0,Bit1,Bit0,Bit0,Bit1,Bit1,)>;
+pub type U19 = Unsigned<(Bit0, Bit1, Bit0, Bit0, Bit1, Bit1)>;
 
 /// A type-level 20 (unsigned)
-pub type U20=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit0,Bit0,)>;
+pub type U20 = Unsigned<(Bit0, Bit1, Bit0, Bit1, Bit0, Bit0)>;
 
 /// A type-level 21 (unsigned)
-pub type U21=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit0,Bit1,)>;
+pub type U21 = Unsigned<(Bit0, Bit1, Bit0, Bit1, Bit0, Bit1)>;
 
 /// A type-level 22 (unsigned)
-pub type U22=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit1,Bit0,)>;
+pub type U22 = Unsigned<(Bit0, Bit1, Bit0, Bit1, Bit1, Bit0)>;
 
 /// A type-level 23 (unsigned)
-pub type U23=Unsigned<(Bit0,Bit1,Bit0,Bit1,Bit1,Bit1,)>;
+pub type U23 = Unsigned<(Bit0, Bit1, Bit0, Bit1, Bit1, Bit1)>;
 
 /// A type-level 24 (unsigned)
-pub type U24=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit0,Bit0,)>;
+pub type U24 = Unsigned<(Bit0, Bit1, Bit1, Bit0, Bit0, Bit0)>;
 
 /// A type-level 25 (unsigned)
-pub type U25=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit0,Bit1,)>;
+pub type U25 = Unsigned<(Bit0, Bit1, Bit1, Bit0, Bit0, Bit1)>;
 
 /// A type-level 26 (unsigned)
-pub type U26=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit1,Bit0,)>;
+pub type U26 = Unsigned<(Bit0, Bit1, Bit1, Bit0, Bit1, Bit0)>;
 
 /// A type-level 27 (unsigned)
-pub type U27=Unsigned<(Bit0,Bit1,Bit1,Bit0,Bit1,Bit1,)>;
+pub type U27 = Unsigned<(Bit0, Bit1, Bit1, Bit0, Bit1, Bit1)>;
 
 /// A type-level 28 (unsigned)
-pub type U28=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit0,Bit0,)>;
+pub type U28 = Unsigned<(Bit0, Bit1, Bit1, Bit1, Bit0, Bit0)>;
 
 /// A type-level 29 (unsigned)
-pub type U29=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit0,Bit1,)>;
+pub type U29 = Unsigned<(Bit0, Bit1, Bit1, Bit1, Bit0, Bit1)>;
 
 /// A type-level 30 (unsigned)
-pub type U30=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit1,Bit0,)>;
+pub type U30 = Unsigned<(Bit0, Bit1, Bit1, Bit1, Bit1, Bit0)>;
 
 /// A type-level 31 (unsigned)
-pub type U31=Unsigned<(Bit0,Bit1,Bit1,Bit1,Bit1,Bit1,)>;
+pub type U31 = Unsigned<(Bit0, Bit1, Bit1, Bit1, Bit1, Bit1)>;
 
 /// A type-level 32 (unsigned)
-pub type U32=Unsigned<(Bit1,Bit0,Bit0,Bit0,Bit0,Bit0,)>;
+pub type U32 = Unsigned<(Bit1, Bit0, Bit0, Bit0, Bit0, Bit0)>;
 
 /// A type-level 33 (unsigned)
-pub type U33=Unsigned<(Bit1,Bit0,Bit0,Bit0,Bit0,Bit1,)>;
-
+pub type U33 = Unsigned<(Bit1, Bit0, Bit0, Bit0, Bit0, Bit1)>;
 
 /////////////////////////////////////////////////////////////////////
 
 /// Compares bits,taking into account the ordering of higher bits.
 #[doc(hidden)]
-pub trait CompareBit<HigherBitOrd,Right>{
+pub trait CompareBit<HigherBitOrd, Right> {
     type Output;
 }
 
-impl CompareBit<TEqual,Bit1> for Bit0{
-    type Output=TLess;
+impl CompareBit<TEqual, Bit1> for Bit0 {
+    type Output = TLess;
 }
-impl<This> CompareBit<TEqual,This> for This{
-    type Output=TEqual;
+impl<This> CompareBit<TEqual, This> for This {
+    type Output = TEqual;
 }
-impl CompareBit<TEqual,Bit0> for Bit1{
-    type Output=TGreater;
-}
-
-impl<This,Other> CompareBit<TLess,Other> for This{
-    type Output=TLess;
-}
-impl<This,Other> CompareBit<TGreater,Other> for This{
-    type Output=TGreater;
+impl CompareBit<TEqual, Bit0> for Bit1 {
+    type Output = TGreater;
 }
 
-
+impl<This, Other> CompareBit<TLess, Other> for This {
+    type Output = TLess;
+}
+impl<This, Other> CompareBit<TGreater, Other> for This {
+    type Output = TGreater;
+}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -211,24 +204,17 @@ fn main() {
 }
 */
 
-impl<L0,R0,T0,L1,R1,T1,L2,R2,T2,L3,R3,T3,L4,R4,T4,L5,R5,T5,>
-    Compare_<Unsigned<(R0,R1,R2,R3,R4,R5,)>>
-for Unsigned<(L0,L1,L2,L3,L4,L5,)>
+impl<L0, R0, T0, L1, R1, T1, L2, R2, T2, L3, R3, T3, L4, R4, T4, L5, R5, T5>
+    Compare_<Unsigned<(R0, R1, R2, R3, R4, R5)>> for Unsigned<(L0, L1, L2, L3, L4, L5)>
 where
-    L0:CompareBit<TEqual,R0,Output=T0>,
-    L1:CompareBit<T0,R1,Output=T1>,
-    L2:CompareBit<T1,R2,Output=T2>,
-    L3:CompareBit<T2,R3,Output=T3>,
-    L4:CompareBit<T3,R4,Output=T4>,
-    L5:CompareBit<T4,R5,Output=T5>,
+    L0: CompareBit<TEqual, R0, Output = T0>,
+    L1: CompareBit<T0, R1, Output = T1>,
+    L2: CompareBit<T1, R2, Output = T2>,
+    L3: CompareBit<T2, R3, Output = T3>,
+    L4: CompareBit<T3, R4, Output = T4>,
+    L5: CompareBit<T4, R5, Output = T5>,
 {
-    type Output=T5;
+    type Output = T5;
 }
 
-
 /////////////////////////////////////////////////////////////////////
-
-
-
-
-

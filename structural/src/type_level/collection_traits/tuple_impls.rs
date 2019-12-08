@@ -1,11 +1,11 @@
-use super::{Append_,Flatten,Flatten_,ToTuple,ToTuple_,ToTList,ToTList_};
+use super::{Append_, Flatten, Flatten_, ToTList, ToTList_, ToTuple, ToTuple_};
 
 macro_rules! tuple_impls {
     (with-idents;
         $( ($len:ty,$len_expr:expr)=[ $($tparams:ident,)* => $($runtparams:ident,)* ])*
     ) => {
         $(
-            
+
             impl<$($tparams),*> ToTuple_ for TList![$($tparams),*] {
                 type Output=($($tparams,)*);
             }
@@ -18,7 +18,7 @@ macro_rules! tuple_impls {
                 type Output=TList![$($tparams),*];
             }
 
-            impl<$($tparams,)*> Flatten_ for ($($tparams,)*) 
+            impl<$($tparams,)*> Flatten_ for ($($tparams,)*)
             where
                 Self:ToTList_,
                 ToTList<Self>:Flatten_,
@@ -27,7 +27,7 @@ macro_rules! tuple_impls {
                 type Output=ToTuple<Flatten<ToTList<Self>>>;
             }
 
-            impl<$($tparams,)* Other,Appended> Append_<Other> for ($($tparams,)*) 
+            impl<$($tparams,)* Other,Appended> Append_<Other> for ($($tparams,)*)
             where
                 Self:ToTList_,
                 Other:ToTList_,
@@ -41,8 +41,7 @@ macro_rules! tuple_impls {
     }
 }
 
-
-tuple_impls!{with-idents;
+tuple_impls! {with-idents;
     (U0,0)=[
         =>
 
