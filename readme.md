@@ -339,7 +339,9 @@ struct Cents(u64);
 
 # Future plans
 
-None right now.
+### 0.3
+
+Adding support for enums,accessing values inside of enum variants which happen to be named the same.
 
 # no-std support
 
