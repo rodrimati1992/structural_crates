@@ -5,7 +5,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 use crate::{
     field_traits::{
         errors::{CombineErrs, FieldErr, IntoFieldErr},
-        NonOptField, NormalizeFields,
+        NormalizeFields,
     },
     mut_ref::MutRef,
     type_level::{FieldPath, FieldPath1},
@@ -195,19 +195,21 @@ macro_rules! impl_get_nested_field_inner {
             type Output=$lastty;
         }
 
-        impl<'a,$($fname,)* $($all_tys,$ferr,)* This>
+        impl<'a,$($fname,)* $($all_tys,$ferr,)* This,CombErr>
             RevGetField<'a,This>
         for FieldPath<($($fname,)*)>
         where
             This:?Sized+'a,
+            Self:RevGetFieldErr_<This,Output=CombErr>,
+            CombErr:FieldErr+'a,
             $(
                 $prefix:GetFieldImpl<FieldPath1<$fname>,Ty=$all_tys,Err=$ferr>+'a,
-                $ferr:IntoFieldErr<$last_ferr>+'a,
+                $ferr:IntoFieldErr< CombErr >+'a,
             )*
             $lastty:Sized+'a,
-            Result<&'a $lastty,$last_ferr>:NormalizeFields,
+            Result<&'a $lastty,CombErr>:NormalizeFields,
         {
-            type Field=Result<&'a $lastty,$last_ferr>;
+            type Field=Result<&'a $lastty, CombErr >;
 
             #[inline(always)]
             fn rev_get_field(self,field:&'a This)->Self::Field{
@@ -216,21 +218,23 @@ macro_rules! impl_get_nested_field_inner {
             }
         }
 
-        unsafe impl<'a,$($fname,)* $($all_tys,$ferr,)* This>
+        unsafe impl<'a,$($fname,)* $($all_tys,$ferr,)* This,CombErr>
             RevGetFieldMut<'a,This>
         for FieldPath<($($fname,)*)>
         where
             This:?Sized+'a,
+            Self:RevGetFieldErr_<This,Output=CombErr>,
+            CombErr:FieldErr+'a,
             $(
                 $prefix:GetFieldMutImpl<FieldPath1<$fname>,Ty=$all_tys,Err=$ferr>+'a,
-                $ferr:IntoFieldErr<$last_ferr>+'a,
+                $ferr:IntoFieldErr< CombErr >+'a,
             )*
             $lastty:Sized+'a,
-            Result<&'a mut $lastty,$last_ferr>:NormalizeFields,
-            Result<MutRef<'a,$lastty>,$last_ferr>:NormalizeFields,
+            Result<&'a mut $lastty,CombErr>:NormalizeFields,
+            Result<MutRef<'a,$lastty>,CombErr>:NormalizeFields,
         {
-            type Field=Result<&'a mut $lastty,$last_ferr>;
-            type FieldMutRef=Result<MutRef<'a,$lastty>,$last_ferr>;
+            type Field=Result<&'a mut $lastty,CombErr >;
+            type FieldMutRef=Result<MutRef<'a,$lastty>,CombErr>;
 
             #[inline(always)]
             fn rev_get_field_mut(self,field:&'a mut This)->Self::Field{
@@ -260,18 +264,20 @@ macro_rules! impl_get_nested_field_inner {
         }
 
         #[cfg(all(feature="specialization", $($enable_specialization)*))]
-        unsafe impl<'a,$($fname,)* $($all_tys,$ferr,)* This>
+        unsafe impl<'a,$($fname,)* $($all_tys,$ferr,)* This,CombErr>
             RevGetFieldMut<'a,This>
         for FieldPath<($($fname,)*)>
         where
             This:'a,
+            Self:RevGetFieldErr_<This,Output=CombErr>,
+            CombErr:FieldErr+'a,
             $(
                 $prefix:GetFieldMutImpl<FieldPath1<$fname>,Ty=$all_tys,Err=$ferr>+'a,
-                $ferr:IntoFieldErr<$last_ferr>+'a,
+                $ferr:IntoFieldErr< CombErr >+'a,
             )*
             $lastty:Sized+'a,
-            Result<&'a mut $lastty,$last_ferr>:NormalizeFields,
-            Result<MutRef<'a,$lastty>,$last_ferr>:NormalizeFields,
+            Result<&'a mut $lastty,CombErr>:NormalizeFields,
+            Result<MutRef<'a,$lastty>,CombErr>:NormalizeFields,
         {
             #[inline(always)]
             unsafe fn rev_get_field_raw_mut(
@@ -286,19 +292,21 @@ macro_rules! impl_get_nested_field_inner {
 
 
 
-        impl<'a,$($fname,)* $($all_tys,$ferr,)* This>
+        impl<'a,$($fname,)* $($all_tys,$ferr,)* This,CombErr>
             RevIntoField<'a,This>
         for FieldPath<($($fname,)*)>
         where
             This:?Sized+'a,
+            Self:RevGetFieldErr_<This,Output=CombErr>,
+            CombErr:FieldErr+'a,
             $(
                 $prefix:IntoFieldImpl<FieldPath1<$fname>,Ty=$all_tys,Err=$ferr>+'a,
-                $ferr:IntoFieldErr<$last_ferr>+'a,
+                $ferr:IntoFieldErr< CombErr >+'a,
             )*
             $lastty:Sized+'a,
-            Result<$lastty,$last_ferr>:NormalizeFields,
+            Result<$lastty,CombErr>:NormalizeFields,
         {
-            type Field=Result<$lastty,$last_ferr>;
+            type Field=Result<$lastty,CombErr >;
 
             #[inline(always)]
             fn rev_into_field(self,field:This)->Self::Field
@@ -359,7 +367,7 @@ impl_get_nested_field_inner! {
     into_box_impl(
         #[cfg(feature="alloc")]
         #[inline(always)]
-        fn rev_box_into_field(self,field:Box<This>)->Result<This,NonOptField>{
+        fn rev_box_into_field(self,field:Box<This>)->Result<This,CombErr>{
             Ok(*field)
         }
     )

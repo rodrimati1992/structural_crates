@@ -75,12 +75,6 @@ impl Display for NonOptField {
     }
 }
 
-impl NonOptField {
-    fn to<T>(self) -> T {
-        match self {}
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 pub trait IntoFieldErr<T>: FieldErr {
