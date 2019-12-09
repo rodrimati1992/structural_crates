@@ -1,9 +1,12 @@
-use crate::field_traits::{
-    GetFieldImpl,
-    GetFieldMutImpl,
-    IntoFieldImpl,
-    OptionalField,
-    GetFieldMutRefFn,
+use crate::{
+    field_traits::{
+        GetFieldImpl,
+        GetFieldMutImpl,
+        IntoFieldImpl,
+        OptionalField,
+        GetFieldMutRefFn,
+    },
+    structural_trait::{FieldInfos,Structural},
 };
 
 use std_::marker::PhantomData;
@@ -89,20 +92,17 @@ where
     }
 
     z_impl_box_into_field_method!{Name}
-
 }
 
 
-
-impl_getters_for_derive_enum! {
-    impl[T] Option<T>
-    where[]
-    {
-        (Structural,Some:T,names::Some,"Some",transparency(Option,Some,0) )
-        (Structural,None:(),names::None,"None",transparency(Option,None,()) )
-    }
+impl<T> Structural for Option<T>
+where
+    T: Structural
+{
+    const FIELDS: &'static FieldInfos={
+        &FieldInfos::Option(T::FIELDS)
+    };
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 

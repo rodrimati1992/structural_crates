@@ -268,45 +268,21 @@ macro_rules! impl_structural{
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {
-            const FIELDS:&'static[$crate::structural_trait::FieldInfo]={
-                use $crate::structural_trait::{FieldInfo,IsOptional};
+            const FIELDS: &'static $crate::structural_trait::FieldInfos= {
+                use $crate::structural_trait::{FieldInfo,FieldInfos,IsOptional};
 
-                &[
+                &FieldInfos::Struct(&[
                     $(
                         FieldInfo{
-                            original_name:stringify!($field_name),
-                            accessor_name:$name_param_str,
+                            name: $crate::structural_trait::Name{
+                                original:stringify!($field_name),
+                                accessor:$name_param_str,
+                            },
                             optionality:IsOptional::new($is_optional),
                         },
                     )*
-                ]
+                ])
             };
-        }
-
-        impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_
-        where $($where_)*
-        {
-            fn fields_info(&self)->&'static[$crate::structural_trait::FieldInfo]{
-                <Self as $crate::Structural>::FIELDS
-            }
-        }
-
-    }
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! z_impl_structural_dyn{
-    (
-        impl[$($typarams:tt)*] $self_:ty
-        $( where[$($where_:tt)*] )?
-    )=>{
-        impl<$($typarams)*> $crate::structural_trait::StructuralDyn for $self_
-        $( where $($where_)* )?
-        {
-            fn fields_info(&self)->&'static[$crate::structural_trait::FieldInfo]{
-                <Self as $crate::Structural>::FIELDS
-            }
         }
     }
 }

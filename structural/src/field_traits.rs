@@ -5,7 +5,7 @@ Accessor and extension traits for fields.
 use crate::{
     mut_ref::MutRef,
     type_level::{FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths},
-    Structural, StructuralDyn,
+    Structural,
 };
 
 use core_extensions::collection_traits::Cloned;
@@ -79,8 +79,7 @@ pub use self::{
 /// use structural::{
 ///     GetFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo},
-///     z_impl_structural_dyn,
+///     structural_trait::{FieldInfo,FieldInfos},
 /// };
 ///
 /// struct Huh<T>{
@@ -88,11 +87,10 @@ pub use self::{
 /// }
 ///
 /// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
-///     
+///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
+///         FieldInfo::not_renamed("value")
+///     ]);
 /// }
-///
-/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
@@ -107,7 +105,7 @@ pub use self::{
 ///
 /// ```
 ///
-pub trait GetFieldImpl<FieldName>: StructuralDyn {
+pub trait GetFieldImpl<FieldName> {
     /// The type of the `FieldName` field.
     type Ty;
     type Err: FieldErr;
@@ -261,9 +259,8 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// use structural::{
 ///     GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::FieldInfo,
+///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
-///     z_impl_structural_dyn,
 /// };
 ///
 /// struct Huh<T>{
@@ -271,11 +268,11 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// }
 ///
 /// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
+///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
+///         FieldInfo::not_renamed("value")
+///     ]);
 ///
 /// }
-///
-/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
@@ -385,9 +382,8 @@ pub type GetFieldMutRefFn<FieldName, FieldTy, E> =
 /// use structural::{
 ///     GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo},
+///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
-///     z_impl_structural_dyn,
 /// };
 ///
 /// struct Huh<T>{
@@ -396,10 +392,11 @@ pub type GetFieldMutRefFn<FieldName, FieldTy, E> =
 ///
 ///
 /// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static[FieldInfo]=&[FieldInfo::not_renamed("value")];
+///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
+///         FieldInfo::not_renamed("value")
+///     ]);
 /// }
 ///
-/// z_impl_structural_dyn!{ impl[T] Huh<T> }
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
@@ -484,16 +481,9 @@ macro_rules! unsized_impls {
         where
             T: Structural + ?Sized,
         {
-            const FIELDS: &'static [FieldInfo] = T::FIELDS;
-        }
-
-        impl<T> StructuralDyn for $ptr<T>
-        where
-            T: StructuralDyn + ?Sized,
-        {
-            fn fields_info(&self) -> &'static [FieldInfo] {
-                (**self).fields_info()
-            }
+            const FIELDS: &'static $crate::structural_trait::FieldInfos={
+                T::FIELDS
+            };
         }
 
         impl<This, Name, Ty> GetFieldImpl<Name> for $ptr<This>

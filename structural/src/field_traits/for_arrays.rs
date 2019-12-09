@@ -68,7 +68,7 @@ print_first_3( ["baz";32] );
 
 use crate::{
     field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldMutRefFn, IntoFieldImpl, NonOptField},
-    structural_trait::{FieldInfo, Structural, StructuralDyn},
+    structural_trait::{FieldInfo,FieldInfos, Structural},
     type_level::{
         cmp::{Compare_, TGreater},
         integer::*,
@@ -140,15 +140,10 @@ macro_rules! declare_array_paths {
             const $fi_ind:FieldInfo=FieldInfo::not_renamed(stringify!($index));
 
             impl<T> Structural for [T;$index]{
-                const FIELDS:&'static[FieldInfo]=&[
-                    $( $fi_in_array, )*
-                ];
-            }
 
-            impl<T> StructuralDyn for [T;$index]{
-                fn fields_info(&self)->&'static[FieldInfo]{
-                    &FIELD_INFOS[..$index]
-                }
+                const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
+                    $( $fi_in_array, )*
+                ]);
             }
 
 
