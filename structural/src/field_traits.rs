@@ -12,6 +12,7 @@ use core_extensions::collection_traits::Cloned;
 
 use std_::marker::PhantomData;
 
+mod enum_impls;
 pub mod errors;
 pub mod for_arrays;
 pub mod for_tuples;

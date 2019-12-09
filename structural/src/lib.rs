@@ -377,6 +377,7 @@ pub mod test_utils;
 
 #[cfg(test)]
 pub mod tests {
+    mod enum_impls;
     mod macro_tests;
     mod multi_nested_fields;
     mod structural_alias;
@@ -432,6 +433,3 @@ pub mod pmr {
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
 
-// fn foo() {
-//     (0, 1, 2).field_(fp!(a));
-// }
