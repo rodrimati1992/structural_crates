@@ -1,8 +1,8 @@
 use crate::{
     field_traits::NonOptField,
-    structural_trait::{accessor_names, FieldInfo},
+    structural_trait::{accessor_names, FieldInfo,FieldInfos},
     GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl, IntoFieldMut,
-    Structural, StructuralDyn,
+    Structural,
 };
 
 #[cfg(feature = "alloc")]
@@ -259,7 +259,10 @@ fn get_fields_assoc_const<T>(_: &T) -> &'static [FieldInfo]
 where
     T: Structural,
 {
-    T::FIELDS
+    match T::FIELDS {
+        FieldInfos::Struct(x)=>x,
+        x=>panic!("{:?} wasn't expected here", x)
+    }
 }
 
 #[test]
@@ -276,7 +279,6 @@ fn delegate_to_test() {
         FieldInfo::not_renamed("4"),
     ];
 
-    assert_eq!(this.fields_info(), &fields[..]);
     assert_eq!(get_fields_assoc_const(&this), &fields[..]);
 
     assert_eq!(this.fields(fp!(1, 3, 0, 2, 4)), (&5, &13, &3, &8, &21),);

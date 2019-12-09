@@ -203,6 +203,7 @@ macro_rules! z_delegate_structural_with {
         impl $impl_params:tt $self:ty
         where $where_clause:tt
         self_ident=$this:ident;
+        $(override_err=$override_err:ty;)?
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
@@ -225,6 +226,7 @@ macro_rules! z_delegate_structural_with {
             impl $impl_params $self
             where $where_clause
             self_ident=$this;
+            $(override_err=$override_err;)?
             delegating_to_type=$delegating_to_type;
             field_name_param=( $fname_var : $fname_ty );
             GetFieldImpl $get_field_closure
@@ -283,26 +285,27 @@ macro_rules! z_delegate_structural_with {
             $delegating_to_type:$crate::Structural,
             $($where_clause)*
         {
-            const FIELDS:&'static[$crate::structural_trait::FieldInfo]=
-                <$delegating_to_type as $crate::Structural>::FIELDS;
+            const FIELDS: &'static $crate::structural_trait::FieldInfos={
+                <$delegating_to_type as $crate::Structural>::FIELDS
+            };
         }
-
-        impl<$($impl_params)*> $crate::StructuralDyn for $self
-        where
-            $delegating_to_type:$crate::StructuralDyn,
-            $($where_clause)*
-        {
-            fn fields_info(&self)->&'static[$crate::structural_trait::FieldInfo]{
-                let $this=self;
-                let field:&$delegating_to_type=$get_field_closure;
-                $crate::StructuralDyn::fields_info(field)
-            }
-        }
+    };
+    (get_err;
+        delegating_to_type=$delegating_to_type:ty;
+    )=>{
+        $crate::field_traits::GetFieldErr<$delegating_to_type,__FieldName>
+    };
+    (get_err;
+        delegating_to_type=$delegating_to_type:ty;
+        override_err=$override_err:ty;
+    )=>{
+        $override_err
     };
     (inner;
         impl [$($($impl_params:tt)+)?] $self:ty
         where [$($where_clause:tt)*]
         self_ident=$this:ident;
+        $(override_err=$override_err:ty;)?
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
@@ -316,7 +319,11 @@ macro_rules! z_delegate_structural_with {
             $($where_clause)*
         {
             type Ty=$crate::GetFieldType<$delegating_to_type,__FieldName>;
-            type Err=$crate::field_traits::GetFieldErr<$delegating_to_type,__FieldName>;
+            type Err=$crate::z_delegate_structural_with!{
+                get_err;
+                delegating_to_type=$delegating_to_type;
+                $(override_err=$override_err;)?
+            };
 
             fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
                 let $this=self;

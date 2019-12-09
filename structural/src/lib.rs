@@ -398,7 +398,7 @@ pub use crate::{
         IntoFieldImpl, IntoFieldMut, NonOptGetField, NonOptGetFieldMut, NonOptIntoField,
         OptGetField, OptGetFieldMut, OptIntoField, RevGetFieldType, RevGetFieldType_,
     },
-    structural_trait::{Structural, StructuralDyn},
+    structural_trait::Structural,
 };
 
 /// Reexports from the `core_extensions` crate.

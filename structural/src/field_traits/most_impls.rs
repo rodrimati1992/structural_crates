@@ -3,7 +3,7 @@
 use super::*;
 
 use crate::field_traits::NonOptField;
-use crate::structural_trait::{FieldInfo, StructuralDyn};
+use crate::structural_trait::{FieldInfo,FieldInfos};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -24,8 +24,8 @@ impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        (IntoFieldMut< start : T,Start_STR,"start",opt=false,  > )
-        (IntoFieldMut< end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < start : T,Start_STR,"start",opt=false,  > )
+        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
     }
 }
 
@@ -33,7 +33,7 @@ impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        (IntoFieldMut< start : T,Start_STR,"start",opt=false,  > )
+        (IntoFieldMut < start : T,Start_STR,"start",opt=false,  > )
     }
 }
 
@@ -41,7 +41,7 @@ impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        (IntoFieldMut< end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
     }
 }
 
@@ -49,23 +49,19 @@ impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        (IntoFieldMut< end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
     }
 }
 
 ///////////////////////////////////////////////////////
 
 impl<T> Structural for RangeInclusive<T> {
-    const FIELDS: &'static [FieldInfo] = &[
-        FieldInfo::not_renamed("start"),
-        FieldInfo::not_renamed("end"),
-    ];
-}
-
-impl<T> StructuralDyn for RangeInclusive<T> {
-    fn fields_info(&self) -> &'static [FieldInfo] {
-        <Self as crate::Structural>::FIELDS
-    }
+    const FIELDS: &'static FieldInfos={
+        &FieldInfos::Struct(&[
+            FieldInfo::not_renamed("start"),
+            FieldInfo::not_renamed("end"),
+        ])
+    };
 }
 
 impl<T> GetFieldImpl<Start_STR> for RangeInclusive<T> {

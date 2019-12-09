@@ -1,4 +1,4 @@
-use crate::structural_trait::{FieldInfo, StructuralDyn};
+use crate::structural_trait::{FieldInfo,FieldInfos};
 use crate::{IntoFieldMut, Structural};
 
 use crate::field_traits::{for_arrays::names, NonOptField};
@@ -22,9 +22,11 @@ macro_rules! impl_tuple {
         $tuple_ty:tt
     ) => {
         impl<$($field_ty),*> Structural for $tuple_ty {
-            const FIELDS:&'static[FieldInfo]=&[
-                $( FieldInfo::not_renamed(stringify!( $field )) ,)*
-            ];
+            const FIELDS: &'static $crate::structural_trait::FieldInfos={
+                &FieldInfos::Struct(&[
+                    $( FieldInfo::not_renamed(stringify!( $field )) ,)*
+                ])
+            };
         }
 
         /// A structural alias for a tuple of the size.
@@ -41,14 +43,6 @@ macro_rules! impl_tuple {
                     IntoFieldMut<$field_param,Ty=$field_ty,Err=NonOptField>+
                 )*
         {}
-
-
-        impl<$($field_ty),*> StructuralDyn for $tuple_ty{
-            fn fields_info(&self)->&'static[FieldInfo]{
-                <Self as $crate::Structural>::FIELDS
-            }
-        }
-
 
         $(
             impl_tuple!{
