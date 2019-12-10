@@ -763,3 +763,36 @@ macro_rules! field_path_aliases {
         }
     );
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[macro_export]
+macro_rules! tstring_aliases {
+    (
+        $($macro_params:tt)*
+    ) => (
+        $crate::_tstring_aliases_impl!{
+            $($macro_params)*
+        }
+    )
+}
+
+#[macro_export]
+macro_rules! tstring_aliases_module {
+    (
+        $(#[$attr:meta])*
+        $vis:vis mod $mod_name:ident{
+            $($mod_contents:tt)*
+        }
+    ) => (
+        #[allow(non_camel_case_types)]
+        #[allow(non_upper_case_globals)]
+        #[allow(unused_imports)]
+        $(#[$attr])*
+        $vis mod $mod_name{
+            $crate::_tstring_aliases_impl!{
+                $($mod_contents)*
+            }
+        }
+    )
+}
