@@ -23,6 +23,7 @@ mod parse_utils;
 mod structural_alias_impl;
 mod structural_derive;
 mod tokenizers;
+mod tstring_aliases;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream as TokenStream2;
@@ -75,6 +76,13 @@ pub fn new_fp_impl_(input: TokenStream1) -> TokenStream1 {
 #[doc(hidden)]
 pub fn _field_path_aliases_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, field_path_aliases_macro::impl_).into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _tstring_aliases_impl(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input, tstring_aliases::impl_).into()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

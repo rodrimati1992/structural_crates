@@ -4,7 +4,7 @@ use crate::{
     tokenizers::{tident_tokens, FullPathForChars},
 };
 
-use core_extensions::{matches, SelfOps, ValSliceExt};
+use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
@@ -195,9 +195,7 @@ impl Parse for FieldPath {
             }
         }
 
-        Ok(FieldPath {
-            list,
-        })
+        Ok(FieldPath { list })
     }
 }
 
@@ -239,9 +237,9 @@ pub(crate) enum FieldPathComponent {
     Chars(Vec<IdentOrIndex>),
     /// A field
     Ident(IdentOrIndex),
-    VariantField{
-        variant:Ident,
-        field:IdentOrIndex,
+    VariantField {
+        variant: Ident,
+        field: IdentOrIndex,
     },
 }
 
@@ -268,23 +266,20 @@ impl FieldPathComponent {
             FPC::Ident(ident) => {
                 let _ = write!(buff, ".{}", ident);
             }
-            FPC::VariantField{variant,field} => {
-                let _ = write!(buff, "::{}.{}", variant,field);
+            FPC::VariantField { variant, field } => {
+                let _ = write!(buff, "::{}.{}", variant, field);
             }
         }
     }
 
-    pub(crate) fn parse(
-        input: ParseStream,
-        is_period: IsPeriod,
-    ) -> parse::Result<Self> {
-        if is_period==IsPeriod::No && input.peek_parse(Token!(::)).is_some() {
-            let variant=input.parse::<Ident>()?;
-            let _=input.parse::<Token!(.)>()?;
-            let field=input.parse::<IdentOrIndex>()?;
-            Ok(FieldPathComponent::VariantField{variant,field})
-        }else{
-            let _=input.peek_parse(Token!(.));
+    pub(crate) fn parse(input: ParseStream, is_period: IsPeriod) -> parse::Result<Self> {
+        if is_period == IsPeriod::No && input.peek_parse(Token!(::)).is_some() {
+            let variant = input.parse::<Ident>()?;
+            let _ = input.parse::<Token!(.)>()?;
+            let field = input.parse::<IdentOrIndex>()?;
+            Ok(FieldPathComponent::VariantField { variant, field })
+        } else {
+            let _ = input.peek_parse(Token!(.));
             input.parse::<IdentOrIndex>().map(FieldPathComponent::Ident)
         }
     }
@@ -302,14 +297,14 @@ impl FieldPathComponent {
                 tident_tokens(buffer, char_path)
             }
             FPC::Ident(ident) => tident_tokens(ident.to_string(), char_path),
-            FPC::VariantField{variant,field}=>{
-                let variant_tokens=tident_tokens(variant.to_string(), char_path);
-                let field_tokens=tident_tokens(field.to_string(), char_path);
+            FPC::VariantField { variant, field } => {
+                let variant_tokens = tident_tokens(variant.to_string(), char_path);
+                let field_tokens = tident_tokens(field.to_string(), char_path);
                 quote!(
                     ::structural::pmr::VariantField<
                         #variant_tokens,
                         #field_tokens,
-                    > 
+                    >
                 )
             }
         }
@@ -319,14 +314,18 @@ impl FieldPathComponent {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) enum IsPeriod{
+pub(crate) enum IsPeriod {
     No,
     Yes,
 }
 
-impl IsPeriod{
-    pub(crate) fn new(v:bool)->Self{
-        if v {IsPeriod::Yes}else{IsPeriod::No}
+impl IsPeriod {
+    pub(crate) fn new(v: bool) -> Self {
+        if v {
+            IsPeriod::Yes
+        } else {
+            IsPeriod::No
+        }
     }
 }
 
