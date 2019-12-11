@@ -73,12 +73,19 @@ impl<T> ToTString_ for TString<T> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A pair of identifiers for the `F` field inside the `V` variant.
+pub struct VariantField<V, F>(pub(crate) PhantomData<(V, F)>);
+
+/// A FieldPath for the `F` field inside the `V` variant.
+pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
+
+////////////////////////////////////////////////////////////////////////////////
+
 /// A type-level representation of a chain of field accesses,like `.a.b.c.d`.
 ///
 pub struct FieldPath<T>(PhantomData<T>);
 
-/// A FieldPath for accesing a single `Str` field.
-#[doc(hidden)]
+/// A FieldPath for accesing a single field.
 pub type FieldPath1<Str> = FieldPath<(Str,)>;
 
 impl<T> Copy for FieldPath<T> {}

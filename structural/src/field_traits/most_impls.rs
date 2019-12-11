@@ -3,7 +3,7 @@
 use super::*;
 
 use crate::field_traits::NonOptField;
-use crate::structural_trait::{FieldInfo,FieldInfos};
+use crate::structural_trait::{FieldInfo, FieldInfos};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -56,7 +56,7 @@ impl_getters_for_derive_struct! {
 ///////////////////////////////////////////////////////
 
 impl<T> Structural for RangeInclusive<T> {
-    const FIELDS: &'static FieldInfos={
+    const FIELDS: &'static FieldInfos = {
         &FieldInfos::Struct(&[
             FieldInfo::not_renamed("start"),
             FieldInfo::not_renamed("end"),
