@@ -1,4 +1,4 @@
-use crate::structural_trait::{FieldInfo,FieldInfos};
+use crate::structural_trait::{FieldInfo, FieldInfos};
 use crate::{IntoFieldMut, Structural};
 
 use crate::field_traits::{for_arrays::names, NonOptField};

@@ -1,6 +1,6 @@
 use crate::{
     field_traits::NonOptField,
-    structural_trait::{accessor_names, FieldInfo,FieldInfos},
+    structural_trait::{accessor_names, FieldInfo, FieldInfos},
     GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl, IntoFieldMut,
     Structural,
 };
@@ -260,8 +260,8 @@ where
     T: Structural,
 {
     match T::FIELDS {
-        FieldInfos::Struct(x)=>x,
-        x=>panic!("{:?} wasn't expected here", x)
+        FieldInfos::Struct(x) => x,
+        x => panic!("{:?} wasn't expected here", x),
     }
 }
 

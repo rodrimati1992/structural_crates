@@ -481,9 +481,7 @@ macro_rules! unsized_impls {
         where
             T: Structural + ?Sized,
         {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos={
-                T::FIELDS
-            };
+            const FIELDS: &'static $crate::structural_trait::FieldInfos = { T::FIELDS };
         }
 
         impl<This, Name, Ty> GetFieldImpl<Name> for $ptr<This>
@@ -550,10 +548,7 @@ macro_rules! unsized_impls {
 mod alloc_impls {
     use super::*;
 
-    use crate::{
-        alloc::{boxed::Box, rc::Rc, sync::Arc},
-        structural_trait::FieldInfo,
-    };
+    use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
 
     unsized_impls! {value,Box}
     unsized_impls! {shared,Arc}

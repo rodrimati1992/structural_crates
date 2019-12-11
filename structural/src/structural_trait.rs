@@ -12,7 +12,7 @@ pub trait Structural {
 
 /// Information about the accessor traits implemented by a type.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum FieldInfos{
+pub enum FieldInfos {
     /// This is an `Option<T>`.
     Option(&'static FieldInfos),
     /// This is an enum,with these variants.
@@ -23,7 +23,6 @@ pub enum FieldInfos{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /// Information about a field with accessor trait impls.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct VariantInfo {
@@ -31,10 +30,10 @@ pub struct VariantInfo {
     pub name: Name,
 }
 
-impl VariantInfo{
+impl VariantInfo {
     /// Constructs a VariantInfo for a variant which uses the same name in its accessor impl.
     pub const fn not_renamed(name: &'static str) -> Self {
-        Self{
+        Self {
             name: Name::not_renamed(name),
         }
     }
@@ -56,7 +55,7 @@ pub struct FieldInfo {
 impl FieldInfo {
     /// Constructs a FieldInfo for a field which uses the same name in its accessor impl.
     pub const fn not_renamed(name: &'static str) -> Self {
-        Self{
+        Self {
             name: Name::not_renamed(name),
             optionality: IsOptional::No,
         }
@@ -74,7 +73,7 @@ impl FieldInfo {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Name{
+pub struct Name {
     /// The original name of the thing.
     pub original: &'static str,
     /// The name used in the accessor trait impls.
@@ -107,30 +106,24 @@ impl IsOptional {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 pub fn names<T>() -> alloc_::vec::Vec<Name>
 where
     T: Structural,
 {
-    names_inner( T::FIELDS )
+    names_inner(T::FIELDS)
 }
 
-#[cfg(feature="alloc")]
-fn names_inner( infos:&FieldInfos ) -> alloc_::vec::Vec<Name> {
+#[cfg(feature = "alloc")]
+fn names_inner(infos: &FieldInfos) -> alloc_::vec::Vec<Name> {
     match infos {
-        FieldInfos::Option(x)=>{
-            names_inner(x)
-        }
-        FieldInfos::Enum(x)=>{
-            x.iter().map(|x|x.name).collect()
-        }
-        FieldInfos::Struct(x)=>{
-            x.iter().map(|x|x.name).collect()
-        }
+        FieldInfos::Option(x) => names_inner(x),
+        FieldInfos::Enum(x) => x.iter().map(|x| x.name).collect(),
+        FieldInfos::Struct(x) => x.iter().map(|x| x.name).collect(),
     }
 }
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 pub fn accessor_names<T>() -> impl ExactSizeIterator<Item = &'static str> + Clone
 where
     T: Structural,
@@ -138,7 +131,7 @@ where
     names::<T>().into_iter().map(|f| f.accessor)
 }
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 pub fn field_names<T>() -> impl ExactSizeIterator<Item = &'static str> + Clone
 where
     T: Structural,

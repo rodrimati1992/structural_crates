@@ -20,13 +20,11 @@ pub mod integer;
 pub mod list;
 
 #[doc(hidden)]
-pub use self::{
-    field_path::FieldPath1,
-    list::{TList, TNil},
-};
+pub use self::list::{TList, TNil};
 
 pub use self::field_path::{
-    AliasedPaths, FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths,
+    AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths,
+    VariantField, VariantFieldPath,
 };
 
 // Importing stuff from this module anywhere other than
