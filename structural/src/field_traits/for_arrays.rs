@@ -67,7 +67,7 @@ print_first_3( ["baz";32] );
 */
 
 use crate::{
-    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldMutRefFn, IntoFieldImpl, NonOptField},
+    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField},
     structural_trait::{FieldInfo, FieldInfos, Structural},
     type_level::{
         cmp::{Compare_, TGreater},
@@ -191,7 +191,7 @@ macro_rules! declare_array_paths {
                 }
 
                 #[inline(always)]
-                fn get_field_raw_mut_func(&self)->GetFieldMutRefFn<P,Self::Ty,NonOptField>{
+                fn get_field_raw_mut_func(&self)->GetFieldRawMutFn<P,Self::Ty,NonOptField>{
                     <Self as GetFieldMutImpl<P>>::get_field_raw_mut
                 }
             }

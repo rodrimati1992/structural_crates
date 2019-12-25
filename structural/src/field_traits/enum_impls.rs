@@ -1,5 +1,5 @@
 use crate::{
-    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldMutRefFn, IntoFieldImpl, OptionalField},
+    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField},
     structural_trait::{FieldInfos, Structural},
 };
 
@@ -10,6 +10,10 @@ tstring_aliases_module! {
         Ok,
         Err,
     }
+}
+
+declare_variant_proxy! {
+    BuiltinProxy
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -56,7 +60,7 @@ where
         }
     }
 
-    fn get_field_raw_mut_func(&self) -> GetFieldMutRefFn<Name, Self::Ty, Self::Err> {
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<Name, Self::Ty, Self::Err> {
         <Self as GetFieldMutImpl<Name>>::get_field_raw_mut
     }
 }
@@ -89,8 +93,9 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Result
-        (GetFieldImpl,Ok,strings::Ok,newtype(0:T))
-        (GetFieldImpl,Err,strings::Err,newtype(0:E))
+        proxy=BuiltinProxy
+        (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T)))
+        (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E)))
     }
 }
 

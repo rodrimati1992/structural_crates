@@ -35,7 +35,7 @@ pub mod _private {
 
     use crate::std_::marker::PhantomData;
     use crate::type_level::collection_traits::Flatten;
-    use crate::type_level::FieldPath;
+    use crate::type_level::{FieldPath, FieldPath1};
 
     /// A type-level string,represented as a tuple of type-level bytes.
     ///
@@ -46,6 +46,9 @@ pub mod _private {
     /// (if you can figure out a cheap way to do that please create an issue/pull request).
     ///
     pub struct TString<T>(pub(crate) PhantomData<T>);
+
+    #[doc(hidden)]
+    pub type FieldPath1Str<T> = FieldPath1<TString<T>>;
 
     pub type FlattenedFieldPath<Tuple> = FieldPath<Flatten<Tuple>>;
 }
