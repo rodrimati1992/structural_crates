@@ -35,8 +35,9 @@ travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 proc-macro = true
 
 [dependencies]
-quote = "1.0"
 proc-macro2 = "1.0"
+quote = "1.0"
+typed-arena = "~1.5"
 
 [dependencies.core_extensions]
 default_features=false
