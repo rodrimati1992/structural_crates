@@ -182,7 +182,7 @@ structural_alias!{
     }
 
     trait Bar{
-        dimension:impl Dim<u32>
+        dimension:impl Dim<u32>,
     }
 
     trait Dim<T>{
