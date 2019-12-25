@@ -1,11 +1,11 @@
 use crate::{
     field_access::Access, ident_or_index::IdentOrIndex, parse_utils::ParsePunctuated,
-    structural_alias_impl::TypeParamBounds,
+    structural_alias_impl_mod::TypeParamBounds,
 };
 
 use as_derive_utils::{
     attribute_parsing::with_nested_meta,
-    datastructure::{DataStructure, Field, FieldMap},
+    datastructure::{DataStructure, DataVariant, Field, FieldMap},
     return_spanned_err, spanned_err,
     utils::{LinearResult, SynPathExt, SynResultExt},
 };
@@ -96,7 +96,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
         access: Default::default(),
         renamed: Default::default(),
         is_impl: None,
-        is_pub: field.is_public(),
+        is_pub: field.is_public() || ds.data_variant == DataVariant::Enum,
     });
 
     let name = ds.name;

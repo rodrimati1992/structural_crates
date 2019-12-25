@@ -1,8 +1,10 @@
 use crate::{
     ident_or_index::IdentOrIndex,
     parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, FullPathForChars},
+    tokenizers::{tident_tokens, variant_field_tokens, FullPathForChars},
 };
+
+use as_derive_utils::spanned_err;
 
 use core_extensions::SelfOps;
 
@@ -174,20 +176,25 @@ impl Parse for FieldPath {
             if input.peek(syn::LitFloat) {
                 let f = input.parse::<syn::LitFloat>()?;
                 let digits = f.base10_digits();
-                let make_int = |digits: &str| {
-                    syn::LitInt::new(digits, f.span()).piped(FieldPathComponent::from_index)
+                let make_int = |digits: &str| -> syn::Result<FieldPathComponent> {
+                    syn::Index {
+                        index: digits.parse().map_err(|e| spanned_err!(f, "{}", e))?,
+                        span: f.span(),
+                    }
+                    .piped(FieldPathComponent::from_index)
+                    .piped(Ok)
                 };
 
                 let mut iter = digits.split('.');
                 if digits.starts_with('.') {
                     let _ = iter.next();
-                    list.push(make_int(iter.next().unwrap().trim_start_matches('.')));
+                    list.push(make_int(iter.next().unwrap().trim_start_matches('.'))?);
                 } else if digits.ends_with('.') {
-                    list.push(make_int(iter.next().unwrap()));
+                    list.push(make_int(iter.next().unwrap())?);
                     next_is_period = true;
                 } else {
-                    list.push(make_int(iter.next().unwrap()));
-                    list.push(make_int(iter.next().unwrap()));
+                    list.push(make_int(iter.next().unwrap())?);
+                    list.push(make_int(iter.next().unwrap())?);
                 }
             } else {
                 let fpc = FieldPathComponent::parse(input, IsPeriod::new(is_period))?;
@@ -248,7 +255,7 @@ impl FieldPathComponent {
         let x = IdentOrIndex::Ident(ident);
         FieldPathComponent::Ident(x)
     }
-    pub(crate) fn from_index(index: syn::LitInt) -> Self {
+    pub(crate) fn from_index(index: syn::Index) -> Self {
         let x = IdentOrIndex::Index(index);
         FieldPathComponent::Ident(x)
     }
@@ -298,14 +305,7 @@ impl FieldPathComponent {
             }
             FPC::Ident(ident) => tident_tokens(ident.to_string(), char_path),
             FPC::VariantField { variant, field } => {
-                let variant_tokens = tident_tokens(variant.to_string(), char_path);
-                let field_tokens = tident_tokens(field.to_string(), char_path);
-                quote!(
-                    ::structural::pmr::VariantField<
-                        #variant_tokens,
-                        #field_tokens,
-                    >
-                )
+                variant_field_tokens(variant.to_string(), field.to_string(), char_path)
             }
         }
     }

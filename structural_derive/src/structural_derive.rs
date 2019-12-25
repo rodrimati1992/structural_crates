@@ -1,11 +1,14 @@
 use crate::{
+    datastructure::StructOrEnum,
     ident_or_index::IdentOrIndexRef,
-    structural_alias_impl::{FieldTypeRef, StructuralAliasFieldRef},
+    structural_alias_impl_mod::{
+        FieldType, StructuralDataType, StructuralField, StructuralVariant,
+    },
     tokenizers::NamedModuleAndTokens,
 };
 
 use as_derive_utils::{
-    datastructure::{DataStructure, DataVariant, Field},
+    datastructure::{DataStructure, DataVariant, Field, Struct, StructKind},
     gen_params_in::{GenParamsIn, InWhat},
     return_syn_err,
 };
@@ -34,9 +37,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
     let ds = &DataStructure::new(&data);
 
     match ds.data_variant {
-        DataVariant::Enum => {
-            return_syn_err!(Span::call_site(), "Cannot derive Structural on an enum")
-        }
+        DataVariant::Enum => {}
         DataVariant::Union => {
             return_syn_err!(Span::call_site(), "Cannot derive Structural on an union")
         }
@@ -47,8 +48,8 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
     let debug_print = options.debug_print;
 
     match options.delegate_to {
-        Some(to) => delegating_structural(ds, options, to),
-        None => deriving_structural(ds, options),
+        Some(to) => delegating_structural(ds, &options, to),
+        None => deriving_structural(ds, &options),
     }?
     .observe(|tokens| {
         if debug_print {
@@ -60,7 +61,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
 
 fn delegating_structural<'a>(
     ds: &'a DataStructure<'a>,
-    _options: StructuralOptions<'a>,
+    _options: &'a StructuralOptions<'a>,
     delegate_to: &'a Field<'a>,
 ) -> Result<TokenStream2, syn::Error> {
     let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
@@ -69,7 +70,7 @@ fn delegating_structural<'a>(
 
     let tyname = ds.name;
 
-    let the_field = delegate_to.ident();
+    let the_field = &delegate_to.ident;
     let fieldty = delegate_to.ty;
 
     let empty_preds = Punctuated::new();
@@ -100,79 +101,99 @@ fn delegating_structural<'a>(
 
 fn deriving_structural<'a>(
     ds: &'a DataStructure<'a>,
-    options: StructuralOptions<'a>,
+    options: &'a StructuralOptions<'a>,
 ) -> Result<TokenStream2, syn::Error> {
     let StructuralOptions {
-        fields: ref config_fields,
+        fields: config_fields,
         with_trait_alias,
         ..
     } = options;
 
     let struct_ = &ds.variants[0];
 
-    let fields = config_fields
-        .values()
-        .zip(struct_.fields.iter())
-        .filter(|(f_cond, _)| f_cond.is_pub)
-        .map(|(_, f)| f)
-        .collect::<Vec<&Field<'_>>>();
-
-    let config_fields = &config_fields
-        .values()
-        .filter(|f| f.is_pub)
-        .collect::<Vec<_>>();
-
-    let renamed_field_names = config_fields
-        .iter()
-        .zip(fields.iter().cloned())
-        .map(|(field_conf, field)| match &field_conf.renamed {
-            Some(x) => x.to_string(),
-            None => field.ident.to_string(),
-        })
-        .collect::<Vec<_>>();
-
-    let names_module_definition = NamedModuleAndTokens::new(ds.name, &renamed_field_names);
-
-    let names_module = &names_module_definition.names_module;
-    let alias_names = &names_module_definition.alias_names;
-
-    let field_tys = fields.iter().cloned().map(|f| &f.ty);
-
-    let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
-
-    let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
+    let mut names_module = NamedModuleAndTokens::new(ds.name);
 
     let tyname = ds.name;
 
-    let empty_preds = Punctuated::new();
-    let where_preds = where_clause
-        .as_ref()
-        .map_or(&empty_preds, |x| &x.predicates)
-        .into_iter();
+    let struct_or_enum = match ds.data_variant {
+        DataVariant::Struct => StructOrEnum::Struct,
+        DataVariant::Enum => StructOrEnum::Enum,
+        DataVariant::Union => unreachable!(),
+    };
 
-    let getter_trait = config_fields.iter().map(|f| f.access);
+    let make_fields = |names_module: &mut NamedModuleAndTokens, variant: &'a Struct<'a>| {
+        variant
+            .fields
+            .iter()
+            .filter_map(|field| {
+                let config_f = &config_fields[field.index];
+
+                if !config_f.is_pub {
+                    return None;
+                }
+
+                let ident: IdentOrIndexRef<'a> = match &config_f.renamed {
+                    Some(x) => x.borrowed(),
+                    None => (&field.ident).into(),
+                };
+
+                let alias_index = match struct_or_enum {
+                    StructOrEnum::Struct => names_module.push_path(ident),
+                    StructOrEnum::Enum => names_module.push_str(ident),
+                };
+
+                Some(StructuralField {
+                    access: config_f.access,
+                    ident,
+                    alias_index,
+                    ty: match &config_f.is_impl {
+                        Some(yes) => FieldType::Impl(yes),
+                        None => FieldType::Ty(field.ty),
+                    },
+                })
+            })
+            .collect::<Vec<StructuralField<'a>>>()
+    };
+
+    let sdt = match struct_or_enum {
+        StructOrEnum::Struct => StructuralDataType {
+            fields: make_fields(&mut names_module, struct_),
+            variants: Vec::new(),
+        },
+        StructOrEnum::Enum => StructuralDataType {
+            fields: Vec::new(),
+            variants: ds
+                .variants
+                .iter()
+                .map(|variant| StructuralVariant {
+                    name: &variant.name,
+                    alias_index: names_module.push_str(variant.name.into()),
+                    fields: make_fields(&mut names_module, variant),
+                })
+                .collect(),
+        },
+    };
 
     // dbg!(field_names.clone().for_each(|x|{ dbg!(x.to_token_stream().to_string()); }));
     // dbg!(&field_tys);
     // dbg!(alias_names.iter().for_each(|x|{ dbg!(x); }));
 
-    let docs = format!(
-        "A trait aliasing the accessor impls for \
-         [{struct_}](./struct.{struct_}.html) fields\n\
-         \n\
-         This trait also has all the constraints(where clause and generic parametr bounds)
-         of [the same struct](./struct.{struct_}.html).\n\n\
-         ### Accessor traits\n\
-         These are the accessor traits this aliases:\n\
-        ",
-        struct_ = tyname,
-    );
-
     let structural_alias_trait;
-    let opt_names_module_definition;
+    let opt_names_module;
 
-    if with_trait_alias {
-        structural_alias_trait = crate::structural_alias_impl::for_delegation(
+    if *with_trait_alias {
+        let docs = format!(
+            "A trait aliasing the accessor impls for \
+             [{struct_}](./struct.{struct_}.html) fields\n\
+             \n\
+             This trait also has all the constraints(where clause and generic parametr bounds)
+             of [the same struct](./struct.{struct_}.html).\n\n\
+             ### Accessor traits\n\
+             These are the accessor traits this aliases:\n\
+            ",
+            struct_ = tyname,
+        );
+        structural_alias_trait = crate::structural_alias_impl_mod::for_delegation(
             tyname.span(),
             std::iter::empty::<Ident>(),
             docs,
@@ -181,50 +202,146 @@ fn deriving_structural<'a>(
             &Ident::new(&format!("{}_SI", tyname), Span::call_site()),
             ds.generics,
             &Punctuated::new(),
-            &names_module_definition,
-            fields
-                .iter()
-                .zip(config_fields.iter())
-                .map(|(field, field_config)| StructuralAliasFieldRef {
-                    access: field_config.access,
-                    ident: field.ident().piped(IdentOrIndexRef::Ident),
-                    ty: match &field_config.is_impl {
-                        Some(yes) => FieldTypeRef::Impl(yes),
-                        None => FieldTypeRef::Ty(&field.ty),
-                    },
-                }),
+            &names_module,
+            &sdt,
         )?
         .piped(Some);
-        opt_names_module_definition = None;
+        opt_names_module = None;
     } else {
         structural_alias_trait = None;
-        opt_names_module_definition = Some(&names_module_definition);
+        opt_names_module = Some(&names_module);
     };
 
+    let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
+
+    let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
+
+    let empty_preds = Punctuated::new();
+    let where_preds = where_clause
+        .as_ref()
+        .map_or(&empty_preds, |x| &x.predicates)
+        .into_iter();
+
     let structural_alias_trait = structural_alias_trait.into_iter();
-    let opt_names_module_definition = opt_names_module_definition.into_iter();
+    let opt_names_module = opt_names_module.into_iter();
 
-    let field_names = fields.iter().map(|f| &f.ident);
+    let names_module_path = &names_module.names_module;
 
-    quote!(
-        #(#structural_alias_trait)*
+    match struct_or_enum {
+        StructOrEnum::Struct => {
+            let fields = struct_
+                .fields
+                .iter()
+                .filter(|&f| config_fields[f].is_pub)
+                .collect::<Vec<&Field<'_>>>();
 
-        #(#opt_names_module_definition)*
+            let getter_trait = sdt.fields.iter().map(|f| f.access);
 
-        ::structural::impl_getters_for_derive_struct!{
-            impl[#impl_generics] #tyname #ty_generics
-            where[ #(#where_preds,)* ]
-            {
-                #((
-                    #getter_trait<
-                        #field_names : #field_tys ,
-                        #names_module::#alias_names,
-                        #renamed_field_names,
-                        opt=false,
-                    >
-                ))*
-            }
+            let field_names = fields.iter().map(|f| &f.ident);
+
+            let field_tys = fields.iter().cloned().map(|f| &f.ty);
+
+            let renamed_field_names =
+                fields
+                    .iter()
+                    .map(|&field| match &config_fields[field].renamed {
+                        Some(x) => x.to_string(),
+                        None => field.ident.to_string(),
+                    });
+
+            let alias_names = sdt
+                .fields
+                .iter()
+                .map(|f| names_module.alias_name(f.alias_index));
+
+            quote!(
+                #(#structural_alias_trait)*
+
+                #(#opt_names_module)*
+
+                ::structural::impl_getters_for_derive_struct!{
+                    impl[#impl_generics] #tyname #ty_generics
+                    where[ #(#where_preds,)* ]
+                    {
+                        #((
+                            #getter_trait<
+                                #field_names : #field_tys ,
+                                #names_module_path::#alias_names,
+                                #renamed_field_names,
+                                opt=false,
+                            >
+                        ))*
+                    }
+                }
+            )
         }
-    )
+        StructOrEnum::Enum => {
+            let variants = ds
+                .variants
+                .iter()
+                .zip(&sdt.variants)
+                .map(|(variant, sdt_variant)| {
+                    let fields = variant
+                        .fields
+                        .iter()
+                        .filter(|&f| config_fields[f].is_pub)
+                        .collect::<Vec<&Field<'_>>>();
+
+                    let variant_kind = match (variant.kind, variant.fields.len()) {
+                        (StructKind::Tuple, 0) => quote!(unit),
+                        (StructKind::Tuple, 1) => quote!(newtype),
+                        _ => quote! { regular },
+                    };
+                    let field_tokens =
+                        fields
+                            .iter()
+                            .zip(&sdt_variant.fields)
+                            .map(|(&field, sdt_field)| {
+                                let access = sdt_field.access;
+                                let fname = &field.ident;
+                                let fty = field.ty;
+                                let f_tstr = names_module.alias_name(sdt_field.alias_index);
+                                quote!(
+                                    #access,
+                                    #fname:#fty,
+                                    #names_module_path::#f_tstr,
+                                )
+                            });
+
+                    let variant_name = variant.name;
+                    let variant_str = names_module.alias_name(sdt_variant.alias_index);
+
+                    quote!(
+                        #variant_name,
+                        #names_module_path::#variant_str,
+                        kind=#variant_kind,
+                        fields( #( (#field_tokens) )* )
+                    )
+                });
+
+            let enum_ = ds.name;
+            let proxy_ = syn::Ident::new(&format!("{}_VariantProxy", ds.name), Span::call_site());
+
+            quote!(
+                #(#structural_alias_trait)*
+
+                #(#opt_names_module)*
+
+                ::structural::declare_variant_proxy!{
+                    #proxy_
+                }
+
+                ::structural::impl_getters_for_derive_enum!{
+                    impl[#impl_generics] #tyname #ty_generics
+                    where[ #(#where_preds,)* ]
+                    {
+                        enum=#enum_
+                        proxy=#proxy_
+                        #((#variants))*
+                    }
+                }
+            )
+        }
+    }
     .piped(Ok)
 }
