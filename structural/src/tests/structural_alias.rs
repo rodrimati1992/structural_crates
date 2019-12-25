@@ -76,7 +76,7 @@ mod all_access {
     impl Dummy for () {
         fn well<This, T>()
         where
-            This: GetFieldImpl<FP!(a), Ty = u32>
+            This: IntoFieldMut<FP!(a), Ty = u32>
                 + GetFieldImpl<FP!(b), Ty = T>
                 + GetFieldMutImpl<FP!(c), Ty = i64>
                 + IntoFieldImpl<FP!(d), Ty = &'static str>,

@@ -271,7 +271,7 @@ impl<'a> FieldType<'a> {
 
 #[cfg(test)]
 pub(crate) fn derive_from_str(saf: &str) -> Result<TokenStream2, syn::Error> {
-    syn::parse_str(saf).and_then(macro_impl)
+    syn::parse_str::<StructuralAliasesHack>(saf).map(|x|x.tokens)
 }
 
 pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStream2, syn::Error> {

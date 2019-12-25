@@ -11,7 +11,7 @@
         ( replacements: { "#r0":"ooh" }, error_count: 1 ),
         ( 
           replacements: { "#r0":"" },
-          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
+          find_all:[not(regex("GetField(Impl)? *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
           error_count: 0,
         ),
         ( 
@@ -21,18 +21,18 @@
         ),
         ( 
           replacements: { "#r0":"mut" },
-          find_all:[not(regex("GetField *<")),str("GetFieldMut"),not(str("IntoField"))], 
+          find_all:[not(regex("GetField(Impl)? *<")),str("GetFieldMut"),not(str("IntoField"))], 
           error_count: 0,
         ),
         // shared and by value access
         ( 
           replacements: { "#r0":"move" },
-          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),regex("IntoField *<")], 
+          find_all:[not(regex("GetField(Impl)? *<")),not(str("GetFieldMut")),regex("IntoField(Impl)? *<")], 
           error_count: 0,
         ),
         ( 
           replacements: { "#r0":"mut move" },
-          find_all:[not(regex("GetField *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
+          find_all:[not(regex("GetField(Impl)? *<")),not(str("GetFieldMut")),str("IntoFieldMut")], 
           error_count: 0,
         ),
       ],

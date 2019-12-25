@@ -1,5 +1,11 @@
 use crate::*;
 
+use std_::mem;
+
+declare_variant_proxy! {
+    BuiltinProxy
+}
+
 #[test]
 fn option_test() {
     {
@@ -51,80 +57,180 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
+        proxy=BuiltinProxy
         (
-            IntoFieldMut,
             AllCorrect,
             pair_strs::AllCorrect,
-            newtype(0:T)
+            kind=newtype,
+            fields((IntoFieldMut,0:T))
         )
         (
-            IntoFieldMut,
             Pair,
             pair_strs::Pair,
+            kind=regular,
             fields(
-                (left:T,pair_strs::left)
-                (right:U,pair_strs::right)
+                (IntoFieldMut,left:T ,pair_strs::left )
+                (IntoFieldMut,right:U,pair_strs::right)
             )
         )
         (
-            IntoFieldMut,
             Unit,
             pair_strs::Unit,
-            unit()
+            kind=regular,
+            fields()
         )
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone)]
+// #[derive(Structural, Debug, Clone)]
+//#[struc(debug_print)]
+enum DerivingPair<T, U> {
+    AllCorrect(T),
+    Pair { left: T, right: U },
+    Unit,
+}
+
+pub(crate) mod DerivingPair_names_module {
+    use super::*;
+    use structural::pmr::*;
+    pub type STR_AllCorrect___0 =
+        ::structural::pmr::TString<(_A, _l, _l, _C, _o, _r, _r, _e, _c, _t)>;
+    pub type STR_0___1 = ::structural::pmr::TString<(_0,)>;
+    pub type STR_Pair___2 = ::structural::pmr::TString<(_P, _a, _i, _r)>;
+    pub type STR_left___3 = ::structural::pmr::TString<(_l, _e, _f, _t)>;
+    pub type STR_right___4 = ::structural::pmr::TString<(_r, _i, _g, _h, _t)>;
+    pub type STR_Unit___5 = ::structural::pmr::TString<(_U, _n, _i, _t)>;
+}
+#[doc = "A trait aliasing the accessor impls for [DerivingPair](./struct.DerivingPair.html) fields\n\nThis trait also has all the constraints(where clause and generic parametr bounds)\n             of [the same struct](./struct.DerivingPair.html).\n\n### Accessor traits\nThese are the accessor traits this aliases:\n\n"]
+trait DerivingPair_SI<T, U>:
+    structural::IntoFieldMut<
+        DerivingPair_names_module::STR_0___1,
+        Err = structural::pmr::NonOptField,
+        Ty = T,
+    > + structural::IntoFieldMut<
+        DerivingPair_names_module::STR_left___3,
+        Err = structural::pmr::NonOptField,
+        Ty = T,
+    > + structural::IntoFieldMut<
+        DerivingPair_names_module::STR_right___4,
+        Err = structural::pmr::NonOptField,
+        Ty = U,
+    >
+{
+}
+impl<T, U, __This: ?Sized> DerivingPair_SI<T, U> for __This where
+    __This: structural::IntoFieldMut<
+            DerivingPair_names_module::STR_0___1,
+            Err = structural::pmr::NonOptField,
+            Ty = T,
+        > + structural::IntoFieldMut<
+            DerivingPair_names_module::STR_left___3,
+            Err = structural::pmr::NonOptField,
+            Ty = T,
+        > + structural::IntoFieldMut<
+            DerivingPair_names_module::STR_right___4,
+            Err = structural::pmr::NonOptField,
+            Ty = U,
+        >
+{
+}
+::structural::declare_variant_proxy! { DerivingPair_VariantProxy }
+::structural::impl_getters_for_derive_enum! {
+    impl [T, U,] DerivingPair < T, U > where []
+    {
+        enum = DerivingPair proxy = DerivingPair_VariantProxy
+        (AllCorrect, DerivingPair_names_module :: STR_AllCorrect___0, kind =
+         newtype, fields
+         ((IntoFieldMut, 0 : T, DerivingPair_names_module :: STR_0___1,)))
+        (Pair, DerivingPair_names_module :: STR_Pair___2, kind = regular,
+         fields
+         ((IntoFieldMut, left : T, DerivingPair_names_module :: STR_left___3,)
+          (IntoFieldMut, right : U, DerivingPair_names_module ::
+           STR_right___4,)))
+        (Unit, DerivingPair_names_module :: STR_Unit___5, kind = regular,
+         fields ())
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+macro_rules! pair_accessors {
+    ( $type_:ident ) => {{
+        {
+            let mut this = $type_::<(i32, i32), ()>::AllCorrect((11, 22));
+            assert_eq!(this.field_(fp!(AllCorrect)), Some(&(11, 22)));
+            assert_eq!(this.field_(fp!(::AllCorrect.0)), Some(&11));
+            assert_eq!(this.field_(fp!(::AllCorrect.1)), Some(&22));
+            assert_eq!(this.field_(fp!(::Pair.left)), None);
+            assert_eq!(this.field_(fp!(::Pair.right)), None);
+
+            assert_eq!(this.field_mut(fp!(AllCorrect)), Some(&mut (11, 22)));
+            assert_eq!(this.field_mut(fp!(::AllCorrect.0)), Some(&mut 11));
+            assert_eq!(this.field_mut(fp!(::AllCorrect.1)), Some(&mut 22));
+            assert_eq!(this.field_mut(fp!(::Pair.left)), None);
+            assert_eq!(this.field_mut(fp!(::Pair.right)), None);
+
+            assert_eq!(this.clone().into_field(fp!(AllCorrect)), Some((11, 22)));
+            assert_eq!(this.clone().into_field(fp!(::AllCorrect.0)), Some(11));
+            assert_eq!(this.clone().into_field(fp!(::AllCorrect.1)), Some(22));
+            assert_eq!(this.clone().into_field(fp!(::Pair.left)), None);
+            assert_eq!(this.clone().into_field(fp!(::Pair.right)), None);
+        }
+        {
+            let mut this = $type_::<bool, u32>::Pair {
+                left: false,
+                right: 100,
+            };
+            assert_eq!(this.field_(fp!(AllCorrect)), None);
+            assert_eq!(this.field_(fp!(::Pair.left)), Some(&false));
+            assert_eq!(this.field_(fp!(::Pair.right)), Some(&100));
+
+            assert_eq!(this.field_mut(fp!(AllCorrect)), None);
+            assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut false));
+            assert_eq!(this.field_mut(fp!(::Pair.right)), Some(&mut 100));
+
+            assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
+            assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(false));
+            assert_eq!(this.clone().into_field(fp!(::Pair.right)), Some(100));
+        }
+        {
+            let mut this = $type_::<u32, u32>::Pair {
+                left: 100,
+                right: 200,
+            };
+            let pair = this.field_mut(fp!(Pair)).unwrap();
+            let (left, right) = pair.fields_mut(fp!(left, right));
+            assert_eq!(left, &mut 100);
+            assert_eq!(right, &mut 200);
+            mem::swap(left, right);
+            assert_eq!(left, &mut 200);
+            assert_eq!(right, &mut 100);
+        }
+        {
+            let mut this = $type_::<bool, u32>::Unit;
+            assert_eq!(this.field_(fp!(AllCorrect)), None);
+            assert_eq!(this.field_(fp!(Unit)).map(drop), Some(()));
+
+            assert_eq!(this.field_mut(fp!(AllCorrect)), None);
+            assert_eq!(this.field_mut(fp!(Unit)).map(drop), Some(()));
+
+            assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
+            assert_eq!(this.clone().into_field(fp!(Unit)).map(drop), Some(()));
+        }
+    }};
+}
+
 #[test]
 fn pair_accessors() {
-    {
-        let mut this = Pair::<(i32, i32), ()>::AllCorrect((11, 22));
-        assert_eq!(this.field_(fp!(AllCorrect)), Some(&(11, 22)));
-        assert_eq!(this.field_(fp!(::AllCorrect.0)), Some(&11));
-        assert_eq!(this.field_(fp!(::AllCorrect.1)), Some(&22));
-        assert_eq!(this.field_(fp!(::Pair.left)), None);
-        assert_eq!(this.field_(fp!(::Pair.right)), None);
+    pair_accessors!(Pair)
+}
 
-        assert_eq!(this.field_mut(fp!(AllCorrect)), Some(&mut (11, 22)));
-        assert_eq!(this.field_mut(fp!(::AllCorrect.0)), Some(&mut 11));
-        assert_eq!(this.field_mut(fp!(::AllCorrect.1)), Some(&mut 22));
-        assert_eq!(this.field_mut(fp!(::Pair.left)), None);
-        assert_eq!(this.field_mut(fp!(::Pair.right)), None);
-
-        assert_eq!(this.clone().into_field(fp!(AllCorrect)), Some((11, 22)));
-        assert_eq!(this.clone().into_field(fp!(::AllCorrect.0)), Some(11));
-        assert_eq!(this.clone().into_field(fp!(::AllCorrect.1)), Some(22));
-        assert_eq!(this.clone().into_field(fp!(::Pair.left)), None);
-        assert_eq!(this.clone().into_field(fp!(::Pair.right)), None);
-    }
-    {
-        let mut this = Pair::<bool, u32>::Pair {
-            left: false,
-            right: 100,
-        };
-        assert_eq!(this.field_(fp!(AllCorrect)), None);
-        assert_eq!(this.field_(fp!(::Pair.left)), Some(&false));
-        assert_eq!(this.field_(fp!(::Pair.right)), Some(&100));
-
-        assert_eq!(this.field_mut(fp!(AllCorrect)), None);
-        assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut false));
-        assert_eq!(this.field_mut(fp!(::Pair.right)), Some(&mut 100));
-
-        assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
-        assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(false));
-        assert_eq!(this.clone().into_field(fp!(::Pair.right)), Some(100));
-    }
-    {
-        let mut this = Pair::<bool, u32>::Unit;
-        assert_eq!(this.field_(fp!(AllCorrect)), None);
-        assert_eq!(this.field_(fp!(Unit)), Some(&()));
-
-        assert_eq!(this.field_mut(fp!(AllCorrect)), None);
-        assert_eq!(this.field_mut(fp!(Unit)), Some(&mut ()));
-
-        assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
-        assert_eq!(this.clone().into_field(fp!(Unit)), Some(()));
-    }
+#[test]
+fn deriving_pair_accessors() {
+    pair_accessors!(DerivingPair)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
