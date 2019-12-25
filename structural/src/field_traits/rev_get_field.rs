@@ -7,7 +7,6 @@ use crate::{
         errors::{CombineErrs, FieldErr, IntoFieldErr},
         NormalizeFields,
     },
-    mut_ref::MutRef,
     type_level::{FieldPath, FieldPath1},
     GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
@@ -26,8 +25,8 @@ pub type RevFieldRefType<'a, FieldName, This> = <FieldName as RevGetField<'a, Th
 pub type RevFieldMutType<'a, FieldName, This> = <FieldName as RevGetFieldMut<'a, This>>::Field;
 
 /// Gets the type used to access the `FieldName` field(s) in `This` by `MutRef`.
-pub type RevFieldMutRefType<'a, FieldName, This> =
-    <FieldName as RevGetFieldMut<'a, This>>::FieldMutRef;
+pub type RevFieldRawMutType<'a, FieldName, This> =
+    <FieldName as RevGetFieldMut<'a, This>>::FieldRawMut;
 
 /// Gets the type used to access the `FieldName` field(s) in `This` by value.
 pub type RevIntoFieldType<'a, FieldName, This> = <FieldName as RevIntoField<'a, This>>::Field;
@@ -114,25 +113,25 @@ pub trait RevGetField<'a, This: ?Sized> {
 /// # Safety
 ///
 /// The implementation must assign virtually the same type to both
-/// the `Field` and `FieldMutRef` associated types.
+/// the `Field` and `FieldRawMut` associated types.
 ///
 /// - If `Field` is a single mutable references,
-/// `FieldMutRef` must be a `MutRef` pointing to the same type.
+/// `FieldRawMut` must be a `MutRef` pointing to the same type.
 ///
 /// - If `Field` is a collection of mutable references,
-/// `FieldMutRef` must be the same collection with the
+/// `FieldRawMut` must be the same collection with the
 /// mutable references replaced with the `MutRef` type.
 pub unsafe trait RevGetFieldMut<'a, This: ?Sized> {
     /// The mutable-reference-containing type this returns.
     type Field: 'a + NormalizeFields;
     /// The `MUtRef`-containing type this returns.
-    type FieldMutRef: 'a + NormalizeFields;
+    type FieldRawMut: NormalizeFields;
 
     /// Accesses the field(s) that `self` represents inside of `this`,by mutable reference.
     fn rev_get_field_mut(self, this: &'a mut This) -> Self::Field;
 
-    /// Accesses the field(s) that `self` represents inside of `this`,by `MutRef`.
-    unsafe fn rev_get_field_raw_mut(self, field: MutRef<'a, This>) -> Self::FieldMutRef;
+    /// Accesses the field(s) that `self` represents inside of `this`,by raw pointer.
+    unsafe fn rev_get_field_raw_mut(self, field: *mut This) -> Self::FieldRawMut;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -231,10 +230,10 @@ macro_rules! impl_get_nested_field_inner {
             )*
             $lastty:Sized+'a,
             Result<&'a mut $lastty,CombErr>:NormalizeFields,
-            Result<MutRef<'a,$lastty>,CombErr>:NormalizeFields,
+            Result<*mut $lastty,CombErr>:NormalizeFields,
         {
             type Field=Result<&'a mut $lastty,CombErr >;
-            type FieldMutRef=Result<MutRef<'a,$lastty>,CombErr>;
+            type FieldRawMut=Result<*mut $lastty,CombErr>;
 
             #[inline(always)]
             fn rev_get_field_mut(self,field:&'a mut This)->Self::Field{
@@ -246,11 +245,7 @@ macro_rules! impl_get_nested_field_inner {
                 #[inline(always)]
                 cfg(all(feature="specialization", $($enable_specialization)*))
 
-                unsafe fn rev_get_field_raw_mut(
-                    self,
-                    field:MutRef<'a,This>,
-                )->Self::FieldMutRef{
-                    let field=field.ptr;
+                unsafe fn rev_get_field_raw_mut( self, field:*mut This )->Self::FieldRawMut{
                     $(
                         let field={
                             let _:PhantomData<$all_tys>;
@@ -258,7 +253,7 @@ macro_rules! impl_get_nested_field_inner {
                             try_fe!(func(field as *mut (),PhantomData))
                         };
                     )*
-                    Ok(MutRef::from_ptr(field))
+                    Ok(field)
                 }
             }
         }
@@ -277,16 +272,14 @@ macro_rules! impl_get_nested_field_inner {
             )*
             $lastty:Sized+'a,
             Result<&'a mut $lastty,CombErr>:NormalizeFields,
-            Result<MutRef<'a,$lastty>,CombErr>:NormalizeFields,
+            Result<*mut $lastty,CombErr>:NormalizeFields,
         {
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut(
-                self,
-                field:MutRef<'a,This>,
-            )->Self::FieldMutRef{
-                let field=field.ptr;
-                $( let field=try_fe!($prefix::get_field_raw_mut(field as *mut (),PhantomData)); )*
-                Ok(MutRef::from_ptr(field))
+            unsafe fn rev_get_field_raw_mut( self, field:*mut This )->Self::FieldRawMut{
+                $(
+                    let field=try_fe!($prefix::get_field_raw_mut(field as *mut (),PhantomData));
+                )*
+                Ok(field)
             }
         }
 

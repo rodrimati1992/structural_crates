@@ -3,7 +3,6 @@ Accessor and extension traits for fields.
 */
 
 use crate::{
-    mut_ref::MutRef,
     type_level::{FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths},
     Structural,
 };
@@ -315,7 +314,7 @@ pub unsafe trait GetFieldMutImpl<FieldName>: GetFieldImpl<FieldName> {
         Self: Sized;
 
     /// Gets the `get_field_raw_mut` associated function as a function pointer.
-    fn get_field_raw_mut_func(&self) -> GetFieldMutRefFn<FieldName, Self::Ty, Self::Err>;
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, Self::Ty, Self::Err>;
 }
 
 pub trait NonOptGetFieldMut<FieldName>: GetFieldMutImpl<FieldName, Err = NonOptField> {}
@@ -335,7 +334,7 @@ impl<This: ?Sized, FieldName> OptGetFieldMut<FieldName> for This where
 /////////////////////////////////////////////////
 
 /// The type of `GetFieldMutImpl::get_field_raw_mut`
-pub type GetFieldMutRefFn<FieldName, FieldTy, E> =
+pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
     unsafe fn(*mut (), PhantomData<FieldName>) -> Result<*mut FieldTy, E>;
 
 /////////////////////////////////////////////////
@@ -520,7 +519,7 @@ macro_rules! unsized_impls {
                 }
             }
 
-            fn get_field_raw_mut_func(&self) -> GetFieldMutRefFn<FieldName, Ty, Self::Err> {
+            fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, Ty, Self::Err> {
                 <Self as GetFieldMutImpl<FieldName>>::get_field_raw_mut
             }
         }

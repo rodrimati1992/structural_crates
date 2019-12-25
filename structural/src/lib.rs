@@ -368,6 +368,7 @@ pub use structural_derive::{
 mod macros;
 
 pub mod docs;
+pub mod enum_traits;
 pub mod field_traits;
 pub mod mut_ref;
 pub mod structural_trait;
@@ -425,7 +426,7 @@ pub mod pmr {
     pub use crate::type_level::*;
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
-    pub use crate::std_::marker::PhantomData;
+    pub use crate::std_::{hint::unreachable_unchecked, marker::PhantomData};
 
     #[cfg(feature = "alloc")]
     pub use crate::alloc::boxed::Box;

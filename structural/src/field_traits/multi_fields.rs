@@ -62,10 +62,10 @@ macro_rules! impl_get_multi_field {
                     'a,
                     This,
                     Field=Result<&'a mut $fty,$err>,
-                    FieldMutRef=Result<MutRef<'a,$fty>,$err>,
+                    FieldRawMut=Result<*mut $fty,$err>,
                 >,
                 Result<&'a mut $fty,$err>:NormalizeFields,
-                Result<MutRef<'a,$fty>,$err>:NormalizeFields,
+                Result<*mut $fty,$err>:NormalizeFields,
                 $fty:'a,
                 $err:'a,
                 // RevFieldMutType<'a,FieldPath<$fpath>,This>:'a,
@@ -76,24 +76,22 @@ macro_rules! impl_get_multi_field {
                     Result<&'a mut $fty,$err>,
                 )*
             );
-            type FieldMutRef=(
+            type FieldRawMut=(
                 $(
-                    Result<MutRef<'a,$fty>,$err>,
+                    Result<*mut $fty,$err>,
                 )*
             );
 
             fn rev_get_field_mut(self,this:&'a mut This)->Self::Field{
                 unsafe{
                     let ($($fpath,)*)={
-                        let this=MutRef::new(this);
-
                         self.rev_get_field_raw_mut(this)
                     };
 
                     (
                         $(
                             match $fpath {
-                                Ok($fpath)=>Ok(&mut *$fpath.ptr),
+                                Ok($fpath)=>Ok(&mut *$fpath),
                                 Err(e)=>Err(e),
                             },
                         )*
@@ -102,10 +100,7 @@ macro_rules! impl_get_multi_field {
             }
 
             #[allow(unused_variables)]
-            unsafe fn rev_get_field_raw_mut(
-                self,
-                this:MutRef<'a,This>,
-            )->Self::FieldMutRef{
+            unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Self::FieldRawMut{
                 (
                     $(
                         FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),

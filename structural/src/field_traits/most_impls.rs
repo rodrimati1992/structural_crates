@@ -200,7 +200,7 @@ where
         }
     }
 
-    fn get_field_raw_mut_func(&self) -> GetFieldMutRefFn<__FieldName, Self::Ty, Self::Err> {
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<__FieldName, Self::Ty, Self::Err> {
         <Self as GetFieldMutImpl<__FieldName>>::get_field_raw_mut
     }
 }
