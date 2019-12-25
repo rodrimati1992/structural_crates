@@ -374,7 +374,7 @@ macro_rules! z_delegate_structural_with {
 
             fn get_field_raw_mut_func(
                 &self
-            )->$crate::field_traits::GetFieldMutRefFn<__FieldName,Self::Ty,Self::Err>{
+            )->$crate::field_traits::GetFieldRawMutFn<__FieldName,Self::Ty,Self::Err>{
                 <Self as $crate::GetFieldMutImpl<__FieldName>>::get_field_raw_mut
             }
         }

@@ -16,6 +16,9 @@ mod structural_alias;
 #[macro_use]
 mod enum_derivation;
 
+#[macro_use]
+mod variant_proxy;
+
 /// Implements an infallible getter
 #[doc(hidden)]
 #[macro_export]
@@ -155,64 +158,7 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
 
         fn get_field_raw_mut_func(
             &self
-        )->$crate::field_traits::GetFieldMutRefFn<$name_param,$Self::Ty,$Self::Err>{
-            <$Self as $crate::field_traits::GetFieldMutImpl<$name_param>>::get_field_raw_mut
-        }
-    )
-}
-
-#[macro_export]
-macro_rules! z_unsafe_impl_get_field_raw_mut_method_enum {
-    (inner;
-        $this:ident, $Self:ident, $name_param:ty, $field_ty:ty,
-        variant($enum_:ident, $variant:ident, ())
-    )=>{
-        match *($this as *mut $Self) {
-            $enum_::$variant{..}=>{
-                Ok( $crate::utils::MakeUnit::UNIT )
-            }
-            _=>{
-                Err( $crate::field_traits::OptionalField )
-            }
-        }
-    };
-    (inner;
-        $this:ident, $Self:ident, $name_param:ty, $field_ty:ty,
-        variant($enum_:ident, $variant:ident, $field_name:tt)
-    )=>{
-        match *($this as *mut $Self) {
-            $enum_::$variant{$field_name:ref mut this,..    }=>{
-                Ok( this as *mut $field_ty )
-            }
-            _=>{
-                Err( $crate::field_traits::OptionalField )
-            }
-        }
-    };
-    (
-        $Self:ident,
-        variant $transparency_params:tt,
-        name_generic=$name_param:ty,
-        field_ty=$field_ty:ty,
-    ) => (
-        unsafe fn get_field_raw_mut(
-            this:*mut (),
-            _:$crate::pmr::PhantomData<$name_param>,
-        )->Result<*mut $field_ty,$crate::field_traits::OptionalField>{
-            z_unsafe_impl_get_field_raw_mut_method_enum!{
-                inner;
-                this, $Self, $name_param, $field_ty,
-                variant $transparency_params
-            }
-        }
-
-        fn get_field_raw_mut_func(
-            &self
-        )->$crate::field_traits::GetFieldMutRefFn<
-            $name_param,
-            $field_ty,
-            $crate::field_traits::OptionalField
-        >{
+        )->$crate::field_traits::GetFieldRawMutFn<$name_param,$Self::Ty,$Self::Err>{
             <$Self as $crate::field_traits::GetFieldMutImpl<$name_param>>::get_field_raw_mut
         }
     )
@@ -244,6 +190,7 @@ macro_rules! z_impl_box_into_field_method {
 #[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_field_method {
     ($field_name:ty) => (
+        #[inline(always)]
         fn box_into_field_(
             self:$crate::pmr::Box<Self>
         )->Result<
@@ -254,6 +201,7 @@ macro_rules! z_impl_box_into_field_method {
         }
     );
     ($field_name:ty,$field_ty:ty,$field_err:ty $(,)*) => (
+        #[inline(always)]
         fn box_into_field_(self:$crate::pmr::Box<Self>)->Result<$field_ty,$field_err>{
             <Self as $crate::IntoFieldImpl::<$field_name>>::into_field_(*self)
         }
@@ -366,8 +314,8 @@ macro_rules! impl_getters_for_derive_struct{
     }
 }
 
-#[macro_export]
 #[doc(hidden)]
+#[macro_export]
 macro_rules! try_fe {
     ( $expr:expr ) => {
         match $expr {
@@ -377,8 +325,19 @@ macro_rules! try_fe {
     };
 }
 
-#[macro_export]
 #[doc(hidden)]
+#[macro_export]
+macro_rules! try_of {
+    ( $expr:expr ) => {
+        match $expr {
+            Ok(x) => x,
+            Err(_) => return Err($crate::field_traits::OptionalField),
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! map_of {
     ( $expr:expr ) => {
         match $expr {
