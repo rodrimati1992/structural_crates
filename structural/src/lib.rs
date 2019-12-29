@@ -359,6 +359,7 @@ pub use structural_derive::{
     _FP_impl_,
     //new_fp_impl_,
     _field_path_aliases_impl,
+    _impl_struct_impl,
     _tstring_aliases_impl,
     old_fp_impl_,
     structural_alias_impl,
@@ -380,6 +381,8 @@ pub mod test_utils;
 #[cfg(test)]
 pub mod tests {
     mod enum_impls;
+    #[cfg(feature = "rust_1_40")]
+    mod impl_struct;
     mod macro_tests;
     mod multi_nested_fields;
     mod structural_alias;

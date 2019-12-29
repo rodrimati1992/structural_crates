@@ -8,6 +8,9 @@ mod list;
 mod ident;
 
 #[macro_use]
+mod impl_struct;
+
+#[macro_use]
 mod make_struct;
 
 #[macro_use]
