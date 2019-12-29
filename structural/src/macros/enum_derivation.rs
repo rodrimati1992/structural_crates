@@ -431,7 +431,7 @@ macro_rules! impl_getter_enum{
 
         delegate_to( GetFieldImpl, $($field_params:tt)* )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -442,12 +442,12 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( GetFieldMutImpl, $($field_params:tt)* )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldMutImpl
             shared $shared
             $kind($($field_params)*)
@@ -458,12 +458,12 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( IntoFieldImpl, $($field_params:tt)* )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             IntoFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -474,17 +474,17 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( IntoFieldMut, $($field_params:tt)* )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             GetFieldMutImpl
             shared $shared
             $kind($($field_params)*)
         }
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             IntoFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -511,7 +511,7 @@ macro_rules! impl_getter_enum{
             $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )*
         )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             $trait_
             shared $shared
             newtype(
@@ -527,7 +527,7 @@ macro_rules! impl_getter_enum{
         kind=newtype
         fields( ( $trait_:ident , $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )* ) )
     )=>{
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             shared $shared
             kind=newtype_as_field
             delegate_to(
@@ -546,14 +546,14 @@ macro_rules! impl_getter_enum{
         fields( $($fields:tt)* )
     )=>{
         $(
-            impl_getter_enum!{
+            $crate::impl_getter_enum!{
                 shared $shared
                 kind=regular
                 delegate_to $fields
             }
         )*
 
-        impl_getter_enum!{
+        $crate::impl_getter_enum!{
             shared $shared
             kind=make_proxy
             delegate_to ( IntoFieldMut, )
@@ -582,8 +582,8 @@ macro_rules! delegate_to_variant_proxy {
             Self:$crate::GetFieldImpl<$crate::pmr::FieldPath1Str<_V>>,
         {
             #[inline]
-            fn is_variant(&self)->bool{
-                GetFieldImpl::<$crate::pmr::FieldPath1Str<_V>>::get_field_(self).is_ok()
+            fn is_variant_(&self)->bool{
+                $crate::GetFieldImpl::<$crate::pmr::FieldPath1Str<_V>>::get_field_(self).is_ok()
             }
         }
     };
@@ -672,7 +672,9 @@ macro_rules! delegate_to_variant_proxy {
                         $crate::pmr::FieldPath1<$variant_name_str>
                     >::get_field_(self)
                 );
-                $crate::map_of!( $crate::GetFieldImpl::<$crate::pmr::FieldPath1<_F>>::get_field_(proxy) )
+                $crate::map_of!(
+                    $crate::GetFieldImpl::<$crate::pmr::FieldPath1<_F>>::get_field_(proxy) 
+                )
             }
         }
 
