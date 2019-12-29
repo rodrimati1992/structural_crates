@@ -377,7 +377,6 @@ pub trait GetFieldExt {
         path.rev_box_into_field(self).normalize_fields()
     }
 
-
     /// Checks whether an enum is a particular variant.
     ///
     /// # Example

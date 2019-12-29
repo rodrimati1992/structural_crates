@@ -6,6 +6,8 @@ use quote::{quote, ToTokens};
 
 use syn::Ident;
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
 /// Whether to use the full path to an item when refering to it.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum FullPathForChars {

@@ -175,3 +175,51 @@ mod variants_with_accesses {
         )
     }
 }
+
+mod with_defaulted_items {
+    use super::*;
+
+    structural_alias! {
+        pub trait Foo{
+            fn hi()->u32{
+                101
+            }
+
+            A{},
+
+            const FOO:&'static str="what";
+
+            ref a:u32,
+        }
+    }
+
+    #[derive(Structural)]
+    enum G {
+        A,
+    }
+
+    impl GetFieldImpl<FP!(a)> for G {
+        type Ty = u32;
+        type Err = NonOptField;
+
+        fn get_field_(&self) -> Result<&u32, NonOptField> {
+            Ok(&404)
+        }
+    }
+
+    fn with_foo<T>(this: &T)
+    where
+        T: Foo,
+    {
+        assert_eq!(G::hi(), 101);
+        assert_eq!(G::FOO, "what");
+
+        assert!(this.is_variant(fp!(A)));
+        assert_eq!(this.field_(fp!(a)), &404);
+    }
+
+    #[test]
+    fn defaulted_items() {
+        with_foo(&G::A);
+    }
+}

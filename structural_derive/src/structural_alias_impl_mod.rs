@@ -2,11 +2,11 @@ use crate::{
     arenas::Arenas,
     field_access::{Access, IsOptional},
     ident_or_index::IdentOrIndexRef,
-    tokenizers::NamedModuleAndTokens,
-    tokenizers::NamesModuleIndex,
+    tokenizers::{NamedModuleAndTokens, NamesModuleIndex},
 };
 
 use as_derive_utils::gen_params_in::{GenParamsIn, InWhat};
+use as_derive_utils::return_spanned_err;
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
@@ -16,9 +16,9 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 
 use syn::{
-    parse::{Parse, ParseStream},
+    parse::{discouraged::Speculative, Parse, ParseStream},
     punctuated::Punctuated,
-    token, Attribute, Generics, Ident, Token, Visibility,
+    token, Attribute, Generics, Ident, Token, TraitItem, Visibility,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +45,7 @@ pub(crate) struct StructuralAlias<'a> {
     pub(crate) trait_token: Token!(trait),
     pub(crate) generics: syn::Generics,
     pub(crate) supertraits: Punctuated<syn::TypeParamBound, token::Add>,
+    pub(crate) extra_items: Vec<TraitItem>,
     pub(crate) datatype: StructuralDataType<'a>,
 }
 
@@ -103,6 +104,7 @@ impl<'a> StructuralAliases<'a> {
 
 impl<'a> StructuralAlias<'a> {
     fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
+        let mut extra_items = Vec::<TraitItem>::new();
         let attrs = input.call(Attribute::parse_outer)?;
         let vis: Visibility = input.parse()?;
 
@@ -135,7 +137,8 @@ impl<'a> StructuralAlias<'a> {
         let content;
         let braces = syn::braced!(content in input);
 
-        let datatype = StructuralDataType::parse(&mut names_mod, arenas, &content)?;
+        let datatype =
+            StructuralDataType::parse(&mut names_mod, &mut extra_items, arenas, &content)?;
 
         let span = trait_token
             .span
@@ -151,6 +154,7 @@ impl<'a> StructuralAlias<'a> {
             ident,
             generics,
             supertraits,
+            extra_items,
             datatype,
         })
     }
@@ -159,6 +163,7 @@ impl<'a> StructuralAlias<'a> {
 impl<'a> StructuralDataType<'a> {
     fn parse(
         names_mod: &mut NamedModuleAndTokens,
+        extra_items: &mut Vec<TraitItem>,
         arenas: &'a Arenas,
         input: ParseStream,
     ) -> Result<Self, syn::Error> {
@@ -167,6 +172,13 @@ impl<'a> StructuralDataType<'a> {
         loop {
             if input.is_empty() {
                 break;
+            }
+
+            let forked = input.fork();
+            if let Ok(item) = forked.parse::<TraitItem>() {
+                input.advance_to(&forked);
+                extra_items.push(item);
+                continue;
             }
 
             let access = input.parse::<Access>()?;
@@ -313,6 +325,7 @@ pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStre
             &saf.generics,
             &saf.supertraits,
             &saf.names_mod,
+            &saf.extra_items,
             &saf.datatype,
         )?
         .piped(|x| out.append_all(x));
@@ -416,7 +429,7 @@ fn process_field(
 
 /// This allows both `structural_alias` and `#[derive(Structural)]` to generate
 /// the trait alias and its impl.
-pub(crate) fn for_delegation<'a, A>(
+pub(crate) fn for_delegation<'a, A, I>(
     span: Span,
     attrs: A,
     mut docs: String,
@@ -426,11 +439,13 @@ pub(crate) fn for_delegation<'a, A>(
     generics: &syn::Generics,
     supertraits: &Punctuated<syn::TypeParamBound, token::Add>,
     names_mod: &NamedModuleAndTokens,
+    trait_items: I,
     datatype: &StructuralDataType<'_>,
 ) -> Result<TokenStream2, syn::Error>
 where
     A: IntoIterator,
     A::Item: ToTokens,
+    I: IntoIterator<Item = &'a TraitItem>,
 {
     use std::fmt::Write;
 
@@ -451,6 +466,29 @@ where
              The accessor for every enum variant field is optional,\
              because the enum might not be that variant.\n\n",
         );
+    }
+
+    let mut out_trait_items = TokenStream2::new();
+    for item in trait_items {
+        let (is_defaulted, item_name) = match item {
+            TraitItem::Const(x) => {
+                x.to_tokens(&mut out_trait_items);
+
+                (x.default.is_some(), "associated constant")
+            }
+            TraitItem::Method(x) => {
+                x.to_tokens(&mut out_trait_items);
+
+                (x.default.is_some(), "associated function")
+            }
+            _ => return_spanned_err!(
+                item,
+                "Only defaulted associated constant/function are supported.",
+            ),
+        };
+        if !is_defaulted {
+            return_spanned_err!(item, "Expected this {} to be defaulted", item_name)
+        }
     }
 
     for variant in &datatype.variants {
@@ -508,8 +546,8 @@ where
     Ok(quote_spanned!(span=>
         #names_mod
 
-        #[doc=#docs]
         #(#attrs)*
+        #[doc=#docs]
         #vis
         #trait_token #ident #generics :
             #( #supertraits_a+ )*
@@ -517,7 +555,9 @@ where
         where
             #(#where_preds_a,)*
             #assoc_ty_bounds
-        {}
+        {
+            #out_trait_items
+        }
 
 
         impl<#impl_generics> #ident #ty_generics
