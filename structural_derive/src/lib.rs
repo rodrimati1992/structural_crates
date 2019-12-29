@@ -21,6 +21,7 @@ mod field_path_aliases_macro;
 mod field_paths;
 mod fp_impl;
 mod ident_or_index;
+mod impl_struct;
 mod parse_utils;
 mod structural_alias_impl_mod;
 mod structural_derive;
@@ -87,6 +88,13 @@ pub fn _field_path_aliases_impl(input: TokenStream1) -> TokenStream1 {
 #[doc(hidden)]
 pub fn _tstring_aliases_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, tstring_aliases::impl_).into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _impl_struct_impl(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input, impl_struct::impl_).into()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

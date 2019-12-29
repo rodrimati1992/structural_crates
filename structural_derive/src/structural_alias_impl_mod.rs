@@ -2,11 +2,13 @@ use crate::{
     arenas::Arenas,
     field_access::{Access, IsOptional},
     ident_or_index::IdentOrIndexRef,
-    tokenizers::{NamedModuleAndTokens, NamesModuleIndex},
+    tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens, NamesModuleIndex},
 };
 
-use as_derive_utils::gen_params_in::{GenParamsIn, InWhat};
-use as_derive_utils::return_spanned_err;
+use as_derive_utils::{
+    gen_params_in::{GenParamsIn, InWhat},
+    return_spanned_err, ToTokenFnMut,
+};
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
@@ -60,6 +62,14 @@ pub struct StructuralVariant<'a> {
     pub(crate) name: &'a Ident,
     pub(crate) alias_index: NamesModuleIndex,
     pub(crate) fields: Vec<StructuralField<'a>>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct TinyStructuralField<'a> {
+    pub(crate) access: Access,
+    pub(crate) ident: IdentOrIndexRef<'a>,
+    pub(crate) optionality: IsOptional,
+    pub(crate) ty: FieldType<'a>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -199,7 +209,7 @@ impl<'a> StructuralDataType<'a> {
                     &content,
                 )?);
             } else {
-                fields.push(StructuralField::parse(
+                fields.push(StructuralField::parse_with_access(
                     names_mod, None, access, arenas, input,
                 )?);
             }
@@ -221,7 +231,7 @@ impl<'a> StructuralVariant<'a> {
         while !input.is_empty() {
             let nested_access = Access::parse_optional(input)?;
 
-            fields.push(StructuralField::parse(
+            fields.push(StructuralField::parse_with_access(
                 names_mod,
                 Some(name),
                 nested_access.unwrap_or(access),
@@ -237,34 +247,88 @@ impl<'a> StructuralVariant<'a> {
     }
 }
 
-impl<'a> StructuralField<'a> {
-    fn parse(
-        names_mod: &mut NamedModuleAndTokens,
+impl<'a> TinyStructuralField<'a> {
+    pub(crate) fn parse(
         enum_variant: Option<&'a Ident>,
         access: Access,
         arenas: &'a Arenas,
         input: ParseStream,
     ) -> Result<Self, syn::Error> {
         let ident = IdentOrIndexRef::parse(arenas, input)?;
-        let alias_index = match enum_variant {
-            Some(variant) => names_mod.push_variant_field(variant, ident),
-            None => names_mod.push_path(ident),
-        };
         let _: Token![:] = input.parse()?;
         let optionality = input.parse::<IsOptional>()?;
         let ty = FieldType::parse(arenas, input)?;
-        input.parse::<Token![,]>()?;
 
         Ok(Self {
             access,
             ident,
-            alias_index,
             optionality: match enum_variant {
                 Some(_) => IsOptional::Yes,
                 None => optionality,
             },
             ty,
         })
+    }
+}
+
+impl<'a> StructuralField<'a> {
+    fn parse_with_access(
+        names_mod: &mut NamedModuleAndTokens,
+        enum_variant: Option<&'a Ident>,
+        access: Access,
+        arenas: &'a Arenas,
+        input: ParseStream,
+    ) -> Result<Self, syn::Error> {
+        let TinyStructuralField {
+            access: _,
+            ident,
+            optionality,
+            ty,
+        } = TinyStructuralField::parse(enum_variant, access, arenas, input)?;
+        input.parse::<Token![,]>()?;
+
+        let alias_index = match enum_variant {
+            Some(variant) => names_mod.push_variant_field(variant, ident),
+            None => names_mod.push_path(ident),
+        };
+
+        Ok(Self {
+            access,
+            ident,
+            alias_index,
+            optionality,
+            ty,
+        })
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a> ToTokens for TinyStructuralField<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        let TinyStructuralField {
+            access,
+            ident,
+            optionality,
+            ty,
+        } = *self;
+
+        let the_trait = access.and_optionality(optionality);
+        let ident = tident_tokens(ident.to_string(), FullPathForChars::Yes);
+        let ty = ToTokenFnMut::new(|tokens| match ty {
+            FieldType::Ty(x) => x.to_tokens(tokens),
+            FieldType::Impl(x) => {
+                <syn::Token!(impl)>::default().to_tokens(tokens);
+                x.to_tokens(tokens);
+            }
+        });
+
+        tokens.append_all(quote!(
+            structural::pmr::#the_trait<
+                structural::pmr::FieldPath<(#ident,)>,
+                Ty=#ty,
+            >
+        ));
     }
 }
 
