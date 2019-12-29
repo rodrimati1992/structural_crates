@@ -171,7 +171,7 @@ impl Parse for FieldPath {
         let mut next_is_period = false;
         while !input.peek(Token![,]) && !input.is_empty() {
             let is_period = std::mem::replace(&mut next_is_period, false)
-                || input.peek_parse(Token!(.)).is_some();
+                || input.peek_parse(Token!(.))?.is_some();
 
             if input.peek(syn::LitFloat) {
                 let f = input.parse::<syn::LitFloat>()?;
@@ -280,13 +280,13 @@ impl FieldPathComponent {
     }
 
     pub(crate) fn parse(input: ParseStream, is_period: IsPeriod) -> parse::Result<Self> {
-        if is_period == IsPeriod::No && input.peek_parse(Token!(::)).is_some() {
+        if is_period == IsPeriod::No && input.peek_parse(Token!(::))?.is_some() {
             let variant = input.parse::<Ident>()?;
             let _ = input.parse::<Token!(.)>()?;
             let field = input.parse::<IdentOrIndex>()?;
             Ok(FieldPathComponent::VariantField { variant, field })
         } else {
-            let _ = input.peek_parse(Token!(.));
+            let _ = input.peek_parse(Token!(.))?;
             input.parse::<IdentOrIndex>().map(FieldPathComponent::Ident)
         }
     }

@@ -113,6 +113,7 @@ impl NamedModuleAndTokens {
             let field_name = tident_tokens(&string, FullPathForChars::No);
 
             quote!(
+                #[allow(non_camel_case_types)]
                 pub type #alias_name=structural::pmr::FieldPath<(#field_name,)>;
             )
             .to_tokens(ts);
@@ -129,6 +130,7 @@ impl NamedModuleAndTokens {
             let string = tident_tokens(&string, FullPathForChars::No);
 
             quote!(
+                #[allow(non_camel_case_types)]
                 pub type #alias_name=#string;
             )
             .to_tokens(ts);
@@ -153,7 +155,8 @@ impl NamedModuleAndTokens {
             let variant_field = variant_field_tokens(&variant, &field_s, FullPathForChars::No);
 
             quote!(
-                pub type #alias_name=#variant_field;
+                #[allow(non_camel_case_types)]
+                pub type #alias_name=::structural::pmr::FieldPath<(#variant_field,)>;
             )
             .to_tokens(ts);
 

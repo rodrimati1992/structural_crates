@@ -230,15 +230,15 @@ macro_rules! _delegate_fp {
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
 ///
 /// ```rust
-/// use structural::{NonOptGetField,GetFieldExt,fp,FP};
+/// use structural::{GetField,GetFieldExt,fp,FP};
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
 ///     // From 1.40 onwards you can also write `FP!(name)`.
 ///     //
 ///     // Before 1.40, you can use `field_path_aliases!{ name }` before this function,
-///     // then write this as `This:NonOptGetField<name,Ty=S>`
-///     This:NonOptGetField<FP!(n a m e),Ty=S>,
+///     // then write this as `This:GetField<name,Ty=S>`
+///     This:GetField<FP!(n a m e),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
@@ -252,11 +252,11 @@ macro_rules! _delegate_fp {
 ///
 #[cfg_attr(feature = "better_macros", doc = " ```rust")]
 #[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
-/// use structural::{NonOptGetField,GetFieldExt,fp,FP};
+/// use structural::{GetField,GetFieldExt,fp,FP};
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
-///     This:NonOptGetField<FP!(name),Ty=S>,
+///     This:GetField<FP!(name),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
@@ -517,7 +517,7 @@ Every one of these aliases are types and constants of the same name.
 # Example
 
 ```rust
-use structural::{field_path_aliases_module,NonOptGetField,GetFieldExt};
+use structural::{field_path_aliases_module,GetField,GetFieldExt};
 
 field_path_aliases_module!{
     pub mod names{
@@ -549,9 +549,9 @@ field_path_aliases_module!{
 
 fn assert_fields<T>(this:&T)
 where
-    T:NonOptGetField<names::zero,Ty=i32>+
-        NonOptGetField<names::one,Ty=i32>+
-        NonOptGetField<names::two,Ty=i32>
+    T:GetField<names::zero,Ty=i32>+
+        GetField<names::one,Ty=i32>+
+        GetField<names::two,Ty=i32>
 {
     assert_eq!( this.field_(names::zero), &2 );
     assert_eq!( this.field_(names::one), &3 );
@@ -668,7 +668,7 @@ within functions though.
 # Example
 
 ```rust
-use structural::{field_path_aliases,NonOptGetField,GetFieldExt};
+use structural::{field_path_aliases,GetField,GetFieldExt};
 
 field_path_aliases!{
     // Equivalent to hello=hello
@@ -694,9 +694,9 @@ field_path_aliases!{
 
 fn assert_fields<T>(this:&T)
 where
-    T:NonOptGetField<zero,Ty=i32>+
-        NonOptGetField<one,Ty=i32>+
-        NonOptGetField<two,Ty=i32>
+    T:GetField<zero,Ty=i32>+
+        GetField<one,Ty=i32>+
+        GetField<two,Ty=i32>
 {
     assert_eq!( this.field_(zero), &2 );
     assert_eq!( this.field_(one), &3 );
