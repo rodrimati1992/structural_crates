@@ -314,6 +314,31 @@ macro_rules! impl_getters_for_derive_struct{
     }
 }
 
+macro_rules! assert_equal_bounds {
+    (
+        trait $trait_:ident,
+        ( $($left:tt)* ),
+        ( $($right:tt)* )$(,)*
+    ) => (
+        trait $trait_: $($left)* {
+            fn foo<T>()
+            where
+                T: ?Sized+$($left)*;
+        }
+
+        impl<_This> $trait_ for _This
+        where
+            _This: ?Sized+$($right)*
+        {
+            fn foo<T>()
+            where
+                T:?Sized+$($right)*
+            {}
+        }
+
+    )
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! try_fe {

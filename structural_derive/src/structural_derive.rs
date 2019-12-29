@@ -1,5 +1,6 @@
 use crate::{
     datastructure::StructOrEnum,
+    field_access::IsOptional,
     ident_or_index::IdentOrIndexRef,
     structural_alias_impl_mod::{
         FieldType, StructuralDataType, StructuralField, StructuralVariant,
@@ -144,6 +145,7 @@ fn deriving_structural<'a>(
 
                 Some(StructuralField {
                     access: config_f.access,
+                    optionality: IsOptional::No,
                     ident,
                     alias_index,
                     ty: match &config_f.is_impl {

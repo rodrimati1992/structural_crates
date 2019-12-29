@@ -62,7 +62,7 @@ impl Parse for StrAliases {
 impl Parse for StrAlias {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let alias_name = input.parse::<Ident>()?;
-        let string = if let Some(_) = input.peek_parse(Token!(=)).transpose()? {
+        let string = if let Some(_) = input.peek_parse(Token!(=))? {
             input.parse::<LitStr>()?.value()
         } else {
             alias_name.to_string()

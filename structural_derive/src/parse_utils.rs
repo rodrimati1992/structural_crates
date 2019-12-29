@@ -22,22 +22,22 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 
 pub(crate) trait ParseBufferExt {
-    fn peek_parse<F, X, P>(&self, f: F) -> Option<Result<P, syn::Error>>
+    fn peek_parse<F, X, P>(&self, f: F) -> Result<Option<P>, syn::Error>
     where
         F: FnOnce(X) -> P + Peek,
         P: Parse;
 }
 
 impl ParseBufferExt for ParseBuffer<'_> {
-    fn peek_parse<F, X, P>(&self, f: F) -> Option<Result<P, syn::Error>>
+    fn peek_parse<F, X, P>(&self, f: F) -> Result<Option<P>, syn::Error>
     where
         F: FnOnce(X) -> P + Peek,
         P: Parse,
     {
         if self.peek(f) {
-            Some(self.parse::<P>())
+            self.parse::<P>().map(Some)
         } else {
-            None
+            Ok(None)
         }
     }
 }

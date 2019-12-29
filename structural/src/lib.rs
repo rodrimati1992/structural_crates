@@ -396,9 +396,9 @@ pub use crate::field_traits::GetFieldExt;
 
 pub use crate::{
     field_traits::{
-        GetFieldImpl, GetFieldMutImpl, GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4,
-        IntoFieldImpl, IntoFieldMut, NonOptGetField, NonOptGetFieldMut, NonOptIntoField,
-        OptGetField, OptGetFieldMut, OptIntoField, RevGetFieldType, RevGetFieldType_,
+        GetField, GetFieldImpl, GetFieldMut, GetFieldMutImpl, GetFieldType, GetFieldType2,
+        GetFieldType3, GetFieldType4, IntoField, IntoFieldImpl, IntoFieldMut, OptGetField,
+        OptGetFieldMut, OptIntoField, OptIntoFieldMut, RevGetFieldType, RevGetFieldType_,
     },
     structural_trait::Structural,
 };
@@ -420,6 +420,7 @@ pub mod reexports {
 #[doc(hidden)]
 pub mod pmr {
     pub use crate::chars::*;
+    pub use crate::enum_traits::*;
     pub use crate::field_traits::*;
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;

@@ -209,7 +209,7 @@ pub trait GetFieldExt {
     ///
     /// ```
     /// use structural::{
-    ///     GetFieldExt,NonOptGetFieldMut,GetFieldType,Structural,
+    ///     GetFieldExt,GetFieldMut,GetFieldType,Structural,
     ///     fp,field_path_aliases_module,
     /// };
     ///
@@ -219,8 +219,8 @@ pub trait GetFieldExt {
     ///
     /// fn swap_coordinates<T,U>(this:&mut T)
     /// where
-    ///     T:NonOptGetFieldMut<names::x,Ty=U>,
-    ///     T:NonOptGetFieldMut<names::y,Ty=U>,
+    ///     T:GetFieldMut<names::x,Ty=U>,
+    ///     T:GetFieldMut<names::y,Ty=U>,
     /// {
     ///     let (x,y)=this.fields_mut(fp!(x,y));
     ///     std::mem::swap(x,y);

@@ -46,11 +46,11 @@ pub use self::{
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{NonOptGetField,GetFieldExt,FP,fp};
+/// use structural::{GetField,GetFieldExt,FP,fp};
 ///
 /// fn formatted_value<T,S>(this:&T)->String
 /// where
-///     T:NonOptGetField<FP!(v a l u e), Ty=S>,
+///     T:GetField<FP!(v a l u e), Ty=S>,
 ///     S:std::fmt::Debug,
 /// {
 ///     format!("{:#?}",this.field_(fp!(value)) )
@@ -113,9 +113,9 @@ pub trait GetFieldImpl<FieldName> {
     fn get_field_(&self) -> Result<&Self::Ty, Self::Err>;
 }
 
-pub trait NonOptGetField<FieldName>: GetFieldImpl<FieldName, Err = NonOptField> {}
+pub trait GetField<FieldName>: GetFieldImpl<FieldName, Err = NonOptField> {}
 
-impl<This: ?Sized, FieldName> NonOptGetField<FieldName> for This where
+impl<This: ?Sized, FieldName> GetField<FieldName> for This where
     This: GetFieldImpl<FieldName, Err = NonOptField>
 {
 }
@@ -134,12 +134,12 @@ impl<This: ?Sized, FieldName> OptGetField<FieldName> for This where
 /// Here is one way you can get the type of a field.
 ///
 /// ```
-/// use structural::{NonOptGetField,GetFieldExt,GetFieldType,FP,fp};
+/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
 /// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(n a m e)>
 /// where
 ///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:NonOptGetField<FP!(n a m e)>
+///     T:GetField<FP!(n a m e)>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -162,12 +162,12 @@ impl<This: ?Sized, FieldName> OptGetField<FieldName> for This where
 /// Another way `get_name` could have been written is like this:
 ///
 /// ```
-/// use structural::{NonOptGetField,GetFieldExt,GetFieldType,FP,fp};
+/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
 ///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:NonOptGetField<FP!(n a m e), Ty=O>
+///     T:GetField<FP!(n a m e), Ty=O>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -224,12 +224,12 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{NonOptGetFieldMut,GetFieldExt,FP,fp};
+/// use structural::{GetFieldMut,GetFieldExt,FP,fp};
 ///
 /// fn take_value<T,V>(this:&mut T)->V
 /// where
 ///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-///     T:NonOptGetFieldMut<FP!(v a l u e), Ty=V>,
+///     T:GetFieldMut<FP!(v a l u e), Ty=V>,
 ///     V:Default,
 /// {
 ///     std::mem::replace( this.field_mut(fp!(value)), Default::default() )
@@ -317,9 +317,9 @@ pub unsafe trait GetFieldMutImpl<FieldName>: GetFieldImpl<FieldName> {
     fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, Self::Ty, Self::Err>;
 }
 
-pub trait NonOptGetFieldMut<FieldName>: GetFieldMutImpl<FieldName, Err = NonOptField> {}
+pub trait GetFieldMut<FieldName>: GetFieldMutImpl<FieldName, Err = NonOptField> {}
 
-impl<This: ?Sized, FieldName> NonOptGetFieldMut<FieldName> for This where
+impl<This: ?Sized, FieldName> GetFieldMut<FieldName> for This where
     This: GetFieldMutImpl<FieldName, Err = NonOptField>
 {
 }
@@ -349,12 +349,12 @@ pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
 /// to alias those bounds and use that alias instead.
 ///
 /// ```rust
-/// use structural::{NonOptIntoField,GetFieldExt,GetFieldType,FP,fp};
+/// use structural::{IntoField,GetFieldExt,GetFieldType,FP,fp};
 ///
 /// fn into_value<T,V>(this:T)->V
 /// where
 ///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-///     T:NonOptIntoField<FP!(v a l u e), Ty=V>,
+///     T:IntoField<FP!(v a l u e), Ty=V>,
 /// {
 ///     this.into_field(fp!(value))
 /// }
@@ -429,9 +429,9 @@ pub trait IntoFieldImpl<FieldName>: GetFieldImpl<FieldName> {
     fn box_into_field_(self: crate::alloc::boxed::Box<Self>) -> Result<Self::Ty, Self::Err>;
 }
 
-pub trait NonOptIntoField<FieldName>: IntoFieldImpl<FieldName, Err = NonOptField> {}
+pub trait IntoField<FieldName>: IntoFieldImpl<FieldName, Err = NonOptField> {}
 
-impl<This: ?Sized, FieldName> NonOptIntoField<FieldName> for This where
+impl<This: ?Sized, FieldName> IntoField<FieldName> for This where
     This: IntoFieldImpl<FieldName, Err = NonOptField>
 {
 }
@@ -443,20 +443,12 @@ impl<This: ?Sized, FieldName> OptIntoField<FieldName> for This where
 {
 }
 
-/// An alias for a shared,mutable,and by-value accessor for a field.
-pub trait IntoFieldMut<FieldName>: IntoFieldImpl<FieldName> + GetFieldMutImpl<FieldName> {}
-
-impl<This, FieldName> IntoFieldMut<FieldName> for This where
-    This: IntoFieldImpl<FieldName> + GetFieldMutImpl<FieldName>
-{
-}
-
-pub trait NonOptIntoFieldMut<FieldName>:
+pub trait IntoFieldMut<FieldName>:
     IntoFieldImpl<FieldName, Err = NonOptField> + GetFieldMutImpl<FieldName>
 {
 }
 
-impl<This: ?Sized, FieldName> NonOptIntoFieldMut<FieldName> for This where
+impl<This: ?Sized, FieldName> IntoFieldMut<FieldName> for This where
     This: IntoFieldImpl<FieldName, Err = NonOptField> + GetFieldMutImpl<FieldName>
 {
 }
