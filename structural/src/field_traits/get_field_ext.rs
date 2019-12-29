@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::enum_traits::IsVariant;
+
 /// A trait defining the primary way to call methods from structural traits.
 pub trait GetFieldExt {
     /// Gets a reference to a field,determined by `path`.
@@ -373,6 +375,45 @@ pub trait GetFieldExt {
         P: RevIntoField<'a, Self>,
     {
         path.rev_box_into_field(self).normalize_fields()
+    }
+
+
+    /// Checks whether an enum is a particular variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// #[derive(Structural)]
+    /// enum Color{
+    ///     Red,
+    ///     Blue,
+    ///     Green,
+    /// }
+    ///
+    /// fn main(){
+    ///     assert!(  Color::Red.is_variant(fp!(Red)) );
+    ///     assert!( !Color::Red.is_variant(fp!(Blue)) );
+    ///     assert!( !Color::Red.is_variant(fp!(Green)) );
+    ///
+    ///     assert!( !Color::Blue.is_variant(fp!(Red)) );
+    ///     assert!(  Color::Blue.is_variant(fp!(Blue)) );
+    ///     assert!( !Color::Blue.is_variant(fp!(Green)) );
+    ///
+    ///     assert!( !Color::Green.is_variant(fp!(Red)) );
+    ///     assert!( !Color::Green.is_variant(fp!(Blue)) );
+    ///     assert!(  Color::Green.is_variant(fp!(Green)) );
+    /// }
+    ///
+    /// ```
+    #[inline(always)]
+    fn is_variant<P>(&self, _path: P) -> bool
+    where
+        P: IsFieldPath,
+        Self: IsVariant<P>,
+    {
+        IsVariant::<P>::is_variant_(self)
     }
 }
 
