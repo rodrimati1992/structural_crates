@@ -205,6 +205,7 @@ fn deriving_structural<'a>(
             ds.generics,
             &Punctuated::new(),
             &names_module,
+            Vec::new(),
             &sdt,
         )?
         .piped(Some);

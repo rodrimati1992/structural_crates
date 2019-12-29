@@ -673,7 +673,7 @@ macro_rules! delegate_to_variant_proxy {
                     >::get_field_(self)
                 );
                 $crate::map_of!(
-                    $crate::GetFieldImpl::<$crate::pmr::FieldPath1<_F>>::get_field_(proxy) 
+                    $crate::GetFieldImpl::<$crate::pmr::FieldPath1<_F>>::get_field_(proxy)
                 )
             }
         }
