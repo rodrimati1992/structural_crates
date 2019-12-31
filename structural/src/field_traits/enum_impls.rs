@@ -94,8 +94,8 @@ impl_getters_for_derive_enum! {
     {
         enum=Result
         proxy=BuiltinProxy
-        (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T)))
-        (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E)))
+        (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T,nonopt)))
+        (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E,nonopt)))
     }
 }
 

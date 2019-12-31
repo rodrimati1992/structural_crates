@@ -291,7 +291,8 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     structural::z_unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
 ///         field_name=value,
-///         name_generic=FP!(v a l u e)
+///         name_generic=FP!(v a l u e),
+///         optionality=nonopt,
 ///     }
 /// }
 ///

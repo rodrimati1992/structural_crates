@@ -62,15 +62,15 @@ impl_getters_for_derive_enum! {
             AllCorrect,
             pair_strs::AllCorrect,
             kind=newtype,
-            fields((IntoFieldMut,0:T))
+            fields((IntoFieldMut,0:T,nonopt))
         )
         (
             Pair,
             pair_strs::Pair,
             kind=regular,
             fields(
-                (IntoFieldMut,left:T ,pair_strs::left )
-                (IntoFieldMut,right:U,pair_strs::right)
+                (IntoFieldMut,left:T ,nonopt,pair_strs::left )
+                (IntoFieldMut,right:U,nonopt,pair_strs::right)
             )
         )
         (
@@ -84,75 +84,11 @@ impl_getters_for_derive_enum! {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
-// #[derive(Structural, Debug, Clone)]
-//#[struc(debug_print)]
+#[derive(Structural, Debug, Clone)]
 enum DerivingPair<T, U> {
     AllCorrect(T),
     Pair { left: T, right: U },
     Unit,
-}
-
-pub(crate) mod DerivingPair_names_module {
-    use super::*;
-    use structural::pmr::*;
-    pub type STR_AllCorrect___0 =
-        ::structural::pmr::TString<(_A, _l, _l, _C, _o, _r, _r, _e, _c, _t)>;
-    pub type STR_0___1 = ::structural::pmr::TString<(_0,)>;
-    pub type STR_Pair___2 = ::structural::pmr::TString<(_P, _a, _i, _r)>;
-    pub type STR_left___3 = ::structural::pmr::TString<(_l, _e, _f, _t)>;
-    pub type STR_right___4 = ::structural::pmr::TString<(_r, _i, _g, _h, _t)>;
-    pub type STR_Unit___5 = ::structural::pmr::TString<(_U, _n, _i, _t)>;
-}
-#[doc = "A trait aliasing the accessor impls for [DerivingPair](./struct.DerivingPair.html) fields\n\nThis trait also has all the constraints(where clause and generic parametr bounds)\n             of [the same struct](./struct.DerivingPair.html).\n\n### Accessor traits\nThese are the accessor traits this aliases:\n\n"]
-trait DerivingPair_SI<T, U>:
-    structural::IntoFieldMut<
-        DerivingPair_names_module::STR_0___1,
-        Err = structural::pmr::NonOptField,
-        Ty = T,
-    > + structural::IntoFieldMut<
-        DerivingPair_names_module::STR_left___3,
-        Err = structural::pmr::NonOptField,
-        Ty = T,
-    > + structural::IntoFieldMut<
-        DerivingPair_names_module::STR_right___4,
-        Err = structural::pmr::NonOptField,
-        Ty = U,
-    >
-{
-}
-impl<T, U, __This: ?Sized> DerivingPair_SI<T, U> for __This where
-    __This: structural::IntoFieldMut<
-            DerivingPair_names_module::STR_0___1,
-            Err = structural::pmr::NonOptField,
-            Ty = T,
-        > + structural::IntoFieldMut<
-            DerivingPair_names_module::STR_left___3,
-            Err = structural::pmr::NonOptField,
-            Ty = T,
-        > + structural::IntoFieldMut<
-            DerivingPair_names_module::STR_right___4,
-            Err = structural::pmr::NonOptField,
-            Ty = U,
-        >
-{
-}
-::structural::declare_variant_proxy! { DerivingPair_VariantProxy }
-::structural::impl_getters_for_derive_enum! {
-    impl [T, U,] DerivingPair < T, U > where []
-    {
-        enum = DerivingPair proxy = DerivingPair_VariantProxy
-        (AllCorrect, DerivingPair_names_module :: STR_AllCorrect___0, kind =
-         newtype, fields
-         ((IntoFieldMut, 0 : T, DerivingPair_names_module :: STR_0___1,)))
-        (Pair, DerivingPair_names_module :: STR_Pair___2, kind = regular,
-         fields
-         ((IntoFieldMut, left : T, DerivingPair_names_module :: STR_left___3,)
-          (IntoFieldMut, right : U, DerivingPair_names_module ::
-           STR_right___4,)))
-        (Unit, DerivingPair_names_module :: STR_Unit___5, kind = regular,
-         fields ())
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

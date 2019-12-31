@@ -5,7 +5,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, TokenStreamExt};
 
 use syn::{
     parse::{Parse, ParseStream},
@@ -109,13 +109,21 @@ pub(crate) enum IsOptional {
     No,
 }
 
+
+impl IsOptional{
+    pub(crate) fn derive_arg(self)->IsOptionalDeriveArg{
+        IsOptionalDeriveArg{
+            value:self,
+        }
+    }
+}
+
 impl ToTokens for IsOptional {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match *self {
-            IsOptional::Yes => Ident::new("OptionalField", Span::call_site()),
-            IsOptional::No => Ident::new("NonOptField", Span::call_site()),
-        }
-        .to_tokens(tokens);
+        tokens.append_all(match *self {
+            IsOptional::Yes => quote!(OptionalField),
+            IsOptional::No => quote!(NonOptField),
+        });
     }
 }
 
@@ -125,6 +133,22 @@ impl Parse for IsOptional {
             Some(_) => IsOptional::Yes,
             None => IsOptional::No,
         })
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct IsOptionalDeriveArg{
+    value:IsOptional,
+}
+
+impl ToTokens for IsOptionalDeriveArg {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        tokens.append_all(match self.value {
+            IsOptional::Yes => quote!(opt),
+            IsOptional::No => quote!(nonopt),
+        });
     }
 }
 

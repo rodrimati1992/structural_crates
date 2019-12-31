@@ -1,6 +1,6 @@
 use crate::{
     arenas::Arenas,
-    field_access::{Access, IsOptional},
+    field_access::{Access,AccessAndIsOptional, IsOptional},
     ident_or_index::IdentOrIndexRef,
     tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens, NamesModuleIndex},
 };
@@ -68,7 +68,8 @@ pub struct StructuralVariant<'a> {
 pub(crate) struct TinyStructuralField<'a> {
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
-    pub(crate) optionality: IsOptional,
+    pub(crate) inner_optionality: IsOptional,
+    pub(crate) is_in_variant: bool,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -77,7 +78,8 @@ pub(crate) struct StructuralField<'a> {
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
     pub(crate) alias_index: NamesModuleIndex,
-    pub(crate) optionality: IsOptional,
+    pub(crate) inner_optionality: IsOptional,
+    pub(crate) is_in_variant: bool,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -247,6 +249,22 @@ impl<'a> StructuralVariant<'a> {
     }
 }
 
+macro_rules! declare_structural_field_methods {
+    () => (
+        pub(crate) fn outer_optionality(&self)->IsOptional{
+            if self.is_in_variant {
+                IsOptional::Yes
+            }else{
+                self.inner_optionality
+            }
+        }
+
+        pub(crate) fn access_and_outer_optionality(&self)-> AccessAndIsOptional {
+            self.access.and_optionality(self.outer_optionality())
+        }
+    )
+}
+
 impl<'a> TinyStructuralField<'a> {
     pub(crate) fn parse(
         enum_variant: Option<&'a Ident>,
@@ -256,19 +274,19 @@ impl<'a> TinyStructuralField<'a> {
     ) -> Result<Self, syn::Error> {
         let ident = IdentOrIndexRef::parse(arenas, input)?;
         let _: Token![:] = input.parse()?;
-        let optionality = input.parse::<IsOptional>()?;
+        let inner_optionality = input.parse::<IsOptional>()?;
         let ty = FieldType::parse(arenas, input)?;
 
         Ok(Self {
             access,
             ident,
-            optionality: match enum_variant {
-                Some(_) => IsOptional::Yes,
-                None => optionality,
-            },
+            inner_optionality,
+            is_in_variant: enum_variant.is_some(),
             ty,
         })
     }
+
+    declare_structural_field_methods!{}
 }
 
 impl<'a> StructuralField<'a> {
@@ -282,7 +300,8 @@ impl<'a> StructuralField<'a> {
         let TinyStructuralField {
             access: _,
             ident,
-            optionality,
+            inner_optionality,
+            is_in_variant,
             ty,
         } = TinyStructuralField::parse(enum_variant, access, arenas, input)?;
         input.parse::<Token![,]>()?;
@@ -296,24 +315,22 @@ impl<'a> StructuralField<'a> {
             access,
             ident,
             alias_index,
-            optionality,
+            inner_optionality,
+            is_in_variant,
             ty,
         })
     }
+    
+    declare_structural_field_methods!{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<'a> ToTokens for TinyStructuralField<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
-        let TinyStructuralField {
-            access,
-            ident,
-            optionality,
-            ty,
-        } = *self;
+        let TinyStructuralField { ident, ty, .. } = *self;
 
-        let the_trait = access.and_optionality(optionality);
+        let the_trait = self.access_and_outer_optionality();
         let ident = tident_tokens(ident.to_string(), FullPathForChars::Yes);
         let ty = ToTokenFnMut::new(|tokens| match ty {
             FieldType::Ty(x) => x.to_tokens(tokens),
@@ -408,7 +425,7 @@ fn write_field_docs(
 
     use self::FieldType as FT;
 
-    let the_trait = field.access.and_optionality(field.optionality).trait_name();
+    let the_trait = field.access_and_outer_optionality().trait_name();
 
     let ident = match variant {
         Some(v_ident) => format!("::{}.{}", v_ident, field.ident),
@@ -444,7 +461,7 @@ fn write_field_docs(
         field_ty,
         LP = left_padding,
     )?;
-    match (variant, field.optionality) {
+    match (variant, field.inner_optionality) {
         (Some(vari_name), _) => {
             write!(docs, "field in the `{}` variant", vari_name)?;
         }
@@ -475,7 +492,7 @@ fn process_field(
         .to_tokens(assoc_ty_bounds);
     }
 
-    let trait_ = field.access.and_optionality(field.optionality);
+    let trait_ = field.access_and_outer_optionality();
 
     let assoc_ty = match &field.ty {
         FT::Ty(ty) => quote!(Ty=#ty),

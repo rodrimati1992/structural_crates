@@ -385,6 +385,7 @@ pub mod tests {
     mod impl_struct;
     mod macro_tests;
     mod multi_nested_fields;
+    mod optional_fields;
     mod structural_alias;
     mod structural_derive;
 }
@@ -430,7 +431,11 @@ pub mod pmr {
     pub use crate::type_level::*;
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
-    pub use crate::std_::{hint::unreachable_unchecked, marker::PhantomData};
+    pub use crate::std_::{
+        hint::unreachable_unchecked,
+        marker::PhantomData,
+        option::Option::{self, None, Some},
+    };
 
     #[cfg(feature = "alloc")]
     pub use crate::alloc::boxed::Box;

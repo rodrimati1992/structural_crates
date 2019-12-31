@@ -135,8 +135,8 @@ macro_rules! make_struct {
                             IntoFieldMut<
                                 $field_name : $field_name,
                                 _names_module_::$field_name,
+                                opt=nonopt,
                                 stringify!($field_name),
-                                opt=false,
                             >
                         ))*
                     }
