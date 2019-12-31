@@ -7,7 +7,10 @@ and multiple field accesses (`FieldPathSet`).
 
 use core_extensions::MarkerType;
 
-use std_::marker::PhantomData;
+use std_::{
+    fmt::{self, Debug},
+    marker::PhantomData,
+};
 
 use crate::type_level::_private::TString;
 
@@ -42,6 +45,12 @@ impl<T, U> IsFieldPathSet for FieldPathSet<T, U> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+impl<T> Debug for TString<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TString").finish()
+    }
+}
 
 impl<T> TString<T> {
     /// Constructs the TString.
@@ -93,6 +102,12 @@ impl<T> Clone for FieldPath<T> {
     #[inline(always)]
     fn clone(&self) -> Self {
         *self
+    }
+}
+
+impl<T> Debug for FieldPath<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TString").finish()
     }
 }
 
@@ -207,6 +222,12 @@ impl<T, U> Clone for FieldPathSet<T, U> {
     #[inline(always)]
     fn clone(&self) -> Self {
         *self
+    }
+}
+
+impl<T, U> Debug for FieldPathSet<T, U> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FieldPathSet").finish()
     }
 }
 

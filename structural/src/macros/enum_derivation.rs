@@ -16,7 +16,11 @@ macro_rules! impl_getter_enum{
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
-        newtype( $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )* )
+        newtype(
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident
+            $(,$field_name_param:ty)? $( , )*
+        )
     )=>{
         impl<$($typarams)*>
             $crate::GetFieldImpl< $crate::pmr::FieldPath1<$variant_name_str> >
@@ -29,7 +33,9 @@ macro_rules! impl_getter_enum{
 
             fn get_field_(&self)->Result<&$field_ty,$crate::field_traits::OptionalField>{
                 match self {
-                    $enum_::$variant{$field_name:field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:field,..}=>{
+                        $crate::handle_optionality!($optionality,ref,field)
+                    }
                     _=>Err($crate::field_traits::OptionalField),
                 }
             }
@@ -47,7 +53,9 @@ macro_rules! impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         regular(
-            $field_name:tt : $field_ty:ty, $field_name_param:ty  $( , )*
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident,
+            $field_name_param:ty $( , )*
         )
     )=>{
         impl<$($typarams)*>
@@ -57,12 +65,14 @@ macro_rules! impl_getter_enum{
             $($where_)*
         {
             type Ty=$field_ty;
-            type Err=$crate::field_traits::NonOptField;
+            type Err=$crate::err_from_opt!($optionality);
 
             #[inline(always)]
-            fn get_field_(&self)->Result<&$field_ty,$crate::field_traits::NonOptField>{
+            fn get_field_(&self)->Result<&$field_ty,$crate::err_from_opt!($optionality)>{
                 match self.value {
-                    $enum_::$variant{$field_name:ref field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:ref field,..}=>{
+                        $crate::handle_optionality!($optionality,ref,field)
+                    }
                     _=>unsafe{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -124,7 +134,11 @@ macro_rules! impl_getter_enum{
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
-        newtype( $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )* )
+        newtype(
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident
+            $(,$field_name_param:ty)? $( , )*
+        )
     )=>{
         unsafe impl<$($typarams)*>
             $crate::GetFieldMutImpl< $crate::pmr::FieldPath1<$variant_name_str> >
@@ -137,7 +151,9 @@ macro_rules! impl_getter_enum{
                 &mut self
             )->Result<&mut $field_ty,$crate::field_traits::OptionalField>{
                 match self {
-                    $enum_::$variant{$field_name:field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:field,..}=>{
+                        $crate::handle_optionality!($optionality,mut,field)
+                    }
                     _=>Err($crate::field_traits::OptionalField),
                 }
             }
@@ -149,7 +165,13 @@ macro_rules! impl_getter_enum{
             )->Result<*mut $field_ty,$crate::field_traits::OptionalField>{
                 let this=this as *mut Self;
                 match *this {
-                    $enum_::$variant{$field_name:ref mut field}=>Ok(field as *mut $field_ty),
+                    $enum_::$variant{$field_name:ref mut field}=>{
+                        $crate::handle_optionality!(
+                            $optionality,
+                            raw,
+                            field as *mut $crate::option_or_value_ty!($optionality,$field_ty),
+                        )
+                    }
                     _=>Err( $crate::field_traits::OptionalField ),
                 }
             }
@@ -182,7 +204,9 @@ macro_rules! impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         regular(
-            $field_name:tt : $field_ty:ty, $field_name_param:ty  $( , )*
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident,
+            $field_name_param:ty $( , )*
         )
     )=>{
         unsafe impl<$($typarams)*>
@@ -195,9 +219,11 @@ macro_rules! impl_getter_enum{
             #[inline(always)]
             fn get_field_mut_(
                 &mut self
-            )->Result<&mut $field_ty,$crate::field_traits::NonOptField>{
+            )->Result<&mut $field_ty,$crate::err_from_opt!($optionality)>{
                 match self.value {
-                    $enum_::$variant{$field_name:ref mut field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:ref mut field,..}=>{
+                        $crate::handle_optionality!($optionality,mut,field)
+                    }
                     _=>unsafe{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -209,10 +235,14 @@ macro_rules! impl_getter_enum{
             unsafe fn get_field_raw_mut(
                 this:*mut (),
                 _:$crate::pmr::PhantomData<$crate::pmr::FieldPath1<$field_name_param>>,
-            )->Result<*mut $field_ty,$crate::field_traits::NonOptField>{
+            )->Result<*mut $field_ty,$crate::err_from_opt!($optionality)>{
                 match *(this as *mut Self as *mut $self_) {
                     $enum_::$variant{$field_name:ref mut this,..    }=>{
-                        Ok( this as *mut $field_ty )
+                        $crate::handle_optionality!(
+                            $optionality,
+                            raw,
+                            this as *mut $crate::option_or_value_ty!($optionality,$field_ty),
+                        )
                     }
                     _=>{
                         // The proxies for each variant ought only be constructible
@@ -227,7 +257,7 @@ macro_rules! impl_getter_enum{
             )->$crate::field_traits::GetFieldRawMutFn<
                 $crate::pmr::FieldPath1<$field_name_param>,
                 $field_ty,
-                $crate::field_traits::NonOptField,
+                $crate::err_from_opt!($optionality),
             >{
                 <Self as
                     $crate::field_traits::GetFieldMutImpl<
@@ -320,7 +350,11 @@ macro_rules! impl_getter_enum{
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
-        newtype( $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )* )
+        newtype(
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident
+            $(,$field_name_param:ty)? $( , )*
+        )
     )=>{
         impl<$($typarams)*>
             $crate::IntoFieldImpl< $crate::pmr::FieldPath1<$variant_name_str> >
@@ -330,7 +364,9 @@ macro_rules! impl_getter_enum{
         {
             fn into_field_(self)->Result<$field_ty,$crate::field_traits::OptionalField>{
                 match self {
-                    $enum_::$variant{$field_name:field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:field,..}=>{
+                        $crate::handle_optionality!($optionality,move,field)
+                    }
                     _=>Err($crate::field_traits::OptionalField),
                 }
             }
@@ -354,7 +390,9 @@ macro_rules! impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         regular(
-            $field_name:tt : $field_ty:ty, $field_name_param:ty  $( , )*
+            $field_name:tt : $field_ty:ty,
+            $optionality:ident,
+            $field_name_param:ty $( , )*
         )
     )=>{
         impl<$($typarams)*>
@@ -364,9 +402,11 @@ macro_rules! impl_getter_enum{
             $($where_)*
         {
             #[inline(always)]
-            fn into_field_(self)->Result<$field_ty,$crate::field_traits::NonOptField>{
+            fn into_field_(self)->Result<$field_ty,$crate::err_from_opt!($optionality)>{
                 match self.value {
-                    $enum_::$variant{$field_name:field,..}=>Ok(field),
+                    $enum_::$variant{$field_name:field,..}=>{
+                        $crate::handle_optionality!($optionality,move,field)
+                    }
                     _=>unsafe{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -378,7 +418,7 @@ macro_rules! impl_getter_enum{
             $crate::z_impl_box_into_field_method!{
                 $crate::pmr::FieldPath1<$field_name_param>,
                 $field_ty,
-                $crate::field_traits::NonOptField,
+                $crate::err_from_opt!($optionality),
             }
         }
     };
@@ -508,14 +548,16 @@ macro_rules! impl_getter_enum{
                 variant_name($variant_name_str:ty)
             )
 
-            $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )*
+            $field_name:tt : $field_ty:ty ,
+            $optionality:ident
+            $(,$field_name_param:ty)? $( , )*
         )
     )=>{
         $crate::impl_getter_enum!{
             $trait_
             shared $shared
             newtype(
-                $field_name : $field_ty $(,$field_name_param)?
+                $field_name : $field_ty,$optionality $(,$field_name_param)?
             )
         }
     };
@@ -525,7 +567,14 @@ macro_rules! impl_getter_enum{
     (
         shared $shared:tt
         kind=newtype
-        fields( ( $trait_:ident , $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )* ) )
+        fields(
+            (
+                $trait_:ident ,
+                $field_name:tt : $field_ty:ty ,
+                $optionality:ident
+                $(,$field_name_param:ty)? $( , )*
+            )
+        )
     )=>{
         $crate::impl_getter_enum!{
             shared $shared
@@ -535,7 +584,7 @@ macro_rules! impl_getter_enum{
 
                 shared $shared
 
-                $field_name : $field_ty $(,$field_name_param)?
+                $field_name : $field_ty,$optionality $(,$field_name_param)?
             )
         }
     };
@@ -601,7 +650,14 @@ macro_rules! delegate_to_variant_proxy {
         shared $shared:tt
         shared $shared2:tt
         kind=newtype
-        fields( ( $trait:ident, $field_name:tt : $field_ty:ty $(,$field_name_param:ty)? $( , )*) )
+        fields(
+            (
+                $trait:ident,
+                $field_name:tt : $field_ty:ty ,
+                $optionality:ident
+                $(,$field_name_param:ty)? $( , )*
+            )
+        )
     )=>{
         delegate_to_variant_proxy!{
             shared $shared
@@ -758,7 +814,7 @@ macro_rules! delegate_to_variant_proxy {
                 Ty=_O,
                 Err=$crate::field_traits::OptionalField,
             >,
-            Self:IntoFieldImpl<$crate::pmr::FieldPath1<$variant_name_str>,Ty=$proxy_ty>,
+            Self:$crate::IntoFieldImpl<$crate::pmr::FieldPath1<$variant_name_str>,Ty=$proxy_ty>,
             $proxy_ty: $crate::IntoFieldImpl<$crate::pmr::FieldPath1<_F>,Ty=_O>,
         {
             #[inline(always)]

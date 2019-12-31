@@ -145,7 +145,8 @@ fn deriving_structural<'a>(
 
                 Some(StructuralField {
                     access: config_f.access,
-                    optionality: IsOptional::No,
+                    inner_optionality: IsOptional::No,
+                    is_in_variant: struct_or_enum==StructOrEnum::Enum,
                     ident,
                     alias_index,
                     ty: match &config_f.is_impl {
@@ -242,7 +243,9 @@ fn deriving_structural<'a>(
 
             let field_names = fields.iter().map(|f| &f.ident);
 
-            let field_tys = fields.iter().cloned().map(|f| &f.ty);
+            let field_tys = fields.iter().map(|f| &f.ty);
+
+            let inner_optionality=sdt.fields.iter().map(|f| f.inner_optionality.derive_arg() );
 
             let renamed_field_names =
                 fields
@@ -270,8 +273,8 @@ fn deriving_structural<'a>(
                             #getter_trait<
                                 #field_names : #field_tys ,
                                 #names_module_path::#alias_names,
+                                opt=#inner_optionality,
                                 #renamed_field_names,
-                                opt=false,
                             >
                         ))*
                     }
@@ -295,6 +298,8 @@ fn deriving_structural<'a>(
                         (StructKind::Tuple, 1) => quote!(newtype),
                         _ => quote! { regular },
                     };
+
+
                     let field_tokens =
                         fields
                             .iter()
@@ -303,10 +308,12 @@ fn deriving_structural<'a>(
                                 let access = sdt_field.access;
                                 let fname = &field.ident;
                                 let fty = field.ty;
+                                let inner_optionality=sdt_field.inner_optionality.derive_arg();
                                 let f_tstr = names_module.alias_name(sdt_field.alias_index);
                                 quote!(
                                     #access,
                                     #fname:#fty,
+                                    #inner_optionality,
                                     #names_module_path::#f_tstr,
                                 )
                             });

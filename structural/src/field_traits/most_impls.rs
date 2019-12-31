@@ -24,8 +24,8 @@ impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",opt=false,  > )
-        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < start : T,Start_STR,opt=nonopt,"start",> )
+        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
     }
 }
 
@@ -33,7 +33,7 @@ impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",opt=false,  > )
+        (IntoFieldMut < start : T,Start_STR,opt=nonopt,"start",> )
     }
 }
 
@@ -41,7 +41,7 @@ impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
     }
 }
 
@@ -49,7 +49,7 @@ impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",opt=false,  > )
+        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
     }
 }
 
