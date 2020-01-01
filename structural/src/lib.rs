@@ -429,6 +429,7 @@ pub mod pmr {
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
+    pub use crate::utils::OptionParam;
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
     pub use crate::std_::{

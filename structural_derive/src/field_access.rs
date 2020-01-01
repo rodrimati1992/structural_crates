@@ -109,12 +109,9 @@ pub(crate) enum IsOptional {
     No,
 }
 
-
-impl IsOptional{
-    pub(crate) fn derive_arg(self)->IsOptionalDeriveArg{
-        IsOptionalDeriveArg{
-            value:self,
-        }
+impl IsOptional {
+    pub(crate) fn derive_arg(self) -> IsOptionalDeriveArg {
+        IsOptionalDeriveArg { value: self }
     }
 }
 
@@ -139,8 +136,8 @@ impl Parse for IsOptional {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct IsOptionalDeriveArg{
-    value:IsOptional,
+pub(crate) struct IsOptionalDeriveArg {
+    value: IsOptional,
 }
 
 impl ToTokens for IsOptionalDeriveArg {

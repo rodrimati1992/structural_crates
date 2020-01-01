@@ -1,7 +1,9 @@
 use crate::{
+    arenas::Arenas,
     datastructure::StructOrEnum,
     field_access::IsOptional,
     ident_or_index::IdentOrIndexRef,
+    parse_utils::extract_option_parameter,
     structural_alias_impl_mod::{
         FieldType, StructuralDataType, StructuralField, StructuralVariant,
     },
@@ -9,7 +11,7 @@ use crate::{
 };
 
 use as_derive_utils::{
-    datastructure::{DataStructure, DataVariant, Field, Struct, StructKind},
+    datastructure::{DataStructure, DataVariant, Field, FieldMap, Struct, StructKind},
     gen_params_in::{GenParamsIn, InWhat},
     return_syn_err,
 };
@@ -18,7 +20,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use quote::quote;
+use quote::{quote, ToTokens};
 
 use syn::{punctuated::Punctuated, DeriveInput, Ident, Token};
 
@@ -27,7 +29,7 @@ mod attribute_parsing;
 #[cfg(test)]
 mod tests;
 
-use self::attribute_parsing::StructuralOptions;
+use self::attribute_parsing::{FieldConfig, StructuralOptions};
 
 #[cfg(test)]
 fn derive_from_str(string: &str) -> Result<TokenStream2, syn::Error> {
@@ -50,7 +52,10 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
 
     match options.delegate_to {
         Some(to) => delegating_structural(ds, &options, to),
-        None => deriving_structural(ds, &options),
+        None => {
+            let arenas = Arenas::default();
+            deriving_structural(ds, &options, &arenas)
+        }
     }?
     .observe(|tokens| {
         if debug_print {
@@ -100,15 +105,48 @@ fn delegating_structural<'a>(
     .piped(Ok)
 }
 
+fn get_optionality<'a>(
+    implicit_optionality: bool,
+    field: &'_ Field<'a>,
+    config_f: &FieldConfig,
+    arenas: &'a Arenas,
+) -> Option<&'a syn::Type> {
+    let optionality_override = config_f.optionality_override;
+
+    match (implicit_optionality, optionality_override) {
+        (_, Some(IsOptional::No)) => return None,
+        (_, Some(IsOptional::Yes)) => {}
+        (false, None) => return None,
+        (true, None) => {}
+    }
+
+    let ty = field.ty;
+
+    let extracted = extract_option_parameter(ty);
+
+    match (optionality_override.is_some(), extracted) {
+        (_, Some(extracted)) => Some(extracted),
+        (false, None) => None,
+        (true, None) => {
+            let opt_ty: syn::Type = syn::parse_quote!( structural::pmr::OptionParam<#ty> );
+
+            Some(arenas.alloc(opt_ty))
+        }
+    }
+}
+
 fn deriving_structural<'a>(
     ds: &'a DataStructure<'a>,
     options: &'a StructuralOptions<'a>,
+    arenas: &'a Arenas,
 ) -> Result<TokenStream2, syn::Error> {
     let StructuralOptions {
         fields: config_fields,
         with_trait_alias,
+        implicit_optionality,
         ..
     } = options;
+    let &implicit_optionality = implicit_optionality;
 
     let struct_ = &ds.variants[0];
 
@@ -122,7 +160,9 @@ fn deriving_structural<'a>(
         DataVariant::Union => unreachable!(),
     };
 
-    let make_fields = |names_module: &mut NamedModuleAndTokens, variant: &'a Struct<'a>| {
+    let mut field_types = FieldMap::with(ds, |f| f.ty);
+
+    let mut make_fields = |names_module: &mut NamedModuleAndTokens, variant: &'a Struct<'a>| {
         variant
             .fields
             .iter()
@@ -143,15 +183,26 @@ fn deriving_structural<'a>(
                     StructOrEnum::Enum => names_module.push_str(ident),
                 };
 
+                let optionality_ty = get_optionality(implicit_optionality, field, config_f, arenas);
+
+                let fty = &mut field_types[field];
+
+                if let Some(x) = optionality_ty {
+                    *fty = x;
+                }
+
                 Some(StructuralField {
                     access: config_f.access,
-                    inner_optionality: IsOptional::No,
-                    is_in_variant: struct_or_enum==StructOrEnum::Enum,
+                    inner_optionality: match optionality_ty {
+                        Some(_) => IsOptional::Yes,
+                        None => IsOptional::No,
+                    },
+                    is_in_variant: struct_or_enum == StructOrEnum::Enum,
                     ident,
                     alias_index,
                     ty: match &config_f.is_impl {
                         Some(yes) => FieldType::Impl(yes),
-                        None => FieldType::Ty(field.ty),
+                        None => FieldType::Ty(*fty),
                     },
                 })
             })
@@ -176,10 +227,6 @@ fn deriving_structural<'a>(
                 .collect(),
         },
     };
-
-    // dbg!(field_names.clone().for_each(|x|{ dbg!(x.to_token_stream().to_string()); }));
-    // dbg!(&field_tys);
-    // dbg!(alias_names.iter().for_each(|x|{ dbg!(x); }));
 
     let structural_alias_trait;
     let opt_names_module;
@@ -243,9 +290,9 @@ fn deriving_structural<'a>(
 
             let field_names = fields.iter().map(|f| &f.ident);
 
-            let field_tys = fields.iter().map(|f| &f.ty);
+            let field_tys = fields.iter().map(|f| field_types[*f]);
 
-            let inner_optionality=sdt.fields.iter().map(|f| f.inner_optionality.derive_arg() );
+            let inner_optionality = sdt.fields.iter().map(|f| f.inner_optionality.derive_arg());
 
             let renamed_field_names =
                 fields
@@ -299,7 +346,6 @@ fn deriving_structural<'a>(
                         _ => quote! { regular },
                     };
 
-
                     let field_tokens =
                         fields
                             .iter()
@@ -307,8 +353,8 @@ fn deriving_structural<'a>(
                             .map(|(&field, sdt_field)| {
                                 let access = sdt_field.access;
                                 let fname = &field.ident;
-                                let fty = field.ty;
-                                let inner_optionality=sdt_field.inner_optionality.derive_arg();
+                                let fty = field_types[field];
+                                let inner_optionality = sdt_field.inner_optionality.derive_arg();
                                 let f_tstr = names_module.alias_name(sdt_field.alias_index);
                                 quote!(
                                     #access,

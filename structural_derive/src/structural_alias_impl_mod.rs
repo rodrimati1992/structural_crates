@@ -1,6 +1,6 @@
 use crate::{
     arenas::Arenas,
-    field_access::{Access,AccessAndIsOptional, IsOptional},
+    field_access::{Access, AccessAndIsOptional, IsOptional},
     ident_or_index::IdentOrIndexRef,
     tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens, NamesModuleIndex},
 };
@@ -286,7 +286,7 @@ impl<'a> TinyStructuralField<'a> {
         })
     }
 
-    declare_structural_field_methods!{}
+    declare_structural_field_methods! {}
 }
 
 impl<'a> StructuralField<'a> {
@@ -320,8 +320,8 @@ impl<'a> StructuralField<'a> {
             ty,
         })
     }
-    
-    declare_structural_field_methods!{}
+
+    declare_structural_field_methods! {}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
