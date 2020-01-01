@@ -11,6 +11,24 @@ pub const fn coerce_slice<'a, T>(slic: &'a [T]) -> &'a [T] {
 
 /////////////////////////////////////////////////////////
 
+mod opsealed {
+    pub trait Sealed {}
+}
+
+impl<T> self::opsealed::Sealed for Option<T> {}
+
+pub trait OptionParam_: self::opsealed::Sealed {
+    type Param;
+}
+
+pub type OptionParam<This> = <This as OptionParam_>::Param;
+
+impl<T> OptionParam_ for Option<T> {
+    type Param = T;
+}
+
+/////////////////////////////////////////////////////////
+
 #[doc(hidden)]
 pub trait MakeUnit {
     const UNIT: Self;
