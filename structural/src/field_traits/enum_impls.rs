@@ -1,4 +1,5 @@
 use crate::{
+    enum_traits::VariantProxy,
     field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField},
     structural_trait::{FieldInfos, Structural},
 };
@@ -10,10 +11,6 @@ tstring_aliases_module! {
         Ok,
         Err,
     }
-}
-
-declare_variant_proxy! {
-    BuiltinProxy
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -93,7 +90,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Result
-        proxy=BuiltinProxy
+        proxy=VariantProxy
         (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T,nonopt)))
         (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E,nonopt)))
     }

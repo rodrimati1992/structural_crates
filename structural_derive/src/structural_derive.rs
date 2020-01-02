@@ -383,9 +383,7 @@ fn deriving_structural<'a>(
 
                 #(#opt_names_module)*
 
-                ::structural::declare_variant_proxy!{
-                    #proxy_
-                }
+                use structural::pmr::VariantProxy as #proxy_;
 
                 ::structural::impl_getters_for_derive_enum!{
                     impl[#impl_generics] #tyname #ty_generics

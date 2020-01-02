@@ -21,6 +21,7 @@ mod multi_fields;
 mod normalize_fields;
 pub mod rev_get_field;
 mod tuple_impls;
+pub mod variant_field;
 
 pub use self::{
     errors::{FieldErr, IntoFieldErr, NonOptField, OptionalField},
