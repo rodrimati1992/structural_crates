@@ -28,6 +28,29 @@ Disables the generation of the `<deriving_type>_SI` trait.
 
 [Here is an example using this attribute](#disabling-the-trait-alias)
 
+### `#[struc(implicit_optionality)]`
+
+Changes accessors of `Option<_>` fields to be optional.
+
+For structs,calling `GetFieldExt::field_` for `Option<T>` fields goes from returning a
+`&Option<T>` to `Option<&T>`.
+
+For enums,calling `GetFieldExt::field_` for `Option<T>` fields goes from returning a
+`Option<&Option<T>>` to `Option<&T>`.
+
+Only fields written like this are treated as optional:
+
+- `Option<_>`
+
+- `std::option::Option<_>`
+
+- `core::option::Option<_>`
+
+(where `_` stands for any type)
+
+If the field is written any differently,then it will not be treated as an optional field,
+and you will be required to use the `#[struc(optional)]` attribute.
+
 # Field Attributes
 
 ### `#[struc(rename="<new_name>")]`
@@ -55,6 +78,83 @@ You can only delegate the implementation and Structural and accessor traits
 to a single field.
 
 Using this attribute will disable the generation of the `<deriving_type>_SI` trait.
+
+### `#[struc(optional)]`
+
+Forces a field to have an optional accessor.
+
+As opposed to `#[struc(implicit_optionality)]`,
+this also allows type aliases of Option to be used,
+
+[Here are more details on how optional fields work](./optional_accessors/index.html)
+
+Example:
+```rust
+use structural::{GetFieldExt,Structural,fp};
+
+type OptionU64=Option<u64>;
+
+#[derive(Structural)]
+struct WithOptional{
+    #[struc(optional)]
+    pub foo:OptionU64,
+
+    pub not_optional:OptionU64,
+}
+
+let mut this=WithOptional{
+    foo: Some(99),
+    not_optional: Some(13),
+};
+assert_eq!( this.field_(fp!(foo)), Some(&99) );
+assert_eq!( this.field_(fp!(not_optional)), &Some(13) );
+
+this.foo=None;
+this.not_optional=None;
+assert_eq!( this.field_(fp!(foo)), None );
+assert_eq!( this.field_(fp!(not_optional)), &None );
+
+```
+
+
+### `#[struc(not_optional)]`
+
+Forces a field to not have an optional accessor.
+
+This allows using `Option<_>` fields with `#[struc(implicit_optionality)]`,
+without making their accessor optional.
+
+[Here are more details on how optional fields work](./optional_accessors/index.html)
+
+Example:
+```rust
+use structural::{GetFieldExt,Structural,fp};
+
+type OptionU64=Option<u64>;
+
+#[derive(Structural)]
+#[struc(implicit_optionality)]
+struct WithOptional{
+    pub foo:Option<u64>,
+
+    #[struc(not_optional)]
+    pub not_optional:Option<u64>,
+}
+
+let mut this=WithOptional{
+    foo: Some(99),
+    not_optional: Some(13),
+};
+assert_eq!( this.field_(fp!(foo)), Some(&99) );
+assert_eq!( this.field_(fp!(not_optional)), &Some(13) );
+
+this.foo=None;
+this.not_optional=None;
+assert_eq!( this.field_(fp!(foo)), None );
+assert_eq!( this.field_(fp!(not_optional)), &None );
+
+```
+
 
 # Container/Field Attributes
 
@@ -356,3 +456,5 @@ fn total_count(animals:&dyn AnimalCounts_SI)->u64{
 
 
 */
+
+pub mod optional_accessors;
