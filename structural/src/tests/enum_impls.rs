@@ -1,10 +1,7 @@
+use crate::enum_traits::VariantProxy;
 use crate::*;
 
 use std_::mem;
-
-declare_variant_proxy! {
-    BuiltinProxy
-}
 
 #[test]
 fn option_test() {
@@ -57,7 +54,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
-        proxy=BuiltinProxy
+        proxy=VariantProxy
         (
             AllCorrect,
             pair_strs::AllCorrect,

@@ -425,6 +425,7 @@ pub mod reexports {
 pub mod pmr {
     pub use crate::chars::*;
     pub use crate::enum_traits::*;
+    pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;

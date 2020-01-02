@@ -1,3 +1,4 @@
+use crate::enum_traits::VariantProxy;
 use crate::{GetFieldExt, Structural};
 
 field_path_aliases_module! {
@@ -150,10 +151,6 @@ declare_struct_tests! {
 
 /////////////////////////////////////////////////////
 
-declare_variant_proxy! {
-    EnumProxy
-}
-
 tstring_aliases_module! {
     mod strings{
         A,B,C,a,b,c,d
@@ -177,7 +174,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=EnumManual
-        proxy=EnumProxy
+        proxy=VariantProxy
         (
             A,
             strings::A,

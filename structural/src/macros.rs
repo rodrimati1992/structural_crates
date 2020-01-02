@@ -19,9 +19,6 @@ mod structural_alias;
 #[macro_use]
 mod enum_derivation;
 
-#[macro_use]
-mod variant_proxy;
-
 /// Implements an infallible getter
 #[doc(hidden)]
 #[macro_export]
