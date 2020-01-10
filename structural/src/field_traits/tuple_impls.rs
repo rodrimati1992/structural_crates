@@ -1,7 +1,7 @@
-use crate::structural_trait::{FieldInfo, FieldInfos};
-use crate::{IntoFieldMut, Structural};
-
-use crate::field_traits::{for_arrays::names, NonOptField};
+use crate::{
+    field_traits::{for_arrays::names, IntoFieldMut, NonOptField},
+    structural_trait::{FieldInfo, FieldInfos, Structural},
+};
 
 macro_rules! impl_tuple {
     (inner;

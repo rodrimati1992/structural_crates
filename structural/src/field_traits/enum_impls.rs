@@ -1,7 +1,10 @@
 use crate::{
-    enum_traits::VariantProxy,
-    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField},
+    enum_traits::{IsVariant, VariantProxy},
+    field_traits::{
+        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField,
+    },
     structural_trait::{FieldInfos, Structural},
+    type_level::FieldPath1,
 };
 
 use std_::marker::PhantomData;
@@ -15,35 +18,42 @@ tstring_aliases_module! {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T, Name> GetFieldImpl<Name> for Option<T>
+impl<T, Name> FieldType<Name> for Option<T>
 where
-    T: GetFieldImpl<Name>,
+    T: FieldType<Name>,
 {
     type Ty = T::Ty;
+}
+
+impl<T, Name, P> GetFieldImpl<Name, P> for Option<T>
+where
+    T: GetFieldImpl<Name, P>,
+{
     type Err = OptionalField;
 
-    fn get_field_(&self) -> Result<&Self::Ty, Self::Err> {
+    fn get_field_(&self, name: Name, param: P) -> Result<&Self::Ty, Self::Err> {
         match self {
-            Some(expr) => map_of!(expr.get_field_()),
+            Some(expr) => map_of!(expr.get_field_(name, param)),
             None => Err(OptionalField),
         }
     }
 }
 
-unsafe impl<T, Name> GetFieldMutImpl<Name> for Option<T>
+unsafe impl<T, Name, P> GetFieldMutImpl<Name, P> for Option<T>
 where
-    T: GetFieldMutImpl<Name>,
+    T: GetFieldMutImpl<Name, P>,
 {
-    fn get_field_mut_(&mut self) -> Result<&mut Self::Ty, Self::Err> {
+    fn get_field_mut_(&mut self, name: Name, param: P) -> Result<&mut Self::Ty, Self::Err> {
         match self {
-            Some(expr) => map_of!(expr.get_field_mut_()),
+            Some(expr) => map_of!(expr.get_field_mut_(name, param)),
             None => Err(OptionalField),
         }
     }
 
     unsafe fn get_field_raw_mut(
         ptr: *mut (),
-        name: PhantomData<Name>,
+        name: Name,
+        param: P,
     ) -> Result<*mut Self::Ty, Self::Err>
     where
         Self: Sized,
@@ -51,29 +61,47 @@ where
         match *(ptr as *mut Self) {
             Some(ref mut expr) => {
                 let ptr = expr as *mut T as *mut ();
-                map_of!(T::get_field_raw_mut(ptr, name))
+                map_of!(T::get_field_raw_mut(ptr, name, param))
             }
             None => Err(OptionalField),
         }
     }
 
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<Name, Self::Ty, Self::Err> {
-        <Self as GetFieldMutImpl<Name>>::get_field_raw_mut
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<Name, P, Self::Ty, Self::Err> {
+        <Self as GetFieldMutImpl<Name, P>>::get_field_raw_mut
     }
 }
 
-impl<T, Name> IntoFieldImpl<Name> for Option<T>
+impl<T, Name, P> IntoFieldImpl<Name, P> for Option<T>
 where
-    T: IntoFieldImpl<Name>,
+    T: IntoFieldImpl<Name, P>,
 {
-    fn into_field_(self) -> Result<Self::Ty, Self::Err> {
+    fn into_field_(self, name: Name, param: P) -> Result<Self::Ty, Self::Err> {
         match self {
-            Some(expr) => map_of!(expr.into_field_()),
+            Some(expr) => map_of!(expr.into_field_(name, param)),
             None => Err(OptionalField),
         }
     }
 
-    z_impl_box_into_field_method! {Name}
+    z_impl_box_into_field_method! { Name, P, Self::Ty, OptionalField }
+}
+
+unsafe impl<T, V> IsVariant<FieldPath1<V>> for Option<T>
+where
+    T: IsVariant<FieldPath1<V>>,
+{
+    fn is_variant_(&self, name: FieldPath1<V>) -> bool {
+        match self {
+            Some(x) => x.is_variant_(name),
+            None => false,
+        }
+    }
+}
+
+unsafe_delegate_variant_field! {
+    impl[T,] IntoVariantFieldMut for Option<T>
+    where[]
+    delegate_to=T,
 }
 
 impl<T> Structural for Option<T>

@@ -67,7 +67,9 @@ print_first_3( ["baz";32] );
 */
 
 use crate::{
-    field_traits::{GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField},
+    field_traits::{
+        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField,
+    },
     structural_trait::{FieldInfo, FieldInfos, Structural},
     type_level::{
         cmp::{Compare_, TGreater},
@@ -159,16 +161,21 @@ macro_rules! declare_array_paths {
                 const _SEALED_IPFA:SealedIPFA<P,[T;$index]>=SealedIPFA{_marker:PhantomData};
             }
 
+            impl<T,P> FieldType<P> for [T;$index]
+            where
+                P:IsPathForArray<Self>,
+            {
+                type Ty=T;
+            }
 
             impl<T,P> GetFieldImpl<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
-                type Ty=T;
                 type Err=NonOptField;
 
                 #[inline(always)]
-                fn get_field_(&self)->Result<&Self::Ty,NonOptField>{
+                fn get_field_(&self,_:P,_:())->Result<&Self::Ty,NonOptField>{
                     Ok(&self[P::INDEX])
                 }
             }
@@ -178,20 +185,21 @@ macro_rules! declare_array_paths {
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn get_field_mut_(&mut self)->Result<&mut Self::Ty,NonOptField>{
+                fn get_field_mut_(&mut self,_:P,_:())->Result<&mut Self::Ty,NonOptField>{
                     Ok(&mut self[P::INDEX])
                 }
 
                 #[inline(always)]
                 unsafe fn get_field_raw_mut(
                     ptr:*mut (),
-                    _:PhantomData<P>
+                    _:P,
+                    _:(),
                 )->Result<*mut Self::Ty,NonOptField>{
                     Ok((ptr as *mut T).add(P::INDEX))
                 }
 
                 #[inline(always)]
-                fn get_field_raw_mut_func(&self)->GetFieldRawMutFn<P,Self::Ty,NonOptField>{
+                fn get_field_raw_mut_func(&self)->GetFieldRawMutFn<P,(),Self::Ty,NonOptField>{
                     <Self as GetFieldMutImpl<P>>::get_field_raw_mut
                 }
             }
@@ -201,7 +209,7 @@ macro_rules! declare_array_paths {
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn into_field_(self)->Result<Self::Ty,NonOptField>{
+                fn into_field_(self,_:P,_:())->Result<Self::Ty,NonOptField>{
                     unsafe{
                         let mut this=ManuallyDrop::new(self);
                         ptr::drop_in_place(&mut this[..P::INDEX]);
