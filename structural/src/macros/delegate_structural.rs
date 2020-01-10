@@ -6,6 +6,13 @@ it doesn't provide a way to do so for only a list of fields.
 
 # Safety
 
+In order to use this macro soundly,
+you must ensure that side effects (including mutation) do not happen while
+getting the delegated-to variable,
+and that the delegated-to variable has a consistent value when
+methods from `structural` traits are called in a sequence
+(with no method calls from non-`structural`-traits in between).
+
 The unsafety of implementing GetFieldMutImpl with this macro comes from the methods
 used to do multiple mutable borrows.
 
@@ -18,7 +25,7 @@ borrowing from the same variable mutably.
 # Example with all syntax
 
 ```rust
-use structural::z_delegate_structural_with;
+use structural::unsafe_delegate_structural_with;
 use structural::mut_ref::MutRef;
 
 # trait Trait{}
@@ -28,7 +35,7 @@ struct Foo<T>{
     value:T
 }
 
-z_delegate_structural_with!{
+unsafe_delegate_structural_with!{
     impl[T,] Foo<T>
     // This where clause is required syntax
     where[
@@ -99,7 +106,7 @@ use std::{
     mem::ManuallyDrop,
 };
 
-use structural::{GetFieldExt,GetFieldMutImpl,z_delegate_structural_with,make_struct,fp};
+use structural::{GetFieldExt,GetFieldMutImpl,unsafe_delegate_structural_with,make_struct,fp};
 use structural::mut_ref::MutRef;
 
 struct Bar<T>{
@@ -115,13 +122,13 @@ impl<T> Bar<T>{
 }
 
 
-z_delegate_structural_with!{
+unsafe_delegate_structural_with!{
     // You must write a trailing comma.
     impl[T,] Bar<T>
     where[
         // This requires T to implement Clone
         // for `Bar<T>` to implement the accessor traits
-        T:Clone
+        T:Clone,
     ]
     self_ident=this;
     delegating_to_type=T;
@@ -198,7 +205,7 @@ z_delegate_structural_with!{
 
 */
 #[macro_export]
-macro_rules! z_delegate_structural_with {
+macro_rules! unsafe_delegate_structural_with {
     (
         impl $impl_params:tt $self:ty
         where $where_clause:tt
@@ -213,6 +220,8 @@ macro_rules! z_delegate_structural_with {
             $( where[ $($mut_where_clause:tt)* ] )?
             $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
+
+            $( raw_mut_impl($($raw_mut_impl:tt)*) )?
         )?
         $(
             IntoFieldImpl
@@ -221,7 +230,7 @@ macro_rules! z_delegate_structural_with {
         )?
     ) => (
 
-        $crate::z_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with!{
             inner-structural;
             impl $impl_params $self
             where $where_clause
@@ -232,7 +241,7 @@ macro_rules! z_delegate_structural_with {
             GetFieldImpl $get_field_closure
         }
 
-        $crate::z_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with!{
             inner;
             impl $impl_params $self
             where $where_clause
@@ -243,22 +252,23 @@ macro_rules! z_delegate_structural_with {
         }
 
         $(
-            $crate::z_delegate_structural_with!{
+            $crate::unsafe_delegate_structural_with!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
                 where[ $( $($mut_where_clause)* )? ]
                 self_ident=$this;
                 delegating_to_type=$delegating_to_type;
+                raw_mut_impl( $($($raw_mut_impl)*)? ),
                 field_name_param=( $fname_var : $fname_ty );
-                GetFieldImpl $get_field_closure
+
                 unsafe GetFieldMutImpl $unsafe_get_field_mut_closure
                 as_delegating_raw $as_field_mutref_closure
             }
         )?
 
         $(
-            $crate::z_delegate_structural_with!{
+            $crate::unsafe_delegate_structural_with!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
@@ -292,17 +302,21 @@ macro_rules! z_delegate_structural_with {
     };
     (get_err;
         delegating_to_type=$delegating_to_type:ty;
+        field_name=$fname_ty:ty;
+        param_type=$param_type:ty;
     )=>{
-        $crate::field_traits::GetFieldErr<$delegating_to_type,__FieldName>
+        $crate::field_traits::GetFieldErr<$delegating_to_type, $fname_ty, $param_type>
     };
     (get_err;
         delegating_to_type=$delegating_to_type:ty;
+        field_name=$fname_ty:ty;
+        param_type=$param_type:ty;
         override_err=$override_err:ty;
     )=>{
         $override_err
     };
     (inner;
-        impl [$($($impl_params:tt)+)?] $self:ty
+        impl [$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         self_ident=$this:ident;
         $(override_err=$override_err:ty;)?
@@ -311,76 +325,352 @@ macro_rules! z_delegate_structural_with {
 
         GetFieldImpl $get_field_closure:block
     )=>{
-        impl<$($($impl_params)* )?__FieldName>
-            $crate::GetFieldImpl<__FieldName>
-            for $self
+        unsafe impl<$($impl_params)* _V>
+            $crate::pmr::IsVariant<_V>
+        for $self
         where
-            $delegating_to_type:$crate::GetFieldImpl<__FieldName>,
+            $delegating_to_type: $crate::pmr::IsVariant<_V>,
             $($where_clause)*
         {
-            type Ty=$crate::GetFieldType<$delegating_to_type,__FieldName>;
-            type Err=$crate::z_delegate_structural_with!{
+            fn is_variant_(&self,name:_V)->bool{
+                let $this=self;
+                let field:&$delegating_to_type=$get_field_closure;
+                $crate::pmr::IsVariant::is_variant_(field,name)
+            }
+        }
+
+        unsafe impl<$($impl_params)* _V,_F>
+            $crate::pmr::GetVariantFieldImpl<_V,_F>
+        for $self
+        where
+            $delegating_to_type: $crate::pmr::GetVariantFieldImpl<_V,_F>,
+            $($where_clause)*
+        {}
+
+        impl<$($impl_params)* $fname_ty> $crate::FieldType<$fname_ty> for $self
+        where
+            $delegating_to_type:$crate::FieldType<$fname_ty>,
+            $($where_clause)*
+        {
+            type Ty=$crate::GetFieldType<$delegating_to_type, $fname_ty>;
+        }
+
+        impl<$($impl_params)* $fname_ty,__P>
+            $crate::GetFieldImpl< $fname_ty, __P>
+            for $self
+        where
+            $delegating_to_type:$crate::GetFieldImpl<$fname_ty,__P>,
+            $($where_clause)*
+        {
+            type Err=$crate::unsafe_delegate_structural_with!{
                 get_err;
                 delegating_to_type=$delegating_to_type;
+                field_name=$fname_ty;
+                param_type=__P;
                 $(override_err=$override_err;)?
             };
 
-            fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
+            #[inline(always)]
+            fn get_field_(
+                &self,
+                $fname_var: $fname_ty,
+                __param:__P,
+            )->Result<
+                &$crate::GetFieldType<Self,$fname_ty>,
+                $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+            >{
                 let $this=self;
                 let field:&$delegating_to_type=$get_field_closure;
-                $crate::GetFieldImpl::<__FieldName>::get_field_(field)
+                $crate::GetFieldImpl::get_field_(field,$fname_var,__param)
             }
         }
     };
     (inner;
-        impl [$($($impl_params:tt)+)?] $self:ty
+        impl [$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         where [$($mut_where_clause:tt)*]
         self_ident=$this:ident;
         delegating_to_type=$delegating_to_type:ty;
+        raw_mut_impl($($raw_mut_impl:tt)*),
         field_name_param=( $fname_var:ident : $fname_ty:ident );
-
-        GetFieldImpl $get_field_closure:block
 
         unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
         as_delegating_raw $as_field_mutref_closure:block
     )=>{
-        unsafe impl<$( $($impl_params)* )?__FieldName>
-            $crate::GetFieldMutImpl<__FieldName>
-            for $self
-        where
-            $delegating_to_type:$crate::GetFieldMutImpl<__FieldName>,
-            $($mut_where_clause)*
-            $($where_clause)*
-        {
-            fn get_field_mut_(&mut self)->Result<&mut Self::Ty,Self::Err>{
-                let $this=self;
-                let field:&mut $delegating_to_type=$unsafe_get_field_mut_closure;
-                <$delegating_to_type as $crate::GetFieldMutImpl<__FieldName>>::get_field_mut_(field)
-            }
-            unsafe fn get_field_raw_mut(
-                $this:*mut (),
-                $fname_var:$crate::pmr::PhantomData<__FieldName>
-            )->Result<*mut Self::Ty,Self::Err>
-            where
-                Self:Sized
-            {
-                let $this=$this as *mut Self;
-                let $this:*mut $delegating_to_type=
-                    $as_field_mutref_closure;
+        $crate::unsafe_delegate_structural_with!{
+            inner-mut-0;
 
-                <$delegating_to_type>::get_field_raw_mut( $this as *mut (),$fname_var )
-            }
+            (
+                impl [$($impl_params)*] $self
+                where [$($where_clause)*]
+                where [$($mut_where_clause)*]
+                self_ident=$this;
+                delegating_to_type=$delegating_to_type;
+                raw_mut_impl($($raw_mut_impl)*)
+                field_name_param=( $fname_var : $fname_ty );
 
-            fn get_field_raw_mut_func(
-                &self
-            )->$crate::field_traits::GetFieldRawMutFn<__FieldName,Self::Ty,Self::Err>{
-                <Self as $crate::GetFieldMutImpl<__FieldName>>::get_field_raw_mut
-            }
+                unsafe GetFieldMutImpl $unsafe_get_field_mut_closure
+                as_delegating_raw $as_field_mutref_closure
+            )
         }
     };
-        (inner;
-        impl [$($($impl_params:tt)+)?] $self:ty
+    (inner-mut-0; $inner_mut_stuff:tt )=>{
+        $crate::unsafe_delegate_structural_with!{
+            inner-mut-1;
+
+            $inner_mut_stuff
+            $inner_mut_stuff
+        }
+    };
+    (inner-mut-1;
+        (
+            impl [$($impl_params:tt)*] $self:ty
+            where [$($where_clause:tt)*]
+            where [$($mut_where_clause:tt)*]
+            self_ident=$this:ident;
+            delegating_to_type=$delegating_to_type:ty;
+            raw_mut_impl( Sized )
+            field_name_param=( $fname_var:ident : $fname_ty:ident );
+
+            unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
+            as_delegating_raw $as_field_mutref_closure:block
+        )
+
+        $inner_mut_stuff:tt
+    )=>{
+        $crate::unsafe_delegate_structural_with!{
+            inner-mut-2;
+
+            $inner_mut_stuff
+
+            fn(
+                #[inline(always)]
+                unsafe fn get_field_raw_mut(
+                    $this:*mut (),
+                    $fname_var: $fname_ty,
+                    __param:__P,
+                )->Result<
+                    *mut $crate::GetFieldType<Self,$fname_ty>,
+                    $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                >
+                where
+                    Self:Sized
+                {
+                    let $this=$this as *mut Self;
+                    let $this:*mut $delegating_to_type=
+                        $as_field_mutref_closure;
+
+                    <$delegating_to_type as
+                        $crate::GetFieldMutImpl<$fname_ty,__P>
+                    >::get_field_raw_mut( $this as *mut (),$fname_var,__param )
+                }
+            )
+
+            impl()
+        }
+    };
+    (inner-mut-1;
+        (
+            impl [$($impl_params:tt)*] $self:ty
+            where [$($where_clause:tt)*]
+            where [$($mut_where_clause:tt)*]
+            self_ident=$this:ident;
+            delegating_to_type=$delegating_to_type:ty;
+            raw_mut_impl( $(?Sized)? )
+            field_name_param=( $fname_var:ident : $fname_ty:ident );
+
+            unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
+            as_delegating_raw $as_field_mutref_closure:block
+        )
+
+        $inner_mut_stuff:tt
+    )=>{
+        $crate::unsafe_delegate_structural_with!{
+            inner-mut-2;
+
+            $inner_mut_stuff
+
+            fn(
+                #[inline(always)]
+                unsafe fn get_field_raw_mut(
+                    $this:*mut (),
+                    $fname_var: $fname_ty,
+                    __param:__P,
+                )->Result<
+                    *mut $crate::GetFieldType<Self,$fname_ty>,
+                    $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                >
+                where
+                    Self:Sized
+                {
+                    let $this=$this as *mut Self;
+                    let $this:*mut $delegating_to_type=
+                        $as_field_mutref_closure;
+
+                    let func=<
+                        $delegating_to_type as
+                        $crate::GetFieldMutImpl<$fname_ty,__P>
+                    >::get_field_raw_mut_func(&*$this);
+                    func( $this as *mut (),$fname_var,__param )
+                }
+            )
+
+            impl()
+        }
+    };
+    (inner-mut-1;
+        (
+            impl [$($impl_params:tt)*] $self:ty
+            where [$($where_clause:tt)*]
+            where [$($mut_where_clause:tt)*]
+            self_ident=$this:ident;
+            delegating_to_type=$delegating_to_type:ty;
+            raw_mut_impl( specialize_cfg( $($specialize_cfg:tt)* ) )
+            field_name_param=( $fname_var:ident : $fname_ty:ident );
+
+            unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
+            as_delegating_raw $as_field_mutref_closure:block
+        )
+
+        $inner_mut_stuff:tt
+    )=>{
+        $crate::unsafe_delegate_structural_with!{
+            inner-mut-2;
+
+            $inner_mut_stuff
+
+
+            fn(
+                $crate::default_if!{
+                    #[inline(always)]
+                    cfg(all($($specialize_cfg)*))
+                    unsafe fn get_field_raw_mut(
+                        $this:*mut (),
+                        $fname_var: $fname_ty,
+                        __param:__P,
+                    )->Result<
+                        *mut $crate::GetFieldType<Self,$fname_ty>,
+                        $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                    >
+                    where
+                        Self:Sized
+                    {
+                        let $this=$this as *mut Self;
+                        let $this:*mut $delegating_to_type=
+                            $as_field_mutref_closure;
+
+                        let func=<
+                            $delegating_to_type as
+                            $crate::GetFieldMutImpl<$fname_ty,__P>
+                        >::get_field_raw_mut_func(&*$this);
+                        func( $this as *mut (),$fname_var,__param )
+                    }
+                }
+            )
+
+            impl(
+                #[cfg(all($($specialize_cfg)*))]
+                unsafe impl<$($impl_params)* $fname_ty,__P>
+                    $crate::GetFieldMutImpl< $fname_ty,__P>
+                    for $self
+                where
+                    $delegating_to_type:Sized + $crate::GetFieldMutImpl<$fname_ty,__P>,
+                    $($mut_where_clause)*
+                    $($where_clause)*
+                {
+                    unsafe fn get_field_raw_mut(
+                        $this:*mut (),
+                        $fname_var: $fname_ty,
+                        __param:__P,
+                    )->Result<
+                        *mut $crate::GetFieldType<Self,$fname_ty>,
+                        $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                    >
+                    where
+                        Self:Sized
+                    {
+                        let $this=$this as *mut Self;
+                        let $this:*mut $delegating_to_type=
+                            $as_field_mutref_closure;
+
+                        <$delegating_to_type as
+                            $crate::GetFieldMutImpl<$fname_ty,__P>
+                        >::get_field_raw_mut( $this as *mut (),$fname_var,__param )
+                    }
+                }
+            )
+        }
+    };
+    (inner-mut-2;
+        (
+            impl [$($impl_params:tt)*] $self:ty
+            where [$($where_clause:tt)*]
+            where [$($mut_where_clause:tt)*]
+            self_ident=$this:ident;
+            delegating_to_type=$delegating_to_type:ty;
+            raw_mut_impl($($raw_mut_impl:tt)*)
+            field_name_param=( $fname_var:ident : $fname_ty:ident );
+
+            unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
+            as_delegating_raw $as_field_mutref_closure:block
+        )
+
+        fn( $($raw_ptr_fn:tt)* )
+        impl( $($raw_ptr_impl:tt)* )
+    )=>{
+
+        unsafe impl<$($impl_params)* _V,_F>
+            $crate::pmr::GetVariantFieldMutImpl<_V,_F>
+        for $self
+        where
+            $delegating_to_type: $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
+            $($where_clause)*
+            $($mut_where_clause)*
+        {}
+
+        unsafe impl<$($impl_params)* $fname_ty,__P>
+            $crate::GetFieldMutImpl<$fname_ty,__P>
+            for $self
+        where
+            $delegating_to_type: $crate::GetFieldMutImpl<$fname_ty,__P>,
+            $($where_clause)*
+            $($mut_where_clause)*
+        {
+            #[inline(always)]
+            fn get_field_mut_(
+                &mut self,
+                $fname_var: $fname_ty,
+                __param:__P,
+            )->Result<
+                &mut $crate::GetFieldType<Self,$fname_ty>,
+                $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+            >{
+                let $this=self;
+                let field:&mut $delegating_to_type=$unsafe_get_field_mut_closure;
+                <$delegating_to_type as
+                    $crate::GetFieldMutImpl<_,_>
+                >::get_field_mut_(field,$fname_var,__param)
+            }
+
+            $($raw_ptr_fn)*
+
+            #[inline(always)]
+            fn get_field_raw_mut_func(
+                &self
+            )->$crate::field_traits::GetFieldRawMutFn<
+                $fname_ty,
+                __P,
+                $crate::GetFieldType<Self,$fname_ty>,
+                $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+            >{
+                <Self as $crate::GetFieldMutImpl<$fname_ty,__P>>::get_field_raw_mut
+            }
+        }
+
+        $($raw_ptr_impl)*
+    };
+    (inner;
+        impl [$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         where [$($into_where_clause:tt)*]
         self_ident=$this:ident;
@@ -389,21 +679,41 @@ macro_rules! z_delegate_structural_with {
 
         IntoFieldImpl $into_field_closure:block
     )=>{
-        impl<$( $($impl_params)* )?__FieldName>
-            $crate::IntoFieldImpl<__FieldName>
+
+        unsafe impl<$($impl_params)* _V,_F>
+            $crate::pmr::IntoVariantFieldImpl<_V,_F>
+        for $self
+        where
+            $delegating_to_type: Sized+$crate::pmr::IntoVariantFieldImpl<_V,_F>,
+            $($into_where_clause)*
+            $($where_clause)*
+        {}
+
+        impl<$($impl_params)* $fname_ty,__P>
+            $crate::IntoFieldImpl< $fname_ty,__P>
             for $self
         where
-            $delegating_to_type:$crate::IntoFieldImpl<__FieldName>,
+            $delegating_to_type:Sized+$crate::IntoFieldImpl<$fname_ty,__P>,
             $($into_where_clause)*
             $($where_clause)*
         {
-            fn into_field_(self)->Result<Self::Ty,Self::Err>{
+            #[inline(always)]
+            fn into_field_(
+                self,
+                $fname_var: $fname_ty,
+                __param:__P,
+            )->Result<$crate::GetFieldType<$delegating_to_type,$fname_ty>,Self::Err>{
                 let $this=self;
                 let field:$delegating_to_type=$into_field_closure;
-                $crate::IntoFieldImpl::<__FieldName>::into_field_(field)
+                $crate::IntoFieldImpl::<$fname_ty,__P>::into_field_(field,$fname_var,__param)
             }
 
-            $crate::z_impl_box_into_field_method!{__FieldName}
+            $crate::z_impl_box_into_field_method!{
+                $fname_ty,
+                __P,
+                $crate::GetFieldType<$delegating_to_type,$fname_ty>,
+                $crate::pmr::GetFieldErr<$delegating_to_type,$fname_ty,__P>,
+            }
         }
     };
 }
