@@ -1,7 +1,7 @@
 use crate::{
     ident_or_index::IdentOrIndex,
     parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, variant_field_tokens, FullPathForChars},
+    tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens, FullPathForChars},
 };
 
 use as_derive_utils::spanned_err;
@@ -248,6 +248,9 @@ pub(crate) enum FieldPathComponent {
         variant: Ident,
         field: IdentOrIndex,
     },
+    VariantName {
+        variant: Ident,
+    },
 }
 
 impl FieldPathComponent {
@@ -276,15 +279,24 @@ impl FieldPathComponent {
             FPC::VariantField { variant, field } => {
                 let _ = write!(buff, "::{}.{}", variant, field);
             }
+            FPC::VariantName { variant } => {
+                let _ = write!(buff, "::{}", variant);
+            }
         }
     }
 
     pub(crate) fn parse(input: ParseStream, is_period: IsPeriod) -> parse::Result<Self> {
         if is_period == IsPeriod::No && input.peek_parse(Token!(::))?.is_some() {
             let variant = input.parse::<Ident>()?;
-            let _ = input.parse::<Token!(.)>()?;
-            let field = input.parse::<IdentOrIndex>()?;
-            Ok(FieldPathComponent::VariantField { variant, field })
+
+            if input.peek_parse(Token!(.))?.is_some() {
+                let field = input.parse::<IdentOrIndex>()?;
+                Ok(FieldPathComponent::VariantField { variant, field })
+            } else if input.is_empty() || input.peek(Token!(,)) {
+                Ok(FieldPathComponent::VariantName { variant })
+            } else {
+                Err(input.error("Expected either a `.field_name`,the end of the input,or a `,`."))
+            }
         } else {
             let _ = input.peek_parse(Token!(.))?;
             input.parse::<IdentOrIndex>().map(FieldPathComponent::Ident)
@@ -307,6 +319,7 @@ impl FieldPathComponent {
             FPC::VariantField { variant, field } => {
                 variant_field_tokens(variant.to_string(), field.to_string(), char_path)
             }
+            FPC::VariantName { variant } => variant_name_tokens(variant.to_string(), char_path),
         }
     }
 }

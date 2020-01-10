@@ -196,7 +196,7 @@ impl<'a> StructuralDataType<'a> {
             let access = input.parse::<Access>()?;
             if input.peek(syn::Ident) && input.peek2(token::Brace) {
                 let ident = arenas.alloc(input.parse::<Ident>()?);
-                let ident_index = names_mod.push_path(ident.into());
+                let ident_index = names_mod.push_str(ident.into());
 
                 let content;
                 let _ = syn::braced!(content in input);
@@ -306,15 +306,10 @@ impl<'a> StructuralField<'a> {
         } = TinyStructuralField::parse(enum_variant, access, arenas, input)?;
         input.parse::<Token![,]>()?;
 
-        let alias_index = match enum_variant {
-            Some(variant) => names_mod.push_variant_field(variant, ident),
-            None => names_mod.push_path(ident),
-        };
-
         Ok(Self {
             access,
             ident,
-            alias_index,
+            alias_index: names_mod.push_str(ident),
             inner_optionality,
             is_in_variant,
             ty,
@@ -330,7 +325,7 @@ impl<'a> ToTokens for TinyStructuralField<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         let TinyStructuralField { ident, ty, .. } = *self;
 
-        let the_trait = self.access_and_outer_optionality();
+        let the_trait = self.access_and_outer_optionality().trait_tokens();
         let ident = tident_tokens(ident.to_string(), FullPathForChars::Yes);
         let ty = ToTokenFnMut::new(|tokens| match ty {
             FieldType::Ty(x) => x.to_tokens(tokens),
@@ -476,36 +471,42 @@ fn write_field_docs(
 
 fn process_field(
     field: &StructuralField<'_>,
+    variant_alias_ident: Option<&Ident>,
     names_mod: &NamedModuleAndTokens,
     field_bounds: &mut TokenStream2,
-    assoc_ty_bounds: &mut TokenStream2,
 ) {
     use self::FieldType as FT;
 
-    let alias_name = names_mod.alias_name(field.alias_index);
+    let f_alias_name = names_mod.alias_name(field.alias_index);
     let names_mod_path = &names_mod.names_module;
-    if let FT::Impl(bounds) = &field.ty {
-        quote!(
-            ::structural::GetFieldType<Self,#names_mod_path::#alias_name>:
-                #bounds,
-        )
-        .to_tokens(assoc_ty_bounds);
-    }
-
-    let trait_ = field.access_and_outer_optionality();
-
+    let aaoo = field.access_and_outer_optionality();
     let assoc_ty = match &field.ty {
         FT::Ty(ty) => quote!(Ty=#ty),
         FT::Impl(bounds) => quote!(Ty:#bounds),
     };
 
-    quote!(
-        structural::#trait_<
-            #names_mod_path::#alias_name,
-            #assoc_ty
-        >+
-    )
-    .to_tokens(field_bounds);
+    match variant_alias_ident {
+        Some(variant_alias_ident) => {
+            let vf_trait = aaoo.variant_field_trait_tokens();
+
+            field_bounds.append_all(quote!(
+                structural::pmr::#vf_trait<
+                    #names_mod_path::#variant_alias_ident,
+                    #names_mod_path::#f_alias_name,
+                    #assoc_ty
+                >+
+            ));
+        }
+        None => {
+            let trait_ = aaoo.trait_tokens();
+            field_bounds.append_all(quote!(
+                structural::#trait_<
+                    structural::pmr::FieldPath1<#names_mod_path::#f_alias_name>,
+                    #assoc_ty
+                >+
+            ));
+        }
+    }
 }
 
 /// This allows both `structural_alias` and `#[derive(Structural)]` to generate
@@ -535,7 +536,6 @@ where
     let names_mod_path = &names_mod.names_module;
 
     let mut field_bounds = TokenStream2::new();
-    let mut assoc_ty_bounds = TokenStream2::new();
 
     const SPACES_X8: &'static str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
@@ -575,10 +575,14 @@ where
     for variant in &datatype.variants {
         let variant_name_type = names_mod.alias_name(variant.alias_index);
 
-        quote!(
-            structural::pmr::IsVariant<#names_mod_path::#variant_name_type>+
-        )
-        .to_tokens(&mut field_bounds);
+        field_bounds.append_all(quote!(
+            structural::pmr::IsVariant<
+                structural::pmr::FieldPath1<
+                    #names_mod_path::#variant_name_type
+                >
+            >
+            +
+        ));
 
         let _ = write!(docs, "Variant `{}` {{", variant.name,);
         docs.push_str(if variant.fields.is_empty() {
@@ -587,7 +591,7 @@ where
             "<br>"
         });
         for field in &variant.fields {
-            process_field(field, names_mod, &mut field_bounds, &mut assoc_ty_bounds);
+            process_field(field, Some(variant_name_type), names_mod, &mut field_bounds);
             let _ = write_field_docs(&mut docs, SPACES_X8, Some(variant.name), field);
         }
         let _ = writeln!(docs, "}}\n");
@@ -597,7 +601,7 @@ where
         docs.push_str("### Fields\n\n");
     }
     for field in datatype.fields.iter() {
-        process_field(field, names_mod, &mut field_bounds, &mut assoc_ty_bounds);
+        process_field(field, None, names_mod, &mut field_bounds);
         let _ = write_field_docs(&mut docs, "", None, field);
     }
 
@@ -635,7 +639,6 @@ where
             #field_bounds
         where
             #(#where_preds_a,)*
-            #assoc_ty_bounds
         {
             #out_trait_items
         }
@@ -647,7 +650,6 @@ where
             __This:
                 #( #supertraits_b+ )*
                 #field_bounds,
-            #assoc_ty_bounds
             #(#where_preds_b,)*
         {}
     ))
