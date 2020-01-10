@@ -134,7 +134,7 @@ macro_rules! pair_accessors {
                 left: 100,
                 right: 200,
             };
-            let pair = this.field_mut(fp!(Pair)).unwrap();
+            let pair = this.field_mut(fp!(::Pair)).unwrap();
             let (left, right) = pair.fields_mut(fp!(left, right));
             assert_eq!(left, &mut 100);
             assert_eq!(right, &mut 200);
@@ -145,13 +145,13 @@ macro_rules! pair_accessors {
         {
             let mut this = $type_::<bool, u32>::Unit;
             assert_eq!(this.field_(fp!(AllCorrect)), None);
-            assert_eq!(this.field_(fp!(Unit)).map(drop), Some(()));
+            assert_eq!(this.field_(fp!(::Unit)).map(drop), Some(()));
 
             assert_eq!(this.field_mut(fp!(AllCorrect)), None);
-            assert_eq!(this.field_mut(fp!(Unit)).map(drop), Some(()));
+            assert_eq!(this.field_mut(fp!(::Unit)).map(drop), Some(()));
 
             assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
-            assert_eq!(this.clone().into_field(fp!(Unit)).map(drop), Some(()));
+            assert_eq!(this.clone().into_field(fp!(::Unit)).map(drop), Some(()));
         }
     }};
 }

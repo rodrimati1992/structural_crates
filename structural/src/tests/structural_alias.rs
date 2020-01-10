@@ -1,4 +1,5 @@
 use crate::enum_traits::IsVariant;
+use crate::field_traits::variant_field::*;
 use crate::field_traits::NonOptField;
 use crate::*;
 
@@ -119,18 +120,16 @@ mod variants_with_accesses {
     use super::*;
 
     field_path_aliases_module! {
-        mod names{
+        mod paths{
             a,
             A,B,C,
-            A_a=::A.a,
-            A_b=::A.b,
-            A_c=::A.c,
-            A_d=::A.d,
-            A_e=::A.e,
-            B_a=::B.a,
-            B_b=::B.b,
-            C_a=::C.a,
-            C_b=::C.b,
+        }
+    }
+
+    tstring_aliases_module! {
+        mod strings{
+            a,b,c,d,e,
+            A,B,C
         }
     }
 
@@ -159,19 +158,19 @@ mod variants_with_accesses {
         trait Dummy,
         (Foo),
         (
-            IsVariant<names::A>+
-            IsVariant<names::B>+
-            IsVariant<names::C>+
-            OptIntoFieldMut< names::A_a, Ty= (u8,u8) >+
-            OptGetField< names::A_b, Ty= (u8,u16) >+
-            OptGetFieldMut< names::A_c, Ty= (u8,u32) >+
-            OptIntoField< names::A_d, Ty= (u8,u64) >+
-            OptIntoFieldMut< names::A_e, Ty= (u16,u8) >+
-            OptIntoFieldMut< names::B_a, Ty= i8 >+
-            OptGetField< names::B_b, Ty= i16 >+
-            OptGetField< names::C_a, Ty= u8 >+
-            OptIntoField< names::C_b, Ty= u16 >+
-            IntoFieldMut< names::a, Ty= () >
+            IsVariant<paths::A>+
+            IsVariant<paths::B>+
+            IsVariant<paths::C>+
+            OptIntoVariantFieldMut< strings::A, strings::a, Ty= (u8,u8) >+
+            OptGetVariantField< strings::A, strings::b, Ty= (u8,u16) >+
+            OptGetVariantFieldMut< strings::A, strings::c, Ty= (u8,u32) >+
+            OptIntoVariantField< strings::A, strings::d, Ty= (u8,u64) >+
+            OptIntoVariantFieldMut< strings::A, strings::e, Ty= (u16,u8) >+
+            OptIntoVariantFieldMut< strings::B, strings::a, Ty= i8 >+
+            OptGetVariantField< strings::B, strings::b, Ty= i16 >+
+            OptGetVariantField< strings::C, strings::a, Ty= u8 >+
+            OptIntoVariantField< strings::C, strings::b, Ty= u16 >+
+            IntoFieldMut< paths::a, Ty= () >
         )
     }
 }
@@ -198,11 +197,13 @@ mod with_defaulted_items {
         A,
     }
 
-    impl GetFieldImpl<FP!(a)> for G {
+    impl FieldType<FP!(a)> for G {
         type Ty = u32;
+    }
+    impl GetFieldImpl<FP!(a)> for G {
         type Err = NonOptField;
 
-        fn get_field_(&self) -> Result<&u32, NonOptField> {
+        fn get_field_(&self, _: FP!(a), _: ()) -> Result<&u32, NonOptField> {
             Ok(&404)
         }
     }

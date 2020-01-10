@@ -271,17 +271,17 @@ macro_rules! declare_enum_tests {
                 assert_eq!(this.field_(fp!(::B.0)), None);
                 assert_eq!(this.field_(fp!(::B.1)), None);
 
-                assert_eq!(this.field_(fp!(A)).map(drop_ref), Some(()));
-                assert_eq!(this.field_(fp!(B)).map(drop_ref), None);
-                assert_eq!(this.field_(fp!(C)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::A)).map(drop_ref), Some(()));
+                assert_eq!(this.field_(fp!(::B)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::C)).map(drop_ref), None);
 
-                assert_eq!(this.field_mut(fp!(A)).map(drop_mut), Some(()));
-                assert_eq!(this.field_mut(fp!(B)).map(drop_mut), None);
-                assert_eq!(this.field_mut(fp!(C)).map(drop_mut), None);
+                assert_eq!(this.field_mut(fp!(::A)).map(drop_mut), Some(()));
+                assert_eq!(this.field_mut(fp!(::B)).map(drop_mut), None);
+                assert_eq!(this.field_mut(fp!(::C)).map(drop_mut), None);
 
-                assert_eq!(this.into_field(fp!(A)).map(drop), Some(()));
-                assert_eq!(this.into_field(fp!(B)).map(drop), None);
-                assert_eq!(this.into_field(fp!(C)).map(drop), None);
+                assert_eq!(this.into_field(fp!(::A)).map(drop), Some(()));
+                assert_eq!(this.into_field(fp!(::B)).map(drop), None);
+                assert_eq!(this.into_field(fp!(::C)).map(drop), None);
             }
             {
                 let mut this = $ty::A {
@@ -310,9 +310,9 @@ macro_rules! declare_enum_tests {
                 assert_eq!(this.into_field(fp!(::B.0)), Some(33));
                 assert_eq!(this.into_field(fp!(::B.1)), Some(44));
 
-                assert_eq!(this.field_(fp!(A)).map(drop_ref), None);
-                assert_eq!(this.field_(fp!(B)).map(drop_ref), Some(()));
-                assert_eq!(this.field_(fp!(C)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::A)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::B)).map(drop_ref), Some(()));
+                assert_eq!(this.field_(fp!(::C)).map(drop_ref), None);
             }
             {
                 let mut this = $ty::B(None);
@@ -336,9 +336,9 @@ macro_rules! declare_enum_tests {
                 assert_eq!(this.field_(fp!(::B.0)), None);
                 assert_eq!(this.field_(fp!(::B.1)), None);
 
-                assert_eq!(this.field_(fp!(A)).map(drop_ref), None);
-                assert_eq!(this.field_(fp!(B)).map(drop_ref), None);
-                assert_eq!(this.field_(fp!(C)).map(drop_ref), Some(()));
+                assert_eq!(this.field_(fp!(::A)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::B)).map(drop_ref), None);
+                assert_eq!(this.field_(fp!(::C)).map(drop_ref), Some(()));
             }
         }
     };
