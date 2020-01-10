@@ -17,27 +17,60 @@ pub mod for_arrays;
 pub mod for_tuples;
 mod get_field_ext;
 mod most_impls;
-mod multi_fields;
+pub mod multi_fields;
 mod normalize_fields;
 pub mod rev_get_field;
 mod tuple_impls;
 pub mod variant_field;
 
 pub use self::{
-    errors::{FieldErr, IntoFieldErr, NonOptField, OptionalField},
+    errors::{CombinedErrs, CombinedErrsOut, IntoFieldErr, IsFieldErr, NonOptField, OptionalField},
     get_field_ext::GetFieldExt,
+    multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
-        RevFieldMutType, RevFieldRefType, RevGetField, RevGetFieldMut, RevGetFieldType,
-        RevGetFieldType_, RevIntoField, RevIntoFieldType,
+        RevGetField, RevGetFieldMut, RevGetFieldType, RevIntoBoxedFieldType, RevIntoField,
     },
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// For querying the type of the `FieldName` field.
+pub trait FieldType<FieldName> {
+    /// The type of the `FieldName` field.
+    type Ty;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+macro_rules! declare_accessor_trait_alias {
+    (
+        $(#[$attr:meta])*
+        $vis:vis trait $trait_name:ident<$name:ident>=
+        $($supertraits:tt)*
+    ) => (
+        $(#[$attr])*
+        $vis trait $trait_name< $name >:$($supertraits)* {}
+
+        impl<This,$name> $trait_name< $name > for This
+        where
+            This:?Sized+$($supertraits)*
+        {}
+    )
+}
 
 /// Allows accessing the `FieldName` field.
 ///
 /// `FieldName` represents the name of the field on the type level,
 /// It is a type because a `FIELD_NAME:&'static str` const parameter
 /// was neither stable nor worked in nightly at the time this was defined.
+///
+/// # Safety
+///
+/// While this trait is not unsafe,
+/// implementors ought not mutate fields inside accessor trait impls.
+///
+/// Mutating fields is only advisable if those fields don't have field accessor impls.
 ///
 /// # Usage as Bound Example
 ///
@@ -77,7 +110,7 @@ pub use self::{
 ///
 /// ```rust
 /// use structural::{
-///     GetFieldImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 /// };
@@ -92,12 +125,18 @@ pub use self::{
 ///     ]);
 /// }
 ///
+///
+///
+/// // This could also be written as `FP!(value)` from 1.40 onwards
+/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+///     type Ty=T;
+/// }
+///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Ty=T;
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
@@ -105,27 +144,21 @@ pub use self::{
 ///
 /// ```
 ///
-pub trait GetFieldImpl<FieldName> {
-    /// The type of the `FieldName` field.
-    type Ty;
-    type Err: FieldErr;
+pub trait GetFieldImpl<FieldName, P = ()>: FieldType<FieldName> {
+    type Err: IsFieldErr;
 
     /// Accesses the `FieldName` field by reference.
-    fn get_field_(&self) -> Result<&Self::Ty, Self::Err>;
+    fn get_field_(&self, field_name: FieldName, param: P) -> Result<&Self::Ty, Self::Err>;
 }
 
-pub trait GetField<FieldName>: GetFieldImpl<FieldName, Err = NonOptField> {}
-
-impl<This: ?Sized, FieldName> GetField<FieldName> for This where
-    This: GetFieldImpl<FieldName, Err = NonOptField>
-{
+declare_accessor_trait_alias! {
+    pub trait GetField<FieldName>=
+        GetFieldImpl<FieldName, Err = NonOptField>
 }
 
-pub trait OptGetField<FieldName>: GetFieldImpl<FieldName, Err = OptionalField> {}
-
-impl<This: ?Sized, FieldName> OptGetField<FieldName> for This where
-    This: GetFieldImpl<FieldName, Err = OptionalField>
-{
+declare_accessor_trait_alias! {
+    pub trait OptGetField<FieldName>=
+        GetFieldImpl<FieldName, Err = OptionalField>
 }
 
 /// Queries the type of a field.
@@ -178,9 +211,9 @@ impl<This: ?Sized, FieldName> OptGetField<FieldName> for This where
 /// since one has to write it as `get_name::<Foo,_>(&foo)`.
 ///
 ///
-pub type GetFieldType<This, FieldName> = <This as GetFieldImpl<FieldName>>::Ty;
+pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
 
-pub type GetFieldErr<This, FieldName> = <This as GetFieldImpl<FieldName>>::Err;
+pub type GetFieldErr<This, FieldName, P = ()> = <This as GetFieldImpl<FieldName, P>>::Err;
 
 /// Queries the type of a double nested field (eg:`.a.b`).
 pub type GetFieldType2<This, FieldName, FieldName2> =
@@ -199,6 +232,9 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// # Safety
 ///
 /// These are requirements for manual implementations.
+///
+/// Implementors ought not mutate fields inside their accessor trait impls,
+/// or the accessor trait impls of other fields.
 ///
 /// It is recommended that you use the `z_unsafe_impl_get_field_raw_mut_method` macro
 /// if you only borrow a field of the type.
@@ -257,7 +293,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// ```rust
 /// use structural::{
-///     GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -274,19 +310,23 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// }
 ///
+/// // This could also be written as `FP!(value)` from 1.40 onwards
+/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+///     type Ty=T;
+/// }
+///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Ty=T;
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// unsafe impl<T> GetFieldMutImpl<FP!(v a l u e)> for Huh<T>{
-///     fn get_field_mut_(&mut self)->Result<&mut Self::Ty,Self::Err>{
+///     fn get_field_mut_(&mut self,_:FP!(v a l u e),_:())->Result<&mut Self::Ty,Self::Err>{
 ///         Ok(&mut self.value)
 ///     }
 ///     structural::z_unsafe_impl_get_field_raw_mut_method!{
@@ -299,9 +339,13 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// ```
 ///
-pub unsafe trait GetFieldMutImpl<FieldName>: GetFieldImpl<FieldName> {
+pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
     /// Accesses the `FieldName` field by mutable reference.
-    fn get_field_mut_(&mut self) -> Result<&mut Self::Ty, Self::Err>;
+    fn get_field_mut_(
+        &mut self,
+        field_name: FieldName,
+        param: P,
+    ) -> Result<&mut Self::Ty, Self::Err>;
 
     /// Gets a mutable pointer for the field.
     ///
@@ -310,38 +354,42 @@ pub unsafe trait GetFieldMutImpl<FieldName>: GetFieldImpl<FieldName> {
     /// You must pass a pointer casted from `*mut Self` to `*mut ()`.
     unsafe fn get_field_raw_mut(
         ptr: *mut (),
-        _: PhantomData<FieldName>,
+        field_name: FieldName,
+        param: P,
     ) -> Result<*mut Self::Ty, Self::Err>
     where
         Self: Sized;
 
     /// Gets the `get_field_raw_mut` associated function as a function pointer.
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, Self::Ty, Self::Err>;
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, P, Self::Ty, Self::Err>;
 }
 
-pub trait GetFieldMut<FieldName>: GetFieldMutImpl<FieldName, Err = NonOptField> {}
-
-impl<This: ?Sized, FieldName> GetFieldMut<FieldName> for This where
-    This: GetFieldMutImpl<FieldName, Err = NonOptField>
-{
+declare_accessor_trait_alias! {
+    pub trait GetFieldMut<FieldName>=
+        GetFieldMutImpl<FieldName, Err = NonOptField>
 }
 
-pub trait OptGetFieldMut<FieldName>: GetFieldMutImpl<FieldName, Err = OptionalField> {}
-
-impl<This: ?Sized, FieldName> OptGetFieldMut<FieldName> for This where
-    This: GetFieldMutImpl<FieldName, Err = OptionalField>
-{
+declare_accessor_trait_alias! {
+    pub trait OptGetFieldMut<FieldName>=
+        GetFieldMutImpl<FieldName, Err = OptionalField>
 }
 
 /////////////////////////////////////////////////
 
 /// The type of `GetFieldMutImpl::get_field_raw_mut`
-pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
-    unsafe fn(*mut (), PhantomData<FieldName>) -> Result<*mut FieldTy, E>;
+pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
+    unsafe fn(*mut (), FieldName, P) -> Result<*mut FieldTy, E>;
 
 /////////////////////////////////////////////////
 
 /// Converts this type into its `FieldName` field.
+///
+/// # Safety
+///
+/// While this trait is not unsafe,
+/// implementors ought not mutate fields inside accessor trait impls.
+///
+/// Mutating fields is only advisable if those fields don't have field accessor impls.
 ///
 /// # Usage as Bound Example
 ///
@@ -381,7 +429,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
 ///
 /// ```rust
 /// use structural::{
-///     GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -398,20 +446,23 @@ pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
 ///     ]);
 /// }
 ///
+/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
+/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+///     type Ty=T;
+/// }
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Ty=T;
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self)->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> IntoFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     fn into_field_(self)->Result<Self::Ty,Self::Err>{
+///     fn into_field_(self,_:FP!(v a l u e),_:())->Result<Self::Ty,Self::Err>{
 ///         Ok(self.value)
 ///     }
 ///
@@ -420,122 +471,44 @@ pub type GetFieldRawMutFn<FieldName, FieldTy, E> =
 ///
 /// ```
 ///
-pub trait IntoFieldImpl<FieldName>: GetFieldImpl<FieldName> {
+pub trait IntoFieldImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
     /// Converts self into the field.
-    fn into_field_(self) -> Result<Self::Ty, Self::Err>
+    fn into_field_(self, field_name: FieldName, param: P) -> Result<Self::Ty, Self::Err>
     where
         Self: Sized;
 
     /// Converts a boxed self into the field.
     #[cfg(feature = "alloc")]
-    fn box_into_field_(self: crate::alloc::boxed::Box<Self>) -> Result<Self::Ty, Self::Err>;
+    fn box_into_field_(
+        self: crate::alloc::boxed::Box<Self>,
+        field_name: FieldName,
+        param: P,
+    ) -> Result<Self::Ty, Self::Err>;
 }
 
-pub trait IntoField<FieldName>: IntoFieldImpl<FieldName, Err = NonOptField> {}
-
-impl<This: ?Sized, FieldName> IntoField<FieldName> for This where
-    This: IntoFieldImpl<FieldName, Err = NonOptField>
-{
+declare_accessor_trait_alias! {
+    pub trait IntoField<FieldName>=
+        IntoFieldImpl<FieldName, Err = NonOptField>
 }
 
-pub trait OptIntoField<FieldName>: IntoFieldImpl<FieldName, Err = OptionalField> {}
-
-impl<This: ?Sized, FieldName> OptIntoField<FieldName> for This where
-    This: IntoFieldImpl<FieldName, Err = OptionalField>
-{
+declare_accessor_trait_alias! {
+    pub trait OptIntoField<FieldName>=
+        IntoFieldImpl<FieldName, Err = OptionalField>
 }
 
-pub trait IntoFieldMut<FieldName>:
-    IntoFieldImpl<FieldName, Err = NonOptField> + GetFieldMutImpl<FieldName>
-{
+declare_accessor_trait_alias! {
+    pub trait IntoFieldMut<FieldName>=
+        IntoFieldImpl<FieldName, Err = NonOptField> +
+        GetFieldMutImpl<FieldName, Err = NonOptField> +
 }
 
-impl<This: ?Sized, FieldName> IntoFieldMut<FieldName> for This where
-    This: IntoFieldImpl<FieldName, Err = NonOptField> + GetFieldMutImpl<FieldName>
-{
-}
-
-pub trait OptIntoFieldMut<FieldName>:
-    IntoFieldImpl<FieldName, Err = OptionalField> + GetFieldMutImpl<FieldName>
-{
-}
-
-impl<This: ?Sized, FieldName> OptIntoFieldMut<FieldName> for This where
-    This: IntoFieldImpl<FieldName, Err = OptionalField> + GetFieldMutImpl<FieldName>
-{
+declare_accessor_trait_alias! {
+    pub trait OptIntoFieldMut<FieldName>=
+        IntoFieldImpl<FieldName, Err = OptionalField> +
+        GetFieldMutImpl<FieldName, Err = OptionalField> +
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(feature = "alloc")]
-macro_rules! unsized_impls {
-    ( shared,$ptr:ident ) => {
-        impl<T> Structural for $ptr<T>
-        where
-            T: Structural + ?Sized,
-        {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos = { T::FIELDS };
-        }
-
-        impl<This, Name, Ty> GetFieldImpl<Name> for $ptr<This>
-        where
-            This: GetFieldImpl<Name, Ty = Ty> + ?Sized,
-        {
-            type Ty = Ty;
-            type Err = GetFieldErr<This, Name>;
-
-            fn get_field_(&self) -> Result<&Self::Ty, Self::Err> {
-                (**self).get_field_()
-            }
-        }
-    };
-    (mutable,$ptr:ident) => {
-        unsized_impls! { shared,$ptr }
-
-        unsafe impl<T, FieldName, Ty> GetFieldMutImpl<FieldName> for Box<T>
-        where
-            T: GetFieldMutImpl<FieldName, Ty = Ty> + ?Sized,
-        {
-            /// Accesses the `FieldName` field by mutable reference.
-            fn get_field_mut_(&mut self) -> Result<&mut Self::Ty, Self::Err> {
-                (**self).get_field_mut_()
-            }
-
-            default_if! {
-                cfg(feature="specialization")
-                unsafe fn get_field_raw_mut(
-                    this:*mut (),
-                    name:PhantomData<FieldName>
-                )->Result<*mut Self::Ty,Self::Err>{
-                    let this=this as *mut Self;
-                    let func=<T as GetFieldMutImpl<FieldName>>::get_field_raw_mut_func(&**this);
-                    func( &mut **this as *mut T as *mut (), name )
-                }
-            }
-
-            fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, Ty, Self::Err> {
-                <Self as GetFieldMutImpl<FieldName>>::get_field_raw_mut
-            }
-        }
-
-        #[cfg(feature = "specialization")]
-        unsafe impl<T, FieldName, Ty> GetFieldMutImpl<FieldName> for Box<T>
-        where
-            T: GetFieldMutImpl<FieldName, Ty = Ty>,
-        {
-            unsafe fn get_field_raw_mut(
-                ptr: *mut (),
-                name: PhantomData<FieldName>,
-            ) -> Result<*mut Self::Ty, Self::Err> {
-                let this = ptr as *mut Self;
-                T::get_field_raw_mut(&mut **this as *mut T as *mut (), name)
-            }
-        }
-    };
-    (value,$ptr:ident) => {
-        unsized_impls! { mutable,$ptr }
-    };
-}
 
 #[cfg(feature = "alloc")]
 mod alloc_impls {
@@ -543,9 +516,50 @@ mod alloc_impls {
 
     use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
 
-    unsized_impls! {value,Box}
-    unsized_impls! {shared,Arc}
-    unsized_impls! {shared,Rc}
+    macro_rules! impl_shared_ptr_accessors {
+        ( $this:ident ) => {
+            unsafe_delegate_structural_with! {
+                impl[T,] $this<T>
+                where[T:?Sized,]
+
+                self_ident=this;
+                delegating_to_type=T;
+                field_name_param=( field_name : FieldName );
+
+                GetFieldImpl {
+                    &*this
+                }
+            }
+        };
+    }
+    impl_shared_ptr_accessors! {Arc}
+    impl_shared_ptr_accessors! {Rc}
+
+    unsafe_delegate_structural_with! {
+        impl[T,] Box<T>
+        where[T:?Sized,]
+
+        self_ident=this;
+        delegating_to_type=T;
+        field_name_param=( field_name : FieldName );
+
+        GetFieldImpl {
+            &*this
+        }
+
+        unsafe GetFieldMutImpl{
+            &mut **this
+        }
+        as_delegating_raw{
+            *(this as *mut Box<T> as *mut *mut T)
+        }
+        raw_mut_impl(specialize_cfg(feature="specialization"))
+
+
+        IntoFieldImpl{
+            *this
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
