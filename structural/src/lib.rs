@@ -400,9 +400,9 @@ pub use crate::field_traits::GetFieldExt;
 
 pub use crate::{
     field_traits::{
-        GetField, GetFieldImpl, GetFieldMut, GetFieldMutImpl, GetFieldType, GetFieldType2,
-        GetFieldType3, GetFieldType4, IntoField, IntoFieldImpl, IntoFieldMut, OptGetField,
-        OptGetFieldMut, OptIntoField, OptIntoFieldMut, RevGetFieldType, RevGetFieldType_,
+        FieldType, GetField, GetFieldImpl, GetFieldMut, GetFieldMutImpl, GetFieldType,
+        GetFieldType2, GetFieldType3, GetFieldType4, IntoField, IntoFieldImpl, IntoFieldMut,
+        OptGetField, OptGetFieldMut, OptIntoField, OptIntoFieldMut,
     },
     structural_trait::Structural,
 };
