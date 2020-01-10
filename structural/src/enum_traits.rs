@@ -1,8 +1,17 @@
+mod enum_ext;
 mod variant_proxy;
 
-pub use self::variant_proxy::VariantProxy;
+pub use self::{enum_ext::EnumExt, variant_proxy::VariantProxy};
 
 /// Queries whether an enum is the `V` variant
-pub trait IsVariant<V> {
-    fn is_variant_(&self) -> bool;
+///
+/// # Safety
+///
+/// An implementation of `IsVariant<FP!(Foo)>`
+/// must only return true if the enum is the `Foo` variant.
+/// 
+/// Implementing this trait wrong will result in undefined behavior with
+/// the VariantProxy for the `V` variant.
+pub unsafe trait IsVariant<V> {
+    fn is_variant_(&self, variant: V) -> bool;
 }

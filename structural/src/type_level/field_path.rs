@@ -83,10 +83,71 @@ impl<T> ToTString_ for TString<T> {
 ////////////////////////////////////////////////////////////////////////////////
 
 /// A pair of identifiers for the `F` field inside the `V` variant.
-pub struct VariantField<V, F>(pub(crate) PhantomData<(V, F)>);
+pub struct VariantField<V, F>(PhantomData<(V, F)>);
+
+impl<V, F> VariantField<V, F> {
+    pub const NEW: Self = VariantField(PhantomData);
+
+    #[inline(always)]
+    pub const fn new() -> Self {
+        VariantField(PhantomData)
+    }
+}
+
+impl<V, F> Copy for VariantField<V, F> {}
+
+impl<V, F> Clone for VariantField<V, F> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+unsafe impl<V, F> MarkerType for VariantField<V, F> {}
 
 /// A FieldPath for the `F` field inside the `V` variant.
 pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// The identifier for the `V` variant.
+pub struct VariantName<V>(PhantomData<(V)>);
+
+impl<V> VariantName<V> {
+    pub const NEW: Self = VariantName(PhantomData);
+
+    #[inline(always)]
+    pub const fn new() -> Self {
+        VariantName(PhantomData)
+    }
+}
+
+impl<V> Copy for VariantName<V> {}
+
+impl<V> Clone for VariantName<V> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+unsafe impl<V> MarkerType for VariantName<V> {}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// A pair of identifiers for the `F` field inside the `V` variant.
+pub struct UncheckedVariantField<V, F>(PhantomData<(V, F)>);
+
+// MarkerType is intentionally not implemented
+// unsafe impl<V, F> !MarkerType for VariantField<V, F>{}
+
+impl<V, F> UncheckedVariantField<V, F> {
+    pub const unsafe fn new() -> Self {
+        UncheckedVariantField(PhantomData)
+    }
+}
+
+// No UncheckedVariantFieldPath because UncheckedVariantField is not
+// going to be part of any `FieldPath`.
+// pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
 
 ////////////////////////////////////////////////////////////////////////////////
 

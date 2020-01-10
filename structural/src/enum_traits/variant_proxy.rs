@@ -1,10 +1,13 @@
 use crate::{
     field_traits::{
-        variant_field::{GetVariantField, GetVariantFieldMut, IntoVariantField},
-        GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,
+        variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
+        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,
     },
-    type_level::FieldPath1,
+    type_level::{FieldPath1, UncheckedVariantField, VariantFieldPath},
 };
+
+#[cfg(feature = "alloc")]
+use crate::alloc::boxed::Box;
 
 use std_::{
     fmt::{self, Debug},
@@ -20,23 +23,37 @@ use std_::{
 /// `V` is the name of the wrapped variant (example type:`FP!(Bar)`).
 ///
 #[derive(Copy, Clone)]
-pub struct VariantProxy<T, V> {
+pub struct VariantProxy<T: ?Sized, V> {
     _marker: PhantomData<V>,
     value: T,
 }
 
-impl<T, V> VariantProxy<T, V> {
+impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// Constructs this VariantProxy from an enum.
     ///
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
     #[inline(always)]
-    pub const unsafe fn new(value: T) -> Self {
+    pub const unsafe fn new(value: T) -> Self
+    where
+        T: Sized,
+    {
         Self {
             value,
             _marker: PhantomData,
         }
+    }
+
+    /// Constructs this VariantProxy from a boxed enum.
+    ///
+    /// # Safety
+    ///
+    /// `V` must be the name of the wrapped enum variant.
+    #[inline(always)]
+    #[cfg(feature = "alloc")]
+    pub unsafe fn from_box(value: Box<T>) -> Box<Self> {
+        std_::mem::transmute::<Box<T>, Box<VariantProxy<T, FieldPath1<V>>>>(value)
     }
 
     /// Constructs this VariantProxy from a reference to an enum.
@@ -46,7 +63,7 @@ impl<T, V> VariantProxy<T, V> {
     /// `V` must be the name of the wrapped enum variant.
     #[inline(always)]
     pub unsafe fn from_ref(reference: &T) -> &Self {
-        &*(reference as *const T as *const VariantProxy<T, V>)
+        &*(reference as *const T as *const VariantProxy<T, FieldPath1<V>>)
     }
 
     /// Constructs this VariantProxy from a mutable reference to the enum.
@@ -66,7 +83,7 @@ impl<T, V> VariantProxy<T, V> {
     /// `V` must be the name of the wrapped enum variant.
     #[inline(always)]
     pub const unsafe fn from_raw_mut(ptr: *mut T) -> *mut Self {
-        ptr as *mut VariantProxy<T, V>
+        ptr as *mut VariantProxy<T, FieldPath1<V>>
     }
 
     /// Gets a reference to the wrapped enum.
@@ -86,7 +103,10 @@ impl<T, V> VariantProxy<T, V> {
     }
 
     /// Unwraps this VariantProxy into the enum it wraps.
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T
+    where
+        T: Sized,
+    {
         self.value
     }
 
@@ -113,57 +133,83 @@ where
     }
 }
 
-impl<T, V, F> GetFieldImpl<FieldPath1<F>> for VariantProxy<T, V>
+impl<T, V, F> FieldType<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
-    T: GetVariantField<V, FieldPath1<F>>,
+    T: ?Sized + FieldType<VariantFieldPath<V, F>>,
 {
     type Ty = T::Ty;
+}
+
+impl<T, V, F> GetFieldImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
+where
+    T: ?Sized + GetVariantFieldImpl<V, F>,
+{
     type Err = T::Err;
 
     #[inline(always)]
-    fn get_field_(&self) -> Result<&T::Ty, T::Err> {
-        // unsafe: VariantProxy<T,V> guarantees that it wraps an enum
+    fn get_field_(&self, _: FieldPath1<F>, _: ()) -> Result<&T::Ty, T::Err> {
+        // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe { self.value.get_variant_field() }
+        unsafe {
+            self.value.get_field_(
+                VariantFieldPath::<V, F>::NEW,
+                UncheckedVariantField::<V, F>::new(),
+            )
+        }
     }
 }
 
-unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, V>
+unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
-    T: GetVariantFieldMut<V, FieldPath1<F>>,
+    T: GetVariantFieldMutImpl<V, F>,
 {
     #[inline(always)]
-    fn get_field_mut_(&mut self) -> Result<&mut T::Ty, T::Err> {
-        // unsafe: VariantProxy<T,V> guarantees that it wraps an enum
+    fn get_field_mut_(&mut self, _: FieldPath1<F>, _: ()) -> Result<&mut T::Ty, T::Err> {
+        // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe { self.value.get_variant_field_mut() }
+        unsafe {
+            self.value.get_field_mut_(
+                VariantFieldPath::<V, F>::NEW,
+                UncheckedVariantField::<V, F>::new(),
+            )
+        }
     }
 
     #[inline(always)]
     unsafe fn get_field_raw_mut(
         this: *mut (),
-        name: PhantomData<FieldPath1<F>>,
+        _: FieldPath1<F>,
+        _: (),
     ) -> Result<*mut T::Ty, T::Err> {
-        // unsafe: VariantProxy<T,V> guarantees that it wraps an enum
+        // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        T::get_variant_field_raw_mut(this as *mut T, PhantomData)
+        T::get_field_raw_mut(
+            this,
+            VariantFieldPath::<V, F>::new(),
+            UncheckedVariantField::<V, F>::new(),
+        )
     }
 
     #[inline(always)]
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldPath1<F>, T::Ty, T::Err> {
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldPath1<F>, (), T::Ty, T::Err> {
         <Self as GetFieldMutImpl<FieldPath1<F>>>::get_field_raw_mut
     }
 }
 
-impl<T, V, F> IntoFieldImpl<FieldPath1<F>> for VariantProxy<T, V>
+impl<T, V, F> IntoFieldImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
-    T: IntoVariantField<V, FieldPath1<F>>,
+    T: IntoVariantFieldImpl<V, F>,
 {
     #[inline(always)]
-    fn into_field_(self) -> Result<T::Ty, T::Err> {
-        // unsafe: VariantProxy<T,V> guarantees that it wraps an enum
+    fn into_field_(self, _: FieldPath1<F>, _: ()) -> Result<T::Ty, T::Err> {
+        // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe { self.value.into_variant_field() }
+        unsafe {
+            self.value.into_field_(
+                VariantFieldPath::<V, F>::NEW,
+                UncheckedVariantField::<V, F>::new(),
+            )
+        }
     }
 
     z_impl_box_into_field_method! {FieldPath1<F>,T::Ty,T::Err}
