@@ -72,6 +72,16 @@ where
     )
 }
 
+pub(crate) fn variant_name_tokens<S0>(variant: S0, char_verbosity: FullPathForChars) -> TokenStream2
+where
+    S0: AsRef<str>,
+{
+    let variant_tokens = tident_tokens(variant.as_ref(), char_verbosity);
+    quote!(
+        ::structural::pmr::VariantName< #variant_tokens >
+    )
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Represents a crate-visible module with a bunch of type aliases for TStrings.
@@ -106,23 +116,6 @@ impl NamedModuleAndTokens {
         NamesModuleIndex(index)
     }
 
-    pub fn push_path(&mut self, ident: IdentOrIndexRef<'_>) -> NamesModuleIndex {
-        self.push_inner(|index, ts| {
-            let string = ident.to_string();
-
-            let alias_name = Ident::new(&format!("STR_{}___{}", string, index), ident.span());
-
-            let field_name = tident_tokens(&string, FullPathForChars::No);
-
-            quote!(
-                #[allow(non_camel_case_types)]
-                pub type #alias_name=structural::pmr::FieldPath<(#field_name,)>;
-            )
-            .to_tokens(ts);
-            alias_name
-        })
-    }
-
     pub fn push_str(&mut self, str: IdentOrIndexRef<'_>) -> NamesModuleIndex {
         self.push_inner(|index, ts| {
             let string = str.to_string();
@@ -134,31 +127,6 @@ impl NamedModuleAndTokens {
             quote!(
                 #[allow(non_camel_case_types)]
                 pub type #alias_name=#string;
-            )
-            .to_tokens(ts);
-
-            alias_name
-        })
-    }
-
-    pub fn push_variant_field(
-        &mut self,
-        variant: &syn::Ident,
-        field: IdentOrIndexRef<'_>,
-    ) -> NamesModuleIndex {
-        self.push_inner(|index, ts| {
-            let variant = variant.to_string();
-            let field_s = field.to_string();
-            let alias_name = Ident::new(
-                &format!("STR_{}_{}__{}", variant, field, index),
-                field.span(),
-            );
-
-            let variant_field = variant_field_tokens(&variant, &field_s, FullPathForChars::No);
-
-            quote!(
-                #[allow(non_camel_case_types)]
-                pub type #alias_name=::structural::pmr::FieldPath<(#variant_field,)>;
             )
             .to_tokens(ts);
 

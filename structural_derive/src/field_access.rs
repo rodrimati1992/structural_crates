@@ -157,18 +157,18 @@ pub(crate) struct AccessAndIsOptional {
     pub(crate) optionality: IsOptional,
 }
 
-macro_rules! AAIO_match {
+macro_rules! AAIO_match_a {
     ( self=$this:ident kind=$kind:ident ) => ({
         let AccessAndIsOptional{access,optionality}=$this;
         match (access,optionality) {
-            (Access::Shared  ,IsOptional::No )=>AAIO_match!(inner; $kind GetField ),
-            (Access::Shared  ,IsOptional::Yes)=>AAIO_match!(inner; $kind OptGetField ),
-            (Access::Value   ,IsOptional::No )=>AAIO_match!(inner; $kind IntoField ),
-            (Access::Value   ,IsOptional::Yes)=>AAIO_match!(inner; $kind OptIntoField ),
-            (Access::Mutable ,IsOptional::No )=>AAIO_match!(inner; $kind GetFieldMut ),
-            (Access::Mutable ,IsOptional::Yes)=>AAIO_match!(inner; $kind OptGetFieldMut ),
-            (Access::MutValue,IsOptional::No )=>AAIO_match!(inner; $kind IntoFieldMut ),
-            (Access::MutValue,IsOptional::Yes)=>AAIO_match!(inner; $kind OptIntoFieldMut ),
+            (Access::Shared  ,IsOptional::No )=>AAIO_match_a!(inner; $kind GetField ),
+            (Access::Shared  ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptGetField ),
+            (Access::Value   ,IsOptional::No )=>AAIO_match_a!(inner; $kind IntoField ),
+            (Access::Value   ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptIntoField ),
+            (Access::Mutable ,IsOptional::No )=>AAIO_match_a!(inner; $kind GetFieldMut ),
+            (Access::Mutable ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptGetFieldMut ),
+            (Access::MutValue,IsOptional::No )=>AAIO_match_a!(inner; $kind IntoFieldMut ),
+            (Access::MutValue,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptIntoFieldMut ),
         }
     });
     (inner; quote $trait_:ident )=>{
@@ -183,14 +183,43 @@ impl AccessAndIsOptional {
     pub(crate) fn trait_name(self) -> &'static str {
         let this = self;
 
-        AAIO_match!( self=this kind=stringify )
+        AAIO_match_a!( self=this kind=stringify )
+    }
+
+    pub(crate) fn trait_tokens(self) -> TokenStream2 {
+        let this = self;
+
+        AAIO_match_a!( self=this kind=quote )
     }
 }
 
-impl ToTokens for AccessAndIsOptional {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        let this = *self;
+macro_rules! AAIO_match_b {
+    ( self=$this:ident kind=$kind:ident ) => ({
+        use self::{Access as A,IsOptional as IO};
+        let AccessAndIsOptional{access,optionality}=$this;
+        match (access,optionality) {
+            (A::Shared  ,IO::No )=>AAIO_match_b!(inner; $kind GetVariantField ),
+            (A::Shared  ,IO::Yes)=>AAIO_match_b!(inner; $kind OptGetVariantField ),
+            (A::Value   ,IO::No )=>AAIO_match_b!(inner; $kind IntoVariantField ),
+            (A::Value   ,IO::Yes)=>AAIO_match_b!(inner; $kind OptIntoVariantField ),
+            (A::Mutable ,IO::No )=>AAIO_match_b!(inner; $kind GetVariantFieldMut ),
+            (A::Mutable ,IO::Yes)=>AAIO_match_b!(inner; $kind OptGetVariantFieldMut ),
+            (A::MutValue,IO::No )=>AAIO_match_b!(inner; $kind IntoVariantFieldMut ),
+            (A::MutValue,IO::Yes)=>AAIO_match_b!(inner; $kind OptIntoVariantFieldMut ),
+        }
+    });
+    (inner; quote $trait_:ident )=>{
+        quote!($trait_)
+    };
+    (inner; stringify $trait_:ident )=>{
+        stringify!($trait_)
+    };
+}
 
-        AAIO_match!( self=this kind=quote ).to_tokens(tokens);
+impl AccessAndIsOptional {
+    pub(crate) fn variant_field_trait_tokens(self) -> TokenStream2 {
+        let this = self;
+
+        AAIO_match_b!( self=this kind=quote )
     }
 }

@@ -20,7 +20,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use quote::{quote, ToTokens};
+use quote::quote;
 
 use syn::{punctuated::Punctuated, DeriveInput, Ident, Token};
 
@@ -85,7 +85,7 @@ fn delegating_structural<'a>(
         .map_or(&empty_preds, |x| &x.predicates)
         .into_iter();
 
-    quote!(::structural::z_delegate_structural_with! {
+    quote!(::structural::unsafe_delegate_structural_with! {
         impl[#impl_generics] #tyname #ty_generics
         where[ #(#where_preds,)* ]
 
@@ -96,10 +96,10 @@ fn delegating_structural<'a>(
         GetFieldImpl { &this.#the_field }
 
         unsafe GetFieldMutImpl { &mut this.#the_field }
-
         as_delegating_raw{
             &mut (*this).#the_field as *mut #fieldty
         }
+
         IntoFieldImpl { this.#the_field }
     })
     .piped(Ok)
@@ -178,10 +178,7 @@ fn deriving_structural<'a>(
                     None => (&field.ident).into(),
                 };
 
-                let alias_index = match struct_or_enum {
-                    StructOrEnum::Struct => names_module.push_path(ident),
-                    StructOrEnum::Enum => names_module.push_str(ident),
-                };
+                let alias_index = names_module.push_str(ident);
 
                 let optionality_ty = get_optionality(implicit_optionality, field, config_f, arenas);
 
@@ -319,7 +316,7 @@ fn deriving_structural<'a>(
                         #((
                             #getter_trait<
                                 #field_names : #field_tys ,
-                                #names_module_path::#alias_names,
+                                structural::pmr::FieldPath1<#names_module_path::#alias_names>,
                                 opt=#inner_optionality,
                                 #renamed_field_names,
                             >
