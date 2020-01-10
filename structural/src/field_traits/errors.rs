@@ -16,7 +16,7 @@ use self::sealed::Sealed;
 ///     Used when a field is optional.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
-pub trait FieldErr: Sealed {}
+pub trait IsFieldErr: Sealed + 'static + Copy {}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OptionalField;
@@ -25,10 +25,10 @@ pub struct OptionalField;
 pub enum NonOptField {}
 
 impl Sealed for OptionalField {}
-impl FieldErr for OptionalField {}
+impl IsFieldErr for OptionalField {}
 
 impl Sealed for NonOptField {}
-impl FieldErr for NonOptField {}
+impl IsFieldErr for NonOptField {}
 
 #[cfg(feature = "std")]
 mod std_impls {
@@ -77,15 +77,15 @@ impl Display for NonOptField {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait IntoFieldErr<T>: FieldErr {
+pub trait IntoFieldErr<T>: IsFieldErr {
     fn into_field_err(self) -> T
     where
-        T: FieldErr;
+        T: IsFieldErr;
 }
 
 impl<T> IntoFieldErr<T> for T
 where
-    T: FieldErr,
+    T: IsFieldErr,
 {
     #[inline(always)]
     fn into_field_err(self) -> T {
@@ -102,11 +102,11 @@ impl IntoFieldErr<OptionalField> for NonOptField {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait CombineErrs {
-    type Combined: FieldErr;
+pub trait CombinedErrs {
+    type Combined: IsFieldErr;
 }
 
-pub type CombineErrsOut<This> = <This as CombineErrs>::Combined;
+pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {
     use super::{NonOptField as IF, OptionalField as OF, *};
@@ -116,7 +116,7 @@ mod impl_combine_errs {
             $( $ty:ty = $output:ty ,)*
         ) => {
             $(
-                impl CombineErrs for $ty {
+                impl CombinedErrs for $ty {
                     type Combined=$output;
                 }
             )*
@@ -130,19 +130,19 @@ mod impl_combine_errs {
             $(
                 #[allow(non_camel_case_types)]
                 impl< $($t0,$t1,$t2,$t3,)* $($trailing,)* CombTuples,CombTrail >
-                    CombineErrs
+                    CombinedErrs
                 for ($($t0,$t1,$t2,$t3,)* $($trailing,)*)
                 where
-                    $( ($t0,$t1,$t2,$t3): CombineErrs, )*
+                    $( ($t0,$t1,$t2,$t3): CombinedErrs, )*
                     (
-                        $( CombineErrsOut<($t0,$t1,$t2,$t3)>, )*
-                    ):CombineErrs<Combined=CombTuples>,
-                    CombTuples:FieldErr,
-                    ($($trailing,)*):CombineErrs<Combined=CombTrail>,
-                    CombTrail:FieldErr,
-                    (CombTuples,CombTrail):CombineErrs,
+                        $( CombinedErrsOut<($t0,$t1,$t2,$t3)>, )*
+                    ):CombinedErrs<Combined=CombTuples>,
+                    CombTuples:IsFieldErr,
+                    ($($trailing,)*):CombinedErrs<Combined=CombTrail>,
+                    CombTrail:IsFieldErr,
+                    (CombTuples,CombTrail):CombinedErrs,
                 {
-                    type Combined=CombineErrsOut<(CombTuples,CombTrail)>;
+                    type Combined=CombinedErrsOut<(CombTuples,CombTrail)>;
                 }
             )*
         };
