@@ -5,87 +5,107 @@ Contains traits for accessing multiple fields at once.
 
 use super::*;
 
-/*
-pub trait RevGetField<'a,This:?Sized>{
-    type Field:'a;
+use crate::type_level::IsFieldPathSet;
 
-    fn rev_get_field(self,this:&'a This)->&'a Self::Field;
+use std_::marker::PhantomData;
+
+pub type RevGetMultiFieldOut<'a, Field, This> = <Field as RevGetMultiField<'a, This>>::Fields;
+
+pub type RevGetMultiFieldMutOut<'a, Field, This> =
+    <Field as RevGetMultiFieldMut<'a, This>>::FieldsMut;
+
+pub type RevGetMultiFieldMutRaw<'a, Field, This> =
+    <Field as RevGetMultiFieldMut<'a, This>>::FieldsRawMut;
+
+pub trait RevGetMultiField<'a, This: ?Sized + 'a>: IsFieldPathSet {
+    type Fields: 'a + NormalizeFields;
+
+    fn rev_get_multi_field(self, this: &'a This) -> Self::Fields;
+
+    #[doc(hidden)]
+    const __UNIMPLEMENTABLE_OUTSIDE__: RGMF<'a, Self, This>;
 }
 
-pub unsafe trait RevGetFieldMut<'a,This:?Sized>{
-    type Field:'a;
+pub trait RevGetMultiFieldMut<'a, This: ?Sized + 'a>: IsFieldPathSet {
+    type FieldsMut: 'a + NormalizeFields;
+    type FieldsRawMut: 'a + NormalizeFields;
 
-    fn rev_get_field_mut(self,this:&'a mut This)->&'a mut Self::Field;
+    fn rev_get_multi_field_mut(self, this: &'a mut This) -> Self::FieldsMut;
 
-    unsafe fn rev_get_field_raw_mut(
-        self,
-        field:MutRef<'a,This>,
-    )->MutRef<'a,Self::Field>;
+    unsafe fn rev_get_multi_field_raw_mut(self, this: *mut This) -> Self::FieldsRawMut;
+
+    #[doc(hidden)]
+    const __UNIMPLEMENTABLE_OUTSIDE__: RGMF<'a, Self, This>;
 }
-*/
 
 macro_rules! impl_get_multi_field {
     ( $(($fpath:ident $err:ident $fty:ident))* ) => (
         impl<'a,This:?Sized,$($fpath,$err,$fty,)* U>
-            RevGetField<'a,This>
+            RevGetMultiField<'a,This>
         for FieldPathSet<($(FieldPath<$fpath>,)*),U>
         where
+            This:'a,
             $(
-                FieldPath<$fpath>:RevGetField<'a,This,Field=Result<&'a $fty,$err>>,
-                Result<&'a $fty,$err>:NormalizeFields,
+                FieldPath<$fpath>:RevGetField<'a, This, Ty=$fty, Err=$err >,
                 $fty:'a,
                 $err:'a,
+                Result<&'a $fty,$err>: NormalizeFields,
             )*
         {
-            type Field=(
+            type Fields=(
                 $(
                     Result<&'a $fty,$err>,
                 )*
             );
 
             #[allow(unused_variables)]
-            fn rev_get_field(self,this:&'a This)->Self::Field{
+            fn rev_get_multi_field(self,this:&'a This)->Self::Fields{
                 (
                     $(
                         FieldPath::<$fpath>::NEW.rev_get_field(this),
                     )*
                 )
             }
+
+            #[doc(hidden)]
+            const __UNIMPLEMENTABLE_OUTSIDE__:RGMF<'a,Self,This>=RGMF(PhantomData);
         }
 
-        unsafe impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
-            RevGetFieldMut<'a,This>
+        impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
+            RevGetMultiFieldMut<'a,This>
         for FieldPathSet<($(FieldPath<$fpath>,)*),UniquePaths>
         where
+            This:'a,
             $(
-                FieldPath<$fpath>:RevGetFieldMut<
-                    'a,
-                    This,
-                    Field=Result<&'a mut $fty,$err>,
-                    FieldRawMut=Result<*mut $fty,$err>,
-                >,
-                Result<&'a mut $fty,$err>:NormalizeFields,
-                Result<*mut $fty,$err>:NormalizeFields,
+                FieldPath<$fpath>: RevGetFieldMut<'a,This, Ty=$fty, Err=$err >,
+                Result<&'a mut $fty,$err>: NormalizeFields,
+                Result<*mut $fty,$err>: NormalizeFields,
                 $fty:'a,
                 $err:'a,
                 // RevFieldMutType<'a,FieldPath<$fpath>,This>:'a,
             )*
         {
-            type Field=(
+            type FieldsMut=(
                 $(
                     Result<&'a mut $fty,$err>,
                 )*
             );
-            type FieldRawMut=(
+            type FieldsRawMut=(
                 $(
                     Result<*mut $fty,$err>,
                 )*
             );
 
-            fn rev_get_field_mut(self,this:&'a mut This)->Self::Field{
+            #[allow(unused_unsafe)]
+            fn rev_get_multi_field_mut(self,this:&'a mut This)->Self::FieldsMut{
                 unsafe{
                     let ($($fpath,)*)={
-                        self.rev_get_field_raw_mut(this)
+                        let this=this as *mut This;
+                        (
+                            $(
+                                FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),
+                            )*
+                        )
                     };
 
                     (
@@ -100,13 +120,16 @@ macro_rules! impl_get_multi_field {
             }
 
             #[allow(unused_variables)]
-            unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Self::FieldRawMut{
+            unsafe fn rev_get_multi_field_raw_mut(self,this:*mut This)->Self::FieldsRawMut{
                 (
                     $(
                         FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),
                     )*
                 )
             }
+
+            #[doc(hidden)]
+            const __UNIMPLEMENTABLE_OUTSIDE__:RGMF<'a,Self,This>=RGMF(PhantomData);
         }
     )
 }
@@ -136,3 +159,6 @@ impl_get_multi_field! {
 impl_get_multi_field! {
     (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
 }
+
+#[doc(hidden)]
+pub struct RGMF<'a, Name, This: ?Sized>(PhantomData<(PhantomData<Name>, PhantomData<&'a This>)>);

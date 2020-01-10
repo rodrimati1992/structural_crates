@@ -1,6 +1,14 @@
 use super::*;
 
-use crate::enum_traits::IsVariant;
+use crate::{
+    enum_traits::IsVariant,
+    field_traits::{
+        multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
+        RevGetField, RevGetFieldMut, RevIntoField,
+    },
+};
+
+use core_extensions::collection_traits::{cloned_items::ClonedType, Cloned};
 
 /// A trait defining the primary way to call methods from structural traits.
 pub trait GetFieldExt {
@@ -40,10 +48,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn field_<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<RevFieldRefType<'a, P, Self>>
+    fn field_<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<Result<&'a P::Ty, P::Err>>
     where
         P: IsFieldPath,
         P: RevGetField<'a, Self>,
+        Result<&'a P::Ty, P::Err>: NormalizeFields,
     {
         path.rev_get_field(self).normalize_fields()
     }
@@ -76,11 +85,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<RevFieldRefType<'a, P, Self>>
+    fn fields<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>
     where
-        P: RevGetField<'a, Self>,
+        P: RevGetMultiField<'a, Self>,
     {
-        path.rev_get_field(self).normalize_fields()
+        path.rev_get_multi_field(self).normalize_fields()
     }
 
     /// Gets clones of multiple fields,determined by `path`.
@@ -140,12 +149,12 @@ pub trait GetFieldExt {
     fn cloned_fields<'a, P>(
         &'a self,
         path: P,
-    ) -> <NormalizeFieldsOut<RevFieldRefType<'a, P, Self>> as Cloned>::Cloned
+    ) -> <NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>> as Cloned>::Cloned
     where
-        P: RevGetField<'a, Self>,
-        NormalizeFieldsOut<RevFieldRefType<'a, P, Self>>: Cloned,
+        P: RevGetMultiField<'a, Self>,
+        NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>: Cloned,
     {
-        path.rev_get_field(self).normalize_fields().cloned_()
+        path.rev_get_multi_field(self).normalize_fields().cloned_()
     }
 
     /// Gets a mutable reference to a field,determined by `path`.
@@ -197,10 +206,11 @@ pub trait GetFieldExt {
     /// ```
     ///
     #[inline(always)]
-    fn field_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<RevFieldMutType<'a, P, Self>>
+    fn field_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<Result<&'a mut P::Ty, P::Err>>
     where
         P: IsFieldPath,
         P: RevGetFieldMut<'a, Self>,
+        Result<&'a mut P::Ty, P::Err>: NormalizeFields,
     {
         path.rev_get_field_mut(self).normalize_fields()
     }
@@ -273,12 +283,15 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<RevFieldMutType<'a, P, Self>>
+    fn fields_mut<'a, P>(
+        &'a mut self,
+        path: P,
+    ) -> NormalizeFieldsOut<RevGetMultiFieldMutOut<'a, P, Self>>
     where
         P: IsFieldPathSet<PathUniqueness = UniquePaths>,
-        P: RevGetFieldMut<'a, Self>,
+        P: RevGetMultiFieldMut<'a, Self>,
     {
-        path.rev_get_field_mut(self).normalize_fields()
+        path.rev_get_multi_field_mut(self).normalize_fields()
     }
 
     /// Converts ´self´ into a field,determined by `path`.
@@ -323,10 +336,12 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<RevIntoFieldType<'a, P, Self>>
+    fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
         P: IsFieldPath,
         P: RevIntoField<'a, Self>,
+        P::Ty: Sized,
+        Result<P::Ty, P::Err>: NormalizeFields,
         Self: Sized,
     {
         path.rev_into_field(self).normalize_fields()
@@ -370,9 +385,11 @@ pub trait GetFieldExt {
     fn box_into_field<'a, P>(
         self: crate::alloc::boxed::Box<Self>,
         path: P,
-    ) -> NormalizeFieldsOut<RevIntoFieldType<'a, P, Self>>
+    ) -> NormalizeFieldsOut<Result<P::BoxedTy, P::Err>>
     where
         P: RevIntoField<'a, Self>,
+        P::BoxedTy: Sized,
+        Result<P::BoxedTy, P::Err>: NormalizeFields,
     {
         path.rev_box_into_field(self).normalize_fields()
     }
@@ -412,7 +429,7 @@ pub trait GetFieldExt {
         P: IsFieldPath,
         Self: IsVariant<P>,
     {
-        IsVariant::<P>::is_variant_(self)
+        IsVariant::is_variant_(self, _path)
     }
 }
 
