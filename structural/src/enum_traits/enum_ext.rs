@@ -1,7 +1,10 @@
 #[cfg(feature = "alloc")]
 use crate::alloc::boxed::Box;
 
-use crate::{enum_traits::VariantProxy, type_level::FieldPath1};
+use crate::{
+    enum_traits::{IsVariant, VariantProxy},
+    type_level::FieldPath1,
+};
 
 pub trait EnumExt {
     fn as_variant<V>(&self, vari: FieldPath1<V>) -> Option<&VariantProxy<Self, FieldPath1<V>>>

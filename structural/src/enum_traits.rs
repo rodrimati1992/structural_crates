@@ -9,7 +9,7 @@ pub use self::{enum_ext::EnumExt, variant_proxy::VariantProxy};
 ///
 /// An implementation of `IsVariant<FP!(Foo)>`
 /// must only return true if the enum is the `Foo` variant.
-/// 
+///
 /// Implementing this trait wrong will result in undefined behavior with
 /// the VariantProxy for the `V` variant.
 pub unsafe trait IsVariant<V> {
