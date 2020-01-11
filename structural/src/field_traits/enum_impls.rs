@@ -3,7 +3,7 @@ use crate::{
     field_traits::{
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField,
     },
-    structural_trait::{FieldInfos, Structural},
+    structural_trait::{FieldInfos, IsStructural, Structural},
     type_level::FieldPath1,
 };
 
@@ -17,6 +17,8 @@ tstring_aliases_module! {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+impl<T> IsStructural for Option<T> {}
 
 impl<T, Name> FieldType<Name> for Option<T>
 where

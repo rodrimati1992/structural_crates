@@ -375,6 +375,10 @@ macro_rules! impl_structural{
             )*]
         }
     )=>{
+        impl<$($typarams)*> $crate::IsStructural for $self_
+        where $($where_)*
+        {}
+
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {
@@ -402,6 +406,10 @@ macro_rules! impl_structural{
             variants=[ $( $variant:ident ),* $(,)*]
         }
     )=>{
+        impl<$($typarams)*> $crate::IsStructural for $self_
+        where $($where_)*
+        {}
+
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {

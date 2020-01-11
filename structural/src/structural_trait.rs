@@ -2,8 +2,11 @@
 Contains the Structural trait with info about the fields that have accessor trait impls.
 */
 
+/// A marker trait for types that implement some field accessor traits.
+pub trait IsStructural {}
+
 /// Provides information about the accessor trait impls for the type.
-pub trait Structural {
+pub trait Structural: IsStructural {
     /// Information about fields/variants that have accessor trait implemented for them.
     const FIELDS: &'static FieldInfos;
 }

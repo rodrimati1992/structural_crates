@@ -19,6 +19,8 @@ pub mod integer;
 #[doc(hidden)]
 pub mod list;
 
+pub mod to_value_traits;
+
 #[doc(hidden)]
 pub use self::list::{TList, TNil};
 
