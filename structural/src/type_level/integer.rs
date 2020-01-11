@@ -2,7 +2,10 @@
 Small,type-level integers.
 */
 
-use crate::type_level::cmp::{Compare_, TEqual, TGreater, TLess};
+use crate::type_level::{
+    cmp::{Compare_, TEqual, TGreater, TLess},
+    to_value_traits::ToUsize,
+};
 
 use std_::marker::PhantomData;
 
@@ -22,6 +25,22 @@ pub trait IsUnsigned: Sealed {}
 
 impl<T> Sealed for Unsigned<T> {}
 impl<T> IsUnsigned for Unsigned<T> {}
+
+/////////////////////////////////////////////////////////////////////
+
+pub trait IsBit: Sealed {
+    const VALUE: bool;
+}
+
+impl Sealed for Bit0 {}
+impl Sealed for Bit1 {}
+
+impl IsBit for Bit0 {
+    const VALUE: bool = false;
+}
+impl IsBit for Bit1 {
+    const VALUE: bool = true;
+}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -218,3 +237,22 @@ where
 }
 
 /////////////////////////////////////////////////////////////////////
+
+impl<B5, B4, B3, B2, B1, B0> ToUsize for Unsigned<(B5, B4, B3, B2, B1, B0)>
+where
+    B5: IsBit,
+    B4: IsBit,
+    B3: IsBit,
+    B2: IsBit,
+    B1: IsBit,
+    B0: IsBit,
+{
+    const USIZE: usize = {
+        ((B5::VALUE as usize) << 5)
+            | ((B4::VALUE as usize) << 4)
+            | ((B3::VALUE as usize) << 3)
+            | ((B2::VALUE as usize) << 2)
+            | ((B1::VALUE as usize) << 1)
+            | (B0::VALUE as usize)
+    };
+}

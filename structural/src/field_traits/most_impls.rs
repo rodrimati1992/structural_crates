@@ -3,7 +3,7 @@
 use super::*;
 
 use crate::field_traits::NonOptField;
-use crate::structural_trait::{FieldInfo, FieldInfos};
+use crate::structural_trait::{FieldInfo, FieldInfos, IsStructural};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -54,6 +54,8 @@ impl_getters_for_derive_struct! {
 }
 
 ///////////////////////////////////////////////////////
+
+impl<T> IsStructural for RangeInclusive<T> {}
 
 impl<T> Structural for RangeInclusive<T> {
     const FIELDS: &'static FieldInfos = {
@@ -175,7 +177,7 @@ unsafe_delegate_structural_with! {
 
 unsafe_delegate_structural_with! {
     impl['a,T,] &'a mut T
-    where [T:?Sized,]
+    where [T:?Sized+IsStructural,]
     self_ident=this;
     delegating_to_type=T;
     field_name_param=( fname_var : fname_ty );
@@ -186,7 +188,7 @@ unsafe_delegate_structural_with! {
 
 unsafe impl<T, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'_ mut T
 where
-    T: ?Sized + GetFieldMutImpl<__FieldName, P>,
+    T: ?Sized + IsStructural + GetFieldMutImpl<__FieldName, P>,
 {
     fn get_field_mut_(&mut self, name: __FieldName, param: P) -> Result<&mut Self::Ty, Self::Err> {
         <T as GetFieldMutImpl<__FieldName, P>>::get_field_mut_(self, name, param)
@@ -215,7 +217,7 @@ where
 #[cfg(feature = "specialization")]
 unsafe impl<T, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'_ mut T
 where
-    T: Sized + GetFieldMutImpl<__FieldName, P>,
+    T: Sized + IsStructural + GetFieldMutImpl<__FieldName, P>,
 {
     unsafe fn get_field_raw_mut(
         this: *mut (),

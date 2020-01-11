@@ -404,7 +404,7 @@ pub use crate::{
         GetFieldType2, GetFieldType3, GetFieldType4, IntoField, IntoFieldImpl, IntoFieldMut,
         OptGetField, OptGetFieldMut, OptIntoField, OptIntoFieldMut,
     },
-    structural_trait::Structural,
+    structural_trait::{IsStructural, Structural},
 };
 
 /// Reexports from the `core_extensions` crate.
@@ -427,6 +427,7 @@ pub mod pmr {
     pub use crate::enum_traits::*;
     pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
+    pub use crate::structural_trait::IsStructural;
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;

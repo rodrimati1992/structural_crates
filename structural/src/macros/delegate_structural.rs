@@ -292,7 +292,7 @@ macro_rules! unsafe_delegate_structural_with {
     )=>{
         impl<$($impl_params)*> $crate::Structural for $self
         where
-            $delegating_to_type:$crate::Structural,
+            $delegating_to_type: $crate::Structural,
             $($where_clause)*
         {
             const FIELDS: &'static $crate::structural_trait::FieldInfos={
@@ -325,6 +325,12 @@ macro_rules! unsafe_delegate_structural_with {
 
         GetFieldImpl $get_field_closure:block
     )=>{
+        impl<$($impl_params)*> $crate::IsStructural for $self
+        where
+            $delegating_to_type: $crate::IsStructural,
+            $($where_clause)*
+        {}
+
         unsafe impl<$($impl_params)* _V>
             $crate::pmr::IsVariant<_V>
         for $self
@@ -343,13 +349,13 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::pmr::GetVariantFieldImpl<_V,_F>
         for $self
         where
-            $delegating_to_type: $crate::pmr::GetVariantFieldImpl<_V,_F>,
+            $delegating_to_type: $crate::IsStructural + $crate::pmr::GetVariantFieldImpl<_V,_F>,
             $($where_clause)*
         {}
 
         impl<$($impl_params)* $fname_ty> $crate::FieldType<$fname_ty> for $self
         where
-            $delegating_to_type:$crate::FieldType<$fname_ty>,
+            $delegating_to_type: $crate::IsStructural + $crate::FieldType<$fname_ty>,
             $($where_clause)*
         {
             type Ty=$crate::GetFieldType<$delegating_to_type, $fname_ty>;
@@ -359,7 +365,7 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::GetFieldImpl< $fname_ty, __P>
             for $self
         where
-            $delegating_to_type:$crate::GetFieldImpl<$fname_ty,__P>,
+            $delegating_to_type: $crate::IsStructural + $crate::GetFieldImpl<$fname_ty,__P>,
             $($where_clause)*
         {
             type Err=$crate::unsafe_delegate_structural_with!{
@@ -574,7 +580,10 @@ macro_rules! unsafe_delegate_structural_with {
                     $crate::GetFieldMutImpl< $fname_ty,__P>
                     for $self
                 where
-                    $delegating_to_type:Sized + $crate::GetFieldMutImpl<$fname_ty,__P>,
+                    $delegating_to_type:
+                        Sized +
+                        $crate::IsStructural+
+                        $crate::GetFieldMutImpl<$fname_ty,__P>,
                     $($mut_where_clause)*
                     $($where_clause)*
                 {
@@ -623,7 +632,9 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::pmr::GetVariantFieldMutImpl<_V,_F>
         for $self
         where
-            $delegating_to_type: $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
+            $delegating_to_type:
+                $crate::IsStructural +
+                $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
             $($where_clause)*
             $($mut_where_clause)*
         {}
@@ -632,7 +643,9 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::GetFieldMutImpl<$fname_ty,__P>
             for $self
         where
-            $delegating_to_type: $crate::GetFieldMutImpl<$fname_ty,__P>,
+            $delegating_to_type:
+                $crate::IsStructural +
+                $crate::GetFieldMutImpl<$fname_ty,__P>,
             $($where_clause)*
             $($mut_where_clause)*
         {
@@ -684,7 +697,10 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::pmr::IntoVariantFieldImpl<_V,_F>
         for $self
         where
-            $delegating_to_type: Sized+$crate::pmr::IntoVariantFieldImpl<_V,_F>,
+            $delegating_to_type:
+                Sized+
+                $crate::IsStructural +
+                $crate::pmr::IntoVariantFieldImpl<_V,_F>,
             $($into_where_clause)*
             $($where_clause)*
         {}
@@ -693,7 +709,10 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::IntoFieldImpl< $fname_ty,__P>
             for $self
         where
-            $delegating_to_type:Sized+$crate::IntoFieldImpl<$fname_ty,__P>,
+            $delegating_to_type:
+                Sized+
+                $crate::IsStructural+
+                $crate::IntoFieldImpl<$fname_ty,__P>,
             $($into_where_clause)*
             $($where_clause)*
         {

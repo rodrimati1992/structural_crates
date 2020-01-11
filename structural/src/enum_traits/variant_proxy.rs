@@ -133,6 +133,8 @@ where
     }
 }
 
+impl<T: ?Sized, V> crate::IsStructural for VariantProxy<T, FieldPath1<V>> {}
+
 impl<T, V, F> FieldType<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: ?Sized + FieldType<VariantFieldPath<V, F>>,

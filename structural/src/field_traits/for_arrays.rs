@@ -138,6 +138,8 @@ macro_rules! declare_array_paths {
             #[allow(dead_code)]
             const $fi_ind:FieldInfo=FieldInfo::not_renamed(stringify!($index));
 
+            impl<T> crate::IsStructural for [T;$index] {}
+
             impl<T> Structural for [T;$index]{
                 const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
                     $( $fi_in_array, )*

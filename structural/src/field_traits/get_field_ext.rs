@@ -6,12 +6,13 @@ use crate::{
         multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
         RevGetField, RevGetFieldMut, RevIntoField,
     },
+    IsStructural,
 };
 
 use core_extensions::collection_traits::{cloned_items::ClonedType, Cloned};
 
 /// A trait defining the primary way to call methods from structural traits.
-pub trait GetFieldExt {
+pub trait GetFieldExt: IsStructural {
     /// Gets a reference to a field,determined by `path`.
     ///
     /// This is named `field_` instead of `field`
@@ -433,4 +434,4 @@ pub trait GetFieldExt {
     }
 }
 
-impl<T: ?Sized> GetFieldExt for T {}
+impl<T: ?Sized + IsStructural> GetFieldExt for T {}

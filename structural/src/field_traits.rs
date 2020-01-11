@@ -4,7 +4,7 @@ Accessor and extension traits for fields.
 
 use crate::{
     type_level::{FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths},
-    Structural,
+    IsStructural, Structural,
 };
 
 use core_extensions::collection_traits::Cloned;
@@ -20,6 +20,7 @@ mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
 pub mod rev_get_field;
+mod slice_impls;
 mod tuple_impls;
 pub mod variant_field;
 
@@ -36,7 +37,7 @@ pub use self::{
 ////////////////////////////////////////////////////////////////////////////////
 
 /// For querying the type of the `FieldName` field.
-pub trait FieldType<FieldName> {
+pub trait FieldType<FieldName>: IsStructural {
     /// The type of the `FieldName` field.
     type Ty;
 }
@@ -110,7 +111,7 @@ macro_rules! declare_accessor_trait_alias {
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,IsStructural,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 /// };
@@ -126,6 +127,7 @@ macro_rules! declare_accessor_trait_alias {
 /// }
 ///
 ///
+/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -293,7 +295,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,GetFieldMutImpl,IsStructural,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -309,6 +311,8 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     ]);
 ///
 /// }
+///
+/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -429,7 +433,7 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
+///     FieldType,GetFieldImpl,IntoFieldImpl,IsStructural,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -445,6 +449,8 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///         FieldInfo::not_renamed("value")
 ///     ]);
 /// }
+///
+/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
