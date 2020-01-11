@@ -2,7 +2,7 @@ use crate::{
     field_access::{Access, IsOptional},
     ident_or_index::IdentOrIndex,
     parse_utils::ParsePunctuated,
-    structural_alias_impl_mod::TypeParamBounds,
+    structural_alias_impl_mod::{ReplaceBounds, TypeParamBounds},
 };
 
 use as_derive_utils::{
@@ -20,6 +20,7 @@ use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub(crate) struct StructuralOptions<'a> {
+    pub(crate) variants: Vec<VariantConfig>,
     pub(crate) fields: FieldMap<FieldConfig>,
 
     pub(crate) debug_print: bool,
@@ -33,6 +34,7 @@ pub(crate) struct StructuralOptions<'a> {
 impl<'a> StructuralOptions<'a> {
     fn new(_ds: &'a DataStructure<'a>, this: StructuralAttrs<'a>) -> Result<Self, syn::Error> {
         let StructuralAttrs {
+            variants,
             fields,
             debug_print,
             with_trait_alias,
@@ -43,6 +45,7 @@ impl<'a> StructuralOptions<'a> {
         } = this;
 
         Ok(Self {
+            variants,
             fields,
             debug_print,
             with_trait_alias,
@@ -54,6 +57,11 @@ impl<'a> StructuralOptions<'a> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Default, Clone)]
+pub(crate) struct VariantConfig {
+    pub(crate) replace_bounds: Option<ReplaceBounds>,
+}
 
 #[derive(Debug, Default)]
 pub(crate) struct FieldConfig {
@@ -75,6 +83,7 @@ pub(crate) struct FieldConfig {
 
 #[derive(Default)]
 struct StructuralAttrs<'a> {
+    variants: Vec<VariantConfig>,
     fields: FieldMap<FieldConfig>,
 
     debug_print: bool,
@@ -84,12 +93,14 @@ struct StructuralAttrs<'a> {
 
     errors: LinearResult<()>,
 
+
     _marker: PhantomData<&'a ()>,
 }
 
 #[derive(Debug, Copy, Clone)]
 enum ParseContext<'a> {
     TypeAttr { name: &'a Ident },
+    Variant { name: &'a Ident, index: usize },
     Field { field: &'a Field<'a> },
 }
 
@@ -98,6 +109,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
     ds: &'a DataStructure<'a>,
 ) -> Result<StructuralOptions<'a>, syn::Error> {
     let mut this = StructuralAttrs::default();
+    this.variants = vec![VariantConfig::default(); ds.variants.len()];
     this.with_trait_alias = true;
 
     this.fields = FieldMap::with(ds, |field| FieldConfig {
@@ -112,8 +124,16 @@ pub(crate) fn parse_attrs_for_structural<'a>(
 
     parse_inner(&mut this, ds.attrs, ParseContext::TypeAttr { name })?;
 
-    for (_, field) in ds.variants[0].fields.iter().enumerate() {
-        parse_inner(&mut this, field.attrs, ParseContext::Field { field })?;
+    for (var_i, variant) in ds.variants.iter().enumerate() {
+        let ctx = ParseContext::Variant {
+            name: variant.name,
+            index: var_i,
+        };
+        parse_inner(&mut this, variant.attrs, ctx)?;
+
+        for field in variant.fields.iter() {
+            parse_inner(&mut this, field.attrs, ParseContext::Field { field })?;
+        }
     }
 
     this.errors.take()?;
@@ -195,9 +215,33 @@ fn parse_sabi_attr<'a>(
                             \"nightly_impl_fields\" or \"impl_fields\" feature.\
                         ",
                     }
+                } else if !this.with_trait_alias {
+                    return Err(trait_alias_err(path));
                 }
                 let bounds: TypeParamBounds = value.parse::<ParsePunctuated<_, _>>()?.list;
                 this.fields[field].is_impl = Some(bounds)
+            } else {
+                return Err(make_err(&path))?;
+            }
+        }
+        (
+            ParseContext::Variant { index, .. },
+            Meta::NameValue(MetaNameValue {
+                lit: Lit::Str(unparsed_lit),
+                path,
+                ..
+            }),
+        ) => {
+            let path = &path;
+            if path.equals_str("replace_bounds") {
+                if !this.with_trait_alias {
+                    return Err(trait_alias_err(path));
+                }
+
+                this.variants[index].replace_bounds = Some(ReplaceBounds {
+                    bounds: unparsed_lit.value(),
+                    span: unparsed_lit.span(),
+                });
             } else {
                 return Err(make_err(&path))?;
             }
@@ -265,4 +309,11 @@ fn parse_sabi_attr<'a>(
         (_, x) => return Err(make_err(&x)),
     }
     Ok(())
+}
+
+fn trait_alias_err(tokens: &dyn ToTokens) -> syn::Error {
+    spanned_err!(
+        tokens,
+        "Cannot use this attribute when no trait alias is being generated"
+    )
 }

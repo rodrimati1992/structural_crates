@@ -1,4 +1,5 @@
 use crate::enum_traits::VariantProxy;
+use crate::field_traits::variant_field::IntoVariantFieldMut;
 use crate::*;
 
 use std_::mem;
@@ -167,3 +168,78 @@ fn deriving_pair_accessors() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Structural)]
+// #[struc(debug_print)]
+enum HuhRB {
+    #[struc(replace_bounds = "WhatRB_VSI< @variant >")]
+    U(WhatRB),
+    V {
+        a: &'static str,
+        b: u32,
+    },
+}
+
+#[derive(Structural)]
+// #[struc(debug_print)]
+struct WhatRB {
+    pub a: u64,
+    pub b: u32,
+    pub c: u16,
+    pub d: u8,
+}
+
+tstring_aliases_module! {
+    mod rb_strs{
+        U,V,a,b,c,d
+    }
+}
+
+assert_equal_bounds! {
+    trait AssertRB,
+    (HuhRB_SI),
+    (
+          IntoVariantFieldMut<rb_strs::U, rb_strs::a, Ty = u64>
+        + IntoVariantFieldMut<rb_strs::U, rb_strs::b, Ty = u32>
+        + IntoVariantFieldMut<rb_strs::U, rb_strs::c, Ty = u16>
+        + IntoVariantFieldMut<rb_strs::U, rb_strs::d, Ty = u8>
+        + IntoVariantFieldMut<rb_strs::V, rb_strs::a, Ty = &'static str>
+        + IntoVariantFieldMut<rb_strs::V, rb_strs::b, Ty = u32>
+    ),
+}
+
+fn test_replace_bounds_trait_object() {
+    fn hi(wha_u: &dyn HuhRB_SI, wha_v: &dyn HuhRB_SI) {
+        {
+            assert_eq!(wha_u.field_(fp!(::U.a)), Some(&11));
+            assert_eq!(wha_u.field_(fp!(::U.b)), Some(&22));
+            assert_eq!(wha_u.field_(fp!(::U.c)), Some(&33));
+            assert_eq!(wha_u.field_(fp!(::U.d)), Some(&44));
+
+            let proxy = wha_u.field_(fp!(::U)).unwrap();
+            assert_eq!(proxy.field_(fp!(a)), &11);
+            assert_eq!(proxy.field_(fp!(b)), &22);
+            assert_eq!(proxy.field_(fp!(c)), &33);
+            assert_eq!(proxy.field_(fp!(d)), &44);
+        }
+
+        {
+            assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
+            assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
+
+            let proxy = wha_u.field_(fp!(::V)).unwrap();
+            assert_eq!(proxy.field_(fp!(a)), &"55");
+            assert_eq!(proxy.field_(fp!(b)), &66);
+        }
+    }
+
+    hi(
+        &HuhRB::U(WhatRB {
+            a: 11,
+            b: 22,
+            c: 33,
+            d: 44,
+        }),
+        &HuhRB::V { a: "55", b: 66 },
+    )
+}

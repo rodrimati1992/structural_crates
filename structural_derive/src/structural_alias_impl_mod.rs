@@ -2,6 +2,7 @@ use crate::{
     arenas::Arenas,
     field_access::{Access, AccessAndIsOptional, IsOptional},
     ident_or_index::IdentOrIndexRef,
+    parse_utils::ParsePunctuated,
     tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens, NamesModuleIndex},
 };
 
@@ -62,14 +63,15 @@ pub struct StructuralVariant<'a> {
     pub(crate) name: &'a Ident,
     pub(crate) alias_index: NamesModuleIndex,
     pub(crate) fields: Vec<StructuralField<'a>>,
+    pub(crate) replace_bounds: Option<&'a ReplaceBounds>,
 }
 
+/// A smaller version of StructuralField
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TinyStructuralField<'a> {
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
     pub(crate) inner_optionality: IsOptional,
-    pub(crate) is_in_variant: bool,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -79,7 +81,6 @@ pub(crate) struct StructuralField<'a> {
     pub(crate) ident: IdentOrIndexRef<'a>,
     pub(crate) alias_index: NamesModuleIndex,
     pub(crate) inner_optionality: IsOptional,
-    pub(crate) is_in_variant: bool,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -90,6 +91,17 @@ pub(crate) enum FieldType<'a> {
 }
 
 pub(crate) type TypeParamBounds = Punctuated<syn::TypeParamBound, syn::token::Add>;
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) enum VariantIdent<'a> {
+    Ident {
+        ident: &'a Ident,
+        alias_ident: &'a Ident,
+    },
+    StructVariantTrait {
+        ident: &'a Ident,
+    },
+}
 
 // A hack to allow borrowing from the arena inside a parser
 impl<'a> Parse for StructuralAliasesHack {
@@ -212,7 +224,7 @@ impl<'a> StructuralDataType<'a> {
                 )?);
             } else {
                 fields.push(StructuralField::parse_with_access(
-                    names_mod, None, access, arenas, input,
+                    names_mod, access, arenas, input,
                 )?);
             }
         }
@@ -235,7 +247,6 @@ impl<'a> StructuralVariant<'a> {
 
             fields.push(StructuralField::parse_with_access(
                 names_mod,
-                Some(name),
                 nested_access.unwrap_or(access),
                 arenas,
                 input,
@@ -245,29 +256,21 @@ impl<'a> StructuralVariant<'a> {
             name,
             alias_index,
             fields,
+            replace_bounds: None,
         })
     }
 }
 
 macro_rules! declare_structural_field_methods {
     () => (
-        pub(crate) fn outer_optionality(&self)->IsOptional{
-            if self.is_in_variant {
-                IsOptional::Yes
-            }else{
-                self.inner_optionality
-            }
-        }
-
-        pub(crate) fn access_and_outer_optionality(&self)-> AccessAndIsOptional {
-            self.access.and_optionality(self.outer_optionality())
+        pub(crate) fn access_and_optionality(&self)-> AccessAndIsOptional {
+            self.access.and_optionality( self.inner_optionality )
         }
     )
 }
 
 impl<'a> TinyStructuralField<'a> {
     pub(crate) fn parse(
-        enum_variant: Option<&'a Ident>,
         access: Access,
         arenas: &'a Arenas,
         input: ParseStream,
@@ -281,7 +284,6 @@ impl<'a> TinyStructuralField<'a> {
             access,
             ident,
             inner_optionality,
-            is_in_variant: enum_variant.is_some(),
             ty,
         })
     }
@@ -292,7 +294,6 @@ impl<'a> TinyStructuralField<'a> {
 impl<'a> StructuralField<'a> {
     fn parse_with_access(
         names_mod: &mut NamedModuleAndTokens,
-        enum_variant: Option<&'a Ident>,
         access: Access,
         arenas: &'a Arenas,
         input: ParseStream,
@@ -301,9 +302,8 @@ impl<'a> StructuralField<'a> {
             access: _,
             ident,
             inner_optionality,
-            is_in_variant,
             ty,
-        } = TinyStructuralField::parse(enum_variant, access, arenas, input)?;
+        } = TinyStructuralField::parse(access, arenas, input)?;
         input.parse::<Token![,]>()?;
 
         Ok(Self {
@@ -311,7 +311,6 @@ impl<'a> StructuralField<'a> {
             ident,
             alias_index: names_mod.push_str(ident),
             inner_optionality,
-            is_in_variant,
             ty,
         })
     }
@@ -321,11 +320,52 @@ impl<'a> StructuralField<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<'a> ToTokens for TinyStructuralField<'a> {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
+#[derive(Debug, Clone)]
+pub(crate) struct ReplaceBounds {
+    pub(crate) bounds: String,
+    pub(crate) span: Span,
+}
+
+impl ReplaceBounds {
+    pub(crate) const NEEDLE: &'static str = "@variant";
+
+    fn to_tokens(
+        &self,
+        field_bounds: &mut TokenStream2,
+        names_mod: &NamedModuleAndTokens,
+        alias_ident: &Ident,
+    ) -> Result<(), syn::Error> {
+        let nma = format!("{}::{}", names_mod.names_module, alias_ident);
+        let bounds_str = syn::LitStr::new(&self.bounds.replace(Self::NEEDLE, &nma), self.span);
+
+        let bounds: TypeParamBounds = bounds_str.parse::<ParsePunctuated<_, _>>()?.list;
+
+        let plus = <syn::Token!(+)>::default();
+        for bound in bounds {
+            bound.to_tokens(field_bounds);
+            plus.to_tokens(field_bounds);
+        }
+        Ok(())
+    }
+
+    fn write_docs(&self, buffer: &mut String, variant_name: &Ident) {
+        use std::fmt::Write;
+
+        let doc_bounds = self
+            .bounds
+            .replace(Self::NEEDLE, &format!("TStr!({})", variant_name));
+
+        let _ = writeln!(buffer, "Using these bounds for the variant: {}", doc_bounds);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a> TinyStructuralField<'a> {
+    pub(crate) fn tokens(&self) -> TokenStream2 {
         let TinyStructuralField { ident, ty, .. } = *self;
 
-        let the_trait = self.access_and_outer_optionality().trait_tokens();
+        let the_trait = self.access_and_optionality().trait_tokens();
         let ident = tident_tokens(ident.to_string(), FullPathForChars::Yes);
         let ty = ToTokenFnMut::new(|tokens| match ty {
             FieldType::Ty(x) => x.to_tokens(tokens),
@@ -335,12 +375,12 @@ impl<'a> ToTokens for TinyStructuralField<'a> {
             }
         });
 
-        tokens.append_all(quote!(
+        quote!(
             structural::pmr::#the_trait<
                 structural::pmr::FieldPath<(#ident,)>,
                 Ty=#ty,
             >
-        ));
+        )
     }
 }
 
@@ -402,9 +442,12 @@ pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStre
             &saf.supertraits,
             &saf.names_mod,
             &saf.extra_items,
+            None,
             &saf.datatype,
         )?
         .piped(|x| out.append_all(x));
+
+        saf.names_mod.to_tokens(&mut out);
     }
     // panic!("{}", out);
     Ok(out)
@@ -413,17 +456,20 @@ pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStre
 fn write_field_docs(
     docs: &mut String,
     left_padding: &str,
-    variant: Option<&Ident>,
+    variant: Option<VariantIdent<'_>>,
     field: &StructuralField<'_>,
 ) -> std::fmt::Result {
     use std::fmt::Write;
 
     use self::FieldType as FT;
 
-    let the_trait = field.access_and_outer_optionality().trait_name();
+    let the_trait = field.access_and_optionality().trait_name();
 
     let ident = match variant {
-        Some(v_ident) => format!("::{}.{}", v_ident, field.ident),
+        Some(VariantIdent::Ident { ident, .. }) => format!("::{}.{}", ident, field.ident),
+        Some(VariantIdent::StructVariantTrait { .. }) => {
+            format!("::[__VariantName].{}", field.ident)
+        }
         None => field.ident.to_string(),
     };
 
@@ -457,8 +503,16 @@ fn write_field_docs(
         LP = left_padding,
     )?;
     match (variant, field.inner_optionality) {
-        (Some(vari_name), _) => {
+        (
+            Some(VariantIdent::Ident {
+                ident: vari_name, ..
+            }),
+            _,
+        ) => {
             write!(docs, "field in the `{}` variant", vari_name)?;
+        }
+        (Some(VariantIdent::StructVariantTrait { .. }), _) => {
+            write!(docs, "field in the `[__VariantName]` variant")?;
         }
         (None, IsOptional::Yes) => docs.push_str("optional field"),
         (None, IsOptional::No) => docs.push_str("field"),
@@ -471,7 +525,7 @@ fn write_field_docs(
 
 fn process_field(
     field: &StructuralField<'_>,
-    variant_alias_ident: Option<&Ident>,
+    variant_ident: Option<VariantIdent<'_>>,
     names_mod: &NamedModuleAndTokens,
     field_bounds: &mut TokenStream2,
 ) {
@@ -479,19 +533,24 @@ fn process_field(
 
     let f_alias_name = names_mod.alias_name(field.alias_index);
     let names_mod_path = &names_mod.names_module;
-    let aaoo = field.access_and_outer_optionality();
+    let aaoo = field.access_and_optionality();
     let assoc_ty = match &field.ty {
         FT::Ty(ty) => quote!(Ty=#ty),
         FT::Impl(bounds) => quote!(Ty:#bounds),
     };
 
-    match variant_alias_ident {
-        Some(variant_alias_ident) => {
+    match variant_ident {
+        Some(variant_ident) => {
+            let variant_name_param = match variant_ident {
+                VariantIdent::Ident { alias_ident, .. } => quote!(#names_mod_path::#alias_ident),
+                VariantIdent::StructVariantTrait { .. } => quote!(__VariantName),
+            };
+
             let vf_trait = aaoo.variant_field_trait_tokens();
 
             field_bounds.append_all(quote!(
                 structural::pmr::#vf_trait<
-                    #names_mod_path::#variant_alias_ident,
+                    #variant_name_param,
                     #names_mod_path::#f_alias_name,
                     #assoc_ty
                 >+
@@ -517,19 +576,45 @@ pub(crate) fn for_delegation<'a, A, I>(
     mut docs: String,
     vis: &syn::Visibility,
     trait_token: &Token!(trait),
-    ident: &Ident,
+    mut ident: &'a Ident,
     generics: &syn::Generics,
     supertraits: &Punctuated<syn::TypeParamBound, token::Add>,
     names_mod: &NamedModuleAndTokens,
     trait_items: I,
+    variant_trait: Option<&'a Ident>,
     datatype: &StructuralDataType<'_>,
 ) -> Result<TokenStream2, syn::Error>
 where
-    A: IntoIterator,
+    A: IntoIterator + Copy,
     A::Item: ToTokens,
-    I: IntoIterator<Item = &'a TraitItem>,
+    I: IntoIterator<Item = &'a TraitItem> + Copy,
 {
     use std::fmt::Write;
+
+    let mut top_variant_ident = None::<VariantIdent<'a>>;
+
+    let mut tokens = TokenStream2::new();
+
+    if let Some(x) = variant_trait {
+        top_variant_ident = Some(VariantIdent::StructVariantTrait { ident: x });
+
+        tokens.append_all(for_delegation(
+            span,
+            attrs,
+            docs.clone(),
+            vis,
+            trait_token,
+            ident,
+            generics,
+            supertraits,
+            names_mod,
+            trait_items,
+            None,
+            datatype,
+        )?);
+
+        ident = x;
+    }
 
     let attrs = attrs.into_iter();
 
@@ -573,27 +658,45 @@ where
     }
 
     for variant in &datatype.variants {
-        let variant_name_type = names_mod.alias_name(variant.alias_index);
+        let alias_ident = names_mod.alias_name(variant.alias_index);
+        let variant_ident = Some(VariantIdent::Ident {
+            ident: variant.name,
+            alias_ident,
+        });
 
         field_bounds.append_all(quote!(
             structural::pmr::IsVariant<
                 structural::pmr::FieldPath1<
-                    #names_mod_path::#variant_name_type
+                    #names_mod_path::#alias_ident
                 >
             >
             +
         ));
 
         let _ = write!(docs, "Variant `{}` {{", variant.name,);
-        docs.push_str(if variant.fields.is_empty() {
-            " "
-        } else {
-            "<br>"
-        });
-        for field in &variant.fields {
-            process_field(field, Some(variant_name_type), names_mod, &mut field_bounds);
-            let _ = write_field_docs(&mut docs, SPACES_X8, Some(variant.name), field);
+        docs.push_str(
+            if variant.fields.is_empty() || variant.replace_bounds.is_some() {
+                " "
+            } else {
+                "<br>"
+            },
+        );
+
+        match &variant.replace_bounds {
+            Some(replace_bounds) => {
+                replace_bounds.to_tokens(&mut field_bounds, names_mod, alias_ident)?;
+
+                replace_bounds.write_docs(&mut docs, variant.name);
+            }
+            None => {
+                for field in &variant.fields {
+                    process_field(field, variant_ident, names_mod, &mut field_bounds);
+
+                    let _ = write_field_docs(&mut docs, SPACES_X8, variant_ident, field);
+                }
+            }
         }
+
         let _ = writeln!(docs, "}}\n");
     }
 
@@ -601,8 +704,8 @@ where
         docs.push_str("### Fields\n\n");
     }
     for field in datatype.fields.iter() {
-        process_field(field, None, names_mod, &mut field_bounds);
-        let _ = write_field_docs(&mut docs, "", None, field);
+        process_field(field, top_variant_ident, names_mod, &mut field_bounds);
+        let _ = write_field_docs(&mut docs, "", top_variant_ident, field);
     }
 
     if !supertraits.is_empty() {
@@ -616,10 +719,23 @@ where
     let supertraits_a = supertraits.into_iter();
     let supertraits_b = supertraits.into_iter();
 
-    let impl_generics =
-        GenParamsIn::with_after_types(generics, InWhat::ImplHeader, quote!(__This: ?Sized,));
+    let variant_generic_param = match variant_trait {
+        Some(_) => quote!(__VariantName,),
+        None => TokenStream2::new(),
+    };
 
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let impl_generics = {
+        let after_types = quote!(__This: ?Sized,#variant_generic_param);
+        GenParamsIn::with_after_types(generics, InWhat::ImplHeader, after_types)
+    };
+
+    let decl_generics =
+        GenParamsIn::with_after_types(generics, InWhat::ItemDecl, &variant_generic_param);
+
+    let ty_generics =
+        GenParamsIn::with_after_types(generics, InWhat::ItemUse, &variant_generic_param);
+
+    let (_, _, where_clause) = generics.split_for_impl();
 
     let empty_preds = Punctuated::new();
     let where_preds = where_clause
@@ -628,13 +744,11 @@ where
     let where_preds_a = where_preds.into_iter();
     let where_preds_b = where_preds.into_iter();
 
-    Ok(quote_spanned!(span=>
-        #names_mod
-
+    tokens.append_all(quote_spanned!(span=>
         #(#attrs)*
         #[doc=#docs]
         #vis
-        #trait_token #ident #generics :
+        #trait_token #ident <#decl_generics> :
             #( #supertraits_a+ )*
             #field_bounds
         where
@@ -644,7 +758,7 @@ where
         }
 
 
-        impl<#impl_generics> #ident #ty_generics
+        impl<#impl_generics> #ident <#ty_generics>
         for __This
         where
             __This:
@@ -652,5 +766,7 @@ where
                 #field_bounds,
             #(#where_preds_b,)*
         {}
-    ))
+    ));
+
+    Ok(tokens)
 }

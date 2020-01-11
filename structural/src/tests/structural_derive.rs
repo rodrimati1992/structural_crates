@@ -121,43 +121,23 @@ struct Privacies1 {
     world: u32,
 }
 
-trait Privacies1Test: Privacies1_SI {
-    fn func()
-    where
-        Self: IntoFieldMut<FP!(a), Ty = u32, Err = NonOptField>
-            + IntoFieldMut<FP!(b), Ty = u32, Err = NonOptField>
-            + IntoFieldMut<FP!(e), Ty = u32, Err = NonOptField>
-            + GetFieldImpl<FP!(f), Ty = u32, Err = NonOptField>
-            + GetFieldMutImpl<FP!(g), Ty = u32, Err = NonOptField>
-            + IntoFieldMut<FP!(h e l l o), Ty = u32, Err = NonOptField>
-            + IntoFieldImpl<FP!(w o r l d), Ty = u32, Err = NonOptField>
-            + Sized,
-    {
-    }
-
-    type Dummy;
-}
-
-// Using this trait to test that `Privacies1_SI` has the bounds from bellow as supertraits.
-// Because these bounds might be more constrained than `Privacies1_SI` itself
-// I'm testing that `Privacies1` implements those traits inside the `privacies` test.
-impl<L> Privacies1Test for L
-where
-    L: IntoFieldMut<FP!(a), Ty = u32, Err = NonOptField>
+assert_equal_bounds! {
+    trait Privacies1Test,
+    ( Privacies1_SI ),
+    (
+        IntoFieldMut<FP!(a), Ty = u32, Err = NonOptField>
         + IntoFieldMut<FP!(b), Ty = u32, Err = NonOptField>
         + IntoFieldMut<FP!(e), Ty = u32, Err = NonOptField>
         + GetFieldImpl<FP!(f), Ty = u32, Err = NonOptField>
         + GetFieldMutImpl<FP!(g), Ty = u32, Err = NonOptField>
         + IntoFieldMut<FP!(h e l l o), Ty = u32, Err = NonOptField>
         + IntoFieldImpl<FP!(w o r l d), Ty = u32, Err = NonOptField>
-        + Sized,
-{
-    type Dummy = ();
+    ),
 }
 
 #[test]
 fn privacies() {
-    let _: <Privacies1 as Privacies1Test>::Dummy;
+    let _ = <Privacies1 as Privacies1Test>::DUMMY;
 
     let _ = |mut this: Privacies0| {
         let _ = this.fields_mut(fp!(a, b));

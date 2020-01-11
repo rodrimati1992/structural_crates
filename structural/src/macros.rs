@@ -479,6 +479,8 @@ macro_rules! assert_equal_bounds {
         ( $($right:tt)* )$(,)*
     ) => (
         trait $trait_: $($left)* {
+            const DUMMY:()=();
+
             fn foo<T>()
             where
                 T: ?Sized+$($left)*;

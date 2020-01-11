@@ -380,7 +380,7 @@ pub mod test_utils;
 
 #[cfg(test)]
 pub mod tests {
-    mod enum_impls;
+    mod enum_derive;
     #[cfg(feature = "rust_1_40")]
     mod impl_struct;
     mod macro_tests;

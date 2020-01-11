@@ -129,7 +129,7 @@ mod variants_with_accesses {
     tstring_aliases_module! {
         mod strings{
             a,b,c,d,e,
-            A,B,C
+            A,AOpt,B,C,
         }
     }
 
@@ -141,6 +141,13 @@ mod variants_with_accesses {
                 mut c:(u8,u32),
                 move d:(u8,u64),
                 mut move e:(u16,u8),
+            },
+            AOpt{
+                a:?(u8,u8),
+                ref b:?(u8,u16),
+                mut c:?(u8,u32),
+                move d:?(u8,u64),
+                mut move e:?(u16,u8),
             },
             mut move B{
                 a:i8,
@@ -161,15 +168,22 @@ mod variants_with_accesses {
             IsVariant<paths::A>+
             IsVariant<paths::B>+
             IsVariant<paths::C>+
-            OptIntoVariantFieldMut< strings::A, strings::a, Ty= (u8,u8) >+
-            OptGetVariantField< strings::A, strings::b, Ty= (u8,u16) >+
-            OptGetVariantFieldMut< strings::A, strings::c, Ty= (u8,u32) >+
-            OptIntoVariantField< strings::A, strings::d, Ty= (u8,u64) >+
-            OptIntoVariantFieldMut< strings::A, strings::e, Ty= (u16,u8) >+
-            OptIntoVariantFieldMut< strings::B, strings::a, Ty= i8 >+
-            OptGetVariantField< strings::B, strings::b, Ty= i16 >+
-            OptGetVariantField< strings::C, strings::a, Ty= u8 >+
-            OptIntoVariantField< strings::C, strings::b, Ty= u16 >+
+            IntoVariantFieldMut< strings::A, strings::a, Ty= (u8,u8) >+
+            GetVariantField< strings::A, strings::b, Ty= (u8,u16) >+
+            GetVariantFieldMut< strings::A, strings::c, Ty= (u8,u32) >+
+            IntoVariantField< strings::A, strings::d, Ty= (u8,u64) >+
+            IntoVariantFieldMut< strings::A, strings::e, Ty= (u16,u8) >+
+
+            OptIntoVariantFieldMut< strings::AOpt, strings::a, Ty= (u8,u8) >+
+            OptGetVariantField< strings::AOpt, strings::b, Ty= (u8,u16) >+
+            OptGetVariantFieldMut< strings::AOpt, strings::c, Ty= (u8,u32) >+
+            OptIntoVariantField< strings::AOpt, strings::d, Ty= (u8,u64) >+
+            OptIntoVariantFieldMut< strings::AOpt, strings::e, Ty= (u16,u8) >+
+
+            IntoVariantFieldMut< strings::B, strings::a, Ty= i8 >+
+            GetVariantField< strings::B, strings::b, Ty= i16 >+
+            GetVariantField< strings::C, strings::a, Ty= u8 >+
+            IntoVariantField< strings::C, strings::b, Ty= u16 >+
             IntoFieldMut< paths::a, Ty= () >
         )
     }

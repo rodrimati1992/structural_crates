@@ -50,7 +50,7 @@ impl<'a> ImplStruct<'a> {
 
         while !input.is_empty() {
             let access = input.parse()?;
-            fields.push(TinyStructuralField::parse(None, access, &arenas, input)?);
+            fields.push(TinyStructuralField::parse(access, &arenas, input)?);
             input.peek_parse(syn::Token![,])?;
         }
 
@@ -62,7 +62,7 @@ impl<'a> ImplStruct<'a> {
 impl<'a> ToTokens for ImplStruct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         let bounds = self.bounds.iter();
-        let fields = self.fields.iter();
+        let fields = self.fields.iter().map(|f| f.tokens());
         tokens.append_all(quote!(
             impl #( #bounds+ )* #( #fields+ )*
         ));

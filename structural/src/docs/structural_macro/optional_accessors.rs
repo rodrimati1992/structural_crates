@@ -10,11 +10,11 @@ because structural uses some type-level machinery to figure out whether it retur
 Every enum field has accessors impls with `FP!(::Foo.bar)` type parameters,
 all of which are optional accessors.
 
-For structs,calling `GetFieldExt::field_` for `Option<T>` fields goes from returning a
-`&Option<T>` to `Option<&T>`.
+For structs,making a field optional causes calling `GetFieldExt::field_` for
+ `Option<T>` fields goes from returning an `&Option<T>` to `Option<&T>`.
 
-For enums,calling `GetFieldExt::field_` for `Option<T>` fields goes from returning a
-`Option<&Option<T>>` to `Option<&T>`.
+For enums,making a field optional causes calling `GetFieldExt::field_` for
+`Option<T>` fields goes from returning an `Option<&Option<T>>` to `Option<&T>`.
 
 The same goes for every other method in `GetFieldExt`.
 

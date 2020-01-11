@@ -194,7 +194,6 @@ fn deriving_structural<'a>(
                         Some(_) => IsOptional::Yes,
                         None => IsOptional::No,
                     },
-                    is_in_variant: struct_or_enum == StructOrEnum::Enum,
                     ident,
                     alias_index,
                     ty: match &config_f.is_impl {
@@ -216,17 +215,18 @@ fn deriving_structural<'a>(
             variants: ds
                 .variants
                 .iter()
-                .map(|variant| StructuralVariant {
+                .enumerate()
+                .map(|(vari, variant)| StructuralVariant {
                     name: &variant.name,
                     alias_index: names_module.push_str(variant.name.into()),
                     fields: make_fields(&mut names_module, variant),
+                    replace_bounds: options.variants[vari].replace_bounds.as_ref(),
                 })
                 .collect(),
         },
     };
 
     let structural_alias_trait;
-    let opt_names_module;
 
     if *with_trait_alias {
         let docs = format!(
@@ -240,9 +240,15 @@ fn deriving_structural<'a>(
             ",
             struct_ = tyname,
         );
+
+        let struct_variant_trait = match struct_or_enum {
+            StructOrEnum::Struct => Some(Ident::new(&format!("{}_VSI", tyname), Span::call_site())),
+            StructOrEnum::Enum => None,
+        };
+
         structural_alias_trait = crate::structural_alias_impl_mod::for_delegation(
             tyname.span(),
-            std::iter::empty::<Ident>(),
+            None::<&Ident>,
             docs,
             ds.vis,
             &<Token!(trait)>::default(),
@@ -250,14 +256,13 @@ fn deriving_structural<'a>(
             ds.generics,
             &Punctuated::new(),
             &names_module,
-            Vec::new(),
+            &[],
+            struct_variant_trait.as_ref(),
             &sdt,
         )?
         .piped(Some);
-        opt_names_module = None;
     } else {
         structural_alias_trait = None;
-        opt_names_module = Some(&names_module);
     };
 
     let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
@@ -271,7 +276,6 @@ fn deriving_structural<'a>(
         .into_iter();
 
     let structural_alias_trait = structural_alias_trait.into_iter();
-    let opt_names_module = opt_names_module.into_iter();
 
     let names_module_path = &names_module.names_module;
 
@@ -307,7 +311,7 @@ fn deriving_structural<'a>(
             quote!(
                 #(#structural_alias_trait)*
 
-                #(#opt_names_module)*
+                #names_module
 
                 ::structural::impl_getters_for_derive_struct!{
                     impl[#impl_generics] #tyname #ty_generics
@@ -378,7 +382,7 @@ fn deriving_structural<'a>(
             quote!(
                 #(#structural_alias_trait)*
 
-                #(#opt_names_module)*
+                #names_module
 
                 use structural::pmr::VariantProxy as #proxy_;
 
