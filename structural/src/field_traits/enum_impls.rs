@@ -9,7 +9,7 @@ use crate::{
 
 use std_::marker::PhantomData;
 
-tstring_aliases_module! {
+tstring_aliases! {
     mod strings {
         Ok,
         Err,

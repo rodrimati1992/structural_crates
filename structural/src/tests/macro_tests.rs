@@ -172,7 +172,7 @@ mod make_struct_tests {
 }
 
 mod names_module_tests {
-    field_path_aliases_module! {
+    field_path_aliases! {
         mod names_a{
             _a,
             _b,

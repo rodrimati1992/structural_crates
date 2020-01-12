@@ -98,7 +98,7 @@ mod with_variants {
         }
     }
 
-    field_path_aliases_module! {
+    field_path_aliases! {
         mod names{
             A,
             B,
@@ -119,14 +119,14 @@ mod with_variants {
 mod variants_with_accesses {
     use super::*;
 
-    field_path_aliases_module! {
+    field_path_aliases! {
         mod paths{
             a,
             A,B,C,
         }
     }
 
-    tstring_aliases_module! {
+    tstring_aliases! {
         mod strings{
             a,b,c,d,e,
             A,AOpt,B,C,

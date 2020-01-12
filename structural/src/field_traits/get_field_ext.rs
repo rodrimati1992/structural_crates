@@ -223,10 +223,10 @@ pub trait GetFieldExt: IsStructural {
     /// ```
     /// use structural::{
     ///     GetFieldExt,GetFieldMut,GetFieldType,Structural,
-    ///     fp,field_path_aliases_module,
+    ///     fp,field_path_aliases,
     /// };
     ///
-    /// field_path_aliases_module!{
+    /// field_path_aliases!{
     ///     mod names{x,y}
     /// }
     ///

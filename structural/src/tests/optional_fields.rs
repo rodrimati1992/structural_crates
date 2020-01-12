@@ -1,7 +1,7 @@
 use crate::enum_traits::VariantProxy;
 use crate::{GetFieldExt, Structural};
 
-field_path_aliases_module! {
+field_path_aliases! {
     mod names{
         a,b,c,d
     }
@@ -151,7 +151,7 @@ declare_struct_tests! {
 
 /////////////////////////////////////////////////////
 
-tstring_aliases_module! {
+tstring_aliases! {
     mod strings{
         A,B,C,a,b,c,d
     }

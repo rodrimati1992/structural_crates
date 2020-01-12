@@ -93,7 +93,6 @@ struct StructuralAttrs<'a> {
 
     errors: LinearResult<()>,
 
-
     _marker: PhantomData<&'a ()>,
 }
 
