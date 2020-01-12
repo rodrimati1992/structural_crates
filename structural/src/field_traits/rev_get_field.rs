@@ -3,7 +3,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 */
 
 use crate::{
-    enum_traits::{IsVariant, VariantProxy},
+    enum_traits::{EnumExt, IsVariant, VariantProxy},
     field_traits::{
         errors::{CombinedErrs, CombinedErrsOut, IntoFieldErr, IsFieldErr},
         GetFieldErr, NonOptField, OptionalField,
@@ -564,15 +564,12 @@ where
     type Ty = VariantProxy<This, FieldPath1<V>>;
     type Err = OptionalField;
 
+    #[inline(always)]
     fn rev_get_field(
         self,
         this: &'a This,
     ) -> Result<&'a VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        if IsVariant::is_variant_(this, FieldPath1::<V>::NEW) {
-            unsafe { Ok(VariantProxy::from_ref(this)) }
-        } else {
-            Err(OptionalField)
-        }
+        map_of!( this.as_variant(FieldPath1::<V>::NEW) )
     }
 }
 
@@ -586,22 +583,15 @@ where
         self,
         this: &'a mut This,
     ) -> Result<&'a mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        if IsVariant::is_variant_(&*this, FieldPath1::<V>::NEW) {
-            unsafe { Ok(VariantProxy::from_mut(this)) }
-        } else {
-            Err(OptionalField)
-        }
+        map_of!( this.as_mut_variant(FieldPath1::<V>::NEW) )
     }
 
+    #[inline(always)]
     unsafe fn rev_get_field_raw_mut(
         self,
         this: *mut This,
     ) -> Result<*mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        if IsVariant::is_variant_(&*this, FieldPath1::<V>::NEW) {
-            Ok(VariantProxy::from_raw_mut(this))
-        } else {
-            Err(OptionalField)
-        }
+        map_of!( EnumExt::as_raw_mut_variant(this,FieldPath1::<V>::NEW) )
     }
 }
 
@@ -612,15 +602,12 @@ where
 {
     type BoxedTy = Box<VariantProxy<This, FieldPath1<V>>>;
 
+    #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<VariantProxy<This, FieldPath1<V>>, OptionalField>
     where
         This: Sized,
     {
-        if IsVariant::is_variant_(&this, FieldPath1::<V>::NEW) {
-            unsafe { Ok(VariantProxy::new(this)) }
-        } else {
-            Err(OptionalField)
-        }
+        map_of!( this.into_variant(FieldPath1::<V>::NEW) )
     }
 
     #[cfg(feature = "alloc")]
@@ -629,10 +616,6 @@ where
         self,
         this: crate::pmr::Box<This>,
     ) -> Result<Box<VariantProxy<This, FieldPath1<V>>>, OptionalField> {
-        if IsVariant::is_variant_(&*this, FieldPath1::<V>::NEW) {
-            unsafe { Ok(VariantProxy::from_box(this)) }
-        } else {
-            Err(OptionalField)
-        }
+        map_of!( this.box_into_variant(FieldPath1::<V>::NEW) )
     }
 }
