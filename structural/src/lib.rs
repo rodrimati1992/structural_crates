@@ -357,6 +357,7 @@ pub use structural_derive::Structural;
 #[doc(hidden)]
 pub use structural_derive::{
     _FP_impl_,
+    _TStr_impl_,
     //new_fp_impl_,
     _field_path_aliases_impl,
     _impl_struct_impl,

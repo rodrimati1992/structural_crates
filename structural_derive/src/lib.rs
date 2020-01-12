@@ -93,6 +93,18 @@ pub fn _tstring_aliases_impl(input: TokenStream1) -> TokenStream1 {
 #[proc_macro]
 #[allow(non_snake_case)]
 #[doc(hidden)]
+pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
+    use crate::tokenizers::{tident_tokens, FullPathForChars};
+
+    parse_or_compile_err(input, |s: syn::LitStr| {
+        Ok(tident_tokens(s.value(), FullPathForChars::Yes))
+    })
+    .into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
 pub fn _impl_struct_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, impl_struct::impl_).into()
 }

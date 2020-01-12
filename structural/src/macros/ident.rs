@@ -809,3 +809,138 @@ macro_rules! tstring_aliases {
         }
     );
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+
+For getting the type of a `TString<_>`(type-level string).
+
+`TString<_>` itself is hidden from the docs because this library reserves
+the right to change its generic parameter from a tuple of type-level characters,
+to a `&'static str` const parameter (or `&'static [char]`).
+
+You can also use [`tstring_aliases`](./macro.tstring_aliases.html)
+to declare one or more aliases for type-level strings.
+
+# Variants
+
+### String literal
+
+From Rust 1.40 onwards you can call this macro with a string literal,
+
+Small Example:
+*/
+#[cfg_attr(not(feature = "better_macros"), doc = "```ignore")]
+#[cfg_attr(feature = "better_macros", doc = "```rust")]
+/**
+use structural::TStr;
+
+type Foo=TStr!("foo");
+
+```
+
+### Space separated characters
+
+You can call this macro with space separated characters.
+
+This variant of the macro exists to support Rust versions before 1.40.
+
+You can also use [`tstring_aliases`](./macro.tstring_aliases.html) macro
+if you prefer it to typing space separated characters.
+
+Small Example:
+
+```rust
+use structural::TStr;
+
+type Foo=TStr!(f o o);
+```
+
+# Example
+
+This example demonstrates the space separated variant of the macro,
+and uses the TStr macro to access a field,
+instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
+
+```rust
+use structural::{GetField,GetFieldExt,Structural,TStr};
+use structural::type_level::FieldPath1;
+
+fn main(){
+    let phone=CellPhone{
+        memory: Bytes{ bytes:64_000_000_000 },
+        charge: Charge{ percent:50 },
+    };
+    assert_eq!( get_charge(&phone).percent, 50 );
+
+    let battery=Battery{
+        charge: Charge{ percent:70 },
+    };
+    assert_eq!( get_charge(&battery).percent, 70 );
+}
+
+fn get_charge( this:&dyn GetField<FieldPath1<TStr!(c h a r g e)>, Ty=Charge> )-> Charge {
+    this.field_(FieldPath1::<TStr!(c h a r g e)>::NEW).clone()
+}
+
+#[derive(Structural)]
+struct CellPhone{
+    pub memory: Bytes,
+    pub charge: Charge,
+}
+
+#[derive(Structural)]
+struct Battery{
+    pub charge: Charge,
+}
+
+#[derive(Debug,Copy,Clone)]
+struct Bytes{
+    bytes: u64,
+}
+
+#[derive(Debug,Copy,Clone)]
+struct Charge{
+    percent: u8,
+}
+
+
+```
+
+
+
+*/
+#[macro_export]
+macro_rules! TStr {
+    ( $string:literal )=>{
+        $crate::_delegate_TStr!($string)
+    };
+    ($($char:tt)*) => {
+        $crate::pmr::TString<($($crate::TChar!($char),)*)>
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "better_macros"))]
+macro_rules! _delegate_TStr {
+    ($string:literal) => {
+        compile_error!(
+            "\
+`TStr!(\"foo\")` requires either Rust 1.40 or the \"better_macros\" cargo feature.
+
+You can always use the `tstring_aliases` macro to declare aliases for type level strings.
+        "
+        )
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "better_macros")]
+macro_rules! _delegate_TStr {
+    ($string:literal) => {
+        $crate::_TStr_impl_!($string)
+    };
+}
