@@ -40,7 +40,7 @@ enum Pair<T, U> {
     Unit,
 }
 
-tstring_aliases_module! {
+tstring_aliases! {
     mod pair_strs {
         AllCorrect,
         Pair,
@@ -189,7 +189,7 @@ struct WhatRB {
     pub d: u8,
 }
 
-tstring_aliases_module! {
+tstring_aliases! {
     mod rb_strs{
         U,V,a,b,c,d
     }

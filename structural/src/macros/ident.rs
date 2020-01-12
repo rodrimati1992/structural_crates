@@ -510,160 +510,49 @@ macro_rules! TChar {
 
 /**
 
-Declares a module with aliases for field paths,used to access fields.
-
-Every one of these aliases are types and constants of the same name.
-
-# Example
-
-```rust
-use structural::{field_path_aliases_module,GetField,GetFieldExt};
-
-field_path_aliases_module!{
-    pub mod names{
-        // Equivalent to _a=_a
-        _a,
-        // Equivalent to _b=_b
-        _b,
-        // Equivalent to _0=_0
-        _0,
-        // Equivalent to c=c
-        c,
-        zero=0,
-        one=1,
-        two=2,
-        e=10,
-        g=abcd,
-
-        // Used to access the `0`,`1`,and `2` fields
-        // with the fields or fields_mut method.
-        FirstThree=(0,1,2),
-        h=(a,b,c),
-        i=(0,3,5),
-
-        j=(p), // The identifier can also be parenthesised
-
-    }
-}
-
-
-fn assert_fields<T>(this:&T)
-where
-    T:GetField<names::zero,Ty=i32>+
-        GetField<names::one,Ty=i32>+
-        GetField<names::two,Ty=i32>
-{
-    assert_eq!( this.field_(names::zero), &2 );
-    assert_eq!( this.field_(names::one), &3 );
-    assert_eq!( this.field_(names::two), &5 );
-    assert_eq!( this.fields(names::FirstThree), (&2,&3,&5) );
-}
-
-fn main(){
-    assert_fields(&(2,3,5));
-    assert_fields(&(2,3,5,8));
-    assert_fields(&(2,3,5,8,13));
-    assert_fields(&(2,3,5,8,13,21));
-}
-
-
-```
-
-# Example
-
-This demonstrates defining and using aliases for nested fields.
-
-```rust
-use structural::{field_path_aliases_module,make_struct,structural_alias,GetFieldExt};
-
-field_path_aliases_module!{
-    pub mod names{
-        a=0.0, // This is for accessing the `.0.0` nested field.
-        b=0.1, // This is for accessing the `.0.1` nested field.
-        c=foo.boo, // This is for accessing the `.foo.bar` nested field.
-        d=foo.bar.baz, // This is for accessing the `.foo.bar.baz` nested field.
-    }
-}
-
-structural_alias!{
-    trait Foo<T>{
-        foo:T,
-    }
-
-    trait Bar<T>{
-        boo:u32,
-        bar:T,
-    }
-
-    trait Baz<T>{
-        baz:T,
-    }
-}
-
-fn assert_nested<A,B,C>(this:&A)
-where
-    A:Foo<B>,
-    B:Bar<C>,
-    C:Baz<u32>,
-{
-    assert_eq!( this.field_(names::c), &100 );
-    assert_eq!( this.field_(names::d), &101 );
-}
-
-fn main(){
-    assert_nested(&make_struct!{
-        foo:make_struct!{
-            boo:100,
-            bar:make_struct!{
-                baz:101,
-            }
-        }
-    });
-}
-
-```
-
-
-*/
-#[macro_export]
-macro_rules! field_path_aliases_module {
-    (
-        $(#[$attr:meta])*
-        $vis:vis mod $mod_name:ident{
-            $($mod_contents:tt)*
-        }
-    ) => (
-        #[allow(non_camel_case_types)]
-        #[allow(non_upper_case_globals)]
-        #[allow(unused_imports)]
-        $(#[$attr])*
-        /// Type aliases and constants for FieldPath and FieldPathSet
-        /// (from the structural crate).
-        ///
-        /// The source code for this module can only be accessed from
-        /// the type aliases and constants.<br>
-        /// As of writing this documentation,`cargo doc` links
-        /// to the inplementation of the `field_path_aliases_module` macro
-        /// instead of where this module is declared.
-        $vis mod $mod_name{
-            use super::*;
-            $crate::_field_path_aliases_impl!{
-                $($mod_contents)*
-            }
-        }
-    );
-}
-
-/**
-
 Declares aliases for field paths,used to access fields.
 
 Every one of these aliases are types and constants of the same name.
 
-As of Rust 1.39,this macro cannot be invoked within a function,
-you *can* use
-[`field_path_aliases_module`](./macro.field_path_aliases_module.html)
-within functions though.
+# Variants
+
+### Inline
+
+Where the aliases are declared at the scope that the macro is invoked.
+
+This variant cannot be invoked within functions.
+
+Small example:
+```rust
+use structural::field_path_aliases;
+
+field_path_aliases!{
+    a,
+    b=b,
+    c=d.e,
+}
+# fn main(){}
+```
+### Module
+
+Where the aliases are declared inside a nested module.
+
+This variant can be invoked within functions.
+
+Small example:
+```rust
+use structural::field_path_aliases;
+
+fn hello(){
+    field_path_aliases!{
+        mod hello{
+            a,
+            b=b,
+            c=d.e,
+        }
+    }
+}
+```
 
 # Example
 
@@ -714,39 +603,54 @@ fn main(){
 
 # Example
 
-This demonstrates defining and using aliases for nested fields.
+This demonstrates defining aliases inside a module.
 
 ```rust
-use structural::{field_path_aliases,structural_alias,GetFieldExt};
-
+use structural::{field_path_aliases,make_struct,structural_alias,GetFieldExt};
 
 field_path_aliases!{
-    nested_a=0.0, // This is for accessing the `.0.0` nested field.
-    nested_b=0.1, // This is for accessing the `.0.1` nested field.
-    nested_c=foo.bar, // This is for accessing the `.foo.bar` nested field.
-    nested_d=foo.bar.baz, // This is for accessing the `.foo.bar.baz` nested field.
-}
-
-structural_alias!{
-    trait Tuple2<T>{
-        ref 0:(T,T),
-        ref 1:(T,T),
+    pub mod names{
+        a=0.0, // This is for accessing the `.0.0` nested field.
+        b=0.1, // This is for accessing the `.0.1` nested field.
+        c=foo.boo, // This is for accessing the `.foo.bar` nested field.
+        d=foo.bar.baz, // This is for accessing the `.foo.bar.baz` nested field.
     }
 }
 
-fn assert_nested<T>(this:&T)
+structural_alias!{
+    trait Foo<T>{
+        foo:T,
+    }
+
+    trait Bar<T>{
+        boo:u32,
+        bar:T,
+    }
+
+    trait Baz<T>{
+        baz:T,
+    }
+}
+
+fn assert_nested<A,B,C>(this:&A)
 where
-    T:Tuple2<u32>
+    A:Foo<B>,
+    B:Bar<C>,
+    C:Baz<u32>,
 {
-    assert_eq!( this.field_(nested_a), &100 );
-    assert_eq!( this.field_(nested_b), &101 );
+    assert_eq!( this.field_(names::c), &100 );
+    assert_eq!( this.field_(names::d), &101 );
 }
 
 fn main(){
-    assert_nested(&(
-        (100,101),
-        (200,201),
-    ));
+    assert_nested(&make_struct!{
+        foo:make_struct!{
+            boo:100,
+            bar:make_struct!{
+                baz:101,
+            }
+        }
+    });
 }
 
 ```
@@ -755,6 +659,31 @@ fn main(){
 */
 #[macro_export]
 macro_rules! field_path_aliases {
+    (
+        $(#[$attr:meta])*
+        $vis:vis mod $mod_name:ident{
+            $($mod_contents:tt)*
+        }
+    ) => (
+        #[allow(non_camel_case_types)]
+        #[allow(non_upper_case_globals)]
+        #[allow(unused_imports)]
+        $(#[$attr])*
+        /// Type aliases and constants for FieldPath and FieldPathSet
+        /// (from the structural crate).
+        ///
+        /// The source code for this module can only be accessed from
+        /// the type aliases and constants.<br>
+        /// As of writing this documentation,`cargo doc` links
+        /// to the inplementation of the `field_path_aliases` macro
+        /// instead of where this module is declared.
+        $vis mod $mod_name{
+            use super::*;
+            $crate::_field_path_aliases_impl!{
+                $($mod_contents)*
+            }
+        }
+    );
     (
         $($mod_contents:tt)*
     ) => (
@@ -766,19 +695,96 @@ macro_rules! field_path_aliases {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[macro_export]
-macro_rules! tstring_aliases {
-    (
-        $($macro_params:tt)*
-    ) => (
-        $crate::_tstring_aliases_impl!{
-            $($macro_params)*
+/**
+Declares type aliases for `TString<_>`(type-level string).
+
+`TString<_>` itself is hidden from the docs because this library reserves
+the right to change its generic parameter from a tuple of type-level characters,
+to a `&'static str` const parameter (or `&'static [char]`).
+
+# Variants
+
+### Inline
+
+Where the aliases are declared at the scope that the macro is invoked.
+
+This variant cannot be invoked within functions.
+
+Small example:
+```rust
+use structural::tstring_aliases;
+
+tstring_aliases!{
+    a, // Declares a type alias `a` with the "a" TString.
+    b="b", // Declares a type alias `b` with the "b" TString.
+}
+# fn main(){}
+```
+### Module
+
+Where the aliases are declared inside a nested module.
+
+This variant can be invoked within functions.
+
+Small example:
+```rust
+use structural::tstring_aliases;
+
+fn hello(){
+    tstring_aliases!{
+        mod hello{
+            a,
+            b="b",
         }
-    )
+    }
+}
+```
+
+# Example
+
+Writing a function that takes a `::Foo.bar` field.
+
+You can use `tstring_aliases` or `TStr` to manually declare
+variant field accessor trait bounds.
+
+```
+use structural::{
+    field_traits::variant_field::GetVariantField,
+    GetFieldExt,Structural,
+    tstring_aliases,fp,
+};
+
+tstring_aliases!{
+    mod strs{
+        Foo,
+        bar,
+    }
 }
 
+fn takes_enum( enum_:&dyn GetVariantField< strs::Foo, strs::bar, Ty= u32 > )-> Option<u32> {
+    enum_.field_(fp!(::Foo.bar)).cloned()
+}
+
+#[derive(Structural)]
+enum Baz{
+    Foo{ bar:u32 },
+    Bar,
+}
+
+fn main(){
+
+    assert_eq!( takes_enum(&Baz::Foo{bar:0}), Some(0) );
+    assert_eq!( takes_enum(&Baz::Foo{bar:5}), Some(5) );
+    assert_eq!( takes_enum(&Baz::Bar), None );
+
+}
+
+```
+
+
+*/
 #[macro_export]
-macro_rules! tstring_aliases_module {
+macro_rules! tstring_aliases {
     (
         $(#[$attr:meta])*
         $vis:vis mod $mod_name:ident{
@@ -794,5 +800,12 @@ macro_rules! tstring_aliases_module {
                 $($mod_contents)*
             }
         }
-    )
+    );
+    (
+        $($macro_params:tt)*
+    ) => (
+        $crate::_tstring_aliases_impl!{
+            $($macro_params)*
+        }
+    );
 }
