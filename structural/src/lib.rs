@@ -381,6 +381,7 @@ pub mod test_utils;
 
 #[cfg(test)]
 pub mod tests {
+    mod delegation;
     mod enum_derive;
     #[cfg(feature = "rust_1_40")]
     mod impl_struct;
@@ -433,6 +434,7 @@ pub mod pmr {
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
     pub use crate::utils::OptionParam;
+    pub use core_extensions::type_level_bool::{Boolean, False, True};
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
     pub use crate::std_::{

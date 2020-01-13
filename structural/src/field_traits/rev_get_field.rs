@@ -569,7 +569,7 @@ where
         self,
         this: &'a This,
     ) -> Result<&'a VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        map_of!( this.as_variant(FieldPath1::<V>::NEW) )
+        map_of!(this.as_variant(FieldPath1::<V>::NEW))
     }
 }
 
@@ -583,7 +583,7 @@ where
         self,
         this: &'a mut This,
     ) -> Result<&'a mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        map_of!( this.as_mut_variant(FieldPath1::<V>::NEW) )
+        map_of!(this.as_mut_variant(FieldPath1::<V>::NEW))
     }
 
     #[inline(always)]
@@ -591,7 +591,7 @@ where
         self,
         this: *mut This,
     ) -> Result<*mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
-        map_of!( EnumExt::as_raw_mut_variant(this,FieldPath1::<V>::NEW) )
+        map_of!(EnumExt::as_raw_mut_variant(this, FieldPath1::<V>::NEW))
     }
 }
 
@@ -600,14 +600,14 @@ where
     This: ?Sized + 'a + IsVariant<FieldPath1<V>>,
     V: 'static,
 {
-    type BoxedTy = Box<VariantProxy<This, FieldPath1<V>>>;
+    type BoxedTy = VariantProxy<Box<This>, FieldPath1<V>>;
 
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<VariantProxy<This, FieldPath1<V>>, OptionalField>
     where
         This: Sized,
     {
-        map_of!( this.into_variant(FieldPath1::<V>::NEW) )
+        map_of!(this.into_variant(FieldPath1::<V>::NEW))
     }
 
     #[cfg(feature = "alloc")]
@@ -615,7 +615,7 @@ where
     fn rev_box_into_field(
         self,
         this: crate::pmr::Box<This>,
-    ) -> Result<Box<VariantProxy<This, FieldPath1<V>>>, OptionalField> {
-        map_of!( this.box_into_variant(FieldPath1::<V>::NEW) )
+    ) -> Result<VariantProxy<Box<This>, FieldPath1<V>>, OptionalField> {
+        map_of!(this.box_into_variant(FieldPath1::<V>::NEW))
     }
 }

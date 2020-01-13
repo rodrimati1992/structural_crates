@@ -27,6 +27,7 @@ mod structural_alias_impl_mod;
 mod structural_derive;
 mod tokenizers;
 mod tstring_aliases;
+mod utils;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream as TokenStream2;

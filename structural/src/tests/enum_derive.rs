@@ -209,37 +209,52 @@ assert_equal_bounds! {
 }
 
 fn test_replace_bounds_trait_object() {
-    fn hi(wha_u: &dyn HuhRB_SI, wha_v: &dyn HuhRB_SI) {
+    fn hi(wha_u: &mut dyn HuhRB_SI, wha_v: &mut dyn HuhRB_SI) {
         {
             assert_eq!(wha_u.field_(fp!(::U.a)), Some(&11));
             assert_eq!(wha_u.field_(fp!(::U.b)), Some(&22));
             assert_eq!(wha_u.field_(fp!(::U.c)), Some(&33));
             assert_eq!(wha_u.field_(fp!(::U.d)), Some(&44));
 
-            let proxy = wha_u.field_(fp!(::U)).unwrap();
+            let proxy = wha_u.field_mut(fp!(::U)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &11);
             assert_eq!(proxy.field_(fp!(b)), &22);
             assert_eq!(proxy.field_(fp!(c)), &33);
             assert_eq!(proxy.field_(fp!(d)), &44);
+
+            assert_eq!(proxy.field_mut(fp!(a)), &mut 11);
+            assert_eq!(proxy.field_mut(fp!(b)), &mut 22);
+            assert_eq!(proxy.field_mut(fp!(c)), &mut 33);
+            assert_eq!(proxy.field_mut(fp!(d)), &mut 44);
+
+            assert_eq!(
+                proxy.fields_mut(fp!(a, b, c, d)),
+                (&mut 11, &mut 22, &mut 33, &mut 44)
+            );
         }
 
         {
             assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
             assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
 
-            let proxy = wha_u.field_(fp!(::V)).unwrap();
+            let proxy = wha_u.field_mut(fp!(::V)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &"55");
             assert_eq!(proxy.field_(fp!(b)), &66);
+
+            assert_eq!(proxy.field_mut(fp!(a)), &"55");
+            assert_eq!(proxy.field_mut(fp!(b)), &66);
+
+            assert_eq!(proxy.fields_mut(fp!(a, b)), (&mut "55", &mut 66));
         }
     }
 
     hi(
-        &HuhRB::U(WhatRB {
+        &mut HuhRB::U(WhatRB {
             a: 11,
             b: 22,
             c: 33,
             d: 44,
         }),
-        &HuhRB::V { a: "55", b: 66 },
+        &mut HuhRB::V { a: "55", b: 66 },
     )
 }

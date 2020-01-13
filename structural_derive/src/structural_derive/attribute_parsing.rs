@@ -5,16 +5,23 @@ use crate::{
     structural_alias_impl_mod::{ReplaceBounds, TypeParamBounds},
 };
 
+use super::delegation::{DelegateTo, RawMutImplParam};
+
 use as_derive_utils::{
     attribute_parsing::with_nested_meta,
     datastructure::{DataStructure, DataVariant, Field, FieldMap},
-    return_spanned_err, spanned_err,
+    return_spanned_err, return_syn_err, spanned_err,
     utils::{LinearResult, SynPathExt, SynResultExt},
 };
 
+use proc_macro2::Span;
+
 use quote::ToTokens;
 
-use syn::{Attribute, Ident, Lit, Meta, MetaList, MetaNameValue};
+use syn::{
+    punctuated::Punctuated, spanned::Spanned, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue,
+    NestedMeta,
+};
 
 use std::marker::PhantomData;
 
@@ -26,7 +33,7 @@ pub(crate) struct StructuralOptions<'a> {
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
     pub(crate) implicit_optionality: bool,
-    pub(crate) delegate_to: Option<&'a Field<'a>>,
+    pub(crate) delegate_to: Option<DelegateTo<'a>>,
 
     _marker: PhantomData<&'a ()>,
 }
@@ -81,6 +88,8 @@ pub(crate) struct FieldConfig {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Default)]
 struct StructuralAttrs<'a> {
     variants: Vec<VariantConfig>,
@@ -89,7 +98,7 @@ struct StructuralAttrs<'a> {
     debug_print: bool,
     with_trait_alias: bool,
     implicit_optionality: bool,
-    delegate_to: Option<&'a Field<'a>>,
+    delegate_to: Option<DelegateTo<'a>>,
 
     errors: LinearResult<()>,
 
@@ -223,28 +232,6 @@ fn parse_sabi_attr<'a>(
                 return Err(make_err(&path))?;
             }
         }
-        (
-            ParseContext::Variant { index, .. },
-            Meta::NameValue(MetaNameValue {
-                lit: Lit::Str(unparsed_lit),
-                path,
-                ..
-            }),
-        ) => {
-            let path = &path;
-            if path.equals_str("replace_bounds") {
-                if !this.with_trait_alias {
-                    return Err(trait_alias_err(path));
-                }
-
-                this.variants[index].replace_bounds = Some(ReplaceBounds {
-                    bounds: unparsed_lit.value(),
-                    span: unparsed_lit.span(),
-                });
-            } else {
-                return Err(make_err(&path))?;
-            }
-        }
         (ParseContext::Field { field, .. }, Meta::Path(path)) => {
             if path.equals_str("public") {
                 this.fields[field].is_pub = true;
@@ -255,14 +242,35 @@ fn parse_sabi_attr<'a>(
             } else if path.equals_str("not_optional") {
                 this.fields[field].optionality_override = Some(IsOptional::No);
             } else if path.equals_str("delegate_to") {
-                if this.delegate_to.is_some() {
-                    return_spanned_err! {
-                        path,
-                        "Cannot use the `#[struc(delegate_to)]` attribute on multiple fields."
-                    };
+                parse_delegate_to(this, Default::default(), path.span(), field)?;
+            } else {
+                return Err(make_err(&path))?;
+            }
+        }
+        (ParseContext::Field { field, .. }, Meta::List(MetaList { path, nested, .. })) => {
+            if path.equals_str("delegate_to") {
+                parse_delegate_to(this, nested, path.span(), field)?;
+            } else {
+                return Err(make_err(&path))?;
+            }
+        }
+        (
+            ParseContext::Variant { index, .. },
+            Meta::NameValue(MetaNameValue {
+                lit: Lit::Str(unparsed_lit),
+                path,
+                ..
+            }),
+        ) => {
+            if path.equals_str("replace_bounds") {
+                if !this.with_trait_alias {
+                    return Err(trait_alias_err(&path));
                 }
-                this.with_trait_alias = false;
-                this.delegate_to = Some(field)
+
+                this.variants[index].replace_bounds = Some(ReplaceBounds {
+                    bounds: unparsed_lit.value(),
+                    span: unparsed_lit.span(),
+                });
             } else {
                 return Err(make_err(&path))?;
             }
@@ -315,4 +323,53 @@ fn trait_alias_err(tokens: &dyn ToTokens) -> syn::Error {
         tokens,
         "Cannot use this attribute when no trait alias is being generated"
     )
+}
+
+fn parse_delegate_to<'a>(
+    this: &mut StructuralAttrs<'a>,
+    list: Punctuated<NestedMeta, syn::Token![,]>,
+    span: Span,
+    field: &'a Field<'a>,
+) -> Result<(), syn::Error> {
+    if this.delegate_to.is_some() {
+        return_syn_err! {
+            span,
+            "Cannot use the `#[struc(delegate_to)]` attribute on multiple fields."
+        };
+    }
+    this.with_trait_alias = false;
+
+    let mut delegate_to = DelegateTo {
+        field,
+        raw_mut_impl_param: RawMutImplParam::Unspecified,
+        bounds: Vec::new(),
+        mut_bounds: Vec::new(),
+        move_bounds: Vec::new(),
+    };
+
+    with_nested_meta("delegate_to", list, |attr| {
+        match attr {
+            Meta::NameValue(MetaNameValue {
+                path,
+                lit: Lit::Str(lit),
+                ..
+            }) => {
+                if path.is_ident("bound") {
+                    delegate_to.bounds.push(lit.parse()?);
+                } else if path.is_ident("mut_bound") {
+                    delegate_to.mut_bounds.push(lit.parse()?);
+                } else if path.is_ident("move_bound") || path.is_ident("into_bound") {
+                    delegate_to.move_bounds.push(lit.parse()?);
+                } else {
+                    return_spanned_err!(path, "unexpected `#[struc(delegate_to())]` subattribute")
+                }
+            }
+            _ => return_spanned_err!(attr, "unexpected `#[struc(delegate_to())]` subattribute"),
+        }
+        Ok(())
+    })?;
+
+    this.delegate_to = Some(delegate_to);
+
+    Ok(())
 }

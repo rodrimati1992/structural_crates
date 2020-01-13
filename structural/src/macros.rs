@@ -634,3 +634,35 @@ macro_rules! optionality_ty {
         $crate::pmr::NonOptField
     };
 }
+
+/// Using this to test implemented traits.
+macro_rules! declare_querying_trait {
+    (
+        trait $trait_name:ident $([$($params:tt)*])?
+        $( implements[ $($supertraits:tt)* ] )?
+        $( where[ $($where_:tt)* ] )?
+        fn $impls_fn:ident;
+    ) => (
+        trait $trait_name<$($($params)*)?>:Sized{
+            type Impls:crate::pmr::Boolean;
+            fn $impls_fn(self)->Self::Impls{
+                <Self::Impls as crate::pmr::MarkerType>::MTVAL
+            }
+        }
+
+        impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
+        for crate::pmr::PhantomData<__This>
+        where
+            $( __This:$($supertraits)*, )?
+            $( $($where_)* )?
+        {
+            type Impls=crate::pmr::True;
+        }
+
+        impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
+        for &'_ crate::pmr::PhantomData<__This>
+        {
+            type Impls=crate::pmr::False;
+        }
+    )
+}

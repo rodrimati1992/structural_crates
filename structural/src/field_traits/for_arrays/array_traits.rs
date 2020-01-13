@@ -79,7 +79,8 @@ macro_rules! declare_array_traits {
 
             impl<This,T>  $trait_name<T> for This
             where
-                Self:
+                This:
+                    ?Sized+
                     $($super_trait<T>+)*
                     $(IntoFieldMut<$field,Ty=T,Err=NonOptField> +)*
             {}

@@ -10,8 +10,8 @@ pub trait EnumExt {
     #[inline(always)]
     fn as_variant<V>(
         &self,
-        vari: FieldPath1<V>
-    ) -> Result<&VariantProxy<Self, FieldPath1<V>>,&Self>
+        vari: FieldPath1<V>,
+    ) -> Result<&VariantProxy<Self, FieldPath1<V>>, &Self>
     where
         Self: IsVariant<FieldPath1<V>>,
     {
@@ -26,7 +26,7 @@ pub trait EnumExt {
     fn as_mut_variant<V>(
         &mut self,
         vari: FieldPath1<V>,
-    ) -> Result<&mut VariantProxy<Self, FieldPath1<V>>,&mut Self>
+    ) -> Result<&mut VariantProxy<Self, FieldPath1<V>>, &mut Self>
     where
         Self: IsVariant<FieldPath1<V>>,
     {
@@ -41,7 +41,7 @@ pub trait EnumExt {
     unsafe fn as_raw_mut_variant<V>(
         this: *mut Self,
         vari: FieldPath1<V>,
-    ) -> Result<*mut VariantProxy<Self, FieldPath1<V>>,*mut Self>
+    ) -> Result<*mut VariantProxy<Self, FieldPath1<V>>, *mut Self>
     where
         Self: IsVariant<FieldPath1<V>>,
     {
@@ -53,10 +53,7 @@ pub trait EnumExt {
     }
 
     #[inline(always)]
-    fn into_variant<V>(
-        self,
-        vari: FieldPath1<V>,
-    ) -> Result<VariantProxy<Self, FieldPath1<V>>,Self>
+    fn into_variant<V>(self, vari: FieldPath1<V>) -> Result<VariantProxy<Self, FieldPath1<V>>, Self>
     where
         Self: IsVariant<FieldPath1<V>> + Sized,
     {
@@ -72,7 +69,7 @@ pub trait EnumExt {
     fn box_into_variant<V>(
         self: Box<Self>,
         vari: FieldPath1<V>,
-    ) -> Result<Box<VariantProxy<Self, FieldPath1<V>>>,Box<Self>>
+    ) -> Result<VariantProxy<Box<Self>, FieldPath1<V>>, Box<Self>>
     where
         Self: IsVariant<FieldPath1<V>>,
     {

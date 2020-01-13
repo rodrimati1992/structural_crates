@@ -79,6 +79,12 @@ to a single field.
 
 Using this attribute will disable the generation of the `<deriving_type>_SI` trait.
 
+Optional arguments for `delegate_to`:
+
+- `bound="T:bound"`: Adds the constraint to all the trait impls.
+- `mut_bound="T:bound"`: Adds the constraint to the `GetFieldImpl` impl.
+- `into_bound="T:bound"`: Adds the constraint to the `IntoFieldImpl` impl.
+
 ### `#[struc(optional)]`
 
 Forces a field to have an optional accessor.
@@ -451,6 +457,94 @@ fn total_count(animals:&dyn AnimalCounts_SI)->u64{
 
 
 
+
+```
+
+### Delegation,with bounds
+
+This is an example of using the `#[struc(delegate_to())]` attribute with
+extra bounds in the accessor trait impls.
+
+```
+use structural::{fp,make_struct,GetFieldExt,Structural};
+
+use std::{
+    fmt::Debug,
+    ops::Add,
+};
+
+
+#[derive(Structural,Debug,Copy,Clone,PartialEq)]
+struct Foo<T>{
+    #[struc(delegate_to(
+        bound="T:PartialEq",
+        mut_bound="T:Copy",
+        into_bound="T:Debug",
+    ))]
+    value:T
+}
+
+#[derive(Structural,Debug,Copy,Clone,PartialEq)]
+#[struc(public)]
+struct AnimalCounts<T>{
+    cows:T,
+    chickens:T,
+    pigs:T,
+}
+
+fn total_count<T>(animals:&dyn AnimalCounts_SI<T>)->T
+where
+    T: Clone+Add<Output=T>,
+{
+    let (a,b,c)=animals.cloned_fields(fp!( cows, chickens, pigs ));
+    a + b + c
+}
+
+{
+    let count=total_count(&Foo{
+        value:AnimalCounts{
+            cows:100,
+            chickens:200,
+            pigs:300,
+        }
+    });
+
+    assert_eq!( count, 600 );
+}
+
+// This doesn't compile because
+// AddableString doesn't satisfy the Copy bound added by `mut_bound="T:Copy"`
+/*
+{
+    let count=total_count(&Foo{
+        value: AnimalCounts::<AddableString> {
+            cows: "foo".into(),
+            chickens: "bar".into(),
+            pigs: "baz".into(),
+        }
+    });
+
+    assert_eq!( count.0, "foobarbaz" );
+}
+*/
+
+
+#[derive(Debug,Clone,PartialEq)]
+struct AddableString(String);
+
+impl<'s> From<&'s str> for AddableString{
+    fn from(s:&'s str)-> AddableString {
+        AddableString( s.to_string() )
+    }
+}
+
+impl Add for AddableString{
+    type Output=Self;
+
+    fn add(self,other:Self)->Self{
+        AddableString( self.0 + other.0.as_str() )
+    }
+}
 
 ```
 
