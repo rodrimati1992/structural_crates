@@ -435,7 +435,7 @@ macro_rules! unsafe_delegate_structural_with {
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl( Sized )
+            raw_mut_impl( $(Sized)? )
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -482,7 +482,7 @@ macro_rules! unsafe_delegate_structural_with {
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl( $(?Sized)? )
+            raw_mut_impl( ?Sized )
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -643,6 +643,7 @@ macro_rules! unsafe_delegate_structural_with {
             $crate::GetFieldMutImpl<$fname_ty,__P>
             for $self
         where
+            $self: Sized,
             $delegating_to_type:
                 $crate::IsStructural +
                 $crate::GetFieldMutImpl<$fname_ty,__P>,

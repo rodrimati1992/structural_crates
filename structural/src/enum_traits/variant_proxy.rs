@@ -12,6 +12,7 @@ use crate::alloc::boxed::Box;
 use std_::{
     fmt::{self, Debug},
     marker::PhantomData,
+    ops::Deref,
 };
 
 /// Wraps an enum,guaranteeing that it's a particular variant.
@@ -52,8 +53,8 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// `V` must be the name of the wrapped enum variant.
     #[inline(always)]
     #[cfg(feature = "alloc")]
-    pub unsafe fn from_box(value: Box<T>) -> Box<Self> {
-        std_::mem::transmute::<Box<T>, Box<VariantProxy<T, FieldPath1<V>>>>(value)
+    pub unsafe fn from_box(value: Box<T>) -> VariantProxy<Box<T>, FieldPath1<V>> {
+        VariantProxy::new(value)
     }
 
     /// Constructs this VariantProxy from a reference to an enum.
@@ -87,6 +88,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     }
 
     /// Gets a reference to the wrapped enum.
+    #[inline(always)]
     pub fn as_ref(&self) -> &T {
         &self.value
     }
@@ -122,13 +124,22 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     }
 }
 
+impl<T: ?Sized, V> Deref for VariantProxy<T, V> {
+    type Target = T;
+
+    #[inline(always)]
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
+
 impl<T, V> Debug for VariantProxy<T, V>
 where
-    T: Debug,
+    T: ?Sized + Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VariantProxy")
-            .field("value", &self.value)
+            .field("value", &&self.value)
             .finish()
     }
 }
@@ -163,7 +174,7 @@ where
 
 unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
-    T: GetVariantFieldMutImpl<V, F>,
+    T: ?Sized + GetVariantFieldMutImpl<V, F>,
 {
     #[inline(always)]
     fn get_field_mut_(&mut self, _: FieldPath1<F>, _: ()) -> Result<&mut T::Ty, T::Err> {
@@ -177,7 +188,52 @@ where
         }
     }
 
+    default_if! {
+        #[inline(always)]
+        cfg(feature="specialization")
+        unsafe fn get_field_raw_mut(
+            this: *mut (),
+            _: FieldPath1<F>,
+            _: (),
+        ) -> Result<*mut T::Ty, T::Err>
+        where
+            Self: Sized
+        {
+            let func=(&**(this as *mut Self)).get_field_raw_mut_func();
+            // safety: VariantProxy<T,V> guarantees that it wraps an enum
+            // with the variant that `V` names.
+            func(
+                this,
+                VariantFieldPath::<V, F>::new(),
+                UncheckedVariantField::<V, F>::new(),
+            )
+        }
+    }
+
     #[inline(always)]
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldPath1<F>, (), T::Ty, T::Err> {
+        // safety:
+        // This transmute should be sound,
+        // since every parameter except for `this: *mut ()` is a zero sized type.
+        unsafe {
+            std::mem::transmute::<
+                GetFieldRawMutFn<
+                    VariantFieldPath<V, F>,
+                    UncheckedVariantField<V, F>,
+                    T::Ty,
+                    T::Err,
+                >,
+                GetFieldRawMutFn<FieldPath1<F>, (), T::Ty, T::Err>,
+            >((**self).get_field_raw_mut_func())
+        }
+    }
+}
+
+#[cfg(feature = "specialization")]
+unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
+where
+    T: GetVariantFieldMutImpl<V, F>,
+{
     unsafe fn get_field_raw_mut(
         this: *mut (),
         _: FieldPath1<F>,
@@ -191,11 +247,6 @@ where
             UncheckedVariantField::<V, F>::new(),
         )
     }
-
-    #[inline(always)]
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldPath1<F>, (), T::Ty, T::Err> {
-        <Self as GetFieldMutImpl<FieldPath1<F>>>::get_field_raw_mut
-    }
 }
 
 impl<T, V, F> IntoFieldImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
@@ -203,7 +254,10 @@ where
     T: IntoVariantFieldImpl<V, F>,
 {
     #[inline(always)]
-    fn into_field_(self, _: FieldPath1<F>, _: ()) -> Result<T::Ty, T::Err> {
+    fn into_field_(self, _: FieldPath1<F>, _: ()) -> Result<T::Ty, T::Err>
+    where
+        Self: Sized,
+    {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         unsafe {

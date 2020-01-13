@@ -26,10 +26,15 @@ use syn::{punctuated::Punctuated, DeriveInput, Ident, Token};
 
 mod attribute_parsing;
 
+mod delegation;
+
 #[cfg(test)]
 mod tests;
 
-use self::attribute_parsing::{FieldConfig, StructuralOptions};
+use self::{
+    attribute_parsing::{FieldConfig, StructuralOptions},
+    delegation::DelegateTo,
+};
 
 #[cfg(test)]
 fn derive_from_str(string: &str) -> Result<TokenStream2, syn::Error> {
@@ -50,7 +55,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
     let options = attribute_parsing::parse_attrs_for_structural(ds)?;
     let debug_print = options.debug_print;
 
-    match options.delegate_to {
+    match &options.delegate_to {
         Some(to) => delegating_structural(ds, &options, to),
         None => {
             let arenas = Arenas::default();
@@ -68,16 +73,24 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
 fn delegating_structural<'a>(
     ds: &'a DataStructure<'a>,
     _options: &'a StructuralOptions<'a>,
-    delegate_to: &'a Field<'a>,
+    delegate_to: &'a DelegateTo<'a>,
 ) -> Result<TokenStream2, syn::Error> {
+    let DelegateTo {
+        field,
+        raw_mut_impl_param,
+        bounds,
+        mut_bounds,
+        move_bounds,
+    } = delegate_to;
+
     let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
 
     let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
 
     let tyname = ds.name;
 
-    let the_field = &delegate_to.ident;
-    let fieldty = delegate_to.ty;
+    let the_field = &field.ident;
+    let fieldty = field.ty;
 
     let empty_preds = Punctuated::new();
     let where_preds = where_clause
@@ -87,7 +100,10 @@ fn delegating_structural<'a>(
 
     quote!(::structural::unsafe_delegate_structural_with! {
         impl[#impl_generics] #tyname #ty_generics
-        where[ #(#where_preds,)* ]
+        where[
+            #(#where_preds,)*
+            #(#bounds,)*
+        ]
 
         self_ident=this;
         delegating_to_type= #fieldty;
@@ -95,12 +111,20 @@ fn delegating_structural<'a>(
 
         GetFieldImpl { &this.#the_field }
 
-        unsafe GetFieldMutImpl { &mut this.#the_field }
+
+        unsafe GetFieldMutImpl
+        where[ #(#mut_bounds,)* ]
+        { &mut this.#the_field }
+
         as_delegating_raw{
             &mut (*this).#the_field as *mut #fieldty
         }
+        #raw_mut_impl_param
 
-        IntoFieldImpl { this.#the_field }
+
+        IntoFieldImpl
+        where[ #(#move_bounds,)* ]
+        { this.#the_field }
     })
     .piped(Ok)
 }

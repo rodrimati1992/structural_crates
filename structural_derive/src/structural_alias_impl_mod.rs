@@ -725,7 +725,7 @@ where
     };
 
     let impl_generics = {
-        let after_types = quote!(__This: ?Sized,#variant_generic_param);
+        let after_types = quote!(__This,#variant_generic_param);
         GenParamsIn::with_after_types(generics, InWhat::ImplHeader, after_types)
     };
 
@@ -762,6 +762,7 @@ where
         for __This
         where
             __This:
+                ?Sized+
                 #( #supertraits_b+ )*
                 #field_bounds,
             #(#where_preds_b,)*
