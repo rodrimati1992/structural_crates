@@ -440,6 +440,7 @@ pub mod pmr {
     pub use crate::std_::{
         hint::unreachable_unchecked,
         marker::PhantomData,
+        mem::drop,
         option::Option::{self, None, Some},
     };
 

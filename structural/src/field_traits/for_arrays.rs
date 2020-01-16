@@ -122,14 +122,22 @@ macro_rules! declare_array_paths {
     (
         $(
             (
-                $index_name:ident = $index:expr,$tnum:ident,$fi_ind:ident,
+                $index_name:ident = $index:expr,$index_str:literal,$tnum:ident,$fi_ind:ident,
                 [$($fi_in_array:ident,)*]
             )
         )*
     ) => (
-        field_path_aliases!{
-            pub(crate) mod names{
-                $( $index_name = $index ,)*
+        pub(crate) mod names{
+            use crate::type_level::FieldPath1;
+
+            $(
+                pub type $index_name= FieldPath1<super::strings::$index_name>;
+                pub const $index_name:$index_name=$index_name::NEW;
+            )*
+        }
+        tstring_aliases!{
+            pub(crate) mod strings{
+                $( $index_name = $index_str ,)*
             }
         }
         use self::names::*;
@@ -231,7 +239,7 @@ Generated with:
 
 fn main() {
     for i in 0..=32{
-        print!("(I{0}={0},U{0},FI_{0},[",i);
+        print!("(I{0}={0},\"{0}\",U{0},FI_{0},[",i);
         for j in 0..i {
             if j%10==0 {
                 print!("\n    ");
@@ -245,140 +253,141 @@ fn main() {
 */
 
 declare_array_paths! {
-    (I0=0,U0,FI_0,[
+    (I0=0,"0",U0,FI_0,[
     ])
-    (I1=1,U1,FI_1,[
+    (I1=1,"1",U1,FI_1,[
         FI_0,
     ])
-    (I2=2,U2,FI_2,[
+    (I2=2,"2",U2,FI_2,[
         FI_0,FI_1,
     ])
-    (I3=3,U3,FI_3,[
+    (I3=3,"3",U3,FI_3,[
         FI_0,FI_1,FI_2,
     ])
-    (I4=4,U4,FI_4,[
+    (I4=4,"4",U4,FI_4,[
         FI_0,FI_1,FI_2,FI_3,
     ])
-    (I5=5,U5,FI_5,[
+    (I5=5,"5",U5,FI_5,[
         FI_0,FI_1,FI_2,FI_3,FI_4,
     ])
-    (I6=6,U6,FI_6,[
+    (I6=6,"6",U6,FI_6,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,
     ])
-    (I7=7,U7,FI_7,[
+    (I7=7,"7",U7,FI_7,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,
     ])
-    (I8=8,U8,FI_8,[
+    (I8=8,"8",U8,FI_8,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,
     ])
-    (I9=9,U9,FI_9,[
+    (I9=9,"9",U9,FI_9,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,
     ])
-    (I10=10,U10,FI_10,[
+    (I10=10,"10",U10,FI_10,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
     ])
-    (I11=11,U11,FI_11,[
+    (I11=11,"11",U11,FI_11,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,
     ])
-    (I12=12,U12,FI_12,[
+    (I12=12,"12",U12,FI_12,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,
     ])
-    (I13=13,U13,FI_13,[
+    (I13=13,"13",U13,FI_13,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,
     ])
-    (I14=14,U14,FI_14,[
+    (I14=14,"14",U14,FI_14,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,
     ])
-    (I15=15,U15,FI_15,[
+    (I15=15,"15",U15,FI_15,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,
     ])
-    (I16=16,U16,FI_16,[
+    (I16=16,"16",U16,FI_16,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,
     ])
-    (I17=17,U17,FI_17,[
+    (I17=17,"17",U17,FI_17,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,
     ])
-    (I18=18,U18,FI_18,[
+    (I18=18,"18",U18,FI_18,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,
     ])
-    (I19=19,U19,FI_19,[
+    (I19=19,"19",U19,FI_19,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,
     ])
-    (I20=20,U20,FI_20,[
+    (I20=20,"20",U20,FI_20,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
     ])
-    (I21=21,U21,FI_21,[
+    (I21=21,"21",U21,FI_21,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,
     ])
-    (I22=22,U22,FI_22,[
+    (I22=22,"22",U22,FI_22,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,
     ])
-    (I23=23,U23,FI_23,[
+    (I23=23,"23",U23,FI_23,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,
     ])
-    (I24=24,U24,FI_24,[
+    (I24=24,"24",U24,FI_24,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,
     ])
-    (I25=25,U25,FI_25,[
+    (I25=25,"25",U25,FI_25,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,
     ])
-    (I26=26,U26,FI_26,[
+    (I26=26,"26",U26,FI_26,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,
     ])
-    (I27=27,U27,FI_27,[
+    (I27=27,"27",U27,FI_27,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,
     ])
-    (I28=28,U28,FI_28,[
+    (I28=28,"28",U28,FI_28,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,
     ])
-    (I29=29,U29,FI_29,[
+    (I29=29,"29",U29,FI_29,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,
     ])
-    (I30=30,U30,FI_30,[
+    (I30=30,"30",U30,FI_30,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
     ])
-    (I31=31,U31,FI_31,[
+    (I31=31,"31",U31,FI_31,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
         FI_30,
     ])
-    (I32=32,U32,FI_32,[
+    (I32=32,"32",U32,FI_32,[
         FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
         FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
         FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
         FI_30,FI_31,
     ])
+
 
 }
 

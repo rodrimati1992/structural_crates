@@ -51,6 +51,24 @@ Only fields written like this are treated as optional:
 If the field is written any differently,then it will not be treated as an optional field,
 and you will be required to use the `#[struc(optional)]` attribute.
 
+# Variant Attributes
+
+### `#[struc(replace_bounds="bounds")]
+
+Replaces (in the generated trait) the bounds for this particular variant with
+the ones in the attribute.
+
+This is most useful for newtype variants (single field tuple variants),
+where you want the generated trait to require the fields of the wrapped type.
+
+All `@variant` in the bounds will be replaced with the name of the variant,
+
+Example:`#[struc(replace_bounds = "Foo_VSI<@variant>")]`
+
+Example:`#[struc(replace_bounds = "Bar_VSI<T,U,@variant>")]`
+
+Example:`#[struc(replace_bounds = "Baz_VSI<'a,u8,@variant>")]`
+
 # Field Attributes
 
 ### `#[struc(rename="<new_name>")]`
