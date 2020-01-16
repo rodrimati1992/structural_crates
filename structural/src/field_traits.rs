@@ -26,11 +26,18 @@ pub mod variant_field;
 
 pub use self::{
     errors::{CombinedErrs, CombinedErrsOut, IntoFieldErr, IsFieldErr, NonOptField, OptionalField},
+    for_arrays::array_traits::*,
+    for_tuples::*,
     get_field_ext::GetFieldExt,
     multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
         RevGetField, RevGetFieldMut, RevGetFieldType, RevIntoBoxedFieldType, RevIntoField,
+    },
+    variant_field::{
+        GetVariantField, GetVariantFieldImpl, GetVariantFieldMut, GetVariantFieldMutImpl,
+        IntoVariantField, IntoVariantFieldImpl, IntoVariantFieldMut, OptGetVariantField,
+        OptGetVariantFieldMut, OptIntoVariantField, OptIntoVariantFieldMut,
     },
 };
 

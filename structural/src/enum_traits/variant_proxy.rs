@@ -214,7 +214,9 @@ where
     fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldPath1<F>, (), T::Ty, T::Err> {
         // safety:
         // This transmute should be sound,
-        // since every parameter except for `this: *mut ()` is a zero sized type.
+        // since every parameter of `GetFieldMutImpl::get_field_mut_`
+        // except for `this: *mut ()` is an zero sized type,
+        // and this converts those parameters to other zero sized types.
         unsafe {
             std::mem::transmute::<
                 GetFieldRawMutFn<

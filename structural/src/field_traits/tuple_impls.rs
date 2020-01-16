@@ -1,5 +1,8 @@
 use crate::{
-    field_traits::{for_arrays::names, IntoFieldMut, NonOptField},
+    field_traits::{
+        for_arrays::{names, strings},
+        IntoFieldMut, IntoVariantFieldMut, NonOptField,
+    },
     structural_trait::{FieldInfo, FieldInfos, Structural},
 };
 
@@ -16,8 +19,9 @@ macro_rules! impl_tuple {
     };
     (
         $the_trait:ident,
+        $variant_trait:ident,
         [
-            $( ($field:tt,$field_ty:ident,$field_param:ty) ),*
+            $( ($field:tt,$field_ty:ident,$field_param:ident) ),*
         ]
         $tuple_ty:tt
     ) => {
@@ -34,7 +38,7 @@ macro_rules! impl_tuple {
         /// A structural alias for a tuple of the size.
         pub trait $the_trait<$($field_ty),*>:
             $(
-                IntoFieldMut<$field_param,Ty=$field_ty,Err=NonOptField>+
+                IntoFieldMut<names::$field_param,Ty=$field_ty>+
             )*
         {}
 
@@ -42,14 +46,30 @@ macro_rules! impl_tuple {
         where
             This:
                 $(
-                    IntoFieldMut<$field_param,Ty=$field_ty,Err=NonOptField>+
+                    IntoFieldMut<names::$field_param,Ty=$field_ty>+
+                )*
+        {}
+
+
+        /// A structural alias for a tuple of the size.
+        pub trait $variant_trait<V,$($field_ty),*>:
+            $(
+                IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
+            )*
+        {}
+
+        impl<$($field_ty,)* This,V> $variant_trait<V,$($field_ty),*> for This
+        where
+            This:
+                $(
+                    IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
                 )*
         {}
 
         $(
             impl_tuple!{
                 inner;
-                ($field,$field_ty,$field_param) $tuple_ty
+                ($field,$field_ty,names::$field_param) $tuple_ty
             }
         )*
     }
@@ -67,13 +87,14 @@ fn main(){
         println!(
             "impl_tuple!{{\n\
                 {I4}Tuple{},\n\
+                {I4}TupleVariant{},\n\
                 {I4}[\n\
                 {I8}{}\n\
                 {I4}]\n\
                 {I4}({},)\n\
             }}",
             x,
-            range.clone().map(|x|format!("({0},C{0},names::I{0})",x)).join(",\n        "),
+            range.clone().map(|x|format!("({0},C{0},I{0})",x)).join(",\n        "),
             range.clone().map(|x|format!("C{0}",x)).join(","),
             I4="    ",
             I8="        ",
@@ -85,151 +106,163 @@ fn main(){
 
 impl_tuple! {
     Tuple1,
+    TupleVariant1,
     [
-        (0,C0,names::I0)
+        (0,C0,I0)
     ]
     (C0,)
 }
 impl_tuple! {
     Tuple2,
+    TupleVariant2,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1)
+        (0,C0,I0),
+        (1,C1,I1)
     ]
     (C0,C1,)
 }
 impl_tuple! {
     Tuple3,
+    TupleVariant3,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2)
     ]
     (C0,C1,C2,)
 }
 impl_tuple! {
     Tuple4,
+    TupleVariant4,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3)
     ]
     (C0,C1,C2,C3,)
 }
 impl_tuple! {
     Tuple5,
+    TupleVariant5,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4)
     ]
     (C0,C1,C2,C3,C4,)
 }
 impl_tuple! {
     Tuple6,
+    TupleVariant6,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5)
     ]
     (C0,C1,C2,C3,C4,C5,)
 }
 impl_tuple! {
     Tuple7,
+    TupleVariant7,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6)
     ]
     (C0,C1,C2,C3,C4,C5,C6,)
 }
 impl_tuple! {
     Tuple8,
+    TupleVariant8,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6),
-        (7,C7,names::I7)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6),
+        (7,C7,I7)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,)
 }
 impl_tuple! {
     Tuple9,
+    TupleVariant9,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6),
-        (7,C7,names::I7),
-        (8,C8,names::I8)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6),
+        (7,C7,I7),
+        (8,C8,I8)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,)
 }
 impl_tuple! {
     Tuple10,
+    TupleVariant10,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6),
-        (7,C7,names::I7),
-        (8,C8,names::I8),
-        (9,C9,names::I9)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6),
+        (7,C7,I7),
+        (8,C8,I8),
+        (9,C9,I9)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,)
 }
 impl_tuple! {
     Tuple11,
+    TupleVariant11,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6),
-        (7,C7,names::I7),
-        (8,C8,names::I8),
-        (9,C9,names::I9),
-        (10,C10,names::I10)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6),
+        (7,C7,I7),
+        (8,C8,I8),
+        (9,C9,I9),
+        (10,C10,I10)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,)
 }
 impl_tuple! {
     Tuple12,
+    TupleVariant12,
     [
-        (0,C0,names::I0),
-        (1,C1,names::I1),
-        (2,C2,names::I2),
-        (3,C3,names::I3),
-        (4,C4,names::I4),
-        (5,C5,names::I5),
-        (6,C6,names::I6),
-        (7,C7,names::I7),
-        (8,C8,names::I8),
-        (9,C9,names::I9),
-        (10,C10,names::I10),
-        (11,C11,names::I11)
+        (0,C0,I0),
+        (1,C1,I1),
+        (2,C2,I2),
+        (3,C3,I3),
+        (4,C4,I4),
+        (5,C5,I5),
+        (6,C6,I6),
+        (7,C7,I7),
+        (8,C8,I8),
+        (9,C9,I9),
+        (10,C10,I10),
+        (11,C11,I11)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,)
 }
