@@ -27,7 +27,7 @@ pub(crate) fn struct_pmr() -> TokenStream2 {
     quote!(__struct_pmr)
 }
 
-/// Tokenizes a `TString<>` in which each character is written as a type.
+/// Tokenizes a `TStr_<>` in which each character is written as a type.
 pub(crate) fn tident_tokens<S>(string: S, char_verbosity: FullPathForChars) -> TokenStream2
 where
     S: AsRef<str>,
@@ -50,7 +50,7 @@ where
         };
         syn::Ident::new(&buffer, Span::call_site())
     });
-    quote!( ::structural::pmr::TString<( #( #path_prefix #bytes,)* )> )
+    quote!( ::structural::pmr::TStr_<( #( #path_prefix #bytes,)* )> )
 }
 
 pub(crate) fn variant_field_tokens<S0, S1>(

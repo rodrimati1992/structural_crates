@@ -5,9 +5,10 @@ use crate::{
     ident_or_index::IdentOrIndexRef,
     parse_utils::extract_option_parameter,
     structural_alias_impl_mod::{
-        FieldType, StructuralDataType, StructuralField, StructuralVariant,
+        Exhaustiveness, FieldType, StructuralAliasParams, StructuralDataType, StructuralField,
+        StructuralVariant,
     },
-    tokenizers::NamedModuleAndTokens,
+    tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens},
 };
 
 use as_derive_utils::{
@@ -20,9 +21,9 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use quote::quote;
+use quote::{quote, TokenStreamExt};
 
-use syn::{punctuated::Punctuated, DeriveInput, Ident, Token};
+use syn::{punctuated::Punctuated, DeriveInput, Ident};
 
 mod attribute_parsing;
 
@@ -176,6 +177,8 @@ fn deriving_structural<'a>(
 
     let mut names_module = NamedModuleAndTokens::new(ds.name);
 
+    let vis = ds.vis;
+
     let tyname = ds.name;
 
     let struct_or_enum = match ds.data_variant {
@@ -250,19 +253,37 @@ fn deriving_structural<'a>(
         },
     };
 
-    let structural_alias_trait;
+    let mut structural_alias_trait = TokenStream2::new();
 
     if *with_trait_alias {
+        let trait_ident = Ident::new(&format!("{}_SI", tyname), Span::call_site());
+        let soe_str = match struct_or_enum {
+            StructOrEnum::Struct => "struct",
+            StructOrEnum::Enum => "enum",
+        };
+
+        let exhaustive_ident = Ident::new(&format!("{}_ESI", tyname), Span::call_site());
+
+        let enum_exhaustiveness = match struct_or_enum {
+            StructOrEnum::Struct => Exhaustiveness::Nonexhaustive,
+            StructOrEnum::Enum => Exhaustiveness::AndExhaustive {
+                name: &exhaustive_ident,
+            },
+        };
+
+        Ident::new(&format!("{}_SI", tyname), Span::call_site());
+
         let docs = format!(
             "A trait aliasing the accessor impls for \
-             [{struct_}](./struct.{struct_}.html) fields\n\
+             [{tyname}](./{soe_str}.{tyname}.html) fields\n\
              \n\
              This trait also has all the constraints(where clause and generic parametr bounds)
-             of [the same struct](./struct.{struct_}.html).\n\n\
+             of [the same type](./{soe_str}.{tyname}.html).\n\n\
              ### Accessor traits\n\
              These are the accessor traits this aliases:\n\
             ",
-            struct_ = tyname,
+            tyname = tyname,
+            soe_str = soe_str,
         );
 
         let struct_variant_trait = match struct_or_enum {
@@ -270,24 +291,23 @@ fn deriving_structural<'a>(
             StructOrEnum::Enum => None,
         };
 
-        structural_alias_trait = crate::structural_alias_impl_mod::for_delegation(
-            tyname.span(),
-            None::<&Ident>,
-            docs,
-            ds.vis,
-            &<Token!(trait)>::default(),
-            &Ident::new(&format!("{}_SI", tyname), Span::call_site()),
-            ds.generics,
-            &Punctuated::new(),
-            &names_module,
-            &[],
-            struct_variant_trait.as_ref(),
-            &sdt,
-        )?
-        .piped(Some);
-    } else {
-        structural_alias_trait = None;
-    };
+        let sop = StructuralAliasParams {
+            span: tyname.span(),
+            attrs: None::<&Ident>,
+            docs: docs,
+            vis: vis,
+            ident: &trait_ident,
+            generics: ds.generics,
+            supertraits: &Punctuated::new(),
+            names_mod: &names_module,
+            trait_items: &[],
+            variant_trait: struct_variant_trait.as_ref(),
+            enum_exhaustiveness,
+            datatype: &sdt,
+        };
+
+        structural_alias_trait.append_all(sop.tokens()?);
+    }
 
     let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
 
@@ -298,8 +318,6 @@ fn deriving_structural<'a>(
         .as_ref()
         .map_or(&empty_preds, |x| &x.predicates)
         .into_iter();
-
-    let structural_alias_trait = structural_alias_trait.into_iter();
 
     let names_module_path = &names_module.names_module;
 
@@ -333,7 +351,7 @@ fn deriving_structural<'a>(
                 .map(|f| names_module.alias_name(f.alias_index));
 
             quote!(
-                #(#structural_alias_trait)*
+                #structural_alias_trait
 
                 #names_module
 
@@ -400,22 +418,27 @@ fn deriving_structural<'a>(
                     )
                 });
 
+            let variant_count_docs = format!("The amount of variants in the {} enum", ds.name);
+            let variant_count_type =
+                syn::Ident::new(&format!("{}_VariantCount", ds.name), Span::call_site());
+
+            let variant_count = tident_tokens(ds.variants.len().to_string(), FullPathForChars::Yes);
             let enum_ = ds.name;
-            let proxy_ = syn::Ident::new(&format!("{}_VariantProxy", ds.name), Span::call_site());
 
             quote!(
-                #(#structural_alias_trait)*
+                #structural_alias_trait
 
                 #names_module
 
-                use structural::pmr::VariantProxy as #proxy_;
+                #[doc=#variant_count_docs]
+                #vis type #variant_count_type=#variant_count;
 
                 ::structural::impl_getters_for_derive_enum!{
                     impl[#impl_generics] #tyname #ty_generics
                     where[ #(#where_preds,)* ]
                     {
                         enum=#enum_
-                        proxy=#proxy_
+                        variant_count=#variant_count_type,
                         #((#variants))*
                     }
                 }
