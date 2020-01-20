@@ -64,7 +64,7 @@ impl<'a> ToTokens for ImplStruct<'a> {
         let bounds = self.bounds.iter();
         let fields = self.fields.iter().map(|f| f.tokens());
         tokens.append_all(quote!(
-            impl #( #bounds+ )* #( #fields+ )*
+            impl #( #bounds+ )* #( #fields+ )* ::structural::pmr::IsStructural
         ));
     }
 }
