@@ -12,7 +12,7 @@ use std_::{
     marker::PhantomData,
 };
 
-use crate::type_level::_private::TString;
+use crate::type_level::_private::TStr_;
 
 use crate::type_level::collection_traits::{
     Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
@@ -32,17 +32,17 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-impl<T> Sealed for TString<T> {}
+impl<T> Sealed for TStr_<T> {}
 impl<T> Sealed for FieldPath<T> {}
 impl<T, U> Sealed for FieldPathSet<T, U> {}
 
 /// A marker trait only implemented by FieldPath
-pub trait IsFieldPath: Sealed + Copy {}
+pub trait IsFieldPath: Sealed + Debug + Copy + MarkerType {}
 
 impl<T> IsFieldPath for FieldPath<T> {}
 
 /// A marker trait only implemented by FieldPathSet
-pub trait IsFieldPathSet: Sealed + Copy {
+pub trait IsFieldPathSet: Sealed + Debug + Copy {
     /// Whether the pats in the set can contain duplicate paths.
     type PathUniqueness;
 }
@@ -53,37 +53,42 @@ impl<T, U> IsFieldPathSet for FieldPathSet<T, U> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<T> Debug for TString<T> {
+/// A marker trait
+pub trait IsTStr: Sealed + Debug + Copy + MarkerType {}
+
+impl<T> IsTStr for TStr_<T> {}
+
+impl<T> Debug for TStr_<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TString").finish()
+        f.debug_struct("TStr_").finish()
     }
 }
 
-impl<T> TString<T> {
-    /// Constructs the TString.
-    pub const NEW: Self = TString(PhantomData);
+impl<T> TStr_<T> {
+    /// Constructs the TStr_.
+    pub const NEW: Self = TStr_(PhantomData);
 
     #[inline(always)]
-    pub const fn to_path(self) -> FieldPath<(TString<T>,)> {
+    pub const fn to_path(self) -> FieldPath<(TStr_<T>,)> {
         FieldPath::NEW
     }
 
     #[inline(always)]
-    pub const fn to_set(self) -> FieldPathSet<(FieldPath<(TString<T>,)>,), UniquePaths> {
+    pub const fn to_set(self) -> FieldPathSet<(FieldPath<(TStr_<T>,)>,), UniquePaths> {
         FieldPath::NEW.to_set()
     }
 }
 
-impl<T> Copy for TString<T> {}
-impl<T> Clone for TString<T> {
+impl<T> Copy for TStr_<T> {}
+impl<T> Clone for TStr_<T> {
     #[inline(always)]
     fn clone(&self) -> Self {
         *self
     }
 }
-unsafe impl<T> MarkerType for TString<T> {}
+unsafe impl<T> MarkerType for TStr_<T> {}
 
-impl<T> ToTString_ for TString<T> {
+impl<T> ToTString_ for TStr_<T> {
     type Output = Self;
 }
 
@@ -117,7 +122,7 @@ pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
 ////////////////////////////////////////////////////////////////////////////////
 
 /// The identifier for the `V` variant.
-pub struct VariantName<V>(PhantomData<(V)>);
+pub struct VariantName<V>(PhantomData<V>);
 
 impl<V> VariantName<V> {
     pub const NEW: Self = VariantName(PhantomData);
@@ -140,13 +145,32 @@ unsafe impl<V> MarkerType for VariantName<V> {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A pair of identifiers for the `F` field inside the `V` variant.
+/// A marker type passed to accessor trait methods called on an enum,
+/// which guarantees that the enum is the variant that `V` represents.
+///
+/// This is only constructible by VariantProxy.
 pub struct UncheckedVariantField<V, F>(PhantomData<(V, F)>);
 
 // MarkerType is intentionally not implemented
 // unsafe impl<V, F> !MarkerType for VariantField<V, F>{}
 
 impl<V, F> UncheckedVariantField<V, F> {
+    /// Constructs an UncheckedVariantField.
+    ///
+    /// # Safety
+    ///
+    /// This must not be stored inside any datatype,
+    /// and only passed as a parameter to field accessor traits
+    /// when their corresponding `*VariantFieldImpl` trait is implemented.
+    ///
+    /// One example correspondance:
+    /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TStr!(Foo),TStr!(bar)> >`
+    /// corresponds to the
+    /// `GetVariantFieldImpl<TStr!(Foo),TStr!(bar)>` unsafe marker trait.
+    ///
+    /// A `GetVariantFieldImpl` impl guarantees
+    /// that the corresponding impl of the `GetFieldImpl` trait does what's expected.
+    ///
     pub const unsafe fn new() -> Self {
         UncheckedVariantField(PhantomData)
     }
@@ -175,7 +199,7 @@ impl<T> Clone for FieldPath<T> {
 
 impl<T> Debug for FieldPath<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TString").finish()
+        f.debug_struct("TStr_").finish()
     }
 }
 
@@ -191,8 +215,8 @@ impl<T> FieldPath<T> {
 unsafe impl<T> MarkerType for FieldPath<T> {}
 
 #[doc(hidden)]
-impl<S> ToTString_ for FieldPath<(TString<S>,)> {
-    type Output = TString<S>;
+impl<S> ToTString_ for FieldPath<(TStr_<S>,)> {
+    type Output = TStr_<S>;
 }
 
 impl<T> ToTList_ for FieldPath<T>
@@ -203,11 +227,11 @@ where
 }
 
 #[doc(hidden)]
-impl<T, S> PushBack_<TString<S>> for FieldPath<T>
+impl<T, S> PushBack_<TStr_<S>> for FieldPath<T>
 where
-    T: PushBack_<TString<S>>,
+    T: PushBack_<TStr_<S>>,
 {
-    type Output = FieldPath<PushBack<T, TString<S>>>;
+    type Output = FieldPath<PushBack<T, TStr_<S>>>;
 }
 
 impl<T, S> PushBack_<FieldPath<(S,)>> for FieldPath<T>
@@ -253,9 +277,9 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<S> FieldPath<(TString<S>,)> {
+impl<S> FieldPath<(TStr_<S>,)> {
     #[doc(hidden)]
-    pub const fn to_tstr(self) -> TString<S> {
+    pub const fn to_tstr(self) -> TStr_<S> {
         MarkerType::MTVAL
     }
 }
@@ -426,17 +450,17 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 
 #[doc(hidden)]
-impl<S> From<FieldPath<(TString<S>,)>> for TString<S> {
+impl<S> From<FieldPath<(TStr_<S>,)>> for TStr_<S> {
     #[inline(always)]
-    fn from(_this: FieldPath<(TString<S>,)>) -> Self {
+    fn from(_this: FieldPath<(TStr_<S>,)>) -> Self {
         MarkerType::MTVAL
     }
 }
 
 #[doc(hidden)]
-impl<S> From<TString<S>> for FieldPath<(TString<S>,)> {
+impl<S> From<TStr_<S>> for FieldPath<(TStr_<S>,)> {
     #[inline(always)]
-    fn from(_this: TString<S>) -> Self {
+    fn from(_this: TStr_<S>) -> Self {
         MarkerType::MTVAL
     }
 }

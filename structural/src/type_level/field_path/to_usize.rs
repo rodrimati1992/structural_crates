@@ -1,13 +1,13 @@
 use crate::type_level::{
     to_value_traits::{ToDigit, ToUsize},
     FieldPath1,
-    _private::TString,
+    _private::TStr_,
 };
 
 macro_rules! impl_to_usize {
     ( $($typ:ident)* ) => (
 
-        impl<$($typ,)*> ToUsize for TString<($($typ,)*)>
+        impl<$($typ,)*> ToUsize for TStr_<($($typ,)*)>
         where
             $($typ:ToDigit,)*
         {

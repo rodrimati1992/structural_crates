@@ -1,7 +1,12 @@
 mod enum_ext;
+pub mod variant_count;
 mod variant_proxy;
 
-pub use self::{enum_ext::EnumExt, variant_proxy::VariantProxy};
+pub use self::{
+    enum_ext::EnumExt,
+    variant_count::{VariantCount, VariantCountOut},
+    variant_proxy::VariantProxy,
+};
 
 /// Queries whether an enum is the `V` variant
 ///
