@@ -43,7 +43,4 @@ struct MyTuple5(pub u8,pub u16,pub u32,pub u64, String);
 
 */
 
-pub use super::tuple_impls::{
-    Tuple1, Tuple10, Tuple11, Tuple12, Tuple2, Tuple3, Tuple4, Tuple5, Tuple6, Tuple7, Tuple8,
-    Tuple9,
-};
+pub use super::tuple_impls::*;

@@ -132,10 +132,9 @@ macro_rules! declare_array_paths {
 
             $(
                 pub type $index_name= FieldPath1<super::strings::$index_name>;
-                pub const $index_name:$index_name=$index_name::NEW;
             )*
         }
-        tstring_aliases!{
+        tstr_aliases!{
             pub(crate) mod strings{
                 $( $index_name = $index_str ,)*
             }
@@ -534,7 +533,7 @@ mod tests {
                 let arr=<&[i32;$size]>::try_from(&array[0..$size]).unwrap().clone();
                 constraint(&arr);
                 $(
-                    assert_eq!( arr.field_($field), &array[$index] );
+                    assert_eq!( arr.field_(<$field>::NEW), &array[$index] );
                 )*
             })
         }

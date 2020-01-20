@@ -9,7 +9,7 @@ use crate::{
     IsStructural,
 };
 
-use core_extensions::collection_traits::{cloned_items::ClonedType, Cloned};
+use core_extensions::collection_traits::Cloned;
 
 /// A trait defining the primary way to call methods from structural traits.
 pub trait GetFieldExt: IsStructural {

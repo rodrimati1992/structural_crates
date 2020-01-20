@@ -100,6 +100,7 @@ macro_rules! impl_get_multi_field {
             fn rev_get_multi_field_mut(self,this:&'a mut This)->Self::FieldsMut{
                 unsafe{
                     let ($($fpath,)*)={
+                        #[allow(unused_variables)]
                         let this=this as *mut This;
                         (
                             $(

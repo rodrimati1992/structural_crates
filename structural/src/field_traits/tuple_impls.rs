@@ -1,7 +1,7 @@
 use crate::{
     field_traits::{
         for_arrays::{names, strings},
-        IntoFieldMut, IntoVariantFieldMut, NonOptField,
+        IntoFieldMut, IntoVariantFieldMut,
     },
     structural_trait::{FieldInfo, FieldInfos, Structural},
 };
@@ -269,12 +269,11 @@ impl_tuple! {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_traits::NonOptField;
     use crate::*;
 
     fn get_field_1<T>(val: &T) -> &u64
     where
-        T: GetFieldImpl<FP!(1), Ty = u64, Err = NonOptField>,
+        T: GetField<FP!(1), Ty = u64>,
     {
         val.field_(fp!(1))
     }

@@ -1,7 +1,5 @@
 use crate::{
-    field_traits::{
-        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField,
-    },
+    field_traits::{FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, OptionalField},
     type_level::to_value_traits::ToUsize,
     IsStructural,
 };
@@ -84,6 +82,7 @@ slice_getter_impls! {
         type Ty=T;
 
         unsafe fn get_field_raw_mut(this,index){
+            let _=index;
             get_raw_mut( *(this as *mut *mut [T]), <P as ToUsize>::USIZE )
         }
     }
@@ -100,6 +99,7 @@ mod alloc_impls {
             type Ty=T;
 
             unsafe fn get_field_raw_mut(this,index){
+                let _=index;
                 get_raw_mut(
                     *(this as *mut Box<[T]> as *mut *mut [T]),
                     <P as ToUsize>::USIZE,
