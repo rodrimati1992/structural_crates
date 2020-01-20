@@ -89,8 +89,8 @@ switch!{ this ;
     Foo=>{
         assert_eq!( this.field_(fp!(a)), &100 )
     }
-    // The `,` is optional after the last switch arm.
-    Bar=>assert_eq!( this.field_(fp!(b)), &200 )
+    Bar=>assert_eq!( this.field_(fp!(b)), &200 ),
+    _=>() // The `,` is optional after the last switch arm.
 }
 
 let text="99";
@@ -111,7 +111,7 @@ let number = switch!{ other = Enum::Baz{ c:"55" } ;
     Bam =>{
         assert_eq!( other.field_mut(fp!(d)), Some(&mut 9999) );
         100
-    },
+    }, // The `,` is optional after `{...}`
     _=>101  // The `,` is optional after the last switch arm.
 };
 
@@ -187,20 +187,23 @@ macro_rules! switch{
         $proxy_:ident $( = $matched:expr )?;
         // No switch arms
     )=>{{
-        $(let mut $proxy_=$matched;)?
-        $crate::pmr::drop($proxy_);
-    }};
-
-    (
-        $proxy_:ident $( = $matched:expr )?;
-        $( $match_block:tt )*
-    )=>{{
-        struct __StructuralSwitch__;
         $(let $proxy_=$matched;)?
         $crate::switch!{
             @branch
             [ $proxy_]
-            [ vari() code() ]
+            [ vari() code((if false {})) default() ]
+        }
+    }};
+
+    (
+        $proxy_:ident $( = $matched:expr )?;
+        $( $match_block:tt )+
+    )=>{{
+        $(let $proxy_=$matched;)?
+        $crate::switch!{
+            @branch
+            [ $proxy_]
+            [ vari() code() default() ]
             $( $match_block )*
         }
     }};
@@ -211,6 +214,33 @@ macro_rules! switch{
         ))
     };
 
+    (@branch
+        [ $proxy_:ident ]
+        [
+            vari $variants:tt
+            code $code:tt
+            default()
+        ]
+    )=>{
+        $crate::switch!{
+            @branch
+            [$proxy_]
+            [
+                vari $variants
+                code $code
+                default({unsafe{
+                    #![allow(unused_unsafe)]
+                    use structural::pmr::{ GetElseValue, GetVariantCountHack };
+                    let (mut expected,found,ret)=
+                        structural::pmr::as_phantomdata(&$proxy_)
+                        .structural_get_variant_count(<_switch_fp_::__TString_Aliases_Count>::NEW)
+                        .get_else_values();
+                    expected=found;
+                    ret
+                }})
+            ]
+        }
+    };
     (@branch
         $top:tt
         [
@@ -223,21 +253,33 @@ macro_rules! switch{
                     $($code:tt)*
                 ))*
             )
+            default( $($default:tt)* )
         ]
     )=>{
-        $crate::field_path_aliases!{
-            mod _switch_fp_{
-                $($variant,)*
+        mod _switch_fp_{
+            $crate::tstr_aliases!{
+                pub mod _switch_tstr_{
+                    @count
+                    $($variant,)*
+                }
             }
+
+            pub use _switch_tstr_::__TString_Aliases_Count;
+
+            $(
+                pub type $variant= structural::pmr::FieldPath1<_switch_tstr_::$variant>;
+                pub const $variant: $variant=<$variant>::NEW;
+            )*
         }
 
         $($first_branch_code)*
         $(
             else $($code)*
         )*
+        else $($default)*
     };
 
-    (@branch $top:tt [ vari $variants:tt code( $($code:tt)* ) ]
+    (@branch $top:tt [ vari $variants:tt code( $($code:tt)* ) default $default_b:tt ]
         $(_)? if $cond:expr => $($rem:tt)*
     )=>{
         $crate::switch!{
@@ -251,12 +293,13 @@ macro_rules! switch{
                         $crate::switch!(@get_expr $($rem)*)
                     })
                 )
+                default $default_b
             ]
             $($rem)*
         }
     };
 
-    (@branch $top:tt [ vari $variants:tt code( $($code:tt)* ) ]
+    (@branch $top:tt [ vari $variants:tt code( $($code:tt)* ) default $default_b:tt ]
         $(_)? if let $pat:pat = $expr:expr => $($rem:tt)*
     )=>{
         $crate::switch!{
@@ -270,12 +313,13 @@ macro_rules! switch{
                         $crate::switch!(@get_expr $($rem)*)
                     })
                 )
+                default $default_b
             ]
             $($rem)*
         }
     };
 
-    (@branch $top:tt [ vari $variants:tt code( $($code:tt)* ) ]
+    (@branch $top:tt [ vari $variants:tt code $code:tt default () ]
         _ => $($rem:tt)*
     )=>{
         $crate::switch!{
@@ -284,10 +328,8 @@ macro_rules! switch{
             $top
             [
                 vari $variants
-                code(
-                    $($code)*
-                    ({ $crate::switch!(@get_expr $($rem)*) })
-                )
+                code $code
+                default ({ $crate::switch!(@get_expr $($rem)*) })
             ]
             $($rem)*
         }
@@ -298,6 +340,7 @@ macro_rules! switch{
         [
             vari( $($prev_variants:ident)* )
             code( $($code:tt)* )
+            default $default_b:tt
         ]
         $variant:ident=> $($rem:tt)*
     )=>{
@@ -318,6 +361,7 @@ macro_rules! switch{
                         $crate::switch!(@get_expr $($rem)* )
                     })
                 )
+                default $default_b
             ]
             $($rem)*
         }

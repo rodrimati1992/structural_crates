@@ -23,71 +23,6 @@
 /// where doing `this.fields_mut(fp!(a,b,c))`
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
-// /// ### Splicing
-// ///
-// /// You can use a `FieldPath` type (not a value)
-// /// inside the `fp` macro with the `( FooType )` syntax.
-// ///
-// /// This will splice the `FieldPath` into the position it was used in.
-// ///
-// /// An example:
-// /// ```
-// /// use structural::{fp,FP,field_path_aliases};
-// /// use structural::reexports::AssertEq;
-// ///
-// /// field_path_aliases!{
-// ///     wooo,
-// ///     chain=b.c.d,
-// ///     get_x=pos.x,
-// /// }
-// ///
-// /// # fn main(){
-// ///
-// /// AssertEq::new( fp!( a.(wooo).e ) , fp!(a.wooo.e) );
-// ///
-// /// AssertEq::new( fp!( a.(get_x).e ), fp!(a.pos.x.e) );
-// ///
-// /// # }
-// ///
-// /// ```
-// ///
-// /// ### Inserting
-// ///
-// /// You can use a `TString` type or a single-ident `FieldPath` type
-// /// inside the `fp` macro with the `[ FooType ]` syntax.
-// ///
-// /// This inserts the value of the `TString`or of the single identifier `FieldPath`
-// /// into that position.
-// ///
-// /// An example:
-// /// ```
-// /// use structural::{fp,FP,field_path_aliases};
-// /// use structural::reexports::AssertEq;
-// ///
-// /// field_path_aliases!{
-// ///     foo,
-// ///     bar=what,
-// ///     baz=the,
-// /// }
-// ///
-// /// // This can also be `type RectangleStr=FP!(rectangle);` from Rust 1.40 onwards
-// /// type RectangleStr=FP!(r e c t a n g l e);
-// ///
-// ///
-// /// # fn main(){
-// /// let _:foo;
-// /// let _:bar;
-// /// let _:baz;
-// ///
-// /// AssertEq::new( fp!( a[foo].e ), fp!(a.foo.e) );
-// /// AssertEq::new( fp!( a[bar].e ), fp!(a.what.e) );
-// /// AssertEq::new( fp!( a[baz].e ), fp!(a.the.e) );
-// /// AssertEq::new( fp!( a[RectangleStr].e ), fp!(a.rectangle.e) );
-// ///
-// /// # }
-// ///
-// /// ```
-// ///
 ///
 ///
 ///
@@ -280,7 +215,7 @@ macro_rules! FP {
 macro_rules! _delegate_FP {
     ($($char:tt)*) => (
         $crate::pmr::FieldPath<(
-            $crate::pmr::TString<($($crate::TChar!($char),)*)>,
+            $crate::pmr::TStr_<($($crate::TChar!($char),)*)>,
         )>
     )
 }
@@ -696,9 +631,9 @@ macro_rules! field_path_aliases {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
-Declares type aliases for `TString<_>`(type-level string).
+Declares type aliases for `TStr_<_>`(type-level string).
 
-`TString<_>` itself is hidden from the docs because this library reserves
+`TStr_<_>` itself is hidden from the docs because this library reserves
 the right to change its generic parameter from a tuple of type-level characters,
 to a `&'static str` const parameter (or `&'static [char]`).
 
@@ -712,11 +647,11 @@ This variant cannot be invoked within functions.
 
 Small example:
 ```rust
-use structural::tstring_aliases;
+use structural::tstr_aliases;
 
-tstring_aliases!{
-    a, // Declares a type alias `a` with the "a" TString.
-    b="b", // Declares a type alias `b` with the "b" TString.
+tstr_aliases!{
+    a, // Declares a type alias `a` with the "a" TStr_.
+    b="b", // Declares a type alias `b` with the "b" TStr_.
 }
 # fn main(){}
 ```
@@ -728,10 +663,10 @@ This variant can be invoked within functions.
 
 Small example:
 ```rust
-use structural::tstring_aliases;
+use structural::tstr_aliases;
 
 fn hello(){
-    tstring_aliases!{
+    tstr_aliases!{
         mod hello{
             a,
             b="b",
@@ -744,17 +679,17 @@ fn hello(){
 
 Writing a function that takes a `::Foo.bar` field.
 
-You can use `tstring_aliases` or `TStr` to manually declare
+You can use `tstr_aliases` or `TStr` to manually declare
 variant field accessor trait bounds.
 
 ```
 use structural::{
     field_traits::variant_field::GetVariantField,
     GetFieldExt,Structural,
-    tstring_aliases,fp,
+    tstr_aliases,fp,
 };
 
-tstring_aliases!{
+tstr_aliases!{
     mod strs{
         Foo,
         bar,
@@ -784,13 +719,23 @@ fn main(){
 
 */
 #[macro_export]
-macro_rules! tstring_aliases {
+macro_rules! tstr_aliases {
     (
         $(#[$attr:meta])*
         $vis:vis mod $mod_name:ident{
             $($mod_contents:tt)*
         }
     ) => (
+        /// Type aliases for `TStr_` (type-level string)
+        /// (from the structural crate).
+        ///
+        /// `TStr_` values can be constructed with the NEW associated constant.
+        ///
+        /// The source code for this module can only be accessed from
+        /// the type aliases and constants.<br>
+        /// As of writing this documentation,`cargo doc` links
+        /// to the inplementation of the `field_path_aliases` macro
+        /// instead of where this module is declared.
         #[allow(non_camel_case_types)]
         #[allow(non_upper_case_globals)]
         #[allow(unused_imports)]
@@ -814,13 +759,13 @@ macro_rules! tstring_aliases {
 
 /**
 
-For getting the type of a `TString<_>`(type-level string).
+For getting the type of a `TStr_<_>`(type-level string).
 
-`TString<_>` itself is hidden from the docs because this library reserves
+`TStr_<_>` itself is hidden from the docs because this library reserves
 the right to change its generic parameter from a tuple of type-level characters,
 to a `&'static str` const parameter (or `&'static [char]`).
 
-You can also use [`tstring_aliases`](./macro.tstring_aliases.html)
+You can also use [`tstr_aliases`](./macro.tstr_aliases.html)
 to declare one or more aliases for type-level strings.
 
 # Variants
@@ -846,7 +791,7 @@ You can call this macro with space separated characters.
 
 This variant of the macro exists to support Rust versions before 1.40.
 
-You can also use [`tstring_aliases`](./macro.tstring_aliases.html) macro
+You can also use [`tstr_aliases`](./macro.tstr_aliases.html) macro
 if you prefer it to typing space separated characters.
 
 Small Example:
@@ -913,11 +858,25 @@ struct Charge{
 */
 #[macro_export]
 macro_rules! TStr {
+    (0)=>{ $crate::TStr!(@chars 0) };
+    (1)=>{ $crate::TStr!(@chars 1) };
+    (2)=>{ $crate::TStr!(@chars 2) };
+    (3)=>{ $crate::TStr!(@chars 3) };
+    (4)=>{ $crate::TStr!(@chars 4) };
+    (5)=>{ $crate::TStr!(@chars 5) };
+    (6)=>{ $crate::TStr!(@chars 6) };
+    (7)=>{ $crate::TStr!(@chars 7) };
+    (8)=>{ $crate::TStr!(@chars 8) };
+    (9)=>{ $crate::TStr!(@chars 9) };
+    (_)=>{ $crate::TStr!(@chars _) };
     ( $string:literal )=>{
         $crate::_delegate_TStr!($string)
     };
+    (@chars $($char:tt)*)=>{
+        $crate::pmr::TStr_<($($crate::TChar!($char),)*)>
+    };
     ($($char:tt)*) => {
-        $crate::pmr::TString<($($crate::TChar!($char),)*)>
+        $crate::TStr!(@chars $($char)*)
     };
 }
 
@@ -930,7 +889,7 @@ macro_rules! _delegate_TStr {
             "\
 `TStr!(\"foo\")` requires either Rust 1.40 or the \"better_macros\" cargo feature.
 
-You can always use the `tstring_aliases` macro to declare aliases for type level strings.
+You can always use the `tstr_aliases` macro to declare aliases for type level strings.
         "
         )
     };

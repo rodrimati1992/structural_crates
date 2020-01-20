@@ -12,7 +12,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -119,7 +118,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -188,7 +186,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -358,7 +355,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -453,7 +449,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -551,7 +546,6 @@ macro_rules! impl_getter_enum{
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -684,7 +678,6 @@ macro_rules! impl_getter_enum{
                 where[$($where_:tt)*]
 
                 enum=$enum_:ident
-                proxy=$proxy:ident
                 variant=$variant:ident
                 variant_name($variant_name_str:ty)
             )
@@ -754,7 +747,6 @@ macro_rules! delegate_to_variant_proxy {
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
             variant=$variant:ident
             variant_name($variant_name_str:ty)
         )
@@ -764,6 +756,7 @@ macro_rules! delegate_to_variant_proxy {
         for $self_
         {
             #[inline]
+            #[allow(unreachable_patterns)]
             fn is_variant_(&self,_:$crate::pmr::FieldPath1<$variant_name_str>)->bool{
                 match self {
                     $enum_::$variant{..}=>true,
@@ -778,7 +771,6 @@ macro_rules! delegate_to_variant_proxy {
             where[$($where_:tt)*]
 
             enum=$enum_:ident
-            proxy=$proxy:ident
         )
     )=>{
         impl<$($typarams)* _V,_F,_O>
@@ -927,7 +919,7 @@ macro_rules! impl_getters_for_derive_enum{
         where $where_preds:tt
         {
             enum=$enum_:ident
-            proxy=$proxy:ident
+            variant_count=$variant_count:ty,
             $((
                 $variant:ident,
                 $variant_tstr:ty,
@@ -953,7 +945,6 @@ macro_rules! impl_getters_for_derive_enum{
                     where $where_preds
 
                     enum=$enum_
-                    proxy=$proxy
                     variant=$variant
                     variant_name($variant_tstr)
                 )
@@ -970,7 +961,6 @@ macro_rules! impl_getters_for_derive_enum{
                     where $where_preds
 
                     enum=$enum_
-                    proxy=$proxy
                     variant=$variant
                     variant_name($variant_tstr)
                 )
@@ -984,8 +974,27 @@ macro_rules! impl_getters_for_derive_enum{
                 where $where_preds
 
                 enum=$enum_
-                proxy=$proxy
             )
         }
-    }
+
+        $crate::impl_getters_for_derive_enum!{
+            @inner
+            impl $typarams $self_
+            where $where_preds
+
+            variant_count=$variant_count,
+        }
+    };
+    (@inner
+        impl[$($typarams:tt)*] $self_:ty
+        where[$($where_:tt)*]
+        variant_count=$variant_count:ty,
+    )=>{
+        unsafe impl<$($typarams)*> $crate::pmr::VariantCount for $self_
+        where
+            $($where_)*
+        {
+            type Count=$variant_count;
+        }
+    };
 }

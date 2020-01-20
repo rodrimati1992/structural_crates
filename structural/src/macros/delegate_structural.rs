@@ -345,6 +345,17 @@ macro_rules! unsafe_delegate_structural_with {
             }
         }
 
+        unsafe impl<$($impl_params)*> $crate::pmr::VariantCount for $self
+        where
+            $delegating_to_type: $crate::pmr::VariantCount,
+            $($where_clause)*
+        {
+            type Count=$crate::pmr::VariantCountOut<$delegating_to_type>;
+        }
+
+        // This is defined separately from `unsafe_delegate_variant_field!`
+        // because additional bounds might be added to GetFieldImpl.
+        //
         unsafe impl<$($impl_params)* _V,_F>
             $crate::pmr::GetVariantFieldImpl<_V,_F>
         for $self
@@ -628,6 +639,8 @@ macro_rules! unsafe_delegate_structural_with {
         impl( $($raw_ptr_impl:tt)* )
     )=>{
 
+        // This is defined separately from `unsafe_delegate_variant_field!`
+        // because additional bounds might be added to GetFieldMutImpl.
         unsafe impl<$($impl_params)* _V,_F>
             $crate::pmr::GetVariantFieldMutImpl<_V,_F>
         for $self
@@ -694,6 +707,8 @@ macro_rules! unsafe_delegate_structural_with {
         IntoFieldImpl $into_field_closure:block
     )=>{
 
+        // This is defined separately from `unsafe_delegate_variant_field!`
+        // because additional bounds might be added to IntoFieldImpl.
         unsafe impl<$($impl_params)* _V,_F>
             $crate::pmr::IntoVariantFieldImpl<_V,_F>
         for $self

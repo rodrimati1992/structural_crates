@@ -330,6 +330,7 @@ struct Cents(u64);
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
 #![cfg_attr(feature = "nightly_specialization", feature(specialization))]
 #![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
+#![deny(rust_2018_idioms)]
 #![no_std]
 
 #[cfg(any(all(feature = "alloc", not(feature = "rust_1_36")), feature = "std",))]
@@ -426,6 +427,7 @@ pub mod reexports {
 #[doc(hidden)]
 pub mod pmr {
     pub use crate::chars::*;
+    pub use crate::enum_traits::variant_count::*;
     pub use crate::enum_traits::*;
     pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
@@ -433,7 +435,7 @@ pub mod pmr {
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
-    pub use crate::utils::OptionParam;
+    pub use crate::utils::{as_phantomdata, OptionParam};
     pub use core_extensions::type_level_bool::{Boolean, False, True};
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
@@ -450,3 +452,5 @@ pub mod pmr {
 
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
+
+mod what {}

@@ -139,12 +139,29 @@ macro_rules! impl_getter{
     };
 }
 
+/// Delegates the enum traits that don't have required methods.
+///
+/// # Safety
+///
+/// The `Self` parameter of this macro must delegate accessor trait impls
+/// parameterized by `<VariantField<V,F>,UncheckedVariantField<V,F>>`
+/// to the `delegated_to` type,
+/// with the option to return `OptionalField` when the delegated to type does not.
+#[macro_export]
 macro_rules! unsafe_delegate_variant_field {
     (
-        impl[$($typarams:tt)*] GetVariantField for $self_:ty
+        impl[$($typarams:tt)*] GetVariantFieldImpl for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
+        unsafe impl<$($typarams)*> $crate::pmr::VariantCount for $self_
+        where
+            $delegating_to: $crate::pmr::VariantCount,
+            $($where_)*
+        {
+            type Count=$crate::pmr::VariantCountOut<$delegating_to>;
+        }
+
         unsafe impl<$($typarams)* _V,_F>
             $crate::pmr::GetVariantFieldImpl<_V,_F>
         for $self_
@@ -154,12 +171,12 @@ macro_rules! unsafe_delegate_variant_field {
         {}
     };
     (
-        impl[$($typarams:tt)*] GetVariantFieldMut for $self_:ty
+        impl[$($typarams:tt)*] GetVariantFieldMutImpl for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
         unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantField for $self_
+            impl[$($typarams)*] GetVariantFieldImpl for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
@@ -173,12 +190,12 @@ macro_rules! unsafe_delegate_variant_field {
         {}
     };
     (
-        impl[$($typarams:tt)*] IntoVariantField for $self_:ty
+        impl[$($typarams:tt)*] IntoVariantFieldImpl for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
         unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantField for $self_
+            impl[$($typarams)*] GetVariantFieldImpl for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
@@ -198,7 +215,7 @@ macro_rules! unsafe_delegate_variant_field {
         delegate_to=$delegating_to:ty,
     )=>{
         unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantFieldMut for $self_
+            impl[$($typarams)*] GetVariantFieldMutImpl for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
@@ -386,7 +403,7 @@ macro_rules! impl_structural{
         where $($where_)*
         {
             const FIELDS: &'static $crate::structural_trait::FieldInfos= {
-                use $crate::structural_trait::{FieldInfo,FieldInfos,IsOptional};
+                use $crate::structural_trait::{FieldInfo,FieldInfos};
 
                 &FieldInfos::Struct(&[
                     $(
@@ -475,6 +492,7 @@ macro_rules! impl_getters_for_derive_struct{
     }
 }
 
+#[cfg(test)]
 macro_rules! assert_equal_bounds {
     (
         trait $trait_:ident,
@@ -571,7 +589,7 @@ macro_rules! try_optionality {
     };
     ( opt,raw,$value:expr $(,)* ) => {{
         let value: *mut Option<_> = $value;
-        match *$value {
+        match *value {
             Some(ref mut x) => x as *mut _,
             None => return Err($crate::pmr::OptionalField),
         }
@@ -593,7 +611,7 @@ macro_rules! map_optionality {
     ( opt,$value:expr $(,)* ) => {
         match $value {
             Ok(x) => Ok(x),
-            Err(e) => Err($crate::pmr::OptionalField),
+            Err(_) => Err($crate::pmr::OptionalField),
         }
     };
 }
@@ -639,6 +657,7 @@ macro_rules! optionality_ty {
 }
 
 /// Using this to test implemented traits.
+#[cfg(test)]
 macro_rules! declare_querying_trait {
     (
         trait $trait_name:ident $([$($params:tt)*])?
