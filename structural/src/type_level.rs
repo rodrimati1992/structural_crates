@@ -25,7 +25,7 @@ pub mod to_value_traits;
 pub use self::list::{TList, TNil};
 
 pub use self::field_path::{
-    AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsFieldPath, IsFieldPathSet,
+    AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsFieldPath, IsFieldPathSet, IsTStr,
     UncheckedVariantField, UniquePaths, VariantField, VariantFieldPath, VariantName,
 };
 
@@ -42,15 +42,15 @@ pub mod _private {
     /// A type-level string,represented as a tuple of type-level bytes.
     ///
     /// This is an implementation detail of structural,
-    /// so that it's possible to replace it with `pub struct TString<const NAME:&'static str>`
+    /// so that it's possible to replace it with `pub struct TStr_<const NAME:&'static str>`
     ///
     /// This cannot be converted to a `&'static str` constant
     /// (if you can figure out a cheap way to do that please create an issue/pull request).
     ///
-    pub struct TString<T>(pub(crate) PhantomData<T>);
+    pub struct TStr_<T>(pub(crate) PhantomData<T>);
 
     #[doc(hidden)]
-    pub type FieldPath1Str<T> = FieldPath1<TString<T>>;
+    pub type FieldPath1Str<T> = FieldPath1<TStr_<T>>;
 
     pub type FlattenedFieldPath<Tuple> = FieldPath<Flatten<Tuple>>;
 }
