@@ -4,6 +4,8 @@ Some helper functions.
 
 use crate::field_traits::OptionalField;
 
+use std::marker::PhantomData;
+
 /// Used to coerce `&[T;N]` to `&[T]`.
 pub const fn coerce_slice<'a, T>(slic: &'a [T]) -> &'a [T] {
     slic
@@ -25,6 +27,13 @@ pub type OptionParam<This> = <This as OptionParam_>::Param;
 
 impl<T> OptionParam_ for Option<T> {
     type Param = T;
+}
+
+/////////////////////////////////////////////////////////
+
+#[inline(always)]
+pub fn as_phantomdata<T>(_: &T) -> PhantomData<T> {
+    PhantomData
 }
 
 /////////////////////////////////////////////////////////
