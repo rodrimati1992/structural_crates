@@ -1,5 +1,5 @@
 use crate::{
-    enum_traits::{IsVariant, VariantProxy},
+    enum_traits::IsVariant,
     field_traits::{
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField,
     },
@@ -7,9 +7,7 @@ use crate::{
     type_level::FieldPath1,
 };
 
-use std_::marker::PhantomData;
-
-tstring_aliases! {
+tstr_aliases! {
     mod strings {
         Ok,
         Err,
@@ -120,7 +118,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Result
-        proxy=VariantProxy
+        variant_count=TStr!(2),
         (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T,nonopt)))
         (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E,nonopt)))
     }

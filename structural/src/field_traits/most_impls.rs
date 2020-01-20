@@ -109,7 +109,7 @@ unsafe_delegate_structural_with! {
     where[]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname : fname_ty );
+    field_name_param=( fname : FnameTy );
 
     GetFieldImpl { this }
 
@@ -147,7 +147,7 @@ unsafe_delegate_structural_with! {
     ]
     self_ident=this;
     delegating_to_type=P::Target;
-    field_name_param=( fname : fname_ty );
+    field_name_param=( fname : FnameTy );
 
     GetFieldImpl { &*this }
 }
@@ -167,7 +167,7 @@ unsafe_delegate_structural_with! {
     where [T:?Sized,]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname_var : fname_ty );
+    field_name_param=( fname_var : FnameTy );
 
     GetFieldImpl { &**this }
 
@@ -180,7 +180,7 @@ unsafe_delegate_structural_with! {
     where [T:?Sized+IsStructural,]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname_var : fname_ty );
+    field_name_param=( fname_var : FnameTy );
 
     GetFieldImpl { &**this }
 

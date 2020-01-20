@@ -5,20 +5,18 @@ Contains traits implemented on field paths,taking Structural types as parameters
 use crate::{
     enum_traits::{EnumExt, IsVariant, VariantProxy},
     field_traits::{
-        errors::{CombinedErrs, CombinedErrsOut, IntoFieldErr, IsFieldErr},
-        GetFieldErr, NonOptField, OptionalField,
+        errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
+        NonOptField, OptionalField,
     },
-    type_level::_private::TString,
+    type_level::_private::TStr_,
     type_level::{FieldPath, FieldPath1, VariantField, VariantName},
-    GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl,
+    GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
 
 #[cfg(feature = "alloc")]
 use crate::pmr::Box;
 
 use core_extensions::MarkerType;
-
-use std_::marker::PhantomData;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -118,14 +116,6 @@ pub trait RevIntoField<'a, This: ?Sized>: RevGetField<'a, This> {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
-macro_rules! get_last_ident {
-    ($first:ty ) => ( $first );
-    ($first:ty , $last:ty ) => ( $last );
-    ($first:ty , $last:ty $(,$rem:ty)+ ) => (
-        get_last_ident!{ $($rem),* }
-    );
-}
 
 macro_rules! impl_get_nested_field_inner {
     (inner;
@@ -545,7 +535,7 @@ macro_rules! impl_rev_traits {
 }
 
 impl_rev_traits! {
-    impl[T] TString<T>
+    impl[T] TStr_<T>
     where[]
 }
 

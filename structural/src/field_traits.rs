@@ -7,10 +7,6 @@ use crate::{
     IsStructural, Structural,
 };
 
-use core_extensions::collection_traits::Cloned;
-
-use std_::marker::PhantomData;
-
 mod enum_impls;
 pub mod errors;
 pub mod for_arrays;
@@ -44,7 +40,7 @@ pub use self::{
 ////////////////////////////////////////////////////////////////////////////////
 
 /// For querying the type of the `FieldName` field.
-pub trait FieldType<FieldName>: IsStructural {
+pub trait FieldType<FieldName> {
     /// The type of the `FieldName` field.
     type Ty;
 }
@@ -162,12 +158,12 @@ pub trait GetFieldImpl<FieldName, P = ()>: FieldType<FieldName> {
 
 declare_accessor_trait_alias! {
     pub trait GetField<FieldName>=
-        GetFieldImpl<FieldName, Err = NonOptField>
+        GetFieldImpl<FieldName, Err = NonOptField> + IsStructural
 }
 
 declare_accessor_trait_alias! {
     pub trait OptGetField<FieldName>=
-        GetFieldImpl<FieldName, Err = OptionalField>
+        GetFieldImpl<FieldName, Err = OptionalField> + IsStructural
 }
 
 /// Queries the type of a field.
@@ -377,12 +373,12 @@ pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> 
 
 declare_accessor_trait_alias! {
     pub trait GetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = NonOptField>
+        GetFieldMutImpl<FieldName, Err = NonOptField> + IsStructural
 }
 
 declare_accessor_trait_alias! {
     pub trait OptGetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = OptionalField>
+        GetFieldMutImpl<FieldName, Err = OptionalField> + IsStructural
 }
 
 /////////////////////////////////////////////////
@@ -501,32 +497,34 @@ pub trait IntoFieldImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
 
 declare_accessor_trait_alias! {
     pub trait IntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = NonOptField>
+        IntoFieldImpl<FieldName, Err = NonOptField> +
+        IsStructural+
 }
 
 declare_accessor_trait_alias! {
     pub trait OptIntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = OptionalField>
+        IntoFieldImpl<FieldName, Err = OptionalField>+
+        IsStructural+
 }
 
 declare_accessor_trait_alias! {
     pub trait IntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = NonOptField> +
         GetFieldMutImpl<FieldName, Err = NonOptField> +
+        IsStructural+
 }
 
 declare_accessor_trait_alias! {
     pub trait OptIntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = OptionalField> +
         GetFieldMutImpl<FieldName, Err = OptionalField> +
+        IsStructural+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "alloc")]
 mod alloc_impls {
-    use super::*;
-
     use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
 
     macro_rules! impl_shared_ptr_accessors {

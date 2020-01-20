@@ -10,14 +10,10 @@ the `V` generic parameter.
 
 use crate::{
     enum_traits::IsVariant,
-    field_traits::{
-        IsFieldErr, NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField,
-    },
+    field_traits::{NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField},
     type_level::{FieldPath1, UncheckedVariantField, VariantFieldPath},
     GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
-
-use std_::marker::PhantomData;
 
 #[cfg(feature = "alloc")]
 pub use crate::alloc::boxed::Box;

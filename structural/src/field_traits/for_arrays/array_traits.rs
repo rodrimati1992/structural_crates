@@ -10,7 +10,7 @@ use super::{
     },
     strings,
 };
-use crate::field_traits::{IntoFieldMut, IntoVariantFieldMut, NonOptField};
+use crate::field_traits::{IntoFieldMut, IntoVariantFieldMut};
 
 /*
 
