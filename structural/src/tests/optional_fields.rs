@@ -1,4 +1,3 @@
-use crate::enum_traits::VariantProxy;
 use crate::{GetFieldExt, Structural};
 
 field_path_aliases! {
@@ -151,7 +150,7 @@ declare_struct_tests! {
 
 /////////////////////////////////////////////////////
 
-tstring_aliases! {
+tstr_aliases! {
     mod strings{
         A,B,C,a,b,c,d
     }
@@ -174,7 +173,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=EnumManual
-        proxy=VariantProxy
+        variant_count=TStr!(3),
         (
             A,
             strings::A,
@@ -315,7 +314,7 @@ macro_rules! declare_enum_tests {
                 assert_eq!(this.field_(fp!(::C)).map(drop_ref), None);
             }
             {
-                let mut this = $ty::B(None);
+                let this = $ty::B(None);
 
                 assert_eq!(this.field_(fp!(::A.a)), None);
                 assert_eq!(this.field_(fp!(::A.b)), None);
@@ -326,7 +325,7 @@ macro_rules! declare_enum_tests {
                 assert_eq!(this.field_(fp!(::B.1)), None);
             }
             {
-                let mut this = $ty::C;
+                let this = $ty::C;
 
                 assert_eq!(this.field_(fp!(::A.a)), None);
                 assert_eq!(this.field_(fp!(::A.b)), None);

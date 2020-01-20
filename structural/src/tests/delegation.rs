@@ -2,7 +2,7 @@ use crate::{
     field_path_aliases, structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
 };
 
-use std_::{fmt::Debug, marker::PhantomData, mem};
+use std_::{fmt::Debug, marker::PhantomData};
 
 use core_extensions::type_level_bool::{False, True};
 
@@ -154,7 +154,7 @@ unsafe_delegate_structural_with! {
     where[]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname : fname_ty );
+    field_name_param=( fname : FnameTy );
 
     GetFieldImpl { &*this.value }
 
@@ -168,7 +168,7 @@ unsafe_delegate_structural_with! {
 #[test]
 fn delegate_unsized() {
     let array: &mut dyn MutArray3<u32> = &mut [1; 10];
-    let this: MaybeSizedFoo<dyn MutArray3<u32>> = MaybeSizedFoo { value: array };
+    let this: MaybeSizedFoo<'_, dyn MutArray3<u32>> = MaybeSizedFoo { value: array };
 
     huh(this);
 }
@@ -185,7 +185,7 @@ unsafe_delegate_structural_with! {
     where[]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname : fname_ty );
+    field_name_param=( fname : FnameTy );
 
     GetFieldImpl { &*this.value }
 
@@ -199,7 +199,7 @@ unsafe_delegate_structural_with! {
 #[test]
 fn delegate_cfg() {
     let array: &mut dyn MutArray3<u32> = &mut [1; 10];
-    let this: SpecializedFoo<dyn MutArray3<u32>> = SpecializedFoo { value: array };
+    let this: SpecializedFoo<'_, dyn MutArray3<u32>> = SpecializedFoo { value: array };
 
     huh(this);
 

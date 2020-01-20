@@ -1,4 +1,3 @@
-use crate::enum_traits::VariantProxy;
 use crate::field_traits::variant_field::IntoVariantFieldMut;
 use crate::*;
 
@@ -40,7 +39,7 @@ enum Pair<T, U> {
     Unit,
 }
 
-tstring_aliases! {
+tstr_aliases! {
     mod pair_strs {
         AllCorrect,
         Pair,
@@ -55,7 +54,7 @@ impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
-        proxy=VariantProxy
+        variant_count=TStr!(3),
         (
             AllCorrect,
             pair_strs::AllCorrect,
@@ -189,7 +188,7 @@ struct WhatRB {
     pub d: u8,
 }
 
-tstring_aliases! {
+tstr_aliases! {
     mod rb_strs{
         U,V,a,b,c,d
     }
@@ -205,9 +204,11 @@ assert_equal_bounds! {
         + IntoVariantFieldMut<rb_strs::U, rb_strs::d, Ty = u8>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::a, Ty = &'static str>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::b, Ty = u32>
+        + IsStructural
     ),
 }
 
+#[test]
 fn test_replace_bounds_trait_object() {
     fn hi(wha_u: &mut dyn HuhRB_SI, wha_v: &mut dyn HuhRB_SI) {
         {
@@ -237,7 +238,7 @@ fn test_replace_bounds_trait_object() {
             assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
             assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
 
-            let proxy = wha_u.field_mut(fp!(::V)).unwrap();
+            let proxy = wha_v.field_mut(fp!(::V)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &"55");
             assert_eq!(proxy.field_(fp!(b)), &66);
 
