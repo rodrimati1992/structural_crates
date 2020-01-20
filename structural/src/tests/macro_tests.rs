@@ -3,20 +3,20 @@
 #[allow(dead_code)]
 #[macro_use]
 mod for_better_macros {
-    use crate::{chars, type_level::_private::TString};
+    use crate::{chars, type_level::_private::TStr_};
 
-    pub type S_foo = TString<(chars::_f, chars::_o, chars::_o)>;
-    pub type S_bar = TString<(chars::_b, chars::_a, chars::_r)>;
-    pub type S_baz = TString<(chars::_b, chars::_a, chars::_z)>;
-    pub type S_a = TString<(chars::_a,)>;
-    pub type S_b = TString<(chars::_b,)>;
-    pub type S_c = TString<(chars::_c,)>;
-    pub type S_d = TString<(chars::_d,)>;
-    pub type S_0 = TString<(chars::_0,)>;
-    pub type S_1 = TString<(chars::_1,)>;
-    pub type S_2 = TString<(chars::_2,)>;
-    pub type S_3 = TString<(chars::_3,)>;
-    pub type S_4 = TString<(chars::_4,)>;
+    pub type S_foo = TStr_<(chars::_f, chars::_o, chars::_o)>;
+    pub type S_bar = TStr_<(chars::_b, chars::_a, chars::_r)>;
+    pub type S_baz = TStr_<(chars::_b, chars::_a, chars::_z)>;
+    pub type S_a = TStr_<(chars::_a,)>;
+    pub type S_b = TStr_<(chars::_b,)>;
+    pub type S_c = TStr_<(chars::_c,)>;
+    pub type S_d = TStr_<(chars::_d,)>;
+    pub type S_0 = TStr_<(chars::_0,)>;
+    pub type S_1 = TStr_<(chars::_1,)>;
+    pub type S_2 = TStr_<(chars::_2,)>;
+    pub type S_3 = TStr_<(chars::_3,)>;
+    pub type S_4 = TStr_<(chars::_4,)>;
 
     pub fn assert_ty<T, U>(_ident: U)
     where
@@ -41,11 +41,11 @@ mod for_better_macros {
 fn identifier_macros_equality() {
     use self::for_better_macros::*;
     use crate::chars;
-    use crate::type_level::{FieldPath, _private::TString};
+    use crate::type_level::{FieldPath, _private::TStr_};
 
-    type S_abcd = TString<(chars::_a, chars::_b, chars::_c, chars::_d)>;
-    type S_21 = TString<(chars::_2, chars::_1)>;
-    type S_ab0 = TString<(chars::_a, chars::_b, chars::_0)>;
+    type S_abcd = TStr_<(chars::_a, chars::_b, chars::_c, chars::_d)>;
+    type S_21 = TStr_<(chars::_2, chars::_1)>;
+    type S_ab0 = TStr_<(chars::_a, chars::_b, chars::_0)>;
 
     path_assertion!(fp!(abcd), FieldPath<(S_abcd,)>);
     path_assertion!(fp!(0), FieldPath<(S_0,)>);

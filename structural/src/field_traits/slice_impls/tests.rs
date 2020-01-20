@@ -1,9 +1,8 @@
-use super::*;
 use crate::GetFieldExt;
 
 macro_rules! slice_test {
     ( ref $this:expr ) => {{
-        let mut this = $this;
+        let this = $this;
         assert_eq!(this.field_(fp!(0)), Some(&3));
         assert_eq!(this.field_(fp!(1)), Some(&5));
         assert_eq!(this.field_(fp!(2)), Some(&8));
@@ -28,6 +27,11 @@ macro_rules! slice_test {
         assert_eq!(this.field_mut(fp!(7)), Some(&mut 89));
         assert_eq!(this.field_mut(fp!(8)), Some(&mut 144));
         assert_eq!(this.field_(fp!(9)), None);
+        let (f0, f1, f2, f3, f4, f5, f6, f7) = this.fields_mut(fp!(0, 1, 2, 3, 4, 5, 6, 7));
+        assert_eq!(
+            (|| Some((f0?, f1?, f2?, f3?, f4?, f5?, f6?, f7?)))(),
+            Some((&mut 3, &mut 5, &mut 8, &mut 13, &mut 21, &mut 34, &mut 55, &mut 89)),
+        );
 
         slice_test! {ref this}
     }};
@@ -48,6 +52,7 @@ fn basic_alloc_tests() {
     slice_test! {mut Box::from([3,5,8,13,21,34,55,89,144]) as Box<[_]> }
 }
 
+#[test]
 fn large_indices() {
     let mut array = [0u16; 1 << 10];
     for i in 0..array.len() {
@@ -57,9 +62,9 @@ fn large_indices() {
 
     assert_eq!(array.field_(fp!(0)), Some(&0));
     assert_eq!(array.field_(fp!(1)), Some(&4));
-    assert_eq!(array.field_(fp!(9)), Some(&8));
+    assert_eq!(array.field_(fp!(9)), Some(&36));
     assert_eq!(array.field_(fp!(10)), Some(&40));
-    assert_eq!(array.field_(fp!(19)), Some(&36));
+    assert_eq!(array.field_(fp!(19)), Some(&76));
     assert_eq!(array.field_(fp!(99)), Some(&396));
     assert_eq!(array.field_(fp!(100)), Some(&400));
     assert_eq!(array.field_(fp!(199)), Some(&796));

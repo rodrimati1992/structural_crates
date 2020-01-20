@@ -5,9 +5,15 @@ mod param_ret {
 
     fn hi(blah: impl_struct! {a:u32,b:u32}) -> impl_struct! {a:u32,b:u64} {
         make_struct! {
-            a:*blah.field_(fp!(a)),
-            b:blah.field_(fp!(b)).clone().into(),
+            a:*blah.field_(fp!(a))/2,
+            b:*blah.field_(fp!(b)) as u64 * 2,
         }
+    }
+
+    #[test]
+    fn param_test() {
+        let ret = hi(make_struct! {a:25,b:100});
+        assert_eq!(ret.fields(fp!(a, b)), (&12, &200));
     }
 }
 
@@ -50,6 +56,6 @@ mod mutabilities {
             c: 2,
             d: 3,
             e: 4,
-        })
+        });
     }
 }

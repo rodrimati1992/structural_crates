@@ -15,8 +15,10 @@ mod with_super_traits {
     }
     trait AssertImplies: Trait {}
 
-    impl<This> AssertImplies for This where This: Copy + IntoFieldMut<FP!(a), Ty = u8, Err = NonOptField>
-    {}
+    impl<This> AssertImplies for This where
+        This: Copy + IntoFieldMut<FP!(a), Ty = u8, Err = NonOptField> + IsStructural
+    {
+    }
 
     /// This function ensures that the supertraits and field accessors in Trait
     /// are implied by `T:Trait`.
@@ -50,7 +52,7 @@ mod with_where_clause {
     impl<This, T> AssertImplies<T> for This
     where
         T: Clone + Debug,
-        This: Copy + IntoFieldMut<FP!(a), Ty = T, Err = NonOptField>,
+        This: Copy + IntoFieldMut<FP!(a), Ty = T, Err = NonOptField> + IsStructural,
     {
     }
 }
@@ -110,7 +112,8 @@ mod with_variants {
         (Foo),
         (
             IsVariant<names::A>+
-            IsVariant<names::B>
+            IsVariant<names::B>+
+            IsStructural
         )
     }
 }
@@ -126,7 +129,7 @@ mod variants_with_accesses {
         }
     }
 
-    tstring_aliases! {
+    tstr_aliases! {
         mod strings{
             a,b,c,d,e,
             A,AOpt,B,C,
@@ -165,6 +168,7 @@ mod variants_with_accesses {
         trait Dummy,
         (Foo),
         (
+            IsStructural+
             IsVariant<paths::A>+
             IsVariant<paths::B>+
             IsVariant<paths::C>+
