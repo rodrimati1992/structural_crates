@@ -200,3 +200,77 @@ mod names_module_tests {
         let _: names_a::j = fp!(p);
     }
 }
+
+mod tstr_aliases_tests {
+    use crate::{chars, type_level::_private::TStr_};
+
+    #[test]
+    fn just_aliases() {
+        mod strs {
+            tstr_aliases! {
+                a,
+                b,
+                word,
+                c="cc",
+                d=dd,
+                p0=0,
+                p10=10,
+            }
+        }
+
+        let _: TStr_<(chars::_a,)> = strs::a::NEW;
+        let _: TStr_<(chars::_b,)> = strs::b::NEW;
+        let _: TStr_<(chars::_w, chars::_o, chars::_r, chars::_d)> = strs::word::NEW;
+        let _: TStr_<(chars::_d, chars::_d)> = strs::d::NEW;
+        let _: TStr_<(chars::_0,)> = strs::p0::NEW;
+        let _: TStr_<(chars::_1, chars::_0)> = strs::p10::NEW;
+    }
+
+    #[test]
+    fn with_submodules() {
+        tstr_aliases! {
+            mod strs{
+                mod m0{
+                    @count
+                }
+                a0="10",
+                mod m1{
+                    @count
+                    a0="11",
+                    a1,
+                }
+                a1,
+                mod m2{
+                    foo,
+                    bar=0,
+                    baz=baaaa,
+                }
+                mod m3{
+                    @count
+                    mod m3m0{
+                        aaa,
+                        bbb,
+                    }
+                }
+            }
+        }
+        let _: TStr_<(chars::_0,)> = strs::m0::__TString_Aliases_Count::NEW;
+
+        let _: TStr_<(chars::_1, chars::_0)> = strs::a0::NEW;
+
+        let _: TStr_<(chars::_2,)> = strs::m1::__TString_Aliases_Count::NEW;
+        let _: TStr_<(chars::_1, chars::_1)> = strs::m1::a0::NEW;
+        let _: TStr_<(chars::_a, chars::_1)> = strs::m1::a1::NEW;
+
+        let _: TStr_<(chars::_a, chars::_1)> = strs::a1::NEW;
+
+        let _: TStr_<(chars::_f, chars::_o, chars::_o)> = strs::m2::foo::NEW;
+        let _: TStr_<(chars::_0,)> = strs::m2::bar::NEW;
+        let _: TStr_<(chars::_b, chars::_a, chars::_a, chars::_a, chars::_a)> = strs::m2::baz::NEW;
+
+        let _: TStr_<(chars::_0,)> = strs::m3::__TString_Aliases_Count::NEW;
+        let _: TStr_<(chars::_2,)> = strs::m3::m3m0::__TString_Aliases_Count::NEW;
+        let _: TStr_<(chars::_a, chars::_a, chars::_a)> = strs::m3::m3m0::aaa::NEW;
+        let _: TStr_<(chars::_b, chars::_b, chars::_b)> = strs::m3::m3m0::bbb::NEW;
+    }
+}

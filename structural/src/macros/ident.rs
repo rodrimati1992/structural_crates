@@ -732,7 +732,7 @@ macro_rules! tstr_aliases {
         /// `TStr_` values can be constructed with the NEW associated constant.
         ///
         /// The source code for this module can only be accessed from
-        /// the type aliases and constants.<br>
+        /// the type aliases.<br>
         /// As of writing this documentation,`cargo doc` links
         /// to the inplementation of the `field_path_aliases` macro
         /// instead of where this module is declared.

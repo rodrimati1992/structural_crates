@@ -1,4 +1,5 @@
 use crate::{
+    ident_or_index::IdentOrIndex,
     parse_utils::ParseBufferExt,
     tokenizers::{tident_tokens, FullPathForChars},
 };
@@ -14,7 +15,6 @@ use quote::{quote, quote_spanned, TokenStreamExt};
 
 use syn::{
     parse::{self, Parse, ParseStream},
-    punctuated::Punctuated,
     Ident, LitStr, Token,
 };
 
@@ -27,11 +27,26 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
 
     let alias_count = parsed.aliases.len();
 
-    let include_count = parsed.include_count;
+    let config = parsed.config;
 
     let mut tokens = TokenStream2::new();
 
-    if include_count {
+    if config.inner_module {
+        tokens.append_all(quote!(
+            //! Type aliases for `TStr_` (type-level string)
+            //! (from the structural crate).
+            //!
+            //! `TStr_` values can be constructed with the NEW associated constant.
+            //!
+            //! The source code for this module can only be accessed from
+            //! the type aliases.<br>
+            //! As of writing this documentation,`cargo doc` links
+            //! to the inplementation of the `field_path_aliases` macro
+            //! instead of where this module is declared.
+        ));
+    }
+
+    if config.include_count {
         let alias_count_str = tident_tokens(alias_count.to_string(), FullPathForChars::Yes);
         tokens.append_all(quote!(
             /// The amount of strings aliased in this module.
@@ -71,12 +86,40 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
             .collect::<Result<TokenStream2, syn::Error>>()?,
     );
 
+    tokens.append_all(
+        parsed
+            .modules
+            .into_iter()
+            .map(move |StrModule { name, aliases }| {
+                let span = name.span();
+                let tokens = self::impl_(aliases)?;
+                Ok(quote_spanned!(span=>
+                    pub mod #name {
+                        #tokens
+                    }
+                ))
+            })
+            .collect::<Result<TokenStream2, syn::Error>>()?,
+    );
+
     Ok(tokens)
 }
 
 pub struct StrAliases {
+    config: StrAliasCfg,
+    aliases: Vec<StrAlias>,
+    modules: Vec<StrModule>,
+}
+
+#[derive(Copy, Clone, Default)]
+pub struct StrAliasCfg {
+    inner_module: bool,
     include_count: bool,
-    aliases: Punctuated<StrAlias, Token![,]>,
+}
+
+pub struct StrModule {
+    name: Ident,
+    aliases: StrAliases,
 }
 
 pub struct StrAlias {
@@ -90,13 +133,51 @@ mod keywords {
 
 impl Parse for StrAliases {
     fn parse(input: ParseStream) -> parse::Result<Self> {
-        let include_count = {
-            input.peek_parse(Token!(@))?.is_some() && input.peek_parse(keywords::count)?.is_some()
-        };
-        Ok(StrAliases {
-            include_count,
-            aliases: input.parse_terminated(Parse::parse)?,
+        Self::parse_(input, StrAliasCfg::default())
+    }
+}
+
+impl StrAliases {
+    fn parse_(input: ParseStream, mut config: StrAliasCfg) -> parse::Result<Self> {
+        while let Some(_) = input.peek_parse(Token!(@))? {
+            if input.peek_parse(keywords::count)?.is_some() {
+                config.include_count = true;
+            }
+        }
+
+        let mut aliases = Vec::<StrAlias>::new();
+        let mut modules = Vec::<StrModule>::new();
+
+        while !input.is_empty() {
+            if input.peek(Token![mod]) {
+                let mut config = config;
+                config.inner_module = true;
+                modules.push(StrModule::parse_(input, config)?);
+            } else {
+                aliases.push(StrAlias::parse(input)?);
+            }
+        }
+
+        Ok(Self {
+            config,
+            aliases,
+            modules,
         })
+    }
+}
+
+impl StrModule {
+    fn parse_(input: ParseStream, config: StrAliasCfg) -> parse::Result<Self> {
+        let _: Token!(mod) = input.parse()?;
+        let name = input.parse::<Ident>()?;
+
+        let aliases = {
+            let content;
+            let _ = syn::braced!(content in input);
+            StrAliases::parse_(&content, config)?
+        };
+
+        Ok(Self { name, aliases })
     }
 }
 
@@ -104,10 +185,16 @@ impl Parse for StrAlias {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let alias_name = input.parse::<Ident>()?;
         let string = if let Some(_) = input.peek_parse(Token!(=))? {
-            input.parse::<LitStr>()?.value()
+            match input.peek_parse(LitStr)? {
+                Some(x) => x.value(),
+                None => input.parse::<IdentOrIndex>()?.to_string(),
+            }
         } else {
             alias_name.to_string()
         };
+        if !input.is_empty() {
+            let _: Token!(,) = input.parse()?;
+        }
         Ok(Self { alias_name, string })
     }
 }
