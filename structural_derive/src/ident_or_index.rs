@@ -15,7 +15,7 @@ use syn::{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 pub(crate) enum IdentOrIndex {
     Ident(Ident),
     Index(SynIndex),
