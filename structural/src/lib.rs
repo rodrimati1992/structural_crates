@@ -7,7 +7,8 @@ This library provides field accessor traits,and emulation of structural types.
 These are the features this library provides:
 
 - [Derivation of the 3 accessor traits for every public field](./docs/structural_macro/index.html)
-(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl).
+(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl),
+and aliases for the optional and non-optional variants of those traits.
 
 - [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
 ](./macro.structural_alias.html).
@@ -362,6 +363,7 @@ pub use structural_derive::{
     //new_fp_impl_,
     _field_path_aliases_impl,
     _impl_struct_impl,
+    _switch_tstring_aliases,
     _tstring_aliases_impl,
     old_fp_impl_,
     structural_alias_impl,
@@ -391,6 +393,7 @@ pub mod tests {
     mod optional_fields;
     mod structural_alias;
     mod structural_derive;
+    mod switch;
 }
 
 pub mod type_level;
@@ -435,7 +438,7 @@ pub mod pmr {
     pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
-    pub use crate::utils::{as_phantomdata, OptionParam};
+    pub use crate::utils::{as_phantomdata, OptionParam, _Structural_BorrowSelf};
     pub use core_extensions::type_level_bool::{Boolean, False, True};
     pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
 
