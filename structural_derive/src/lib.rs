@@ -25,6 +25,7 @@ mod impl_struct;
 mod parse_utils;
 mod structural_alias_impl_mod;
 mod structural_derive;
+mod switch_tstring_aliases;
 mod tokenizers;
 mod tstring_aliases;
 mod utils;
@@ -108,6 +109,13 @@ pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
 #[doc(hidden)]
 pub fn _impl_struct_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, impl_struct::impl_).into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _switch_tstring_aliases(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input, switch_tstring_aliases::impl_).into()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
