@@ -49,6 +49,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         $crate::handle_optionality!($optionality,ref,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>Err($crate::pmr::OptionalField),
                 }
             }
@@ -97,11 +98,12 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         let name = $crate::pmr::FieldPath1::<_F>::NEW;
                         let field = $crate::try_optionality!($optionality,ref,field);
-                        map_optionality!(
+                        $crate::map_optionality!(
                             $optionality,
                             $crate::GetFieldImpl::get_field_(field,name,())
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The methods in *VariantField require the receiver
                         // to be the variant specified by the first type parameter
@@ -166,6 +168,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         $crate::handle_optionality!($optionality,ref,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The methods in *VariantField require the receiver
                         // to be the variant specified by the first type parameter
@@ -211,6 +214,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         $crate::handle_optionality!($optionality,mut,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>Err($crate::pmr::OptionalField),
                 }
             }
@@ -230,6 +234,7 @@ macro_rules! impl_getter_enum{
                             field as *mut $crate::option_or_value_ty!($optionality,$field_ty),
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>Err( $crate::pmr::OptionalField ),
                 }
             }
@@ -283,13 +288,14 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         let name=$crate::pmr::FieldPath1::<_F>::NEW;
                         let field= $crate::try_optionality!($optionality,mut,field);
-                        map_optionality!(
+                        $crate::map_optionality!(
                             $optionality,
                             $crate::GetFieldMutImpl::<
                                 $crate::pmr::FieldPath1<_F>
                             >::get_field_mut_(field,name,())
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The methods in *VariantField require the receiver
                         // to be the variant specified by the first type parameter
@@ -320,6 +326,7 @@ macro_rules! impl_getter_enum{
                             )
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>{
                         // The methods in *VariantField require the receiver
                         // to be the variant specified by the first type parameter
@@ -390,6 +397,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:ref mut field,..}=>{
                         $crate::handle_optionality!($optionality,mut,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -413,6 +421,7 @@ macro_rules! impl_getter_enum{
                             this,
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -473,6 +482,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         $crate::handle_optionality!($optionality,move,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>Err($crate::pmr::OptionalField),
                 }
             }
@@ -516,13 +526,14 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         let name=$crate::pmr::FieldPath1::<_F>::NEW;
                         let field= $crate::try_optionality!($optionality,move,field);
-                        map_optionality!(
+                        $crate::map_optionality!(
                             $optionality,
                             $crate::IntoFieldImpl::<
                                 $crate::pmr::FieldPath1<_F>
                             >::into_field_(field,name,())
                         )
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The methods in *VariantField require the receiver
                         // to be the variant specified by the first type parameter
@@ -581,6 +592,7 @@ macro_rules! impl_getter_enum{
                     $enum_::$variant{$field_name:field,..}=>{
                         $crate::handle_optionality!($optionality,move,field)
                     }
+                    #[allow(unreachable_patterns)]
                     _=>unsafe{
                         // The proxies for each variant ought only be constructible
                         // when the enum is that particular variant.
@@ -760,6 +772,7 @@ macro_rules! delegate_to_variant_proxy {
             fn is_variant_(&self,_:$crate::pmr::FieldPath1<$variant_name_str>)->bool{
                 match self {
                     $enum_::$variant{..}=>true,
+                    #[allow(unreachable_patterns)]
                     _=>false,
                 }
             }
