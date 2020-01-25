@@ -32,24 +32,24 @@ impl<'a> Drop for DecOnDrop<'a> {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug,PartialEq,Eq)]
-pub(crate) enum RefKind{
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum RefKind {
     Shared,
     Mutable,
 }
 
-pub(crate) trait GetRefKind{
-    fn get_ref_kind(self)->RefKind;
+pub(crate) trait GetRefKind {
+    fn get_ref_kind(self) -> RefKind;
 }
 
-impl<T:?Sized> GetRefKind for &T {
-    fn get_ref_kind(self)->RefKind{
+impl<T: ?Sized> GetRefKind for &T {
+    fn get_ref_kind(self) -> RefKind {
         RefKind::Shared
     }
 }
 
-impl<T:?Sized> GetRefKind for &mut T {
-    fn get_ref_kind(self)->RefKind{
+impl<T: ?Sized> GetRefKind for &mut T {
+    fn get_ref_kind(self) -> RefKind {
         RefKind::Mutable
     }
 }
