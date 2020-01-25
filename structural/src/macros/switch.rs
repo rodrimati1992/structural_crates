@@ -1,7 +1,7 @@
 /**
 Provides basic pattern matching for structural enums.
 
-The basicness of `switch` resides in that it can only branch based on the variant of 
+The basicness of `switch` resides in that it can only branch based on the variant of
 the structural enum.
 Once a branch is taken(based solely on what the current variant is),
 all the listed fields of the variant are destructured into the pattern for the field
@@ -59,7 +59,7 @@ fn takes_exhaustive<T>(mut this: T)->u32
 where
     T: Enum_ESI,
 {
-    // The matched expression is not moved if 
+    // The matched expression is not moved if
     // it's a single identifier,and no branch takes it by value.
     //
     // To match the enum by reference only, you can use `switch{ref this; .... }`,
@@ -112,7 +112,7 @@ switch!{ ref this ;
         assert_eq!( this.field_(fp!(a)), &100 )
     }
     // You can copy `Copy` fields in `ref` branches with `&field_name`
-    // The `ref`ness of this branch is inherited from 
+    // The `ref`ness of this branch is inherited from
     // the `ref` at the top of the macro invocation.
     Bar{ &b }=>assert_eq!( b, 200 ),
 
@@ -124,15 +124,15 @@ switch!{ ref this ;
 }
 
 let text="99";
-// `other = <expression>` is used here to be able to use 
+// `other = <expression>` is used here to be able to use
 // the `VariantProxy<Enum,FP!(VariantName)>` inside the switch branch,
 // to access any field of the matched variant(especially those that weren't destructured).
-// 
+//
 // If it was just the expression,then the `VariantProxy` would be inaccessible.
 let number = switch!{ other = Enum::Baz{ c:"55" } ;
     // `if`s cannot be used as pattern guardss
     if 2+2!=4 => unreachable!("2+2 is 4, silly!"),
-    
+
     Baz => other
         .into_field(fp!(c))
         .parse::<u32>()
@@ -150,11 +150,11 @@ let number = switch!{ other = Enum::Baz{ c:"55" } ;
     ref mut Bam{d} =>{
         assert_eq!( d, Some(&mut 9999) );
 
-        // The `other` here is a `&mut VariantProxy<Enum,FP!(Bam)>`, 
+        // The `other` here is a `&mut VariantProxy<Enum,FP!(Bam)>`,
         // you can access all the fields using it,
         // but only after the last use of destructured fields.
         assert_eq!( other.field_mut(fp!(d)), Some(&mut 9999) );
-        
+
         100
     }, // The `,` is optional after `{...}`
     _=>101  // The `,` is optional after the last switch arm.
@@ -168,7 +168,7 @@ assert_eq!(number,55);
 
 This gets the human-readable name of the direction the enum represents.
 
-The enum can have any data so long as it has exactly the 
+The enum can have any data so long as it has exactly the
 same amount and name of variants as `Direction4`.
 
 ```
@@ -234,7 +234,7 @@ If you want to see a example that uses all the syntax,go to the
 ```text
 switch!{
     $switch_header:switch_header
-    
+
 
     $(
         $switch_branch:switch_branch
@@ -340,7 +340,7 @@ with access to the variables declared inside the pattern.
 
 `named_field_destructure` can be any of:
 
-- `$field_name:identifier`: 
+- `$field_name:identifier`:
     Accesses the field as:
         - A refernce if the variant is accessed by `ref`.
         - A mutable reference if the variant is accessed by `ref mut`.<br>
@@ -353,13 +353,13 @@ with access to the variables declared inside the pattern.
 - `&mut $field_name:identifier`:
 Copies the field from a variant accessed by `ref mut`.<br>
 
-- `$field_name:identifier : $pattern:pattern`: 
+- `$field_name:identifier : $pattern:pattern`:
     Destructures the field into an irrefutable pattern,<br>
     Example: `ref Foo{x: &x } copies the x field into an x variable.`<br>
-    Example: `ref Foo{x: (a,b) }` 
+    Example: `ref Foo{x: (a,b) }`
     destructures the x field into a pair of references,`a` and `b`<br>
     Example: `ref mut Foo{x: &mut x } copies the x field into an x variable.`<br>
-    Example: `ref mut Foo{x: (a,b) }` 
+    Example: `ref mut Foo{x: (a,b) }`
     destructures the x field into a pair of mutable references,`a` and `b`<br>
 
 <br>
@@ -417,11 +417,11 @@ macro_rules! switch_inn{
             $($match_arms)*
         }
     };
-    // Have to match on the same ident twice because the `self` passed to the macro 
+    // Have to match on the same ident twice because the `self` passed to the macro
     // is not the same as `self` passed from within the macro.
     (@top_ident
         [$def_access:ident]
-        $matched:ident,self; 
+        $matched:ident,self;
         $($match_arms:tt)+
     )=>{
         $crate::switch_inn!{
@@ -470,7 +470,7 @@ macro_rules! switch_inn{
         }
     };
     (@top
-        $($proxy_:ident)? $(= $matched:expr)? ; 
+        $($proxy_:ident)? $(= $matched:expr)? ;
     )=>{
         compile_error!("expected a non-empty switch")
     };
@@ -600,44 +600,44 @@ macro_rules! switch_inn{
     (@branch $top:tt $vars:tt mut $($rem:tt)* )=>{
         compile_error!("Expected `ref` or `ref mut`,found `mut`")
     };
-    (@branch 
-        [ $def_access:ident $proxy_:tt ] 
-        $vars:tt 
+    (@branch
+        [ $def_access:ident $proxy_:tt ]
+        $vars:tt
         $variant:ident
         $($rem:tt)+
     )=>{
-        $crate::switch_inn!(@branch_1 
+        $crate::switch_inn!(@branch_1
             [$def_access $proxy_]
             $vars
-            [$def_access] 
+            [$def_access]
             $variant $($rem)+
         )
     };
-    (@branch_1 
-        $top:tt $vars:tt [$access:ident] 
-        $variant:ident => $($rem:tt)* 
+    (@branch_1
+        $top:tt $vars:tt [$access:ident]
+        $variant:ident => $($rem:tt)*
     )=>{
-        $crate::switch_inn!(@branch_2 
-            $top $vars [$access $variant ()] 
-            $($rem)* 
+        $crate::switch_inn!(@branch_2
+            $top $vars [$access $variant ()]
+            $($rem)*
         )
     };
-    (@branch_1 
-        $top:tt $vars:tt [$access:ident] 
-        $variant:ident ($($fields:tt)*) => $($rem:tt)* 
+    (@branch_1
+        $top:tt $vars:tt [$access:ident]
+        $variant:ident ($($fields:tt)*) => $($rem:tt)*
     )=>{
-        $crate::switch_inn!(@branch_2 
-            $top $vars [$access $variant ($($fields)*)] 
-            $($rem)* 
+        $crate::switch_inn!(@branch_2
+            $top $vars [$access $variant ($($fields)*)]
+            $($rem)*
         )
     };
-    (@branch_1 
-        $top:tt $vars:tt [$access:ident] 
-        $variant:ident{$($fields:tt)*} => $($rem:tt)* 
+    (@branch_1
+        $top:tt $vars:tt [$access:ident]
+        $variant:ident{$($fields:tt)*} => $($rem:tt)*
     )=>{
-        $crate::switch_inn!(@branch_2 
+        $crate::switch_inn!(@branch_2
             $top $vars [$access $variant {$($fields)*}]
-            $($rem)* 
+            $($rem)*
         )
     };
     (@branch_2
@@ -694,7 +694,7 @@ macro_rules! switch_inn{
     };
     (@make_proxy $access:ident $variant:ident (assigned $proxy_:ident $self_:tt) )=>{
         $crate::switch_inn!(
-            @make_proxy_1 $access $variant ($proxy_ $self_) 
+            @make_proxy_1 $access $variant ($proxy_ $self_)
         )
     };
     (@make_proxy_1 ref $variant:ident $(#$attr:tt)? ($proxy_:ident $self_:tt) )=>{
@@ -741,37 +741,37 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
     (@access_f $vars:tt {$($patterns:tt)*} )=>{
         $crate::switch_inn!{@access_f_1 $vars [] brace ($($patterns)*) }
     };
-    (@access_f_1 
-        $vars:tt 
+    (@access_f_1
+        $vars:tt
         $prev_fields:tt
         brace
         ( $field_name:tt :  $($rem:tt)* )
     )=>{
         $crate::switch_inn!{@access_f_patt
-            $vars 
+            $vars
             $prev_fields
             brace
             []
             ($($rem)*)
         }
     };
-    (@access_f_1 
-        $vars:tt 
+    (@access_f_1
+        $vars:tt
         $prev_fields:tt
         $vkind:ident
         ( $($anything:tt)+ )
     )=>{
         $crate::switch_inn!{@access_f_patt
-            $vars 
+            $vars
             $prev_fields
             $vkind
             []
             ( $($anything)* )
         }
     };
-    (@access_f_1 
+    (@access_f_1
         [ $access:ident $variant:ident self ]
-        [ $($variable_pats:tt)* ] 
+        [ $($variable_pats:tt)* ]
         $vkind:ident
         ()
     )=>{
@@ -780,9 +780,9 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
             $crate::switch_inn!{@call_field_method $access $variant _struc_proxy_ }
         };
     };
-    (@access_f_1 
+    (@access_f_1
         [ $access:ident $variant:ident $proxy_:tt ]
-        [ $($variable_pats:tt)* ] 
+        [ $($variable_pats:tt)* ]
         $vkind:ident
         ()
     )=>{
@@ -792,71 +792,71 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
         };
     };
     (@access_f_patt
-        $vars:tt 
+        $vars:tt
         $prev_fields:tt
         $vkind:ident
         []
         ( _ $(, $($rem:tt)* )? )
     )=>{
         $crate::switch_inn!{
-            @access_f_1 
-            $vars 
-            $prev_fields 
-            $vkind 
-            ($($($rem)*)?) 
+            @access_f_1
+            $vars
+            $prev_fields
+            $vkind
+            ($($($rem)*)?)
         }
     };
     (@access_f_patt
-        $vars:tt 
-        [ $($prev_fields:tt)* ] 
+        $vars:tt
+        [ $($prev_fields:tt)* ]
         $vkind:ident
         [$($patt_tokens:tt)*]
         ( $t0:tt  $(, $($rem:tt)* )? )
     )=>{
-        $crate::switch_inn!{@access_f_1 
-            $vars 
+        $crate::switch_inn!{@access_f_1
+            $vars
             [ $($prev_fields)* $($patt_tokens)* $t0, ]
             $vkind
             ($($($rem)*)?)
         }
     };
     (@access_f_patt
-        $vars:tt 
-        [ $($prev_fields:tt)* ] 
+        $vars:tt
+        [ $($prev_fields:tt)* ]
         $vkind:ident
         [$($patt_tokens:tt)*]
         ( $t0:tt $t1:tt  $(, $($rem:tt)* )? )
     )=>{
-        $crate::switch_inn!{@access_f_1 
-            $vars 
+        $crate::switch_inn!{@access_f_1
+            $vars
             [ $($prev_fields)* $($patt_tokens)* $t0 $t1, ]
             $vkind
             ($($($rem)*)?)
         }
     };
     (@access_f_patt
-        $vars:tt 
-        [ $($prev_fields:tt)* ] 
+        $vars:tt
+        [ $($prev_fields:tt)* ]
         $vkind:ident
         [$($patt_tokens:tt)*]
         ( $t0:tt $t1:tt $t2:tt  $(, $($rem:tt)* )? )
     )=>{
-        $crate::switch_inn!{@access_f_1 
-            $vars 
+        $crate::switch_inn!{@access_f_1
+            $vars
             [ $($prev_fields)* $($patt_tokens)* $t0 $t1 $t2, ]
             $vkind
             ($($($rem)*)?)
         }
     };
     (@access_f_patt
-        $vars:tt 
+        $vars:tt
         $prev_fields:tt
         $vkind:ident
         [$($patt_tokens:tt)*]
         ( $t0:tt $t1:tt $t2:tt $($rem:tt)* )
     )=>{
         $crate::switch_inn!{@access_f_patt
-            $vars 
+            $vars
             $prev_fields
             $vkind
             [$($patt_tokens)* $t0 $t1 $t2]
@@ -864,26 +864,26 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
         }
     };
     (@access_f_patt
-        $vars:tt 
-        [ $($prev_fields:tt)* ] 
+        $vars:tt
+        [ $($prev_fields:tt)* ]
         $vkind:ident
         ( $variable_name:ident  $(, $($rem:tt)* )? )
     )=>{
-        $crate::switch_inn!{@access_f_1 
-            $vars 
+        $crate::switch_inn!{@access_f_1
+            $vars
             [ $($prev_fields)* ($variable_name), ]
             $vkind
             ($($($rem)*)?)
         }
     };
     (@access_f_patt
-        $vars:tt 
-        [ $($prev_fields:tt)* ] 
+        $vars:tt
+        [ $($prev_fields:tt)* ]
         $vkind:ident
         ( $variable:tt  $(, $($rem:tt)* )? )
     )=>{
-        $crate::switch_inn!{@access_f_1 
-            $vars 
+        $crate::switch_inn!{@access_f_1
+            $vars
             [ $($prev_fields)* ($variable), ]
             $vkind
             ($($($rem)*)?)
