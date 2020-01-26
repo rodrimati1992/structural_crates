@@ -4,15 +4,12 @@ use crate::{
     tokenizers::{tident_tokens, FullPathForChars},
 };
 
-use as_derive_utils::{
-    datastructure::StructKind,
-    return_syn_err,
-};
+use as_derive_utils::{datastructure::StructKind, return_syn_err};
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
-use proc_macro2::{Span,TokenStream as TokenStream2,TokenTree as TokenTree2};
+use proc_macro2::{Span, TokenStream as TokenStream2, TokenTree as TokenTree2};
 
 use quote::{quote, quote_spanned};
 
@@ -21,7 +18,6 @@ use syn::{
     spanned::Spanned,
     Ident, Token,
 };
-
 
 pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error> {
     let variant_fields = parsed.variants.iter().map(|vari| {
@@ -48,8 +44,8 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
             };
         }
     });
-    
-    let variant_names = parsed.variants.iter().map(|vari|{
+
+    let variant_names = parsed.variants.iter().map(|vari| {
         let span = vari.name.span();
         let alias_name = &vari.name;
         let variant_name = tident_tokens(alias_name.to_string(), FullPathForChars::StructPmr);
@@ -59,7 +55,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         }
     });
 
-    let variant_count_str=tident_tokens(parsed.variants.len().to_string(),FullPathForChars::Yes);
+    let variant_count_str = tident_tokens(parsed.variants.len().to_string(), FullPathForChars::Yes);
 
     Ok(quote! {
         pub type VariantCount=#variant_count_str;
@@ -119,7 +115,7 @@ impl SwitchVariant {
         let mut fields = Vec::<String>::new();
         let mut index = 0;
         while !input.is_empty() {
-            if let Some((field_span,field))=parse_field(input, index, vkind)? {
+            if let Some((field_span, field)) = parse_field(input, index, vkind)? {
                 if fields.contains(&field) {
                     return_syn_err!(
                         field_span,
@@ -137,20 +133,19 @@ impl SwitchVariant {
     }
 }
 
-
 fn parse_field(
     input: ParseStream,
     index: usize,
     vkind: StructKind,
-) -> parse::Result<Option<(Span,String)>> {
+) -> parse::Result<Option<(Span, String)>> {
     match vkind {
         StructKind::Braced => {
             skip_ref(input)?;
             let field_name = input.parse::<IdentOrIndex>()?;
             if input.peek_parse(Token!(:))?.is_some() {
                 if input.peek_parse(Token!(_))?.is_some() {
-                    return Ok(None)
-                }else{
+                    return Ok(None);
+                } else {
                     skip_rest_of_field(input)?;
                 }
             }
@@ -159,7 +154,7 @@ fn parse_field(
         StructKind::Tuple => {
             if input.peek_parse(Token!(_))?.is_some() {
                 Ok(None)
-            }else{
+            } else {
                 skip_rest_of_field(input)?;
                 Ok(Some((Span::call_site(), index.to_string())))
             }
@@ -167,22 +162,22 @@ fn parse_field(
     }
 }
 
-fn skip_ref(input: ParseStream)->parse::Result<()>{
-    if let None=input.peek_parse(Token!(&))? {
-        return Ok(())
+fn skip_ref(input: ParseStream) -> parse::Result<()> {
+    if let None = input.peek_parse(Token!(&))? {
+        return Ok(());
     }
-    if let None=input.peek_parse(Token!(mut))? {
-        return Ok(())
+    if let None = input.peek_parse(Token!(mut))? {
+        return Ok(());
     }
-    if let None=input.peek_parse(Token!(mut))? {
-        return Ok(())
+    if let None = input.peek_parse(Token!(mut))? {
+        return Ok(());
     }
     Ok(())
 }
 
-fn skip_rest_of_field(input: ParseStream)->parse::Result<()>{
+fn skip_rest_of_field(input: ParseStream) -> parse::Result<()> {
     while !(input.is_empty() || input.peek(Token!(,))) {
-        let _=input.parse::<TokenTree2>()?;
+        let _ = input.parse::<TokenTree2>()?;
     }
     Ok(())
 }
