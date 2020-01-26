@@ -10,7 +10,9 @@ the `V` generic parameter.
 
 use crate::{
     enum_traits::IsVariant,
-    field_traits::{NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField},
+    field_traits::{
+        FieldType, NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField,
+    },
     type_level::{FieldPath1, UncheckedVariantField, VariantFieldPath},
     GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
@@ -45,6 +47,14 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
     IsVariant<FieldPath1<V>> + GetFieldImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>
 {
 }
+
+/// Gets the type of a variant field,
+///
+/// Example(since 1.40): `GetVariantFieldType<This, TStr!(Foo), TStr!(0)>`
+///
+/// Example(before 1.40): `GetVariantFieldType<This, TStr!(F o o), TStr!(0)>`
+pub type GetVariantFieldType<This, Variant, Field> =
+    <This as FieldType<VariantFieldPath<Variant, Field>>>::Ty;
 
 /// Gets a mutable reference to the `F` field  from the `V` variant
 ///

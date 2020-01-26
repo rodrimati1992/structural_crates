@@ -149,7 +149,9 @@ impl<'a> StructuralDataType<'a> {
                         Parser::parse_str(push_variant, "")?;
                     }
                 }
-                input.parse::<Token![,]>()?;
+                if !input.is_empty() {
+                    input.parse::<Token![,]>()?;
+                }
             } else {
                 fields.push(StructuralField::parse_braced_field(
                     names_mod, access, arenas, input,

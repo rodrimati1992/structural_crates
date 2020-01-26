@@ -32,8 +32,8 @@ pub use self::{
     },
     variant_field::{
         GetVariantField, GetVariantFieldImpl, GetVariantFieldMut, GetVariantFieldMutImpl,
-        IntoVariantField, IntoVariantFieldImpl, IntoVariantFieldMut, OptGetVariantField,
-        OptGetVariantFieldMut, OptIntoVariantField, OptIntoVariantFieldMut,
+        GetVariantFieldType, IntoVariantField, IntoVariantFieldImpl, IntoVariantFieldMut,
+        OptGetVariantField, OptGetVariantFieldMut, OptIntoVariantField, OptIntoVariantFieldMut,
     },
 };
 
