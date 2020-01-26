@@ -1,5 +1,4 @@
 use crate::{
-    arenas::Arenas,
     field_access::{Access, AccessAndIsOptional, IsOptional},
     ident_or_index::IdentOrIndexRef,
     parse_utils::ParsePunctuated,
@@ -19,15 +18,20 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 
 use syn::{
-    parse::{discouraged::Speculative, Parse, ParseStream},
+    parse::{Parse, ParseStream},
     punctuated::Punctuated,
-    token, Attribute, Generics, Ident, Token, TraitItem, Visibility,
+    token, Attribute, Ident, TraitItem,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests;
+
+mod attribute_parsing;
+mod parsing;
+
+use self::attribute_parsing::StructuralAliasOptions;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -49,6 +53,7 @@ pub(crate) struct StructuralAlias<'a> {
     pub(crate) supertraits: Punctuated<syn::TypeParamBound, token::Add>,
     pub(crate) extra_items: Vec<TraitItem>,
     pub(crate) datatype: StructuralDataType<'a>,
+    pub(crate) options: StructuralAliasOptions<'a>,
 }
 
 #[derive(Debug)]
@@ -123,150 +128,6 @@ impl<'a> Parse for StructuralAliasesHack {
     }
 }
 
-impl<'a> StructuralAliases<'a> {
-    fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
-        let mut list = Vec::<StructuralAlias>::new();
-        while !input.is_empty() {
-            list.push(StructuralAlias::parse(arenas, input)?);
-        }
-        Ok(Self { list })
-    }
-}
-
-impl<'a> StructuralAlias<'a> {
-    fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
-        let mut extra_items = Vec::<TraitItem>::new();
-        let attrs = input.call(Attribute::parse_outer)?;
-        let vis: Visibility = input.parse()?;
-
-        let trait_token: Token![trait] = input.parse()?;
-
-        let ident = arenas.alloc(input.parse::<Ident>()?);
-
-        let mut names_mod = NamedModuleAndTokens::new(ident);
-        let mut generics: Generics = input.parse()?;
-        let colon_token: Option<Token![:]> = input.parse()?;
-
-        let mut supertraits = Punctuated::new();
-        if colon_token.is_some() {
-            loop {
-                supertraits.push_value(input.parse()?);
-                if input.peek(Token![where]) || input.peek(token::Brace) {
-                    break;
-                }
-                supertraits.push_punct(input.parse()?);
-                if input.peek(Token![where]) || input.peek(token::Brace) {
-                    break;
-                }
-            }
-        }
-
-        generics.where_clause = input.parse()?;
-
-        // let equal:Token![=]= input.parse()?;
-
-        let content;
-        let braces = syn::braced!(content in input);
-
-        let datatype =
-            StructuralDataType::parse(&mut names_mod, &mut extra_items, arenas, &content)?;
-
-        let span = trait_token
-            .span
-            .join(braces.span)
-            .unwrap_or(trait_token.span);
-
-        Ok(Self {
-            names_mod,
-            span,
-            attrs,
-            vis,
-            ident,
-            generics,
-            supertraits,
-            extra_items,
-            datatype,
-        })
-    }
-}
-
-impl<'a> StructuralDataType<'a> {
-    fn parse(
-        names_mod: &mut NamedModuleAndTokens,
-        extra_items: &mut Vec<TraitItem>,
-        arenas: &'a Arenas,
-        input: ParseStream,
-    ) -> Result<Self, syn::Error> {
-        let mut variants = Vec::new();
-        let mut fields = Vec::new();
-        loop {
-            if input.is_empty() {
-                break;
-            }
-
-            let forked = input.fork();
-            if let Ok(item) = forked.parse::<TraitItem>() {
-                input.advance_to(&forked);
-                extra_items.push(item);
-                continue;
-            }
-
-            let access = input.parse::<Access>()?;
-            if input.peek(syn::Ident) && input.peek2(token::Brace) {
-                let ident = arenas.alloc(input.parse::<Ident>()?);
-                let ident_index = names_mod.push_str(ident.into());
-
-                let content;
-                let _ = syn::braced!(content in input);
-                input.parse::<Token![,]>()?;
-
-                variants.push(StructuralVariant::parse(
-                    names_mod,
-                    access,
-                    ident,
-                    ident_index,
-                    arenas,
-                    &content,
-                )?);
-            } else {
-                fields.push(StructuralField::parse_with_access(
-                    names_mod, access, arenas, input,
-                )?);
-            }
-        }
-        Ok(Self { variants, fields })
-    }
-}
-
-impl<'a> StructuralVariant<'a> {
-    fn parse(
-        names_mod: &mut NamedModuleAndTokens,
-        access: Access,
-        name: &'a Ident,
-        alias_index: NamesModuleIndex,
-        arenas: &'a Arenas,
-        input: ParseStream,
-    ) -> Result<Self, syn::Error> {
-        let mut fields = Vec::<StructuralField<'a>>::new();
-        while !input.is_empty() {
-            let nested_access = Access::parse_optional(input)?;
-
-            fields.push(StructuralField::parse_with_access(
-                names_mod,
-                nested_access.unwrap_or(access),
-                arenas,
-                input,
-            )?);
-        }
-        Ok(Self {
-            name,
-            alias_index,
-            fields,
-            replace_bounds: None,
-        })
-    }
-}
-
 macro_rules! declare_structural_field_methods {
     () => (
         pub(crate) fn access_and_optionality(&self)-> AccessAndIsOptional {
@@ -274,53 +135,11 @@ macro_rules! declare_structural_field_methods {
         }
     )
 }
-
 impl<'a> TinyStructuralField<'a> {
-    pub(crate) fn parse(
-        access: Access,
-        arenas: &'a Arenas,
-        input: ParseStream,
-    ) -> Result<Self, syn::Error> {
-        let ident = IdentOrIndexRef::parse(arenas, input)?;
-        let _: Token![:] = input.parse()?;
-        let inner_optionality = input.parse::<IsOptional>()?;
-        let ty = FieldType::parse(arenas, input)?;
-
-        Ok(Self {
-            access,
-            ident,
-            inner_optionality,
-            ty,
-        })
-    }
-
     declare_structural_field_methods! {}
 }
 
 impl<'a> StructuralField<'a> {
-    fn parse_with_access(
-        names_mod: &mut NamedModuleAndTokens,
-        access: Access,
-        arenas: &'a Arenas,
-        input: ParseStream,
-    ) -> Result<Self, syn::Error> {
-        let TinyStructuralField {
-            access: _,
-            ident,
-            inner_optionality,
-            ty,
-        } = TinyStructuralField::parse(access, arenas, input)?;
-        input.parse::<Token![,]>()?;
-
-        Ok(Self {
-            access,
-            ident,
-            alias_index: names_mod.push_str(ident),
-            inner_optionality,
-            ty,
-        })
-    }
-
     declare_structural_field_methods! {}
 }
 
@@ -392,34 +211,6 @@ impl<'a> TinyStructuralField<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<'a> FieldType<'a> {
-    fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
-        const ASSOC_TY_BOUNDS: bool = cfg!(feature = "impl_fields");
-
-        use syn::Type;
-
-        match input.parse::<syn::Type>()? {
-            Type::ImplTrait(x) => {
-                if ASSOC_TY_BOUNDS {
-                    Ok(FieldType::Impl(arenas.alloc(x.bounds)))
-                } else {
-                    use syn::spanned::Spanned;
-                    Err(syn::Error::new(
-                        x.span(),
-                        "\
-                         Cannot use an `impl Trait` field without enabling the \
-                         \"nightly_impl_fields\" or \"impl_fields\" feature.\
-                         ",
-                    ))
-                }
-            }
-            x => Ok(FieldType::Ty(arenas.alloc(x))),
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 #[cfg(test)]
 pub(crate) fn derive_from_str(saf: &str) -> Result<TokenStream2, syn::Error> {
     syn::parse_str::<StructuralAliasesHack>(saf).map(|x| x.tokens)
@@ -438,7 +229,7 @@ pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStre
          generated by the `structural_alias` macro.\n\n"
     );
     for saf in list {
-        let sap = StructuralAliasParams {
+        let tokens = StructuralAliasParams {
             span: saf.span,
             attrs: &saf.attrs,
             docs: trait_docs.clone(),
@@ -449,11 +240,16 @@ pub(crate) fn macro_impl<'a>(aliases: StructuralAliases<'a>) -> Result<TokenStre
             names_mod: &saf.names_mod,
             trait_items: &saf.extra_items,
             variant_trait: None,
-            enum_exhaustiveness: Exhaustiveness::Nonexhaustive,
+            enum_exhaustiveness: saf.options.enum_exhaustiveness,
             datatype: &saf.datatype,
         }
         .tokens()?;
-        out.append_all(sap);
+
+        if saf.options.debug_print {
+            println!("\n\n\n{}\n\n\n", tokens);
+        }
+
+        out.append_all(tokens);
 
         saf.names_mod.to_tokens(&mut out);
     }
@@ -800,6 +596,7 @@ where
                 tokens.append_all(quote_spanned!(span=>
                     #(#attrs)*
                     #vis
+                    #[allow(non_camel_case_types)]
                     trait #exhaus_ident <#decl_generics> :
                         #ident <#ty_generics>+
                         #count_bound
