@@ -2,13 +2,14 @@
 
 The `structural_alias` macro defines a trait alias for multiple field accessors.
 
-# The entire syntax
+# Syntax
 
 ```
 # use structural::structural_alias;
 # pub trait SuperTrait{}
 
 structural_alias!{
+    #[struc( /* attributes detailed in the attributes section */ )]
     pub trait Foo<'a,T:Copy>:SuperTrait
     where
         T:SuperTrait
@@ -21,12 +22,42 @@ structural_alias!{
         # /*
         i:impl Bar,
         # */
-    }
 
-    pub trait Bar{
-        x:u32,
-        y:u32,
-        z:u32,
+        /////////////////////
+        // Variants
+        A{
+            foo:u32,
+            ref bar:u64,
+        },
+
+        ref B(
+            String,
+            mut Vec<()> // The last `,` is optional
+        ),
+
+        mut C(
+            u64,
+            mut move u64,
+        ),
+
+        move D{
+            bar:&'static str
+        },
+
+        mut move E{
+            baz:&'static str,
+            ref bam:&'static [u8],
+        },
+
+        F,
+
+        /////////////////////
+        // Extension method
+        fn hello(){}
+
+        /////////////////////
+        // Extension constant
+        const FOO:usize=0;
     }
 }
 
@@ -36,8 +67,12 @@ structural_alias!{
 Outside of the `{...}` the trait syntax is the same as the
 regular one,with the same meaning.
 
-Inside the `{...}` is a list of fields,
-each of which get turned into supertraits on `Foo`:
+Inside the `{...}` is a list of fields,variants,methods,and constants,
+in any order.
+The fields and variants get turned into supertraits of `Foo`.
+The methods and constants turn into defaulted methods and defaulted constants in `Foo`.
+
+### Fields
 
 - `     a:u32`:
     Corresponds to the `IntoFieldMut<FP!(a),Ty=u32>` trait,
@@ -64,6 +99,62 @@ each of which get turned into supertraits on `Foo`:
     allowing shared,mutable,and by value access to
     a field that implements the Bar trait.<br>
     This requires the `nightly_impl_fields` or `impl_fields` cargo feature.
+
+### Variants
+
+Variants follow the same pattern as fields regarding access
+(`<none>`/`ref`/`mut`/`move`/`mut move`).
+```ignore
+mut Foo{
+    // This is equivalent to `mut foo:String`,`mut` is inherited from the variant.
+    // Corresponds to `GetVariantFieldMut<FP!(foo),Ty= String>`
+    foo:String,
+    // Corresponds to `GetVariantField<FP!(bar),Ty= u32>`
+    ref bar:u32,
+    // Corresponds to `IntoVariantFieldMut<FP!(baz),Ty= Vec<u32>>`
+    mut move baz:Vec<u32>,
+},
+
+```
+
+### Functions and constants
+
+You can define defaulted functions and constants.
+
+
+# Attributes
+
+These are attributes for each individual trait declared using this macro.
+
+### `#[struc(debug_print)]`
+
+Causes a compiletime error,printing the generated code for a trait.
+
+### `#[struc(exhaustive_enum)]`
+
+Makes the structural alias require an enum that has the same variants,
+with at least the required fields.
+
+Without this attribute,an enum can also have a superset of the required variants.
+
+### `#[struc(and_exhaustive_enum)]`
+
+Generates an additional trait alias,with this trait as a supertarit,
+also requiring an exhaustive enum as described in the docs
+for [`#[struc(exhaustive_enum)]`](#strucexhaustive_enum).
+
+Variants of the attribute:
+
+- `#[struc(and_exhaustive_enum)]`:
+    The generated trait is named `<the_name_of_this_trait>_Exhaustive`
+
+- `#[struc(and_exhaustive_enum(suffix="ident"))]`:
+    The generated trait is named `<the_name_of_this_trait><suffix_parameter>`
+
+- `#[struc(and_exhaustive_enum(name="ident"))]`
+    Uses the name parameter as the name of the generated trait
+
+Without any attributes,an enum can have a superset of the required variants.
 
 # Supertraits
 
@@ -99,7 +190,11 @@ trait MyTrait:Fields{
 ### Same field names
 
 Structural aliases can have other structural aliases as supertraits,
-even ones with the same fields.
+even ones with the same fields/variants.
+
+An exception is when the structural alias is for exhaustive enums,
+using the `#[struc(*exaustive_enum)]` attributes,
+where subtraits cannot add variants,but can add fields.
 
 In this example:
 
@@ -328,6 +423,83 @@ structural_alias!{
 
 ```
 
+### Exhaustive enums
+
+This also demonstrates how you can define a trait alias for exhaustive enums,
+along with extension methods.
+
+```rust
+
+use std::path::PathBuf;
+# /*
+use dependency::YesWith;
+# */
+
+#[derive(Structural)]
+#[struc(no_trait)]
+enum WasFileFound{
+    Yes(PathBuf,()), //Workaround before removing implicit delegation ot newtype variants.
+    No,
+}
+
+fn find_file(name:&str)->WasFileFound{
+    WasFileFound::Yes( PathBuf::from(name),() )
+}
+
+fn main(){
+    let filename="hello";
+
+    // The `into_yes` method comes from the BooleanEnum trait
+    if let Some(file)= find_file(filename).into_yes() {
+        println!("Found '{}' at this path: {} ",filename,file.display());
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+////                    In a dependency
+///////////////////////////////////////////////////////////////////////////////
+
+use structural::{
+    fp,structural_alias,switch,
+    field_traits::{GetVariantFieldType,IntoVariantField},
+    GetFieldExt,
+    Structural,
+};
+
+structural_alias!{
+    #[struc(exhaustive_enum)]
+    pub trait BooleanEnum{
+        Yes{},
+        No{},
+
+        fn is_yes(&self)->bool{
+            switch!{ref self;
+                Yes=>true,
+                _=>false
+            }
+        }
+
+        fn is_no(&self)->bool{
+            switch!{ref self;
+                No=>true,
+                _=>false
+            }
+        }
+    }
+
+    pub trait YesWith<T>: BooleanEnum {
+        Yes(T),
+
+        fn into_yes(self)->Option<T>
+        where
+            Self: Sized
+        {
+            self.into_field(fp!(::Yes.0))
+        }
+    }
+}
+```
 
 */
 #[macro_export]
