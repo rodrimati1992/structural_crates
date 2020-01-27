@@ -1,7 +1,7 @@
 /// Implements enum variant+field getter(s)
 #[doc(hidden)]
 #[macro_export]
-macro_rules! impl_getter_enum{
+macro_rules! _private_impl_getter_enum{
     ////////////////////////////////////////////////////////////////////////////
     ////            All the ways to implement GetFieldImpl
     ////////////////////////////////////////////////////////////////////////////
@@ -618,7 +618,7 @@ macro_rules! impl_getter_enum{
 
         delegate_to( GetFieldImpl, $($field_params:tt)* )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -629,12 +629,12 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( GetFieldMutImpl, $($field_params:tt)* )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldMutImpl
             shared $shared
             $kind($($field_params)*)
@@ -645,12 +645,12 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( IntoFieldImpl, $($field_params:tt)* )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             IntoFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -661,17 +661,17 @@ macro_rules! impl_getter_enum{
         kind=$kind:tt
         delegate_to( IntoFieldMut, $($field_params:tt)* )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldImpl
             shared $shared
             $kind($($field_params)*)
         }
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             GetFieldMutImpl
             shared $shared
             $kind($($field_params)*)
         }
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             IntoFieldImpl
             shared $shared
             $kind($($field_params)*)
@@ -699,7 +699,7 @@ macro_rules! impl_getter_enum{
             $(,$field_name_param:ty)? $( , )*
         )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             $trait_
             shared $shared
             newtype(
@@ -722,7 +722,7 @@ macro_rules! impl_getter_enum{
             )
         )
     )=>{
-        $crate::impl_getter_enum!{
+        $crate::_private_impl_getter_enum!{
             shared $shared
             kind=newtype_as_field
             delegate_to(
@@ -741,7 +741,7 @@ macro_rules! impl_getter_enum{
         fields( $($fields:tt)* )
     )=>{
         $(
-            $crate::impl_getter_enum!{
+            $crate::_private_impl_getter_enum!{
                 shared $shared
                 kind=regular
                 delegate_to $fields
@@ -752,7 +752,7 @@ macro_rules! impl_getter_enum{
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! delegate_to_variant_proxy {
+macro_rules! private_delegate_to_variant_proxy {
     (is_variant;
         shared(
             impl[$($typarams:tt)*] $self_:ty
@@ -927,7 +927,7 @@ macro_rules! delegate_to_variant_proxy {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! impl_getters_for_derive_enum{
+macro_rules! _private_impl_getters_for_derive_enum{
     (
         impl $typarams:tt $self_:ty
         where $where_preds:tt
@@ -944,7 +944,7 @@ macro_rules! impl_getters_for_derive_enum{
 
     )=>{
 
-        $crate::impl_structural!{
+        $crate::_private_impl_structural!{
             impl $typarams Structural for $self_
             where $where_preds
             {
@@ -953,7 +953,7 @@ macro_rules! impl_getters_for_derive_enum{
         }
 
         $(
-            $crate::impl_getter_enum!{
+            $crate::_private_impl_getter_enum!{
                 shared(
                     impl $typarams $self_
                     where $where_preds
@@ -968,7 +968,7 @@ macro_rules! impl_getters_for_derive_enum{
                 )
             }
 
-            $crate::delegate_to_variant_proxy!{
+            $crate::private_delegate_to_variant_proxy!{
                 is_variant;
                 shared(
                     impl $typarams $self_
@@ -982,7 +982,7 @@ macro_rules! impl_getters_for_derive_enum{
 
         )*
 
-        $crate::delegate_to_variant_proxy!{
+        $crate::private_delegate_to_variant_proxy!{
             shared(
                 impl $typarams $self_
                 where $where_preds
@@ -991,7 +991,7 @@ macro_rules! impl_getters_for_derive_enum{
             )
         }
 
-        $crate::impl_getters_for_derive_enum!{
+        $crate::_private_impl_getters_for_derive_enum!{
             @inner
             impl $typarams $self_
             where $where_preds

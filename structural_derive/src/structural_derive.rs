@@ -354,7 +354,7 @@ fn deriving_structural<'a>(
                 .map(|f| names_module.alias_name(f.alias_index));
 
             (
-                quote!(impl_getters_for_derive_struct),
+                quote!(_private_impl_getters_for_derive_struct),
                 quote!(),
                 quote!(
                     #((
@@ -424,7 +424,7 @@ fn deriving_structural<'a>(
             let enum_ = ds.name;
 
             (
-                quote!(impl_getters_for_derive_enum),
+                quote!(_private_impl_getters_for_derive_enum),
                 quote!(
                     #[doc=#variant_count_docs]
                     #vis type #variant_count_type=#variant_count;

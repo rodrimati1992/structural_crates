@@ -25,7 +25,7 @@ mod switch;
 /// Implements an infallible getter
 #[doc(hidden)]
 #[macro_export]
-macro_rules! impl_getter{
+macro_rules! _private_impl_getter{
     (
         $(unsafe)?
         impl[$($typarams:tt)*]
@@ -59,7 +59,7 @@ macro_rules! impl_getter{
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
-        $crate::impl_getter!{
+        $crate::_private_impl_getter!{
             impl[$($typarams)*] GetFieldImpl<$field_name:$field_ty,$optionality,$name_param>
             for $self_
             $( where[$($where_)*] )?
@@ -91,7 +91,7 @@ macro_rules! impl_getter{
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
-        $crate::impl_getter!{
+        $crate::_private_impl_getter!{
             impl[$($typarams)*]
                 GetFieldImpl<$field_name:$field_ty,$optionality,$name_param>
             for $self_
@@ -117,7 +117,7 @@ macro_rules! impl_getter{
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
-        $crate::impl_getter!{
+        $crate::_private_impl_getter!{
             unsafe impl[$($typarams)*]
                 GetFieldMutImpl<$field_name:$field_ty,$optionality,$name_param>
             for $self_
@@ -147,6 +147,10 @@ macro_rules! impl_getter{
 /// parameterized by `<VariantField<V,F>,UncheckedVariantField<V,F>>`
 /// to the `delegated_to` type,
 /// with the option to return `OptionalField` when the delegated to type does not.
+///
+/// Example:in `impl<V,F> GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
+/// it must gelegate to the `GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>>`
+/// impl of the delegated to type.
 #[macro_export]
 macro_rules! unsafe_delegate_variant_field {
     (
@@ -381,7 +385,7 @@ macro_rules! optionality_from {
 // Implements the Structural traits
 #[doc(hidden)]
 #[macro_export]
-macro_rules! impl_structural{
+macro_rules! _private_impl_structural{
     (
         impl[$($typarams:tt)*] Structural for $self_:ty
         where[$($where_:tt)*]
@@ -449,7 +453,7 @@ macro_rules! impl_structural{
 // Implements the Structural and accessor traits for a struct
 #[doc(hidden)]
 #[macro_export]
-macro_rules! impl_getters_for_derive_struct{
+macro_rules! _private_impl_getters_for_derive_struct{
     (
         impl $typarams:tt $self_:ty
         where $where_preds:tt
@@ -465,7 +469,7 @@ macro_rules! impl_getters_for_derive_struct{
         }
     )=>{
 
-        $crate::impl_structural!{
+        $crate::_private_impl_structural!{
             impl $typarams Structural for $self_
             where $where_preds
             {
@@ -482,7 +486,7 @@ macro_rules! impl_getters_for_derive_struct{
         }
 
         $(
-            $crate::impl_getter!{
+            $crate::_private_impl_getter!{
                 unsafe impl $typarams
                     $getter_trait<$field_name : $field_ty,$optionality,$name_param_ty>
                 for $self_

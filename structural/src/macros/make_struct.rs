@@ -127,7 +127,7 @@ macro_rules! make_struct {
                     )*
                 }
 
-                $crate::impl_getters_for_derive_struct!{
+                $crate::_private_impl_getters_for_derive_struct!{
                     impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*>
                     where[]
                     {
