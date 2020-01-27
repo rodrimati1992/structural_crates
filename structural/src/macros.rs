@@ -166,7 +166,7 @@ macro_rules! unsafe_delegate_variant_field {
             $crate::pmr::GetVariantFieldImpl<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::GetVariantFieldImpl<_V,_F>
+            $delegating_to: $crate::pmr::GetVariantFieldImpl<_V,_F>,
             $($where_)*
         {}
     };
@@ -185,7 +185,7 @@ macro_rules! unsafe_delegate_variant_field {
             $crate::pmr::GetVariantFieldMutImpl<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::GetVariantFieldMutImpl<_V,_F>
+            $delegating_to: $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
             $($where_)*
         {}
     };
@@ -205,7 +205,7 @@ macro_rules! unsafe_delegate_variant_field {
             $crate::pmr::IntoVariantFieldImpl<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>
+            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>,
             $($where_)*
         {}
     };
@@ -225,7 +225,7 @@ macro_rules! unsafe_delegate_variant_field {
             $crate::pmr::IntoVariantFieldImpl<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>
+            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>,
             $($where_)*
         {}
     };
@@ -495,25 +495,32 @@ macro_rules! impl_getters_for_derive_struct{
 #[cfg(test)]
 macro_rules! assert_equal_bounds {
     (
-        trait $trait_:ident,
+        trait $trait_:ident $([$($trait_params:tt)*])? ,
         ( $($left:tt)* ),
-        ( $($right:tt)* )$(,)*
+        ( $($right:tt)* )$(,)?
+        $( where[ $($where_preds:tt)* ] )?
     ) => (
-        trait $trait_: $($left)* {
+        trait $trait_< $($($trait_params)*)? >: $($left)*
+        where
+            $($($where_preds)*)?
+        {
             const DUMMY:()=();
 
-            fn foo<T>()
+            fn foo<_T>()
             where
-                T: ?Sized+$($left)*;
+                _T: ?Sized+$($left)*,
+                $($($where_preds)*)?;
         }
 
-        impl<_This> $trait_ for _This
+        impl<$($($trait_params)*)? _This> $trait_<$($($trait_params)*)?> for _This
         where
-            _This: ?Sized+$($right)*
+            _This: ?Sized+$($right)*,
+            $($($where_preds)*)?
         {
-            fn foo<T>()
+            fn foo<_T>()
             where
-                T:?Sized+$($right)*
+                _T:?Sized+$($right)*,
+                $($($where_preds)*)?
             {}
         }
 

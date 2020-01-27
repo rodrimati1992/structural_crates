@@ -766,6 +766,7 @@ macro_rules! delegate_to_variant_proxy {
         unsafe impl<$($typarams)*>
             $crate::pmr::IsVariant<$crate::pmr::FieldPath1<$variant_name_str>>
         for $self_
+        where $($where_)*
         {
             #[inline]
             #[allow(unreachable_patterns)]

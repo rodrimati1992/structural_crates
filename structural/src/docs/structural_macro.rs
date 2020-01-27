@@ -22,6 +22,10 @@ All of these can be overriden.
 
 Prints the output of the derive macro by panicking.
 
+### `#[struc(bound="T:Trait")]`
+
+Adds a bound to every accessor trait impl.
+
 ### `#[struc(no_trait)]`
 
 Disables the generation of the `<deriving_type>_SI` trait.

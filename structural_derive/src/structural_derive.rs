@@ -298,6 +298,7 @@ fn deriving_structural<'a>(
             vis: vis,
             ident: &trait_ident,
             generics: ds.generics,
+            extra_where_preds: &options.bounds,
             supertraits: &Punctuated::new(),
             names_mod: &names_module,
             trait_items: &[],
@@ -323,7 +324,7 @@ fn deriving_structural<'a>(
 
     let mut config_variants = options.variants.iter();
 
-    match struct_or_enum {
+    let tuple = match struct_or_enum {
         StructOrEnum::Struct => {
             let fields = struct_
                 .fields
@@ -352,25 +353,19 @@ fn deriving_structural<'a>(
                 .iter()
                 .map(|f| names_module.alias_name(f.alias_index));
 
-            quote!(
-                #structural_alias_trait
-
-                #names_module
-
-                ::structural::impl_getters_for_derive_struct!{
-                    impl[#impl_generics] #tyname #ty_generics
-                    where[ #(#where_preds,)* ]
-                    {
-                        #((
-                            #getter_trait<
-                                #field_names : #field_tys ,
-                                structural::pmr::FieldPath1<#names_module_path::#alias_names>,
-                                opt=#inner_optionality,
-                                #renamed_field_names,
-                            >
-                        ))*
-                    }
-                }
+            (
+                quote!(impl_getters_for_derive_struct),
+                quote!(),
+                quote!(
+                    #((
+                        #getter_trait<
+                            #field_names : #field_tys ,
+                            structural::pmr::FieldPath1<#names_module_path::#alias_names>,
+                            opt=#inner_optionality,
+                            #renamed_field_names,
+                        >
+                    ))*
+                ),
             )
         }
         StructOrEnum::Enum => {
@@ -413,7 +408,6 @@ fn deriving_structural<'a>(
 
                     let variant_name = variant.name;
                     let variant_str = names_module.alias_name(sdt_variant.alias_index);
-
                     quote!(
                         #variant_name,
                         #names_module_path::#variant_str,
@@ -429,25 +423,39 @@ fn deriving_structural<'a>(
             let variant_count = tident_tokens(ds.variants.len().to_string(), FullPathForChars::Yes);
             let enum_ = ds.name;
 
-            quote!(
-                #structural_alias_trait
-
-                #names_module
-
-                #[doc=#variant_count_docs]
-                #vis type #variant_count_type=#variant_count;
-
-                ::structural::impl_getters_for_derive_enum!{
-                    impl[#impl_generics] #tyname #ty_generics
-                    where[ #(#where_preds,)* ]
-                    {
-                        enum=#enum_
-                        variant_count=#variant_count_type,
-                        #((#variants))*
-                    }
-                }
+            (
+                quote!(impl_getters_for_derive_enum),
+                quote!(
+                    #[doc=#variant_count_docs]
+                    #vis type #variant_count_type=#variant_count;
+                ),
+                quote! {
+                    enum=#enum_
+                    variant_count=#variant_count_type,
+                    #((#variants))*
+                },
             )
         }
-    }
+    };
+
+    let (which_macro, soe_specific_out, soe_specific_in) = tuple;
+    let extra_where_preds = options.bounds.iter();
+
+    quote!(
+        #structural_alias_trait
+
+        #names_module
+
+        #soe_specific_out
+
+        ::structural::#which_macro!{
+            impl[#impl_generics] #tyname #ty_generics
+            where[
+                #(#where_preds,)*
+                #(#extra_where_preds,)*
+            ]
+            {#soe_specific_in}
+        }
+    )
     .piped(Ok)
 }
