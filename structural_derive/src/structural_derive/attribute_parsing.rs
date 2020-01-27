@@ -20,7 +20,7 @@ use quote::ToTokens;
 
 use syn::{
     punctuated::Punctuated, spanned::Spanned, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue,
-    NestedMeta,
+    NestedMeta, WherePredicate,
 };
 
 use std::marker::PhantomData;
@@ -29,6 +29,7 @@ use std::marker::PhantomData;
 pub(crate) struct StructuralOptions<'a> {
     pub(crate) variants: Vec<VariantConfig>,
     pub(crate) fields: FieldMap<FieldConfig>,
+    pub(crate) bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
@@ -43,6 +44,7 @@ impl<'a> StructuralOptions<'a> {
         let StructuralAttrs {
             variants,
             fields,
+            bounds,
             debug_print,
             with_trait_alias,
             implicit_optionality,
@@ -54,6 +56,7 @@ impl<'a> StructuralOptions<'a> {
         Ok(Self {
             variants,
             fields,
+            bounds,
             debug_print,
             with_trait_alias,
             implicit_optionality,
@@ -100,6 +103,7 @@ pub(crate) struct FieldConfig {
 struct StructuralAttrs<'a> {
     variants: Vec<VariantConfig>,
     fields: FieldMap<FieldConfig>,
+    bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
     debug_print: bool,
     with_trait_alias: bool,
@@ -334,6 +338,8 @@ fn parse_sabi_attr<'a>(
                 for (_, fa) in this.fields.iter_mut() {
                     fa.access = access;
                 }
+            } else if ident == "bound" {
+                this.bounds.push(unparsed_lit.parse::<WherePredicate>()?);
             } else {
                 return Err(make_err(path));
             }

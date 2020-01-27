@@ -274,3 +274,163 @@ fn delegate_to_test() {
     assert_eq!(this.clone().into_field(fp!(3)), 13);
     assert_eq!(this.clone().into_field(fp!(4)), 21);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+field_path_aliases! {
+    mod paths{
+        a,b
+    }
+}
+tstr_aliases! {
+    mod strings{
+        A,B,C,a,b,n0=0,
+    }
+}
+
+mod struct_with_constraints {
+    use super::*;
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    // #[struc(debug_print)]
+    pub struct WhereClause0<T>
+    where
+        T: Copy,
+    {
+        pub b: T,
+    }
+
+    assert_equal_bounds! {
+        trait WhereClause0Dummy[T,],
+        (WhereClause0_SI<T>),
+        (IntoFieldMut<paths::b,Ty=T>),
+        where[ T:Copy, ]
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    pub struct Bounds0<T, U: Clone> {
+        pub a: T,
+        pub b: U,
+    }
+
+    assert_equal_bounds! {
+        trait Bounds0Dummy[T,U,],
+        (Bounds0_SI<T,U>),
+        (
+            IntoFieldMut<paths::a,Ty=T>+
+            IntoFieldMut<paths::b,Ty=U>
+        ),
+        where[ U:Clone, ]
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    #[struc(bound = "T:'a")]
+    pub struct Bounds1<'a, T, U: 'a> {
+        pub a: &'a T,
+        pub b: U,
+    }
+
+    assert_equal_bounds! {
+        trait Bounds1Dummy['a,T,U,],
+        (Bounds1_SI<'a,T,U>),
+        (
+            IntoFieldMut<paths::a,Ty=&'a T>+
+            IntoFieldMut<paths::b,Ty=U>
+        ),
+        where[ T:'a,U:'a, ]
+    }
+}
+
+mod struct_delegated_with_constraints {
+    use super::*;
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    pub struct WhereClause0<T>
+    where
+        T: Copy,
+    {
+        #[struc(delegate_to)]
+        pub b: T,
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    pub struct Bounds0<T, U: Clone> {
+        #[struc(delegate_to)]
+        pub a: T,
+        pub b: U,
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    #[struc(bound = "T:'a")]
+    pub struct Bounds1<'a, T, U: 'a> {
+        #[struc(delegate_to)]
+        pub a: T,
+        pub b: U,
+        pub c: &'a (),
+    }
+}
+
+mod enum_with_constraints {
+    use super::*;
+    use crate::field_traits::IntoVariantFieldMut;
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    //#[struc(debug_print)]
+    pub enum WhereClause0<T>
+    where
+        T: Copy,
+    {
+        A(T),
+    }
+
+    assert_equal_bounds! {
+        trait WhereClause0Dummy[T,],
+        (WhereClause0_SI<T>),
+        (IntoVariantFieldMut<strings::A,strings::n0,Ty=T>),
+        where[ T:Copy, ]
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    pub enum Bounds0<T, U: Clone> {
+        A(T),
+        B(U),
+    }
+
+    assert_equal_bounds! {
+        trait Bounds0Dummy[T,U,],
+        (Bounds0_SI<T,U>),
+        (
+            IntoVariantFieldMut<strings::A,strings::n0,Ty=T>+
+            IntoVariantFieldMut<strings::B,strings::n0,Ty=U>
+        ),
+        where[ U:Clone, ]
+    }
+
+    #[allow(dead_code)]
+    #[derive(Structural, Copy, Clone)]
+    #[struc(bound = "T:'a")]
+    pub enum Bounds1<'a, T, U: 'a> {
+        A(T),
+        B(U),
+        C(&'a ()),
+    }
+
+    assert_equal_bounds! {
+        trait Bounds1Dummy['a,T,U,],
+        (Bounds1_SI<'a,T,U>),
+        (
+            IntoVariantFieldMut<strings::A,strings::n0,Ty=T>+
+            IntoVariantFieldMut<strings::B,strings::n0,Ty=U>+
+            IntoVariantFieldMut<strings::C,strings::n0,Ty=&'a ()>+
+        ),
+        where[ T:'a,U:'a, ]
+    }
+}
