@@ -210,6 +210,7 @@ enum EnumDerivedImplicit {
         #[struc(not_optional)]
         d: Option<bool>,
     },
+    #[struc(newtype)]
     B(Option<(u32, u64)>),
     C,
 }
@@ -229,6 +230,7 @@ enum EnumDerivedExplicit {
 
         d: Option<bool>,
     },
+    #[struc(newtype)]
     B(#[struc(optional)] Option<(u32, u64)>),
     C,
 }

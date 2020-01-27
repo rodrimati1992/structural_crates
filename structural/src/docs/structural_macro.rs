@@ -58,16 +58,22 @@ and you will be required to use the `#[struc(optional)]` attribute.
 Replaces (in the generated trait) the bounds for this particular variant with
 the ones in the attribute.
 
-This is most useful for newtype variants (single field tuple variants),
-where you want the generated trait to require the fields of the wrapped type.
+All `@variant` in the bounds will be replaced with the name of the variant,
+
+### `#[struc(newtype)]`
+
+Marks a variant as a newtype variant,
+delegating access to fields in the variant to the single field of the variant.
+
+This attribute can an optional argumen:
+
+- `#[struc(newtype(bounds="Baz_VSI<'a,u8,@variant>"))]:
 
 All `@variant` in the bounds will be replaced with the name of the variant,
 
-Example:`#[struc(replace_bounds = "Foo_VSI<@variant>")]`
-
-Example:`#[struc(replace_bounds = "Bar_VSI<T,U,@variant>")]`
-
-Example:`#[struc(replace_bounds = "Baz_VSI<'a,u8,@variant>")]`
+Example:`#[struc(newtype(bounds = "Foo_VSI<@variant>"))]` <br>
+Example:`#[struc(newtype(bounds = "Bar_VSI<T,U,@variant>"))]` <br>
+Example:`#[struc(newtype(bounds = "Baz_VSI<'a,u8,@variant>"))]` <br>
 
 # Field Attributes
 
@@ -89,6 +95,8 @@ Note that these bounds are only added to the `<deriving_type>_SI` trait.
 [Here is the example for this attribute.](#impl-trait-fields)
 
 ### `#[struc(delegate_to)]`
+
+This can only be used with structs.
 
 Delegates the implementation of the Structural and accessor traits to this field.
 

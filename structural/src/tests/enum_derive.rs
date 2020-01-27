@@ -83,8 +83,12 @@ impl_getters_for_derive_enum! {
 
 #[derive(Structural, Debug, Clone)]
 enum DerivingPair<T, U> {
+    #[struc(newtype)]
     AllCorrect(T),
-    Pair { left: T, right: U },
+    Pair {
+        left: T,
+        right: U,
+    },
     Unit,
 }
 
@@ -168,20 +172,19 @@ fn deriving_pair_accessors() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Structural)]
+#[derive(Structural, Debug)]
 // #[struc(debug_print)]
-enum HuhRB {
-    #[struc(replace_bounds = "WhatRB_VSI< @variant >")]
-    U(WhatRB),
+enum HuhNT {
+    #[struc(newtype(bounds = "WhatNT_VSI< @variant >"))]
+    U(WhatNT),
     V {
         a: &'static str,
         b: u32,
     },
 }
 
-#[derive(Structural)]
-// #[struc(debug_print)]
-struct WhatRB {
+#[derive(Structural, Debug, Clone, PartialEq)]
+struct WhatNT {
     pub a: u64,
     pub b: u32,
     pub c: u16,
@@ -190,13 +193,14 @@ struct WhatRB {
 
 tstr_aliases! {
     mod rb_strs{
-        U,V,a,b,c,d
+        U,V,a,b,c,d,
+        n0="0",n1="1",
     }
 }
 
 assert_equal_bounds! {
-    trait AssertRB,
-    (HuhRB_SI),
+    trait AssertNT,
+    (HuhNT_SI),
     (
           IntoVariantFieldMut<rb_strs::U, rb_strs::a, Ty = u64>
         + IntoVariantFieldMut<rb_strs::U, rb_strs::b, Ty = u32>
@@ -209,8 +213,8 @@ assert_equal_bounds! {
 }
 
 #[test]
-fn test_replace_bounds_trait_object() {
-    fn hi(wha_u: &mut dyn HuhRB_SI, wha_v: &mut dyn HuhRB_SI) {
+fn test_replace_newtype_trait_object() {
+    fn hi(wha_u: &mut dyn HuhNT_SI, wha_v: &mut dyn HuhNT_SI) {
         {
             assert_eq!(wha_u.field_(fp!(::U.a)), Some(&11));
             assert_eq!(wha_u.field_(fp!(::U.b)), Some(&22));
@@ -249,13 +253,80 @@ fn test_replace_bounds_trait_object() {
         }
     }
 
+    let what_nt = WhatNT {
+        a: 11,
+        b: 22,
+        c: 33,
+        d: 44,
+    };
+    let mut this = HuhNT::U(what_nt.clone());
+    assert_eq!(this.field_(fp!(U)), Some(&what_nt));
+
+    hi(&mut this, &mut HuhNT::V { a: "55", b: 66 })
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Structural, Debug)]
+// #[struc(debug_print)]
+enum HuhRB {
+    #[struc(replace_bounds = "WhatRB_VSI< @variant >")]
+    U(u8, u16, u32, u64),
+    V {
+        a: &'static str,
+        b: u32,
+    },
+}
+
+#[derive(Structural, Debug)]
+#[struc(public)]
+struct WhatRB(u8, u16);
+
+assert_equal_bounds! {
+    trait AssertRB,
+    (HuhRB_SI),
+    (
+          IntoVariantFieldMut<rb_strs::U, rb_strs::n0, Ty = u8>
+        + IntoVariantFieldMut<rb_strs::U, rb_strs::n1, Ty = u16>
+        + IntoVariantFieldMut<rb_strs::V, rb_strs::a, Ty = &'static str>
+        + IntoVariantFieldMut<rb_strs::V, rb_strs::b, Ty = u32>
+        + IsStructural
+    ),
+}
+
+#[test]
+fn test_replace_bounds_trait_object() {
+    fn hi(wha_u: &mut dyn HuhRB_SI, wha_v: &mut dyn HuhRB_SI) {
+        {
+            assert_eq!(wha_u.field_(fp!(::U.0)), Some(&11));
+            assert_eq!(wha_u.field_(fp!(::U.1)), Some(&22));
+
+            let proxy = wha_u.field_mut(fp!(::U)).unwrap();
+            assert_eq!(proxy.field_(fp!(0)), &11);
+            assert_eq!(proxy.field_(fp!(1)), &22);
+            assert_eq!(proxy.field_mut(fp!(0)), &mut 11);
+            assert_eq!(proxy.field_mut(fp!(1)), &mut 22);
+
+            assert_eq!(proxy.fields_mut(fp!(0, 1)), (&mut 11, &mut 22));
+        }
+
+        {
+            assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
+            assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
+
+            let proxy = wha_v.field_mut(fp!(::V)).unwrap();
+            assert_eq!(proxy.field_(fp!(a)), &"55");
+            assert_eq!(proxy.field_(fp!(b)), &66);
+
+            assert_eq!(proxy.field_mut(fp!(a)), &"55");
+            assert_eq!(proxy.field_mut(fp!(b)), &66);
+
+            assert_eq!(proxy.fields_mut(fp!(a, b)), (&mut "55", &mut 66));
+        }
+    }
+
     hi(
-        &mut HuhRB::U(WhatRB {
-            a: 11,
-            b: 22,
-            c: 33,
-            d: 44,
-        }),
+        &mut HuhRB::U(11, 22, 33, 44),
         &mut HuhRB::V { a: "55", b: 66 },
     )
 }

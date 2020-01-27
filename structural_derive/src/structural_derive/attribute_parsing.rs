@@ -11,7 +11,7 @@ use as_derive_utils::{
     attribute_parsing::with_nested_meta,
     datastructure::{DataStructure, DataVariant, Field, FieldMap},
     return_spanned_err, return_syn_err, spanned_err,
-    utils::{LinearResult, SynPathExt, SynResultExt},
+    utils::{LinearResult, SynResultExt},
 };
 
 use proc_macro2::Span;
@@ -65,8 +65,14 @@ impl<'a> StructuralOptions<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug, Clone)]
+pub(crate) struct NewtypeConfig {
+    pub(crate) replace_bounds: Option<ReplaceBounds>,
+}
+
 #[derive(Debug, Default, Clone)]
 pub(crate) struct VariantConfig {
+    pub(crate) is_newtype: bool,
     pub(crate) replace_bounds: Option<ReplaceBounds>,
 }
 
@@ -178,7 +184,7 @@ fn parse_attr_list<'a>(
     pctx: ParseContext<'a>,
     list: MetaList,
 ) -> Result<(), syn::Error> {
-    if list.path.equals_str("struc") {
+    if list.path.is_ident("struc") {
         with_nested_meta("struc", list.nested, |attr| {
             parse_sabi_attr(this, pctx, attr).combine_into_err(&mut this.errors);
             Ok(())
@@ -205,15 +211,15 @@ fn parse_sabi_attr<'a>(
                 ..
             }),
         ) => {
-            if path.equals_str("rename") {
+            if path.is_ident("rename") {
                 let renamed = value.parse::<IdentOrIndex>()?;
                 this.fields[field].renamed = Some(renamed);
-            } else if path.equals_str("access") {
+            } else if path.is_ident("access") {
                 let access = value.parse::<Access>()?;
                 let fa = &mut this.fields[field];
                 fa.access = access;
                 fa.is_pub = true;
-            } else if path.equals_str("impl") {
+            } else if path.is_ident("impl") {
                 if !cfg!(feature = "impl_fields") {
                     return_spanned_err! {
                         path,
@@ -233,22 +239,22 @@ fn parse_sabi_attr<'a>(
             }
         }
         (ParseContext::Field { field, .. }, Meta::Path(path)) => {
-            if path.equals_str("public") {
+            if path.is_ident("public") {
                 this.fields[field].is_pub = true;
-            } else if path.equals_str("not_public") || path.equals_str("private") {
+            } else if path.is_ident("not_public") || path.is_ident("private") {
                 this.fields[field].is_pub = false;
-            } else if path.equals_str("optional") {
+            } else if path.is_ident("optional") {
                 this.fields[field].optionality_override = Some(IsOptional::Yes);
-            } else if path.equals_str("not_optional") {
+            } else if path.is_ident("not_optional") {
                 this.fields[field].optionality_override = Some(IsOptional::No);
-            } else if path.equals_str("delegate_to") {
+            } else if path.is_ident("delegate_to") {
                 parse_delegate_to(this, Default::default(), path.span(), field)?;
             } else {
                 return Err(make_err(&path))?;
             }
         }
         (ParseContext::Field { field, .. }, Meta::List(MetaList { path, nested, .. })) => {
-            if path.equals_str("delegate_to") {
+            if path.is_ident("delegate_to") {
                 parse_delegate_to(this, nested, path.span(), field)?;
             } else {
                 return Err(make_err(&path))?;
@@ -262,7 +268,7 @@ fn parse_sabi_attr<'a>(
                 ..
             }),
         ) => {
-            if path.equals_str("replace_bounds") {
+            if path.is_ident("replace_bounds") {
                 if !this.with_trait_alias {
                     return Err(trait_alias_err(&path));
                 }
@@ -275,18 +281,37 @@ fn parse_sabi_attr<'a>(
                 return Err(make_err(&path))?;
             }
         }
+        (ParseContext::Variant { index, .. }, Meta::Path(ref path)) => {
+            if path.is_ident("newtype") {
+                this.variants[index].is_newtype = true;
+            } else {
+                return Err(make_err(&path))?;
+            }
+        }
+        (ParseContext::Variant { index, .. }, Meta::List(list)) => {
+            if list.path.is_ident("newtype") {
+                if !this.with_trait_alias {
+                    return Err(trait_alias_err(&list.path));
+                }
+                let variant_c = &mut this.variants[index];
+                variant_c.is_newtype = true;
+                parse_is_newtype(variant_c, list.nested)?;
+            } else {
+                return Err(make_err(&list.path))?;
+            }
+        }
         (ParseContext::TypeAttr { .. }, Meta::Path(ref path)) => {
-            if path.equals_str("debug_print") {
+            if path.is_ident("debug_print") {
                 this.debug_print = true;
-            } else if path.equals_str("implicit_optionality") {
+            } else if path.is_ident("implicit_optionality") {
                 this.implicit_optionality = true;
-            } else if path.equals_str("no_trait") {
+            } else if path.is_ident("no_trait") {
                 this.with_trait_alias = false;
-            } else if path.equals_str("public") {
+            } else if path.is_ident("public") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;
                 }
-            } else if path.equals_str("not_public") || path.equals_str("private") {
+            } else if path.is_ident("not_public") || path.is_ident("private") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = false;
                 }
@@ -372,4 +397,30 @@ fn parse_delegate_to<'a>(
     this.delegate_to = Some(delegate_to);
 
     Ok(())
+}
+
+fn parse_is_newtype<'a>(
+    this: &mut VariantConfig,
+    list: Punctuated<NestedMeta, syn::Token![,]>,
+) -> Result<(), syn::Error> {
+    with_nested_meta("newtype", list, |attr| {
+        match attr {
+            Meta::NameValue(MetaNameValue {
+                path,
+                lit: Lit::Str(lit),
+                ..
+            }) => {
+                if path.is_ident("bound") || path.is_ident("bounds") {
+                    this.replace_bounds = Some(ReplaceBounds {
+                        bounds: lit.value(),
+                        span: lit.span(),
+                    });
+                } else {
+                    return_spanned_err!(path, "unexpected `#[struc(newtype())]` subattribute")
+                }
+            }
+            _ => return_spanned_err!(attr, "unexpected `#[struc(newtype())]` subattribute"),
+        }
+        Ok(())
+    })
 }
