@@ -51,7 +51,6 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn field_<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<Result<&'a P::Ty, P::Err>>
     where
-        P: IsFieldPath,
         P: RevGetField<'a, Self>,
         Result<&'a P::Ty, P::Err>: NormalizeFields,
     {
@@ -209,7 +208,6 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn field_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<Result<&'a mut P::Ty, P::Err>>
     where
-        P: IsFieldPath,
         P: RevGetFieldMut<'a, Self>,
         Result<&'a mut P::Ty, P::Err>: NormalizeFields,
     {
@@ -289,7 +287,6 @@ pub trait GetFieldExt: IsStructural {
         path: P,
     ) -> NormalizeFieldsOut<RevGetMultiFieldMutOut<'a, P, Self>>
     where
-        P: IsFieldPathSet<PathUniqueness = UniquePaths>,
         P: RevGetMultiFieldMut<'a, Self>,
     {
         path.rev_get_multi_field_mut(self).normalize_fields()
@@ -339,7 +336,6 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: IsFieldPath,
         P: RevIntoField<'a, Self>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
@@ -427,7 +423,6 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn is_variant<P>(&self, _path: P) -> bool
     where
-        P: IsFieldPath,
         Self: IsVariant<P>,
     {
         IsVariant::is_variant_(self, _path)

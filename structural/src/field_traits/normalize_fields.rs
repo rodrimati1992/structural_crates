@@ -71,7 +71,7 @@ macro_rules! normalize_tuple {
 /*
 fn main(){
     let large=8;
-    for x in 0..=12 {
+    for x in 0..=13 {
         let is_large= x > large;
         print!("( ");
         for y in 0..x {
@@ -89,7 +89,7 @@ fn main(){
 */
 
 normalize_tuple! {
-    ()
+    ( )
     ( (C0,0), )
     ( (C0,0), (C1,1), )
     ( (C0,0), (C1,1), (C2,2), )
@@ -114,5 +114,8 @@ normalize_tuple! {
         (C0,0), (C1,1), (C2,2), (C3,3), (C4,4), (C5,5), (C6,6), (C7,7),
         (C8,8), (C9,9), (C10,10), (C11,11),
     )
-
+    (
+        (C0,0), (C1,1), (C2,2), (C3,3), (C4,4), (C5,5), (C6,6), (C7,7),
+        (C8,8), (C9,9), (C10,10), (C11,11), (C12,12),
+    )
 }
