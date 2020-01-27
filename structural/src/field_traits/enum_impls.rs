@@ -113,7 +113,7 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl_getters_for_derive_enum! {
+_private_impl_getters_for_derive_enum! {
     impl[T,E,] Result<T,E>
     where[]
     {

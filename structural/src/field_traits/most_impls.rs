@@ -20,7 +20,7 @@ type End_STR = FP!(e n d);
 
 ///////////////////////////////////////////////////////
 
-impl_getters_for_derive_struct! {
+_private_impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
@@ -29,7 +29,7 @@ impl_getters_for_derive_struct! {
     }
 }
 
-impl_getters_for_derive_struct! {
+_private_impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
@@ -37,7 +37,7 @@ impl_getters_for_derive_struct! {
     }
 }
 
-impl_getters_for_derive_struct! {
+_private_impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
@@ -45,7 +45,7 @@ impl_getters_for_derive_struct! {
     }
 }
 
-impl_getters_for_derive_struct! {
+_private_impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {

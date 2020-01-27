@@ -581,4 +581,5 @@ impl Add for AddableString{
 
 */
 
+pub mod enums;
 pub mod optional_accessors;

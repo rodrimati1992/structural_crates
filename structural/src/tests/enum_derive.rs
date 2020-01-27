@@ -49,7 +49,7 @@ tstr_aliases! {
     }
 }
 
-impl_getters_for_derive_enum! {
+_private_impl_getters_for_derive_enum! {
     impl[T,U,] Pair<T,U>
     where[]
     {

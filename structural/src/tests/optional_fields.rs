@@ -14,7 +14,7 @@ struct StructManual {
     d: Option<bool>,
 }
 
-impl_getters_for_derive_struct! {
+_private_impl_getters_for_derive_struct! {
     impl[] StructManual
     where[]
     {
@@ -168,7 +168,7 @@ enum EnumManual {
     C,
 }
 
-impl_getters_for_derive_enum! {
+_private_impl_getters_for_derive_enum! {
     impl[] EnumManual
     where[]
     {

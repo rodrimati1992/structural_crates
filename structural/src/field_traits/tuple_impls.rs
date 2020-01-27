@@ -11,7 +11,7 @@ macro_rules! impl_tuple {
         ($field:tt,$field_ty:ident,$field_param:ty)
         ($($tuple_param:ident),* $(,)* )
     )=>{
-        impl_getter!{
+        _private_impl_getter!{
             unsafe impl[$($tuple_param),*]
                 IntoFieldMut< $field:$field_ty,nonopt,$field_param >
             for ($($tuple_param,)*)
