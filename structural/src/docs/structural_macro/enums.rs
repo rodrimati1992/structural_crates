@@ -7,7 +7,7 @@
 The `*_SI` and `structural_aliases` generated traits are by default non-exhaustive,
 and so require the default case for the `switch!` macro to evaluate to non-`()`.
 <br>
-The `*_ESI` trait and 
+The `*_ESI` trait (generated for enums by the Structural derive macro) and 
 `structural_aliases` generated traits with `VariantCount` as a supertrait are exhaustive enums,
 which means that they don't require a default case for the `switch!` macro to 
 evaluate to non-`()`.
@@ -16,12 +16,12 @@ be exhaustively matched,otherwise causing a compile-time error.
 
 
 
-To have structural newtype variant,
-you should use the `#[struc(replace_bounds="Newtype_VSI<@variant>")]`  attribute.
+When declaring a newtype variant(a single fieldtuple variant), 
+you often should use the `#[struc(newtype(bounds="Newtype_VSI<@variant>"))]`  attribute.
 Without the attribute the generated trait will require the exact wrapped type.
-With the attribute,any type with at least the fields of the wrapped type could be used.
+With the attribute,any type that satisfy the bounds can be used.
 <br>
-ie:`Bar::Foo((0,1))` would be compatible with `Baz::Foo([0,1])` if the 
+ie:`Bar::Foo((0,1))` would be  compatible with `Baz::Foo([0,1])` if the 
 `#[struc(replace_bounds="ArrayVariant2<@variant,u64>")` attribute was used on the 
 `Foo` variant in both types.
 
@@ -29,8 +29,10 @@ ie:`Bar::Foo((0,1))` would be compatible with `Baz::Foo([0,1])` if the
 
 The Structural derive macro generates these items for enums:
 
-- Option-returning variant accessor impls for newtype variants (single field tuple variants),
-(accessed with `fp!(VariantName)`)for accessing the single field of the variant.
+- Option-returning variant accessor impls for newtype variants
+(variants which have the `#[struc(newtype)]` attribute),
+(accessed with `fp!(VariantName)`)for accessing the single field of the variant,
+this is not included as a bound in the `*_SI` and `*_ESI` traits generated for the enum.
 
 - Option-returning variant accessor impls for the every variant
 (accessed with `fp!(::VariantName)`) which return the VariantProxy type.
@@ -43,12 +45,13 @@ to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - A `<DerivingType>_SI` trait,aliasing the traits implemented by the enum.
 <br>
-If `#[struc(replace_bounds="Foo")]` is used on a variant,
+If `#[struc(newtype(bounds="Foo"))]`  is used on a variant,
 then the bound for the accessor of the newtype variant 
 (accessed with `fp!(VariantName)`)
 is replaced with the bounds passed to the attribute.
 
-VariantProxy has accessors impls for all the fields of the variant that it wraps
+`VariantProxy<Enum,FP!(NameOfVariant)>`
+has accessors impls for all the fields of the variant that it wraps
 (accessed with `fp!(field_name)`),
 those accessors are only optional if the field is marked as optional.
 
@@ -103,7 +106,7 @@ enum Foo{
     // This attribute allows tuple variants with at least `0` and `1` fields
     // to be used with the generated `Foo_SI` structural alias.
     // ie:`Bam(u64,u64)`,`Bam([u64;8])`,`Bam((u64,u64,String,Vec<u64>))`
-    #[struc(replace_bounds="TupleVariant2<@variant,u64,u64>")]
+    #[struc(newtype("TupleVariant2<@variant,u64,u64>"))]
     Bam((u64,u64))
 }
 
@@ -116,7 +119,7 @@ enum Boom{
     Bar{
         ignored:u64,
     },
-    #[struc(replace_bounds="Baz_VSI<@variant>")]
+    #[struc(newtype(bounds="Baz_VSI<@variant>"))]
     Baz(Baz),
     Bam(u64,u64),
     Pow(u64),

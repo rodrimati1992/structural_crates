@@ -12,7 +12,7 @@ use crate::{
 };
 
 use as_derive_utils::{
-    datastructure::{DataStructure, DataVariant, Field, FieldMap, Struct, StructKind},
+    datastructure::{DataStructure, DataVariant, Field, FieldMap, Struct},
     gen_params_in::{GenParamsIn, InWhat},
     return_syn_err,
 };
@@ -321,6 +321,8 @@ fn deriving_structural<'a>(
 
     let names_module_path = &names_module.names_module;
 
+    let mut config_variants = options.variants.iter();
+
     match struct_or_enum {
         StructOrEnum::Struct => {
             let fields = struct_
@@ -383,10 +385,12 @@ fn deriving_structural<'a>(
                         .filter(|&f| config_fields[f].is_pub)
                         .collect::<Vec<&Field<'_>>>();
 
-                    let variant_kind = match (variant.kind, variant.fields.len()) {
-                        (StructKind::Tuple, 0) => quote!(unit),
-                        (StructKind::Tuple, 1) => quote!(newtype),
-                        _ => quote! { regular },
+                    let config_v = config_variants.next().unwrap();
+
+                    let variant_kind = if config_v.is_newtype {
+                        quote!(newtype)
+                    } else {
+                        quote!(regular)
                     };
 
                     let field_tokens =
