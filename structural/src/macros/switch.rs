@@ -701,8 +701,9 @@ macro_rules! switch_inn{
         $(#$attr)?
         let $proxy_=unsafe{
             use $crate::pmr::_Structural_BorrowSelf;
-            $crate::pmr::VariantProxy::<_,_switch_fp_::v::$variant>::from_ref(
-                $self_._structural_borrow_self()
+            $crate::pmr::VariantProxy::from_ref(
+                $self_._structural_borrow_self(),
+                _switch_fp_::v::$variant::NEW,
             )
         };
     };
@@ -710,8 +711,9 @@ macro_rules! switch_inn{
         $(#$attr)?
         let $proxy_=unsafe{
             use $crate::pmr::_Structural_BorrowSelf;
-            $crate::pmr::VariantProxy::<_,_switch_fp_::v::$variant>::from_mut(
-                $self_._structural_borrow_self_mut()
+            $crate::pmr::VariantProxy::from_mut(
+                $self_._structural_borrow_self_mut(),
+                _switch_fp_::v::$variant::NEW,
             )
         };
     };
@@ -719,8 +721,9 @@ macro_rules! switch_inn{
         $(#$attr)?
         #[allow(unused_mut)]
         let mut $proxy_=unsafe{
-            $crate::pmr::VariantProxy::<_,_switch_fp_::v::$variant>::new(
-                $self_
+            $crate::pmr::VariantProxy::new(
+                $self_,
+                _switch_fp_::v::$variant::NEW,
             )
         };
     };
