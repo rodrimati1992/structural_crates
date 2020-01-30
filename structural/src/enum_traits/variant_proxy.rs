@@ -17,12 +17,55 @@ use std_::{
 
 /// Wraps an enum,guaranteeing that it's a particular variant.
 ///
+/// These are 3 ways to construct a VariantProxy:
+///
+/// - Safe: Calling GetFieldExt methods with `fp!(::VariantName)` as an argument,
+/// which returns an `Option<VariantProxy<Self,FP!(VariantName)>>`
+/// (reference methods return a reference to a VariantProxy).
+///
+/// - Safe: Calling an EnumExt method with `fp!(VariantName)` as an argument
+///
+/// - Unsafe: Calling a VariantProxy constructor function.
+///
 /// # Generic parameters
 ///
 /// `T` is the enum this wraps.
 ///
 /// `V` is the name of the wrapped variant (example type:`FP!(Bar)`).
 ///
+///
+/// # Example
+///
+/// ```
+/// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
+/// use structural::enum_traits::VariantProxy;
+///
+/// #[derive(Debug,PartialEq,Structural,Copy,Clone)]
+/// #[struc(no_trait)]
+/// enum Foo{
+///     Bar(u32,&'static str),
+///     Baz(u32),
+/// }
+///
+/// field_path_aliases!{
+///     mod paths{ Bar,field_0=0, field_1=1 }
+/// }
+///
+/// let this=Foo::Bar(0,"hello");
+/// let mut proxy: VariantProxy<Foo, paths::Bar>= unsafe{
+///     VariantProxy::new(this, paths::Bar) 
+/// };
+///
+/// assert_eq!( proxy.field_(paths::field_0), &0);
+/// assert_eq!( proxy.field_(paths::field_1), &"hello");
+///
+/// assert_eq!( proxy.field_mut(paths::field_0), &mut 0);
+/// assert_eq!( proxy.field_mut(paths::field_1), &mut "hello");
+///
+/// assert_eq!( proxy.into_field(paths::field_0), 0);
+/// assert_eq!( proxy.into_field(paths::field_1), "hello");
+///
+/// ```
 #[derive(Copy, Clone)]
 pub struct VariantProxy<T: ?Sized, V> {
     _marker: PhantomData<V>,
@@ -35,8 +78,33 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(u64),
+    /// }
+    ///
+    /// field_path_aliases!{
+    ///     mod paths{ Bar }
+    /// }
+    ///
+    /// let proxy: VariantProxy<Foo, paths::Bar>= unsafe{
+    ///     VariantProxy::new(Foo::Bar(0), paths::Bar) 
+    /// };
+    ///
+    /// assert_eq!( proxy.into_field(fp!(0)), 0 );
+    ///
+    /// ```
     #[inline(always)]
-    pub const unsafe fn new(value: T) -> Self
+    pub const unsafe fn new(value: T, _: FieldPath1<V>) -> Self
     where
         T: Sized,
     {
@@ -51,10 +119,39 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(&'static str),
+    /// }
+    ///
+    /// field_path_aliases!{
+    ///     mod paths{ Baz }
+    /// }
+    ///
+    /// let this=Box::new(Foo::Baz("hello"));
+    /// let proxy: VariantProxy<Box<Foo>, paths::Baz>= unsafe{
+    ///     VariantProxy::from_box(this, paths::Baz) 
+    /// };
+    ///
+    /// assert_eq!( proxy.into_field(fp!(0)), "hello" );
+    ///
+    /// ```
     #[inline(always)]
     #[cfg(feature = "alloc")]
-    pub unsafe fn from_box(value: Box<T>) -> VariantProxy<Box<T>, FieldPath1<V>> {
-        VariantProxy::new(value)
+    pub unsafe fn from_box(
+        value: Box<T>,
+        vari: FieldPath1<V>,
+    ) -> VariantProxy<Box<T>, FieldPath1<V>> {
+        VariantProxy::new(value, vari)
     }
 
     /// Constructs this VariantProxy from a reference to an enum.
@@ -62,8 +159,31 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32,bool),
+    ///     Baz(u32),
+    /// }
+    /// 
+    /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
+    /// let proxy: &VariantProxy<Foo, FP!(B a r)>= unsafe{
+    ///     VariantProxy::from_ref(&Foo::Bar(99,false), fp!(Bar)) 
+    /// };
+    ///
+    /// assert_eq!( proxy.field_(fp!(0)), &99 );
+    /// assert_eq!( proxy.field_(fp!(1)), &false );
+    ///
+    /// ```
     #[inline(always)]
-    pub unsafe fn from_ref(reference: &T) -> &Self {
+    pub unsafe fn from_ref(reference: &T, _: FieldPath1<V>) -> &Self {
         &*(reference as *const T as *const VariantProxy<T, FieldPath1<V>>)
     }
 
@@ -72,9 +192,38 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Safety
+    ///
+    /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(Option<usize>,Vec<String>),
+    /// }
+    /// 
+    /// let mut this=Foo::Baz(Some(1),vec![]);
+    ///
+    /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
+    /// let proxy: &mut VariantProxy<Foo, FP!(B a z)>= unsafe{
+    ///     VariantProxy::from_mut(&mut this, fp!(Baz)) 
+    /// };
+    ///
+    /// assert_eq!( proxy.field_mut(fp!(0)), &mut Some(1) );
+    /// assert_eq!( proxy.field_mut(fp!(1)), &mut Vec::<String>::new() );
+    ///
+    /// ```
     #[inline(always)]
-    pub unsafe fn from_mut(reference: &mut T) -> &mut Self {
-        &mut *Self::from_raw_mut(reference)
+    pub unsafe fn from_mut(reference: &mut T, vari: FieldPath1<V>) -> &mut Self {
+        &mut *Self::from_raw_mut(reference, vari)
     }
 
     /// Constructs this VariantProxy from a raw pointer to the enum.
@@ -82,14 +231,69 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// # Safety
     ///
     /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Safety
+    ///
+    /// `V` must be the name of the wrapped enum variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// use std::cmp::Ordering;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(Ordering,&'static [u8]),
+    /// }
+    /// 
+    /// let mut this=Foo::Baz( Ordering::Less, &[0,1,2,3] );
+    ///
+    /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
+    /// let proxy: *mut VariantProxy<Foo, FP!(B a z)>= unsafe{
+    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz)) 
+    /// };
+    ///
+    /// unsafe{
+    ///     assert_eq!( (*proxy).field_mut(fp!(0)), &mut Ordering::Less );
+    ///     assert_eq!( (*proxy).field_mut(fp!(1)), &mut &[0,1,2,3] );
+    /// }
+    ///
+    /// ```
     #[inline(always)]
-    pub const unsafe fn from_raw_mut(ptr: *mut T) -> *mut Self {
+    pub const unsafe fn from_raw_mut(ptr: *mut T, _: FieldPath1<V>) -> *mut Self {
         ptr as *mut VariantProxy<T, FieldPath1<V>>
     }
 
     /// Gets a reference to the wrapped enum.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(u32),
+    /// }
+    /// 
+    /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
+    /// let proxy: VariantProxy<Foo, FP!(B a r)>= unsafe{
+    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar)) 
+    /// };
+    ///
+    /// assert_eq!(proxy.get() , &Foo::Bar(0));
+    ///
+    /// ```
     #[inline(always)]
-    pub fn as_ref(&self) -> &T {
+    pub fn get(&self) -> &T {
         &self.value
     }
 
@@ -100,11 +304,57 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// You must not change the variant of the wrapped enum,
     /// since VariantProxy relies on it being the one that the `V`
     /// generic parmeter specifies
-    pub unsafe fn as_mut(&mut self) -> &mut T {
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(u32),
+    /// }
+    /// 
+    /// let mut this=Foo::Baz(0);
+    ///
+    /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
+    /// let proxy: &mut VariantProxy<Foo, FP!(B a z)>= unsafe{
+    ///     VariantProxy::from_mut(&mut this, fp!(Baz)) 
+    /// };
+    ///
+    /// assert_eq!(unsafe{ proxy.get_mut() }, &mut Foo::Baz(0));
+    ///
+    /// ```
+    pub unsafe fn get_mut(&mut self) -> &mut T {
         &mut self.value
     }
 
     /// Unwraps this VariantProxy into the enum it wraps.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(u32),
+    /// }
+    /// 
+    /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
+    /// let proxy: VariantProxy<Foo, FP!(B a r)>= unsafe{
+    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar)) 
+    /// };
+    ///
+    /// assert_eq!(proxy.into_inner() , Foo::Bar(0));
+    ///
+    /// ```
     pub fn into_inner(self) -> T
     where
         T: Sized,
@@ -119,6 +369,30 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// You must not change the variant of the wrapped enum,
     /// because VariantProxy relies on it being the one that the `V`
     /// generic parmaetere specifies
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{fp,FP,GetFieldExt,Structural};
+    /// use structural::enum_traits::VariantProxy;
+    ///
+    /// #[derive(Debug,PartialEq,Structural)]
+    /// #[struc(no_trait)]
+    /// enum Foo{
+    ///     Bar(u32),
+    ///     Baz(u32),
+    /// }
+    /// 
+    /// let mut this=Foo::Baz(0);
+    ///
+    /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
+    /// let proxy: *mut VariantProxy<Foo, FP!(B a z)>= unsafe{
+    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz)) 
+    /// };
+    ///
+    /// assert_eq!(unsafe{  &mut *VariantProxy::as_raw_mut(proxy) }, &mut Foo::Baz(0));
+    ///
+    /// ```
     pub unsafe fn as_raw_mut(this: *mut Self) -> *mut T {
         this as *mut T
     }

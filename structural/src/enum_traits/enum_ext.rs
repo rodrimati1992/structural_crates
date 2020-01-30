@@ -16,7 +16,7 @@ pub trait EnumExt {
         Self: IsVariant<FieldPath1<V>>,
     {
         if IsVariant::is_variant_(self, vari) {
-            unsafe { Ok(VariantProxy::from_ref(self)) }
+            unsafe { Ok(VariantProxy::from_ref(self, vari)) }
         } else {
             Err(self)
         }
@@ -31,7 +31,7 @@ pub trait EnumExt {
         Self: IsVariant<FieldPath1<V>>,
     {
         if IsVariant::is_variant_(&*self, vari) {
-            unsafe { Ok(VariantProxy::from_mut(self)) }
+            unsafe { Ok(VariantProxy::from_mut(self, vari)) }
         } else {
             Err(self)
         }
@@ -46,7 +46,7 @@ pub trait EnumExt {
         Self: IsVariant<FieldPath1<V>>,
     {
         if IsVariant::is_variant_(&*this, vari) {
-            Ok(VariantProxy::from_raw_mut(this))
+            Ok(VariantProxy::from_raw_mut(this, vari))
         } else {
             Err(this)
         }
@@ -58,7 +58,7 @@ pub trait EnumExt {
         Self: IsVariant<FieldPath1<V>> + Sized,
     {
         if IsVariant::is_variant_(&self, vari) {
-            unsafe { Ok(VariantProxy::new(self)) }
+            unsafe { Ok(VariantProxy::new(self, vari)) }
         } else {
             Err(self)
         }
@@ -74,7 +74,7 @@ pub trait EnumExt {
         Self: IsVariant<FieldPath1<V>>,
     {
         if IsVariant::is_variant_(&*self, vari) {
-            unsafe { Ok(VariantProxy::from_box(self)) }
+            unsafe { Ok(VariantProxy::from_box(self, vari)) }
         } else {
             Err(self)
         }
