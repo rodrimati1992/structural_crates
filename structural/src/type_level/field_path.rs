@@ -23,8 +23,24 @@ use crate::type_level::collection_traits::{
 #[cfg(test)]
 mod tests;
 
+
 mod to_usize;
 
+////////////////////////////////////////////////////////////////////////////////
+
+pub mod aliases{
+    field_path_aliases!{
+        index_0=0,
+        index_1=1,
+        index_2=2,
+        index_3=3,
+        index_4=4,
+        index_5=5,
+        index_6=6,
+        index_7=7,
+        index_8=8,
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 mod sealed {
