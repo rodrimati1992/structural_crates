@@ -124,16 +124,35 @@ macro_rules! fp {
 #[doc(hidden)]
 //#[cfg(not(feature="better_macros"))]
 macro_rules! _delegate_fp {
+    ($ident:ident) => (
+        $crate::_delegate_fp_inner!( [ident] $ident )
+    );
+    (0)=>{ $crate::type_level::field_path::aliases::index_0 };
+    (1)=>{ $crate::type_level::field_path::aliases::index_1 };
+    (2)=>{ $crate::type_level::field_path::aliases::index_2 };
+    (3)=>{ $crate::type_level::field_path::aliases::index_3 };
+    (4)=>{ $crate::type_level::field_path::aliases::index_4 };
+    (5)=>{ $crate::type_level::field_path::aliases::index_5 };
+    (6)=>{ $crate::type_level::field_path::aliases::index_6 };
+    (7)=>{ $crate::type_level::field_path::aliases::index_7 };
+    (8)=>{ $crate::type_level::field_path::aliases::index_8 };
     ($($everything:tt)*) => ({
-        #[allow(unused_imports)]
-        use structural::pmr as __struct_pmr;
+        $crate::_delegate_fp_inner!( [normal] $($everything)* )
+    })
+}
 
-        struct __Dummy;
-
-        impl __Dummy{
-            $crate::old_fp_impl_!{$($everything)*}
+#[macro_export]
+#[doc(hidden)]
+//#[cfg(not(feature="better_macros"))]
+macro_rules! _delegate_fp_inner {
+    ($($everything:tt)*) => ({
+        mod dummy{
+            #[allow(unused_imports)]
+            use structural::pmr as __struct_pmr;
+            $crate::low_fp_impl_!{$($everything)*}
         }
-        __Dummy::VALUE
+
+        dummy::VALUE
     })
 }
 
@@ -226,7 +245,7 @@ macro_rules! _delegate_FP {
 macro_rules! _delegate_FP {
     ($($everything:tt)*) => (
         $crate::_FP_impl_!($($everything)*)
-    )
+    );
 }
 
 /*

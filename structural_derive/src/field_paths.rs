@@ -92,7 +92,7 @@ impl FieldPaths {
         }
     }
 
-    /// Gets a tokenizer that outputs the type-level identifier.
+    /// Gets a the type-level identifier.
     pub(crate) fn type_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {
         if self.is_set() {
             let path = self.paths.iter().map(|x| x.to_token_stream(char_path));
@@ -106,7 +106,7 @@ impl FieldPaths {
         }
     }
 
-    /// Gets a tokenizer that outputs a const item with the type-level identifier.
+    /// Gets a const item with the type-level identifier.
     pub(crate) fn constant_named(
         &self,
         name: &syn::Ident,
@@ -124,6 +124,19 @@ impl FieldPaths {
                 pub const #name:#type_=structural::pmr::MarkerType::MTVAL;
             )
         }
+    }
+    
+    /// Gets a const item with the type-level identifier.
+    pub(crate) fn constant_from_single(
+        const_name: &syn::Ident,
+        value: &IdentOrIndex,
+        char_path: FullPathForChars,
+    ) -> TokenStream2 {
+        let type_=tident_tokens(value.to_string(),char_path);
+        quote!(
+            pub const #const_name: ::structural::pmr::FieldPath1<#type_>=
+                structural::pmr::MarkerType::MTVAL;
+        )
     }
 
     /// Gets a tokenizer that outputs a type-level FieldPath(Set) value.

@@ -1,4 +1,9 @@
-use crate::{field_paths::FieldPaths, tokenizers::FullPathForChars};
+use crate::{
+    field_paths::FieldPaths,
+    ident_or_index::IdentOrIndex,
+    parse_utils::ParseBufferExt,
+    tokenizers::FullPathForChars,
+};
 
 use core_extensions::SelfOps;
 
@@ -6,7 +11,10 @@ use proc_macro2::TokenStream as TokenStream2;
 
 use quote::quote;
 
-use syn::Ident;
+use syn::{
+    parse::{self, ParseStream},
+    Ident,
+};
 
 /// This is the implementation of the FP macro when
 /// the input isn't space separated characters.
@@ -31,30 +39,47 @@ fn test_FP_macro() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) fn old_fp_impl(set: FieldPaths) -> Result<TokenStream2, syn::Error> {
+pub(crate) fn low_fp_impl(params: LowFpParams) -> Result<TokenStream2, syn::Error> {
     let const_name = Ident::new("VALUE", proc_macro2::Span::call_site());
-    let constant = set.constant_named(&const_name, FullPathForChars::StructPmr);
+    let constant = match params {
+        LowFpParams::Ident(ident)=>{
+            FieldPaths::constant_from_single(&const_name,&ident,FullPathForChars::StructPmr)
+        }
+        LowFpParams::FieldPaths(fps)=>{
+            fps.constant_named(&const_name, FullPathForChars::StructPmr)
+        }
+    };
 
     Ok(quote!(
         #constant
     ))
 }
 
-/*
 
-This is for referencing generic parameters within `fp!()`,
-uncomment this if you add a cargo feature to enable proc macros in expression position.
-
-pub(crate) fn new_fp_impl(set: FieldPaths) -> Result<TokenStream2,syn::Error> {
-    let const_name=Ident::new("value",proc_macro2::Span::call_site());
-    let variable=set.variable_named(&const_name,FullPathForChars::StructPmr);
-
-    let pmr_rename=crate::tokenizers::struct_pmr();
-
-    Ok(quote!({
-        use structural::pmr as #pmr_rename;
-        #variable
-        value
-    }))
+mod low_fp_kw{
+    use syn::custom_keyword;
+    custom_keyword!{normal}
+    custom_keyword!{ident}
 }
-*/
+
+pub(crate) enum LowFpParams{
+    Ident(IdentOrIndex),
+    FieldPaths(FieldPaths),
+}
+
+impl parse::Parse for LowFpParams{
+    fn parse(input: ParseStream) -> parse::Result<Self> {
+        let s_tokens;
+        let _=syn::bracketed!(s_tokens in input);
+        if s_tokens.peek_parse(low_fp_kw::ident)?.is_some() {
+
+            input.parse::<IdentOrIndex>()
+                .map(LowFpParams::Ident)
+        } else {
+            s_tokens.peek_parse(low_fp_kw::normal)?;
+            input.parse::<FieldPaths>()
+                .map(LowFpParams::FieldPaths)
+        }
+    }
+}
+

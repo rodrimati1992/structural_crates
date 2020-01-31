@@ -65,8 +65,8 @@ The implementation of the fp macro without enabling proc macros in expression po
 */
 #[proc_macro]
 #[doc(hidden)]
-pub fn old_fp_impl_(input: TokenStream1) -> TokenStream1 {
-    parse_or_compile_err(input, fp_impl::old_fp_impl).into()
+pub fn low_fp_impl_(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input, fp_impl::low_fp_impl).into()
 }
 
 /*

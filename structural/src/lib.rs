@@ -365,7 +365,7 @@ pub use structural_derive::{
     _impl_struct_impl,
     _switch_tstring_aliases,
     _tstring_aliases_impl,
-    old_fp_impl_,
+    low_fp_impl_,
     structural_alias_impl,
 };
 
@@ -455,3 +455,4 @@ pub mod pmr {
 
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
+

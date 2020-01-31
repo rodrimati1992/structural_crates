@@ -4,20 +4,20 @@
 
 # Things to keep in mind
 
-When declaring a newtype variant(a single fieldtuple variant), 
+When declaring a newtype variant(a single fieldtuple variant),
 you often should use the `#[struc(newtype(bounds="Newtype_VSI<@variant>"))]`  attribute.
 Without the attribute the generated trait will require the exact wrapped type.
 With the attribute,any type that satisfy the bounds can be used.
 <br>
-ie:`Bar::Foo((0,1))` would be  compatible with `Baz::Foo([0,1])` if the 
-`#[struc(replace_bounds="ArrayVariant2<@variant,u64>")` attribute was used on the 
+ie:`Bar::Foo((0,1))` would be  compatible with `Baz::Foo([0,1])` if the
+`#[struc(replace_bounds="ArrayVariant2<@variant,u64>")` attribute was used on the
 `Foo` variant in both types.
 <br>
-The `*_VSI` trait is generated for structs that derive `Structural` and 
+The `*_VSI` trait is generated for structs that derive `Structural` and
 don't have a `#[struc(no_trait)]` attribute.
 This trait allows the struct to be used as an enum variant,
 taking the name of the variant as a additional type parameter.<br>
-Example: `Foo_VSI<'a,T,TStr!(Bar)>` is the trait for `Foo` being used as the bound 
+Example: `Foo_VSI<'a,T,TStr!(Bar)>` is the trait for `Foo` being used as the bound
 for a `Bar` variant.
 
 
@@ -28,21 +28,21 @@ The Structural derive macro generates these items for enums:
 
 - Option-returning impls for newtype variants
 (variants which have the `#[struc(newtype)]` attribute).
-Accessing the single field of the variant by passing `fp!(VariantName)` to 
+Accessing the single field of the variant by passing `fp!(VariantName)` to
 the GetFieldExt methods.
 This is not included as a bound in the `*_SI` and `*_ESI` traits generated for the enum.
 
 - Option-returning variant accessor impls for the every variant
 (accessed with `fp!(::VariantName)`) which return the VariantProxy type.
 
-- Option-returning accessor impls for variant fields 
+- Option-returning accessor impls for variant fields
 (accessed with `fp!(::VariantName.field)`).
 
 - IsVariant impls for every variant,
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - A `<DerivingType>_SI` trait,aliasing the traits implemented by the enum,
-this allows the variant name and count of types bounded by it to be 
+this allows the variant name and count of types bounded by it to be
 a superset of `<DerivingType>`.
 If you match on a type bounded by this trait inside the `switch` macro,
 you'll be required to have a default branch (eg:`_=>{}`).
@@ -88,7 +88,7 @@ fn main(){
 
 
     // This function requires the enum to implement the `Foo_ESI` trait,
-    // which is `Foo_SI` with the additional requirement that the 
+    // which is `Foo_SI` with the additional requirement that the
     // amount and name of variants is the same as `Foo`'s.
     assert_eq!( sum_fields_exhaustive_variants(&Foo::Bar), 0);
     assert_eq!( sum_fields_exhaustive_variants(&Foo::Baz{ a:77, b:23 }), 100);
@@ -108,7 +108,7 @@ fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
         Bar=>0,
         Baz{a,b}=>*a as u64 + *b as u64,
         Bam(&t0,&t1)=>t0 + t1,
-        // The default branch is required because `Foo_SI` allows the enum to 
+        // The default branch is required because `Foo_SI` allows the enum to
         // have more variants than `Bar`,`Baz`,and `Bam`.
         _=>return None
     })
@@ -122,7 +122,7 @@ fn sum_fields_exhaustive_variants(this: &impl Foo_ESI)->u64 {
         Bar=>0,
         ref Baz{&a,&b}=>a as u64 + b as u64,
         ref Bam(t0,t1)=>*t0 + *t1,
-        // No need for a default branch,since `Foo_ESI` requires the variants 
+        // No need for a default branch,since `Foo_ESI` requires the variants
         // to be `Bar`,`Baz`,`Bam`,and no more
     }
 }
