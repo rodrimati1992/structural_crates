@@ -4,6 +4,9 @@ Contains types representing values.
 
 // pub use core_extensions::type_level_bool::{self,True,False,Boolean};
 
+#[macro_use]
+mod macros;
+
 pub mod cmp;
 pub mod collection_traits;
 

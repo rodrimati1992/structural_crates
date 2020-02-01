@@ -23,13 +23,12 @@ use crate::type_level::collection_traits::{
 #[cfg(test)]
 mod tests;
 
-
 mod to_usize;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub mod aliases{
-    field_path_aliases!{
+pub mod aliases {
+    field_path_aliases! {
         index_0=0,
         index_1=1,
         index_2=2,
@@ -108,6 +107,11 @@ impl<T> ToTString_ for TStr_<T> {
     type Output = Self;
 }
 
+impl_cmp_traits! {
+    impl[T] TStr_<T>
+    where[]
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /// A pair of identifiers for the `F` field inside the `V` variant.
@@ -135,6 +139,11 @@ unsafe impl<V, F> MarkerType for VariantField<V, F> {}
 /// A FieldPath for the `F` field inside the `V` variant.
 pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
 
+impl_cmp_traits! {
+    impl[V,F] VariantField<V,F>
+    where[]
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /// The identifier for the `V` variant.
@@ -158,6 +167,11 @@ impl<V> Clone for VariantName<V> {
 }
 
 unsafe impl<V> MarkerType for VariantName<V> {}
+
+impl_cmp_traits! {
+    impl[T] VariantName<T>
+    where[]
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -195,6 +209,11 @@ impl<V, F> UncheckedVariantField<V, F> {
 // No UncheckedVariantFieldPath because UncheckedVariantField is not
 // going to be part of any `FieldPath`.
 // pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
+
+impl_cmp_traits! {
+    impl[V,F] UncheckedVariantField<V,F>
+    where[]
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -298,6 +317,11 @@ impl<S> FieldPath<(TStr_<S>,)> {
     pub const fn to_tstr(self) -> TStr_<S> {
         MarkerType::MTVAL
     }
+}
+
+impl_cmp_traits! {
+    impl[T] FieldPath<T>
+    where[]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,6 +485,11 @@ where
     T: Append_<T2>,
 {
     type Output = FieldPathSet<Append<T, T2>, AliasedPaths>;
+}
+
+impl_cmp_traits! {
+    impl[T,U] FieldPathSet<T,U>
+    where[]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
