@@ -125,14 +125,14 @@ impl FieldPaths {
             )
         }
     }
-    
+
     /// Gets a const item with the type-level identifier.
     pub(crate) fn constant_from_single(
         const_name: &syn::Ident,
         value: &IdentOrIndex,
         char_path: FullPathForChars,
     ) -> TokenStream2 {
-        let type_=tident_tokens(value.to_string(),char_path);
+        let type_ = tident_tokens(value.to_string(), char_path);
         quote!(
             pub const #const_name: ::structural::pmr::FieldPath1<#type_>=
                 structural::pmr::MarkerType::MTVAL;

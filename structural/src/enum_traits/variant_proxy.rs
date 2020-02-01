@@ -53,7 +53,7 @@ use std_::{
 ///
 /// let this=Foo::Bar(0,"hello");
 /// let mut proxy: VariantProxy<Foo, paths::Bar>= unsafe{
-///     VariantProxy::new(this, paths::Bar) 
+///     VariantProxy::new(this, paths::Bar)
 /// };
 ///
 /// assert_eq!( proxy.field_(paths::field_0), &0);
@@ -66,7 +66,7 @@ use std_::{
 /// assert_eq!( proxy.into_field(paths::field_1), "hello");
 ///
 /// ```
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub struct VariantProxy<T: ?Sized, V> {
     _marker: PhantomData<V>,
     value: T,
@@ -97,7 +97,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     /// }
     ///
     /// let proxy: VariantProxy<Foo, paths::Bar>= unsafe{
-    ///     VariantProxy::new(Foo::Bar(0), paths::Bar) 
+    ///     VariantProxy::new(Foo::Bar(0), paths::Bar)
     /// };
     ///
     /// assert_eq!( proxy.into_field(fp!(0)), 0 );
@@ -139,7 +139,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// let this=Box::new(Foo::Baz("hello"));
     /// let proxy: VariantProxy<Box<Foo>, paths::Baz>= unsafe{
-    ///     VariantProxy::from_box(this, paths::Baz) 
+    ///     VariantProxy::from_box(this, paths::Baz)
     /// };
     ///
     /// assert_eq!( proxy.into_field(fp!(0)), "hello" );
@@ -172,10 +172,10 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32,bool),
     ///     Baz(u32),
     /// }
-    /// 
+    ///
     /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
     /// let proxy: &VariantProxy<Foo, FP!(B a r)>= unsafe{
-    ///     VariantProxy::from_ref(&Foo::Bar(99,false), fp!(Bar)) 
+    ///     VariantProxy::from_ref(&Foo::Bar(99,false), fp!(Bar))
     /// };
     ///
     /// assert_eq!( proxy.field_(fp!(0)), &99 );
@@ -209,12 +209,12 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(Option<usize>,Vec<String>),
     /// }
-    /// 
+    ///
     /// let mut this=Foo::Baz(Some(1),vec![]);
     ///
     /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
     /// let proxy: &mut VariantProxy<Foo, FP!(B a z)>= unsafe{
-    ///     VariantProxy::from_mut(&mut this, fp!(Baz)) 
+    ///     VariantProxy::from_mut(&mut this, fp!(Baz))
     /// };
     ///
     /// assert_eq!( proxy.field_mut(fp!(0)), &mut Some(1) );
@@ -250,12 +250,12 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(Ordering,&'static [u8]),
     /// }
-    /// 
+    ///
     /// let mut this=Foo::Baz( Ordering::Less, &[0,1,2,3] );
     ///
     /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
     /// let proxy: *mut VariantProxy<Foo, FP!(B a z)>= unsafe{
-    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz)) 
+    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz))
     /// };
     ///
     /// unsafe{
@@ -283,10 +283,10 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(u32),
     /// }
-    /// 
+    ///
     /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
     /// let proxy: VariantProxy<Foo, FP!(B a r)>= unsafe{
-    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar)) 
+    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar))
     /// };
     ///
     /// assert_eq!(proxy.get() , &Foo::Bar(0));
@@ -317,12 +317,12 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(u32),
     /// }
-    /// 
+    ///
     /// let mut this=Foo::Baz(0);
     ///
     /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
     /// let proxy: &mut VariantProxy<Foo, FP!(B a z)>= unsafe{
-    ///     VariantProxy::from_mut(&mut this, fp!(Baz)) 
+    ///     VariantProxy::from_mut(&mut this, fp!(Baz))
     /// };
     ///
     /// assert_eq!(unsafe{ proxy.get_mut() }, &mut Foo::Baz(0));
@@ -346,10 +346,10 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(u32),
     /// }
-    /// 
+    ///
     /// // FP!(B a r) can also be FP!(Bar) from Rust 1.40 onwards
     /// let proxy: VariantProxy<Foo, FP!(B a r)>= unsafe{
-    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar)) 
+    ///     VariantProxy::new(Foo::Bar(0), fp!(Bar))
     /// };
     ///
     /// assert_eq!(proxy.into_inner() , Foo::Bar(0));
@@ -382,12 +382,12 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///     Bar(u32),
     ///     Baz(u32),
     /// }
-    /// 
+    ///
     /// let mut this=Foo::Baz(0);
     ///
     /// // FP!(B a z) can also be FP!(Baz) from Rust 1.40 onwards
     /// let proxy: *mut VariantProxy<Foo, FP!(B a z)>= unsafe{
-    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz)) 
+    ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz))
     /// };
     ///
     /// assert_eq!(unsafe{  &mut *VariantProxy::as_raw_mut(proxy) }, &mut Foo::Baz(0));
