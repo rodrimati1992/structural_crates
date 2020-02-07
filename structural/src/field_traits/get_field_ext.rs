@@ -1,7 +1,7 @@
 use super::*;
 
 use crate::{
-    enum_traits::IsVariant,
+    enums::IsVariant,
     field_traits::{
         multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
         RevGetField, RevGetFieldMut, RevIntoField,

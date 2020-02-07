@@ -3,7 +3,7 @@ Traits for getting a field from an enum variant.
 */
 
 use crate::{
-    enum_traits::IsVariant,
+    enums::IsVariant,
     field_traits::{
         FieldType, NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField,
     },

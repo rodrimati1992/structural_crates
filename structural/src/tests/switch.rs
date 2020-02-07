@@ -1,5 +1,5 @@
 use crate::{
-    enum_traits::VariantProxy,
+    enums::VariantProxy,
     field_path_aliases,
     test_utils::{GetRefKind, RefKind},
     GetFieldExt, Structural,

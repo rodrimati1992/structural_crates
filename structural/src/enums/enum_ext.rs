@@ -2,7 +2,7 @@
 use crate::alloc::boxed::Box;
 
 use crate::{
-    enum_traits::{IsVariant, VariantProxy},
+    enums::{IsVariant, VariantProxy},
     type_level::FieldPath1,
 };
 
@@ -22,8 +22,8 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enum_traits::example_enums::Variants;
-    /// use structural::enum_traits::{EnumExt,VariantProxy};
+    /// use structural::enums::example_enums::Variants;
+    /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let this=Variants::Foo(11,22);
     /// {
@@ -60,8 +60,8 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enum_traits::example_enums::Variants;
-    /// use structural::enum_traits::{EnumExt,VariantProxy};
+    /// use structural::enums::example_enums::Variants;
+    /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let mut this=Variants::Bar("hello");
     /// let mut other=this.clone();
@@ -102,8 +102,8 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enum_traits::example_enums::Variants;
-    /// use structural::enum_traits::{EnumExt,VariantProxy};
+    /// use structural::enums::example_enums::Variants;
+    /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let mut this=Variants::Baz(None);
     ///
@@ -152,8 +152,8 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enum_traits::example_enums::Variants;
-    /// use structural::enum_traits::{EnumExt,VariantProxy};
+    /// use structural::enums::example_enums::Variants;
+    /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// use std::cmp::Ordering;
     ///
@@ -193,8 +193,8 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enum_traits::example_enums::Variants;
-    /// use structural::enum_traits::{EnumExt,VariantProxy};
+    /// use structural::enums::example_enums::Variants;
+    /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// use std::cmp::Ordering;
     ///

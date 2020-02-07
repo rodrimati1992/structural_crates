@@ -3,7 +3,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 */
 
 use crate::{
-    enum_traits::{EnumExt, IsVariant, VariantProxy},
+    enums::{EnumExt, IsVariant, VariantProxy},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         NonOptField, OptionalField,

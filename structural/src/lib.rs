@@ -373,7 +373,7 @@ pub use structural_derive::{
 mod macros;
 
 pub mod docs;
-pub mod enum_traits;
+pub mod enums;
 pub mod field_traits;
 pub mod mut_ref;
 pub mod structural_trait;
@@ -430,8 +430,8 @@ pub mod reexports {
 #[doc(hidden)]
 pub mod pmr {
     pub use crate::chars::*;
-    pub use crate::enum_traits::variant_count::*;
-    pub use crate::enum_traits::*;
+    pub use crate::enums::variant_count::*;
+    pub use crate::enums::*;
     pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
     pub use crate::structural_trait::IsStructural;
