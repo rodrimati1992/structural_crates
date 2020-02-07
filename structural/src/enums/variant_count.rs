@@ -2,7 +2,7 @@ use crate::type_level::IsTStr;
 
 use std_::marker::PhantomData;
 
-/// For querying the ammount of variants of an enum.
+/// For querying the amount of variants of an enum.
 ///
 /// # Safety
 ///
@@ -12,18 +12,128 @@ use std_::marker::PhantomData;
 /// Specifying fewer variants than the enum actually has may result in undefined behavior
 /// when the enum is matched in the `switch` macro.
 ///
+/// # Example
+///
+/// This example demonstrates using `VariantCount` as a bound to
+/// restrict a pre-existing structural alias.
+///
+/// ```rust
+/// use structural::{Structural,TStr,structural_alias,switch};
+/// use structural::enums::VariantCount;
+///
+/// # fn main(){
+/// assert_eq!( exhaustive_a(Enum::Foo), 0 );
+/// assert_eq!( exhaustive_b(Enum::Foo), 0 );
+///
+/// let bar=Enum::Bar(0);
+/// assert_eq!( exhaustive_a(bar.clone()), 1 );
+/// assert_eq!( exhaustive_b(bar), 1 );
+///
+/// let baz=Enum::Baz{wha:"whoah".into()};
+/// assert_eq!( exhaustive_a(baz.clone()), 2 );
+/// assert_eq!( exhaustive_b(baz), 2 );
+///
+/// # }
+///
+/// fn exhaustive_a<T>(this: T)->u8
+/// where
+///     T: Ternary + VariantCount<Count=TStr!(3)>,
+/// {
+///     // The VariantCount bound allow this switch to be exhaustive.
+///     switch!{this;
+///         Foo=>0,
+///         Bar=>1,
+///         Baz=>2,
+///     }
+/// }
+///
+/// fn exhaustive_b<T>(this: T)->u8
+/// where
+///     // `TernaryExhaustive` is equivalent to `Ternary + VariantCount<Count=TStr!(3)>`.
+///     //
+///     // You would use a `+ VariantCount<Count=_>` bound if the structural alias
+///     // came from somewhere else,it's a nonexhaustive structural alias,
+///     // and you don't want to do declare another alias like `TernarySuper`.
+///     T: TernaryExhaustive
+/// {
+///     exhaustive_a(this)
+/// }
+///
+/// structural_alias!{
+///     // `#[struc(and_exhaustive_enum(...))]` generates a subtrait with
+///     //`VariantCount<Count=TStr!($variant_count)>` as an additional bound
+///     // (the `$variant_count` stands for the number of variants in the structural alias)
+///     #[struc(and_exhaustive_enum(name="TernaryExhaustive"))]
+///     pub trait Ternary{
+///         Foo,
+///         Bar,
+///         Baz,
+///     }
+///
+///     pub trait TernarySuper: Ternary + VariantCount<Count=TStr!(3)> {}
+/// }
+///
+/// #[derive(Structural,Clone)]
+/// # #[struc(no_trait)]
+/// enum Enum{
+///     Foo,
+///     Bar(u32),
+///     Baz{wha:String},
+/// }
+///
+///
+/// ```
 pub unsafe trait VariantCount {
     /// This is a type-level string(eg:`TStr!(3)`)
     /// representing the amount of variants of the enum.
     ///
-    /// This is a type instead of a constant so that it can be a supertrait of
-    /// dyn-compatible traits.
+    /// This is a type instead of a `&'static str` constant so that
+    /// it can be a supertrait of dyn-compatible traits.
     type Count: IsTStr;
 }
 
-/// Queries the ammount of variants of `This`.
+/// Queries the amount of variants of `This`.
 ///
-/// This evaluates to a TStr,like `TStr!("hello")`
+/// This evaluates to a TStr,like `TStr!(9)`
+///
+/// # Example
+///
+/// This demonstrates `VariantCountOut` by
+/// making a function that requires two enums to have the same number of variants.
+///
+/// ```rust
+/// use structural::Structural;
+/// use structural::enums::{VariantCount,VariantCountOut};
+///
+/// same_sized_enums( &Enum1::Foo, &Enum2::A );
+///
+/// // This does not compile because `Enum1` has 3 variants and `Result` has 2 variants.
+/// // same_sized_enums( &Enum1::Foo, &Result::<(),()>::Ok(()) );
+///
+/// // This function asserts at compile-time that both enums have the same number of variants.
+/// fn same_sized_enums<L,R>(left:&L,right:&R)
+/// where
+///     L:VariantCount,
+///     R:VariantCount<Count=VariantCountOut<L>>,
+/// {}
+///
+///     
+/// #[derive(Structural)]
+/// # #[struc(no_trait)]
+/// enum Enum1{
+///     Foo,
+///     Bar,
+///     Baz,
+/// }
+///     
+/// #[derive(Structural)]
+/// # #[struc(no_trait)]
+/// enum Enum2{
+///     A,
+///     B,
+///     C,
+/// }
+/// ```
 pub type VariantCountOut<This> = <This as VariantCount>::Count;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -104,6 +214,7 @@ impl<This> Clone for ExpectedDefaultBranch<This> {
 
 /////////////////////////////////////
 
+/// This is a hack used to produce moderately readable error messages for the `switch` macro.
 #[allow(non_camel_case_types)]
 mod messages {
     use super::*;

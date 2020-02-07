@@ -1,4 +1,4 @@
-use crate::enum_traits::{IsVariant, VariantCount};
+use crate::enums::{IsVariant, VariantCount};
 use crate::field_traits::variant_field::*;
 use crate::field_traits::NonOptField;
 use crate::*;

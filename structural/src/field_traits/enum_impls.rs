@@ -1,5 +1,5 @@
 use crate::{
-    enum_traits::IsVariant,
+    enums::IsVariant,
     field_traits::{
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, OptionalField,
     },

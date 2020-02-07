@@ -15,7 +15,12 @@ use std_::{
     ops::Deref,
 };
 
-/// Wraps an enum,guaranteeing that it's a particular variant.
+/// Enum wrapper,for accessing the fields of a particular variant
+/// (determined by the `V` type parameter).
+///
+/// Example type: `VariantProxy<Enum,FP!(Foo)>`,`Foo` being the name of the variant.
+///
+/// # Construction
 ///
 /// These are 3 ways to construct a VariantProxy:
 ///
@@ -36,34 +41,119 @@ use std_::{
 ///
 /// # Example
 ///
+/// This example constructs a `VariantProxy` safely.
+///
 /// ```
 /// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
-/// use structural::enum_traits::VariantProxy;
+/// use structural::enums::{EnumExt,VariantProxy};
+///
+/// field_path_aliases!{
+///     mod paths{ Bar }
+/// }
+///
+/// with_bar(Foo::Bar(0,"hello"));
+///
+/// with_bar(Foo2::Bar(0,"hello",true));
+///
+/// /// Runs some assertions.
+/// ///
+/// /// # Panics
+/// ///
+/// /// This functin panics if you pass an enum whose current variant is **not** `Bar`.
+/// fn with_bar<T>(this: T)
+/// where
+///     // `Foo_ESI` was generates by the `Structural` derive,
+///     // it aliases the accessor traits for `Foo`,
+///     // and also requires an enum with the same amount of variants as `Foo`
+///     //
+///     // `Debug` is required to print the enum in the `.expect(...)` error.
+///     T: Foo_ESI + Copy + std::fmt::Debug
+/// {
+///     let mut proxy: VariantProxy<T, paths::Bar>=
+///         this.into_variant(paths::Bar)
+///             .expect("Expected the `Bar` variant to be passed in");
+///    
+///     assert_eq!( proxy.field_(fp!(0)), &0);
+///     assert_eq!( proxy.field_(fp!(1)), &"hello");
+///    
+///     assert_eq!( proxy.field_mut(fp!(0)), &mut 0);
+///     assert_eq!( proxy.field_mut(fp!(1)), &mut "hello");
+///    
+///     assert_eq!( proxy.into_field(fp!(0)), 0);
+///     assert_eq!( proxy.into_field(fp!(1)), "hello");
+/// }
 ///
 /// #[derive(Debug,PartialEq,Structural,Copy,Clone)]
-/// #[struc(no_trait)]
 /// enum Foo{
 ///     Bar(u32,&'static str),
 ///     Baz(u32),
 /// }
 ///
-/// field_path_aliases!{
-///     mod paths{ Bar,field_0=0, field_1=1 }
+/// #[derive(Debug,PartialEq,Structural,Copy,Clone)]
+/// # #[struc(no_trait)]
+/// enum Foo2{
+///     Bar(u32,&'static str,bool),
+///     Baz(u32,u64),
 /// }
 ///
-/// let this=Foo::Bar(0,"hello");
-/// let mut proxy: VariantProxy<Foo, paths::Bar>= unsafe{
-///     VariantProxy::new(this, paths::Bar)
-/// };
+/// ```
 ///
-/// assert_eq!( proxy.field_(paths::field_0), &0);
-/// assert_eq!( proxy.field_(paths::field_1), &"hello");
+/// # Example
 ///
-/// assert_eq!( proxy.field_mut(paths::field_0), &mut 0);
-/// assert_eq!( proxy.field_mut(paths::field_1), &mut "hello");
+/// This example uses an `unsafe` constructor.
 ///
-/// assert_eq!( proxy.into_field(paths::field_0), 0);
-/// assert_eq!( proxy.into_field(paths::field_1), "hello");
+/// ```
+/// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
+/// use structural::enums::VariantProxy;
+///
+/// field_path_aliases!{
+///     mod paths{ Bar }
+/// }
+///
+/// unsafe{
+///     with_bar(Foo::Bar(0,"hello"));
+///
+///     with_bar(Foo2::Bar(0,"hello",true));
+/// }
+///
+/// /// Runs some assertions.
+/// ///
+/// /// # Safety
+/// ///
+/// /// You must pass an enum whose current variant is `Bar`,
+/// /// `this.is_variant(fp!(Foo))` (the method is from `GetFieldExt`) must return true.
+/// unsafe fn with_bar<T>(this: T)
+/// where
+///     // `Foo_ESI` was generates by the `Structural` derive,
+///     // it aliases the accessor traits for `Foo`,
+///     // and also requires an enum with the same amount of variants as `Foo`
+///     T: Foo_ESI + Copy
+/// {
+///     let mut proxy: VariantProxy<T, paths::Bar>=
+///         VariantProxy::new(this, paths::Bar);
+///    
+///     assert_eq!( proxy.field_(fp!(0)), &0);
+///     assert_eq!( proxy.field_(fp!(1)), &"hello");
+///    
+///     assert_eq!( proxy.field_mut(fp!(0)), &mut 0);
+///     assert_eq!( proxy.field_mut(fp!(1)), &mut "hello");
+///    
+///     assert_eq!( proxy.into_field(fp!(0)), 0);
+///     assert_eq!( proxy.into_field(fp!(1)), "hello");
+/// }
+///
+/// #[derive(Debug,PartialEq,Structural,Copy,Clone)]
+/// enum Foo{
+///     Bar(u32,&'static str),
+///     Baz(u32),
+/// }
+///
+/// #[derive(Debug,PartialEq,Structural,Copy,Clone)]
+/// # #[struc(no_trait)]
+/// enum Foo2{
+///     Bar(u32,&'static str,bool),
+///     Baz(u32,u64),
+/// }
 ///
 /// ```
 #[derive(Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
@@ -83,7 +173,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -124,7 +214,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,field_path_aliases,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -164,7 +254,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -201,7 +291,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -240,7 +330,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// use std::cmp::Ordering;
     ///
@@ -275,7 +365,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -309,7 +399,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -338,7 +428,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
@@ -374,7 +464,7 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt,Structural};
-    /// use structural::enum_traits::VariantProxy;
+    /// use structural::enums::VariantProxy;
     ///
     /// #[derive(Debug,PartialEq,Structural)]
     /// #[struc(no_trait)]
