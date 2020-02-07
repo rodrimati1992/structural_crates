@@ -189,9 +189,9 @@ impl<V, F> UncheckedVariantField<V, F> {
     ///
     /// # Safety
     ///
-    /// This must not be stored inside any datatype,
-    /// and only passed as a parameter to field accessor traits
-    /// when their corresponding `*VariantFieldImpl` trait is implemented.
+    /// This must only be passed to an accessor method of an enum with the `V` variant,
+    /// eg:you can only soundly pass `UncheckedVariantField::<TStr!(A),TStr!(b)>::new()`
+    /// for an enum whose current variant is `A`.
     ///
     /// One example correspondance:
     /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TStr!(Foo),TStr!(bar)> >`
