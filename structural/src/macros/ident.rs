@@ -8,9 +8,12 @@
 ///
 /// When passed multiple arguments,this instantiates a `FieldPathSet`.
 /// It can then be passed to the `GetFieldExt::fields` method.<br>
+///
 /// To be passed to `GetFieldExt::fields_mut`,
-/// `FieldPathSet` must be constructed with syntactically unique paths,
-/// since there is no cheap way to check for equality of type-level strings yet.
+/// the arguments to`fp!()` must be unique paths,
+/// since there is no *cheap* way to check for equality of type-level strings yet.
+/// All paths are checked against every other path to ensure that
+/// none of them is a prefix of any other.
 ///
 /// ### Nested fields
 ///
@@ -167,17 +170,31 @@ macro_rules! _delegate_fp_inner {
 
 /// Constructs a FieldPath(Set) for use as a generic parameter.
 ///
-/// # Improved macro
+/// # Variants of the macro
 ///
-/// To get an improved version of this macro which can use the same syntax
-/// as the `fp` macro,you can do any of:
+/// ### Identifier
 ///
-/// - Use Rust 1.40 or greater
+/// <span id="improved-macro"></span>
+///
+/// The variant of the macro takes in an identifier,or an integer.
+///
+/// Examples: `FP!(hello)`,`FP!(100)`
+///
+/// This variant of the macro requires one of these:
+///
+/// - Use Rust 1.40 or greater.
 ///
 /// - Use the `nightly_better_macros` cargo feature.
 ///
 /// - Use the `better_macros` cargo feature.
 ///
+/// ### Space separated characters
+///
+/// This variant of the macro takes in space separated characters.
+///
+/// This exists to support Rust versions older than 1.40.
+///
+/// Example: `FP!(f o o)` `FP!(4 1 3)` `FP!(c o u n t d o w n)`
 ///
 /// # Examples
 ///
@@ -190,7 +207,7 @@ macro_rules! _delegate_fp_inner {
 /// where
 ///     // From 1.40 onwards you can also write `FP!(name)`.
 ///     //
-///     // Before 1.40, you can use `field_path_aliases!{ name }` before this function,
+///     // Before 1.40, you can also use `field_path_aliases!{ name }` before this function,
 ///     // then write this as `This:GetField<name,Ty=S>`
 ///     This:GetField<FP!(n a m e),Ty=S>,
 ///     S:AsRef<str>,
@@ -789,9 +806,10 @@ to declare one or more aliases for type-level strings.
 
 # Variants
 
-### String literal
+### String literal,or identifier
 
 From Rust 1.40 onwards you can call this macro with a string literal,
+or a single identifier(which will be stringified),
 
 Small Example:
 */
@@ -802,6 +820,10 @@ use structural::TStr;
 
 type Foo=TStr!("foo");
 
+type Bar=TStr!(foo); // Equivalent to `TStr!("foo")`
+
+type Baz=TStr!(100); // Equivalent to `TStr!("100")`
+
 ```
 
 ### Space separated characters
@@ -811,7 +833,8 @@ You can call this macro with space separated characters.
 This variant of the macro exists to support Rust versions before 1.40.
 
 You can also use [`tstr_aliases`](./macro.tstr_aliases.html) macro
-if you prefer it to typing space separated characters.
+if you prefer string literals or identifiers to space separated characters,
+and you are using Rust version older than 1.40.
 
 Small Example:
 
@@ -820,6 +843,51 @@ use structural::TStr;
 
 type Foo=TStr!(f o o);
 ```
+
+# Example
+
+**(Only works from Rust 1.40 onwards)**
+
+This example demonstrates how `TStr` can be used to manually bound a
+type parameter with the `*VariantField*` traits,to access a variant field.
+
+*/
+#[cfg_attr(not(feature = "better_macros"), doc = "```ignore")]
+#[cfg_attr(feature = "better_macros", doc = "```rust")]
+/**
+use structural::{GetFieldExt,FP,Structural,TStr};
+use structural::field_traits::{GetFieldType,GetVariantFieldType,IntoVariantFieldMut};
+use structural::type_level::VariantFieldPath;
+
+// `GetFieldType<This,FP!(::Ok.0)>` can also be written as
+// `GetVariantFieldType<This,TStr!(Ok),TStr!(0)>`.
+//
+// `GetVariantFieldType` is useful in generic contexts where
+// the name of the variant is taken  separately from the name of the field.
+fn into_ok<This>(this: This)->Option<GetFieldType<This,FP!(::Ok.0)>>
+where
+    This: IntoVariantFieldMut<TStr!(Ok),TStr!(0)>
+{
+    // Equivalent to: `this.into_field(fp!(::Ok.0))`
+    this.into_field(VariantFieldPath::<TStr!("Ok"),TStr!("0")>::NEW)
+}
+
+#[derive(Structural)]
+# #[struc(no_trait)]
+enum ResultLike<T,E>{
+    Ok(T),
+    Err(E),
+}
+
+assert_eq!( into_ok(ResultLike::<_,()>::Ok(99)), Some(99));
+assert_eq!( into_ok(ResultLike::<(),_>::Err(99)), None);
+
+assert_eq!( into_ok(Result::<_,()>::Ok(99)), Some(99));
+assert_eq!( into_ok(Result::<(),_>::Err(99)), None);
+
+
+```
+
 
 # Example
 
@@ -895,7 +963,7 @@ macro_rules! TStr {
         $crate::pmr::TStr_<($($crate::TChar!($char),)*)>
     };
     ($($char:tt)*) => {
-        $crate::TStr!(@chars $($char)*)
+        $crate::_delegate_TStr!($($char)*)
     };
 }
 
@@ -912,6 +980,9 @@ You can always use the `tstr_aliases` macro to declare aliases for type level st
         "
         )
     };
+    ($($char:tt)*) => {
+        $crate::TStr!(@chars $($char)*)
+    };
 }
 
 #[macro_export]
@@ -920,5 +991,11 @@ You can always use the `tstr_aliases` macro to declare aliases for type level st
 macro_rules! _delegate_TStr {
     ($string:literal) => {
         $crate::_TStr_impl_!($string)
+    };
+    ($ident:tt) => {
+        $crate::_TStr_impl_!($ident)
+    };
+    ($char0:tt $($char:tt)+) => {
+        $crate::TStr!(@chars $char0 $($char)*)
     };
 }

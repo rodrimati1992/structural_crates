@@ -127,6 +127,8 @@ pub struct StrAlias {
     string: String,
 }
 
+pub(crate) struct TString(pub(crate) String);
+
 mod keywords {
     syn::custom_keyword!(count);
 }
@@ -185,10 +187,7 @@ impl Parse for StrAlias {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let alias_name = input.parse::<Ident>()?;
         let string = if let Some(_) = input.peek_parse(Token!(=))? {
-            match input.peek_parse(LitStr)? {
-                Some(x) => x.value(),
-                None => input.parse::<IdentOrIndex>()?.to_string(),
-            }
+            input.parse::<TString>()?.0
         } else {
             alias_name.to_string()
         };
@@ -196,5 +195,15 @@ impl Parse for StrAlias {
             let _: Token!(,) = input.parse()?;
         }
         Ok(Self { alias_name, string })
+    }
+}
+
+impl Parse for TString {
+    fn parse(input: ParseStream) -> parse::Result<Self> {
+        let s: String = match input.peek_parse(LitStr)? {
+            Some(x) => x.value(),
+            None => input.parse::<IdentOrIndex>()?.to_string(),
+        };
+        Ok(TString(s))
     }
 }

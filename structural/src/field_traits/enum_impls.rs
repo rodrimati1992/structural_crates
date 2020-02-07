@@ -11,6 +11,7 @@ tstr_aliases! {
     mod strings {
         Ok,
         Err,
+        field0=0,
     }
 }
 
@@ -119,8 +120,8 @@ _private_impl_getters_for_derive_enum! {
     {
         enum=Result
         variant_count=TStr!(2),
-        (Ok,strings::Ok,kind=newtype,fields((IntoFieldMut,0:T,nonopt)))
-        (Err,strings::Err,kind=newtype,fields((IntoFieldMut,0:E,nonopt)))
+        (Ok,strings::Ok,kind=regular,fields((IntoFieldMut,0:T,nonopt,strings::field0)))
+        (Err,strings::Err,kind=regular,fields((IntoFieldMut,0:E,nonopt,strings::field0)))
     }
 }
 

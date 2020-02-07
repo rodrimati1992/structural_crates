@@ -22,6 +22,8 @@ pub unsafe trait VariantCount {
 }
 
 /// Queries the ammount of variants of `This`.
+///
+/// This evaluates to a TStr,like `TStr!("hello")`
 pub type VariantCountOut<This> = <This as VariantCount>::Count;
 
 ///////////////////////////////////////////////////////////////////////////////

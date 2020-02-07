@@ -97,9 +97,10 @@ pub fn _tstring_aliases_impl(input: TokenStream1) -> TokenStream1 {
 #[doc(hidden)]
 pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
     use crate::tokenizers::{tident_tokens, FullPathForChars};
+    use crate::tstring_aliases::TString;
 
-    parse_or_compile_err(input, |s: syn::LitStr| {
-        Ok(tident_tokens(s.value(), FullPathForChars::Yes))
+    parse_or_compile_err(input, |s: TString| {
+        Ok(tident_tokens(s.0, FullPathForChars::Yes))
     })
     .into()
 }
