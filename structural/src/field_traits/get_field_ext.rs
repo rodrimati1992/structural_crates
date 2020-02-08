@@ -12,6 +12,14 @@ use crate::{
 use core_extensions::collection_traits::Cloned;
 
 /// A trait defining the primary way to call methods from structural traits.
+///
+/// # Optionality
+///
+/// The reference accessor methods in this trait can return either the field type or
+/// an `Option<&>`,depending on whether the field accessor is optional.
+///
+/// Accessing a variant field (eg:`.field(fp!(::Foo.bar))`) always returns an `Option` .
+///
 pub trait GetFieldExt: IsStructural {
     /// Gets a reference to a field,determined by `path`.
     ///
@@ -48,6 +56,48 @@ pub trait GetFieldExt: IsStructural {
     /// }
     ///
     /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_circle( &Shape::Circle{ x:3, y:5, radius:8 } );
+    /// with_circle( &MoreShapes::Circle{ x:3, y:5, radius:8 } );
+    ///
+    /// fn with_circle<T>(circle:&T)
+    /// where
+    ///     // `Shape_SI` was generated for Shape by the `Structural` derive.
+    ///     T: Shape_SI
+    /// {
+    ///     assert_eq!( circle.field_(fp!(::Circle.x)), Some(&3) );
+    ///     assert_eq!( circle.field_(fp!(::Circle.y)), Some(&5) );
+    ///     assert_eq!( circle.field_(fp!(::Circle.radius)), Some(&8) );
+    ///
+    ///     // Constructing the variant proxy is the only Option we have to handle here,
+    ///     // instead of every access to the fields in the Circle variant being optional.
+    ///     let proxy=circle.field_(fp!(::Circle)).expect("Expected a circle");
+    ///     assert_eq!( proxy.field_(fp!(x)), &3 );
+    ///     assert_eq!( proxy.field_(fp!(y)), &5 );
+    ///     assert_eq!( proxy.field_(fp!(radius)), &8 );
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// enum Shape{
+    ///     Circle{x:u32,y:u32,radius:u32},
+    ///     Square{x:u32,y:u32,width:u32},
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum MoreShapes{
+    ///     Circle{x:u32,y:u32,radius:u32},
+    ///     Square{x:u32,y:u32,width:u32},
+    ///     Rectangle{x:u32,y:u32,width:u32,height:u32},
+    /// }
+    ///
+    ///
+    /// ```
     #[inline(always)]
     fn field_<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<Result<&'a P::Ty, P::Err>>
     where
@@ -82,6 +132,45 @@ pub trait GetFieldExt: IsStructural {
     ///     with_even( &(0,22,0,44,0,77,0,0) );
     ///     with_even( &(0,22,0,44,0,77,0,0,0) );
     /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_car( &Vehicle::Car{ name:"initial-c", km:9001 } );
+    /// with_car( &MoreVehicles::Car{ name:"initial-c", km:9001 } );
+    ///
+    /// fn with_car<T>(circle:&T)
+    /// where
+    ///     // `Vehicle_SI` was generated for Vehicle by the `Structural` derive.
+    ///     T: Vehicle_SI
+    /// {
+    ///     assert_eq!(
+    ///         circle.fields(fp!(::Car.name, ::Car.km)),
+    ///         ( Some(&"initial-c"), Some(&9001) )
+    ///     );
+    ///
+    ///     //TODO:
+    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// enum Vehicle{
+    ///     Car{name: &'static str, km:u32},
+    ///     Truck,
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum MoreVehicles{
+    ///     Car{name: &'static str, km:u32},
+    ///     Truck,
+    ///     Boat,
+    /// }
+    ///
     ///
     /// ```
     #[inline(always)]
@@ -146,6 +235,45 @@ pub trait GetFieldExt: IsStructural {
     /// }
     ///
     /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_pc( &Device::Pc{ manufacturer:"dawn", year:2038 } );
+    /// with_pc( &MoreDevices::Pc{ manufacturer:"dawn", year:2038 } );
+    ///
+    /// fn with_pc<T>(pc:&T)
+    /// where
+    ///     // `Device_SI` was generated for Device by the `Structural` derive.
+    ///     T: Device_SI
+    /// {
+    ///     assert_eq!(
+    ///         pc.cloned_fields(fp!(::Pc.manufacturer, ::Pc.year)),
+    ///         ( Some("dawn"), Some(2038) )
+    ///     );
+    ///
+    ///     //TODO:
+    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// enum Device{
+    ///     Pc{manufacturer: &'static str, year:u32},
+    ///     Phone,
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum MoreDevices{
+    ///     Pc{manufacturer: &'static str, year:u32},
+    ///     Phone,
+    ///     Tablet,
+    /// }
+    ///
+    ///
+    /// ```
     fn cloned_fields<'a, P>(
         &'a self,
         path: P,
@@ -205,6 +333,45 @@ pub trait GetFieldExt: IsStructural {
     ///
     /// ```
     ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_soda( &mut Beverage::Soda{ ml:600, cents:400 } );
+    /// with_soda( &mut MoreBeverages::Soda{ ml:600, cents:400 } );
+    ///
+    /// fn with_soda<T>(soda:&mut T)
+    /// where
+    ///     // `Beverage_SI` was generated for Beverage by the `Structural` derive.
+    ///     T: Beverage_SI
+    /// {
+    ///     assert_eq!( soda.field_mut(fp!(::Soda.ml)), Some(&mut 600) );
+    ///     assert_eq!( soda.field_mut(fp!(::Soda.cents)), Some(&mut 400) );
+    ///
+    ///     // Constructing the variant proxy is the only Option we have to handle here,
+    ///     // instead of every access to the fields in the Soda variant being optional.
+    ///     let proxy=soda.field_mut(fp!(::Soda)).expect("Expected a soda");
+    ///     assert_eq!( proxy.field_mut(fp!(ml)), &mut 600 );
+    ///     assert_eq!( proxy.field_mut(fp!(cents)), &mut 400 );
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// enum Beverage{
+    ///     Soda{ ml:u32, cents:u32 },
+    ///     Water,
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum MoreBeverages{
+    ///     Soda{ ml:u32, cents:u32 },
+    ///     Water,
+    ///     Beer,
+    /// }
+    ///
+    ///
+    /// ```
     #[inline(always)]
     fn field_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<Result<&'a mut P::Ty, P::Err>>
     where
@@ -281,6 +448,44 @@ pub trait GetFieldExt: IsStructural {
     /// let _=tup.fields_mut(fp!(4,4));
     ///
     /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_book( &mut Medium::Book{ pages:500, title:"Dracular" } );
+    /// with_book( &mut MoreMedia::Book{ pages:500, title:"Dracular" } );
+    ///
+    /// fn with_book<T>(circle:&mut T)
+    /// where
+    ///     // `Medium_SI` was generated for Medium by the `Structural` derive.
+    ///     T: Medium_SI
+    /// {
+    ///     assert_eq!(
+    ///         circle.fields_mut(fp!(::Book.pages, ::Book.title)),
+    ///         ( Some(&mut 500), Some(&mut "Dracular") )
+    ///     );
+    ///
+    ///     //TODO:
+    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// enum Medium{
+    ///     Book{ pages:u32, title:&'static str },
+    ///     Comic,
+    /// }
+    ///
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum MoreMedia{
+    ///     Book{ pages:u32, title:&'static str },
+    ///     Comic,
+    ///     Television,
+    /// }
+    ///
+    /// ```
     #[inline(always)]
     fn fields_mut<'a, P>(
         &'a mut self,
@@ -333,6 +538,46 @@ pub trait GetFieldExt: IsStructural {
     /// }
     ///
     /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_table( &Furniture::Table{ height_cm:101, width_cm:333 } );
+    /// with_table( &MoreFurniture::Table{ height_cm:101, width_cm:333 } );
+    ///
+    /// fn with_table<T>(table:&T)
+    /// where
+    ///     // `Furniture_SI` was generated for Furniture by the `Structural` derive.
+    ///     T: Furniture_SI + Clone
+    /// {
+    ///     assert_eq!( table.clone().into_field(fp!(::Table.height_cm)), Some(101) );
+    ///     assert_eq!( table.clone().into_field(fp!(::Table.width_cm)), Some(333) );
+    ///
+    ///     // Constructing the variant proxy is the only Option we have to handle here,
+    ///     // instead of every access to the fields in the Table variant being optional.
+    ///     let proxy=table.clone().into_field(fp!(::Table)).expect("Expected a table");
+    ///     assert_eq!( proxy.clone().into_field(fp!(height_cm)), 101 );
+    ///     assert_eq!( proxy.clone().into_field(fp!(width_cm)), 333 );
+    /// }
+    ///
+    /// #[derive(Structural,Clone)]
+    /// enum Furniture{
+    ///     Table{ height_cm:u32, width_cm:u32 },
+    ///     Chair,
+    /// }
+    ///
+    /// #[derive(Structural,Clone)]
+    /// # #[struc(no_trait)]
+    /// enum MoreFurniture{
+    ///     Table{ height_cm:u32, width_cm:u32 },
+    ///     Chair,
+    ///     Sofa,
+    /// }
+    ///
+    ///
+    /// ```
     #[inline(always)]
     fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
@@ -377,6 +622,46 @@ pub trait GetFieldExt: IsStructural {
     /// }
     ///
     /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,Structural,fp};
+    ///
+    /// with_box( &Packaging::Box_{ volume_cm3:123_456, weight_g:1_000_000 } );
+    /// with_box( &MorePackaging::Box_{ volume_cm3:123_456, weight_g:1_000_000 } );
+    ///
+    /// fn with_box<T>(box_:&T)
+    /// where
+    ///     // `Packaging_SI` was generated for Packaging by the `Structural` derive.
+    ///     T: Packaging_SI + Clone
+    /// {
+    ///     assert_eq!( box_.clone().into_field(fp!(::Box_.volume_cm3)), Some(123_456) );
+    ///     assert_eq!( box_.clone().into_field(fp!(::Box_.weight_g)), Some(1_000_000) );
+    ///
+    ///     // Constructing the variant proxy is the only Option we have to handle here,
+    ///     // instead of every access to the fields in the Box_ variant being optional.
+    ///     let proxy=box_.clone().into_field(fp!(::Box_)).expect("Expected a box_");
+    ///     assert_eq!( proxy.clone().into_field(fp!(volume_cm3)), 123_456 );
+    ///     assert_eq!( proxy.clone().into_field(fp!(weight_g)), 1_000_000 );
+    /// }
+    ///
+    /// #[derive(Structural,Clone)]
+    /// enum Packaging{
+    ///     Box_{ volume_cm3:u64, weight_g:u64 },
+    ///     Envelope,
+    /// }
+    ///
+    /// #[derive(Structural,Clone)]
+    /// # #[struc(no_trait)]
+    /// enum MorePackaging{
+    ///     Box_{ volume_cm3:u64, weight_g:u64 },
+    ///     Envelope,
+    ///     Bag,
+    /// }
+    ///
+    ///
+    /// ```
     #[cfg(feature = "alloc")]
     #[inline(always)]
     fn box_into_field<'a, P>(
@@ -398,6 +683,27 @@ pub trait GetFieldExt: IsStructural {
     /// ```
     /// use structural::{GetFieldExt,Structural,fp};
     ///
+    /// check_colors( &Color::Red, &Color::Blue, &Color::Green );
+    /// check_colors( &ColorPlus::Red, &ColorPlus::Blue, &ColorPlus::Green );
+    ///
+    /// fn check_colors<T>( red:&T, blue:&T, green:&T )
+    /// where
+    ///     // `Color_SI` was declared by the `Structural` derive on `Color`.
+    ///     T: Color_SI
+    /// {
+    ///     assert!(  red.is_variant(fp!(Red)) );
+    ///     assert!( !red.is_variant(fp!(Blue)) );
+    ///     assert!( !red.is_variant(fp!(Green)) );
+    ///
+    ///     assert!( !blue.is_variant(fp!(Red)) );
+    ///     assert!(  blue.is_variant(fp!(Blue)) );
+    ///     assert!( !blue.is_variant(fp!(Green)) );
+    ///
+    ///     assert!( !green.is_variant(fp!(Red)) );
+    ///     assert!( !green.is_variant(fp!(Blue)) );
+    ///     assert!(  green.is_variant(fp!(Green)) );
+    /// }
+    ///
     /// #[derive(Structural)]
     /// enum Color{
     ///     Red,
@@ -405,19 +711,18 @@ pub trait GetFieldExt: IsStructural {
     ///     Green,
     /// }
     ///
-    /// fn main(){
-    ///     assert!(  Color::Red.is_variant(fp!(Red)) );
-    ///     assert!( !Color::Red.is_variant(fp!(Blue)) );
-    ///     assert!( !Color::Red.is_variant(fp!(Green)) );
-    ///
-    ///     assert!( !Color::Blue.is_variant(fp!(Red)) );
-    ///     assert!(  Color::Blue.is_variant(fp!(Blue)) );
-    ///     assert!( !Color::Blue.is_variant(fp!(Green)) );
-    ///
-    ///     assert!( !Color::Green.is_variant(fp!(Red)) );
-    ///     assert!( !Color::Green.is_variant(fp!(Blue)) );
-    ///     assert!(  Color::Green.is_variant(fp!(Green)) );
+    /// #[derive(Structural)]
+    /// # #[struc(no_trait)]
+    /// enum ColorPlus{
+    ///     Red,
+    ///     Blue,
+    ///     Green,
+    ///     Teal,
+    ///     White,
+    ///     Gray,
+    ///     Black,
     /// }
+    ///
     ///
     /// ```
     #[inline(always)]
