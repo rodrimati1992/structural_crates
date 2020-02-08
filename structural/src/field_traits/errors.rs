@@ -1,5 +1,7 @@
 use std_::fmt::{self, Display};
 
+use core_extensions::collection_traits::Cloned;
+
 mod sealed {
     pub trait Sealed {}
 }
@@ -16,13 +18,31 @@ use self::sealed::Sealed;
 ///     Used when a field is optional.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
-pub trait IsFieldErr: Sealed + 'static + Copy {}
+pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OptionalField;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NonOptField {}
+
+impl Cloned for OptionalField {
+    type Cloned = Self;
+
+    #[inline(always)]
+    fn cloned_(&self) -> Self {
+        *self
+    }
+}
+
+impl Cloned for NonOptField {
+    type Cloned = Self;
+
+    #[inline(always)]
+    fn cloned_(&self) -> Self {
+        *self
+    }
+}
 
 impl Sealed for OptionalField {}
 impl IsFieldErr for OptionalField {}
