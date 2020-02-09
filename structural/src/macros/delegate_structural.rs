@@ -1,5 +1,5 @@
 /**
-This macro allows delegating the implementation of the Structural and field accessor traits.
+This macro allows delegating the implementation of the accessor traits.
 
 This macro delegates the implementation of those traits for all fields,
 it doesn't provide a way to do so for only a list of fields.

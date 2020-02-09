@@ -101,14 +101,18 @@ macro_rules! pair_accessors {
             assert_eq!(this.field_(fp!(AllCorrect)), Some(&(11, 22)));
             assert_eq!(this.field_(fp!(::AllCorrect.0)), Some(&11));
             assert_eq!(this.field_(fp!(::AllCorrect.1)), Some(&22));
+            assert_eq!(this.fields(fp!(::AllCorrect=>0,1)), Some((&11,&22)));
             assert_eq!(this.field_(fp!(::Pair.left)), None);
             assert_eq!(this.field_(fp!(::Pair.right)), None);
+            assert_eq!(this.fields(fp!(::Pair=>left,right)), None);
 
             assert_eq!(this.field_mut(fp!(AllCorrect)), Some(&mut (11, 22)));
             assert_eq!(this.field_mut(fp!(::AllCorrect.0)), Some(&mut 11));
             assert_eq!(this.field_mut(fp!(::AllCorrect.1)), Some(&mut 22));
+            assert_eq!(this.fields_mut(fp!(::AllCorrect=>0,1)), Some((&mut 11,&mut 22)));
             assert_eq!(this.field_mut(fp!(::Pair.left)), None);
             assert_eq!(this.field_mut(fp!(::Pair.right)), None);
+            assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), None);
 
             assert_eq!(this.clone().into_field(fp!(AllCorrect)), Some((11, 22)));
             assert_eq!(this.clone().into_field(fp!(::AllCorrect.0)), Some(11));
@@ -124,10 +128,12 @@ macro_rules! pair_accessors {
             assert_eq!(this.field_(fp!(AllCorrect)), None);
             assert_eq!(this.field_(fp!(::Pair.left)), Some(&false));
             assert_eq!(this.field_(fp!(::Pair.right)), Some(&100));
+            assert_eq!(this.fields(fp!(::Pair=>left,right)), Some((&false,&100)));
 
             assert_eq!(this.field_mut(fp!(AllCorrect)), None);
             assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut false));
             assert_eq!(this.field_mut(fp!(::Pair.right)), Some(&mut 100));
+            assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), Some((&mut false,&mut 100)));
 
             assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
             assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(false));
@@ -220,6 +226,11 @@ fn test_replace_newtype_trait_object() {
             assert_eq!(wha_u.field_(fp!(::U.b)), Some(&22));
             assert_eq!(wha_u.field_(fp!(::U.c)), Some(&33));
             assert_eq!(wha_u.field_(fp!(::U.d)), Some(&44));
+            assert_eq!(wha_u.fields(fp!(::U=>a,b,c,d)), Some((&11, &22, &33, &44)));
+            assert_eq!(
+                wha_u.fields_mut(fp!(::U=>a,b,c,d)),
+                Some((&mut 11, &mut 22, &mut 33, &mut 44)),
+            );
 
             let proxy = wha_u.field_mut(fp!(::U)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &11);
@@ -241,6 +252,8 @@ fn test_replace_newtype_trait_object() {
         {
             assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
             assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
+            assert_eq!(wha_v.fields(fp!(::V=>a,b)), Some((&"55", &66)));
+            assert_eq!(wha_v.fields_mut(fp!(::V=>a,b)), Some((&mut "55", &mut 66)));
 
             let proxy = wha_v.field_mut(fp!(::V)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &"55");
@@ -300,6 +313,8 @@ fn test_replace_bounds_trait_object() {
         {
             assert_eq!(wha_u.field_(fp!(::U.0)), Some(&11));
             assert_eq!(wha_u.field_(fp!(::U.1)), Some(&22));
+            assert_eq!(wha_u.fields(fp!(::U=>0,1)), Some((&11, &22)));
+            assert_eq!(wha_u.fields_mut(fp!(::U=>0,1)), Some((&mut 11, &mut 22)));
 
             let proxy = wha_u.field_mut(fp!(::U)).unwrap();
             assert_eq!(proxy.field_(fp!(0)), &11);
@@ -313,6 +328,8 @@ fn test_replace_bounds_trait_object() {
         {
             assert_eq!(wha_v.field_(fp!(::V.a)), Some(&"55"));
             assert_eq!(wha_v.field_(fp!(::V.b)), Some(&66));
+            assert_eq!(wha_v.fields(fp!(::V=>a,b)), Some((&"55", &66)));
+            assert_eq!(wha_v.fields_mut(fp!(::V=>a,b)), Some((&mut "55", &mut 66)));
 
             let proxy = wha_v.field_mut(fp!(::V)).unwrap();
             assert_eq!(proxy.field_(fp!(a)), &"55");
