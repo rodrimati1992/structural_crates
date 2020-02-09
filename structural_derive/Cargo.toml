@@ -41,7 +41,6 @@ typed-arena = "~1.5"
 
 [dependencies.core_extensions]
 default_features=false
-features=["std"]
 version="0.1"
 
 [dependencies.syn]

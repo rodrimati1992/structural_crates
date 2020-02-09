@@ -10,7 +10,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, TokenStreamExt};
 
 use syn::{
     parse::{self, Parse, ParseStream},
@@ -21,6 +21,7 @@ use syn::{
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct FieldPaths {
+    prefix: Option<FieldPath>,
     paths: Vec<FieldPath>,
     path_uniqueness: PathUniqueness,
 }
@@ -32,6 +33,7 @@ impl FieldPaths {
 
     pub(crate) fn from_path(path: FieldPath) -> Self {
         Self {
+            prefix: None,
             paths: vec![path],
             path_uniqueness: PathUniqueness::Unique,
         }
@@ -60,6 +62,7 @@ impl FieldPaths {
                 };
 
                 Self {
+                    prefix: None,
                     paths,
                     path_uniqueness,
                 }
@@ -68,7 +71,7 @@ impl FieldPaths {
     }
 
     pub(crate) fn is_set(&self) -> bool {
-        self.paths.len() != 1
+        self.prefix.is_some() || self.paths.len() != 1
     }
 
     /// Outputs the inside of `fp!`/`FP!` invocation that constructed this FieldPaths.
@@ -76,6 +79,10 @@ impl FieldPaths {
         #[cfg(feature = "test_asserts")]
         let start = buff.len();
 
+        if let Some(prefix) = &self.prefix {
+            prefix.write_str(buff);
+            buff.push_str("=>");
+        }
         for (i, path) in self.paths.iter().enumerate() {
             path.write_str(buff);
             if i + 1 != self.paths.len() {
@@ -98,9 +105,20 @@ impl FieldPaths {
             let path = self.paths.iter().map(|x| x.to_token_stream(char_path));
             let uniqueness = self.path_uniqueness;
 
-            quote!(
-                ::structural::pmr::FieldPathSet<(#(#path,)*),#uniqueness>
-            )
+            if let Some(prefix) = &self.prefix {
+                let prefix = prefix.tuple_tokens(char_path);
+                quote!(
+                    ::structural::pmr::NestedFieldSet<
+                        #prefix,
+                        (#(#path,)*),
+                        #uniqueness
+                    >
+                )
+            } else {
+                quote!(
+                    ::structural::pmr::FieldPathSet<(#(#path,)*),#uniqueness>
+                )
+            }
         } else {
             self.paths[0].to_token_stream(char_path)
         }
@@ -113,17 +131,14 @@ impl FieldPaths {
         char_path: FullPathForChars,
     ) -> TokenStream2 {
         let type_ = self.type_tokens(char_path);
-        if self.is_set() {
-            quote!(
-                pub const #name:#type_=unsafe{
-                    structural::pmr::FieldPathSet::new_unchecked()
-                };
-            )
-        } else {
-            quote!(
-                pub const #name:#type_=structural::pmr::MarkerType::MTVAL;
-            )
-        }
+        let mut ret = quote!(pub const #name:#type_=);
+        ret.append_all(match (&self.prefix, self.is_set()) {
+            (None, false) => quote!(structural::pmr::MarkerType::MTVAL),
+            (None, true) => quote!(unsafe { structural::pmr::FieldPathSet::new_unchecked() }),
+            (Some(_), _) => quote!(unsafe { structural::pmr::NestedFieldSet::new_unchecked() }),
+        });
+        <Token!(;)>::default().to_tokens(&mut ret);
+        ret
     }
 
     /// Gets a const item with the type-level identifier.
@@ -142,7 +157,11 @@ impl FieldPaths {
     /// Gets a tokenizer that outputs a type-level FieldPath(Set) value.
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
-            quote!(unsafe { structural::pmr::FieldPathSet::new_unchecked() })
+            if self.prefix.is_some() {
+                quote!(unsafe { structural::pmr::NestedFieldSet::new_unchecked() })
+            } else {
+                quote!(unsafe { structural::pmr::FieldPathSet::new_unchecked() })
+            }
         } else {
             quote!(structural::pmr::MarkerType::MTVAL)
         }
@@ -152,6 +171,8 @@ impl FieldPaths {
 impl Parse for FieldPaths {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let forked = input.fork();
+        // If this is space separated characters(which start with two idents)
+        // then this only parses a sequence of IdentOrIndex.
         if let (Ok { .. }, Ok { .. }) = (
             forked.parse::<IdentOrIndex>(),
             forked.parse::<IdentOrIndex>(),
@@ -164,9 +185,31 @@ impl Parse for FieldPaths {
                 .piped(FieldPaths::from_path)
                 .piped(Ok)
         } else {
-            input
-                .parse_terminated::<_, Token!(,)>(FieldPath::parse)
-                .map(|x| FieldPaths::from_iter(x.into_iter()))
+            let mut prefix = None::<FieldPath>;
+            let mut paths = Vec::<FieldPath>::new();
+            while !input.is_empty() {
+                let path = input.parse::<FieldPath>()?;
+                if input.peek(Token!(=>)) {
+                    if prefix.is_some() {
+                        return Err(input.error("Cannot use `=>` multiple times."));
+                    } else if !paths.is_empty() {
+                        return Err(input.error("Cannot use `=>` after multiple field accesses."));
+                    }
+                    input.parse::<Token!(=>)>()?;
+                    prefix = Some(path);
+                } else if input.peek(Token!(,)) {
+                    paths.push(path);
+                    input.parse::<Token!(,)>()?;
+                } else if input.is_empty() {
+                    paths.push(path);
+                } else {
+                    return Err(input.error("Expected a `=>`,a `,`, or the end of the input"));
+                }
+            }
+
+            let mut this = FieldPaths::from_iter(paths.into_iter());
+            this.prefix = prefix;
+            Ok(this)
         }
     }
 }
@@ -182,7 +225,7 @@ impl Parse for FieldPath {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let mut list = Vec::<FieldPathComponent>::new();
         let mut next_is_period = false;
-        while !input.peek(Token![,]) && !input.is_empty() {
+        while !is_field_path_terminator(input) {
             let is_period = std::mem::replace(&mut next_is_period, false)
                 || input.peek_parse(Token!(.))?.is_some();
 
@@ -244,8 +287,13 @@ impl FieldPath {
     }
 
     pub(crate) fn to_token_stream(&self, char_path: FullPathForChars) -> TokenStream2 {
+        let tuple = self.tuple_tokens(char_path);
+        quote!( structural::pmr::FieldPath<#tuple> )
+    }
+
+    pub(crate) fn tuple_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {
         let strings = self.list.iter().map(|x| x.single_tokenizer(char_path));
-        quote!( structural::pmr::FieldPath<(#(#strings,)*)> )
+        quote!( (#(#strings,)*) )
     }
 }
 
@@ -305,7 +353,7 @@ impl FieldPathComponent {
             if input.peek_parse(Token!(.))?.is_some() {
                 let field = input.parse::<IdentOrIndex>()?;
                 Ok(FieldPathComponent::VariantField { variant, field })
-            } else if input.is_empty() || input.peek(Token!(,)) {
+            } else if is_field_path_terminator(input) {
                 Ok(FieldPathComponent::VariantName { variant })
             } else {
                 Err(input.error("Expected either a `.field_name`,the end of the input,or a `,`."))
@@ -335,6 +383,10 @@ impl FieldPathComponent {
             FPC::VariantName { variant } => variant_name_tokens(variant.to_string(), char_path),
         }
     }
+}
+
+fn is_field_path_terminator(input: ParseStream) -> bool {
+    input.is_empty() || input.peek(Token!(,)) || input.peek(Token!(=>))
 }
 
 ///////////////////////////////////////////////////////////////////////////////

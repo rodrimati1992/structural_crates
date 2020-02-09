@@ -29,7 +29,8 @@ pub use self::list::{TList, TNil};
 
 pub use self::field_path::{
     AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsFieldPath, IsFieldPathSet, IsTStr,
-    UncheckedVariantField, UniquePaths, VariantField, VariantFieldPath, VariantName,
+    NestedFieldSet, UncheckedVariantField, UniquePaths, VariantField, VariantFieldPath,
+    VariantName,
 };
 
 // Importing stuff from this module anywhere other than

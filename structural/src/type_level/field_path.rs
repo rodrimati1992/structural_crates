@@ -406,6 +406,9 @@ impl<T> FieldPathSet<T, AliasedPaths> {
         FieldPathSet(PhantomData)
     }
 
+    /// Constructs a `FieldPathSet`.
+    pub const NEW: Self = FieldPathSet(PhantomData);
+
     /// Converts a `FieldPathSet<T,AliasedPaths>` to a `FieldPathSet<T,UniquePaths>`
     ///
     /// # Safety
@@ -490,6 +493,72 @@ where
 impl_cmp_traits! {
     impl[T,U] FieldPathSet<T,U>
     where[]
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// Allows accessing multiple fields inside of some nested field.
+///
+/// This is useful for accessing multiple fields inside of an optional one,
+/// including accessing the fields in an enum variant.
+pub struct NestedFieldSet<F, S, U> {
+    pub path: FieldPath<F>,
+    pub path_set: FieldPathSet<S, U>,
+}
+
+impl<F, S> NestedFieldSet<F, S, AliasedPaths> {
+    pub const NEW: Self = Self {
+        path: FieldPath::NEW,
+        path_set: FieldPathSet::NEW,
+    };
+
+    /// Constructs a `NestedFieldSet`.
+    #[inline(always)]
+    pub const fn new() -> Self {
+        Self::NEW
+    }
+}
+
+impl<F, S, U> NestedFieldSet<F, S, U> {
+    /// Constructs a `NestedFieldSet`.
+    #[inline(always)]
+    #[doc(hidden)]
+    pub const unsafe fn new_unchecked() -> Self {
+        Self {
+            path: FieldPath::NEW,
+            path_set: FieldPathSet::new_unchecked(),
+        }
+    }
+}
+
+impl<F, S> NestedFieldSet<F, S, UniquePaths> {
+    /// Constructs a `NestedFieldSet`.
+    ///
+    /// # Safety
+    ///
+    /// `S` must be a tuple of `FieldPaths<_>`s,
+    /// where none of them is a subset of each other.
+    #[inline(always)]
+    pub const unsafe fn new() -> Self {
+        Self::new_unchecked()
+    }
+}
+
+unsafe impl<F, S> MarkerType for NestedFieldSet<F, S, AliasedPaths> {}
+
+impl<F, S, U> Debug for NestedFieldSet<F, S, U> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NestedFieldSet").finish()
+    }
+}
+
+impl<F, S, U> Copy for NestedFieldSet<F, S, U> {}
+
+impl<F, S, U> Clone for NestedFieldSet<F, S, U> {
+    #[inline(always)]
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
