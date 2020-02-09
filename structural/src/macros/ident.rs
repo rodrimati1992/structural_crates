@@ -26,10 +26,19 @@
 /// where doing `this.fields_mut(fp!(a,b,c))`
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
+/// ### Nested Multiple fields
+///
+/// You can access multiple fields inside of a nested field with the `=>` in
+/// `fp!(foo.bar.baz => 0,1,2)`.
+///
+/// This is most useful when accessing multiple fields inside of an
+/// optional field or inside an enum variant.
+/// The `=>` operator was defined for ergonomics,
+/// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
+/// `this.field_(fp!(::Foo)).map(|v| v.fields(fp!(0,1,2)) )`.
 ///
 ///
-///
-/// # Example
+/// # Example:Multiple fields
 ///
 /// ```
 /// use structural::{GetFieldExt,fp,structural_alias};
@@ -59,9 +68,7 @@
 /// }
 /// ```
 ///
-/// # Example
-///
-/// An example which accesses nested fields.
+/// # Example:Nested Fields
 ///
 /// ```
 /// use structural::{GetFieldExt,Structural,fp,make_struct};
@@ -75,12 +82,13 @@
 /// }
 ///
 /// #[derive(Debug,Clone,PartialEq,Structural)]
+/// # #[struc(no_trait)]
 /// #[struc(public)]
 /// struct Bar{
 ///     aaa:(u32,u32),
 /// }
 ///
-///
+/// // `Foo_SI` was declared by the `Structural` derive on `Foo`
 /// fn with_foo(foo:&mut dyn Foo_SI){
 ///     let expected_bar=Bar{aaa: (300,301) };
 ///
@@ -116,6 +124,61 @@
 /// }
 /// ```
 ///
+/// # Example:Multiple fields insde a nested field
+///
+/// ```rust
+/// use structural::{GetFieldExt,Structural,fp};
+///
+/// // `EnumA_SI` was declared by the `Structural` derive on `EnumA`
+/// fn with_foo(foo:&mut impl EnumA_SI){
+///     assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some((&5,&8)) );
+///     assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some((&mut 5,&mut 8)) );
+///
+///     assert_eq!( foo.fields(fp!(::Bar=>x,y)), None );
+///     assert_eq!( foo.fields_mut(fp!(::Bar=>x,y)), None );
+/// }
+///
+/// // `EnumA_SI` was declared by the `Structural` derive on `EnumA`
+/// fn with_bar(bar:&mut impl EnumA_SI){
+///     assert_eq!( bar.fields(fp!(::Foo=>0,1)), None );
+///     assert_eq!( bar.fields_mut(fp!(::Foo=>0,1)), None );
+///
+///     assert_eq!( bar.fields(fp!(::Bar=>x,y)), Some((&"wha",&false)) );
+///     assert_eq!( bar.fields_mut(fp!(::Bar=>x,y)), Some((&mut "wha",&mut false)) );
+/// }
+///
+/// with_foo(&mut EnumA::Foo(5,8));
+/// with_foo(&mut EnumB::Foo(5,8,13));
+///
+/// with_bar(&mut EnumA::Bar{ x:"wha", y:false });
+/// with_bar(&mut EnumB::Bar{ x:"wha", y:false, z:None });
+///
+/// #[derive(Structural)]
+/// enum EnumA{
+///     Foo(u32,u64),
+///     Bar{
+///         x:&'static str,
+///         y:bool,
+///     },
+/// }
+///
+/// #[derive(Structural)]
+/// # #[struc(no_trait)]
+/// enum EnumB{
+///     Foo(u32,u64,i32),
+///     Bar{
+///         x:&'static str,
+///         y:bool,
+///         z:Option<()>,
+///     },
+/// }
+///
+///
+///
+/// ```
+///
+///
+
 #[macro_export]
 macro_rules! fp {
     ( $($strings:tt)* ) => {{

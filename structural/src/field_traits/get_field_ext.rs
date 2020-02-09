@@ -143,31 +143,42 @@ pub trait GetFieldExt: IsStructural {
     /// with_car( &Vehicle::Car{ name:"initial-c", km:9001 } );
     /// with_car( &MoreVehicles::Car{ name:"initial-c", km:9001 } );
     ///
-    /// fn with_car<T>(circle:&T)
+    /// fn with_car<T>(car:&T)
     /// where
     ///     // `Vehicle_SI` was generated for Vehicle by the `Structural` derive.
     ///     T: Vehicle_SI
     /// {
     ///     assert_eq!(
-    ///         circle.fields(fp!(::Car.name, ::Car.km)),
+    ///         car.fields(fp!(::Car.name, ::Car.km)),
     ///         ( Some(&"initial-c"), Some(&9001) )
     ///     );
     ///
-    ///     //TODO:
-    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
+    ///     // this allows accessing multiple fields inside an enum variant without having to
+    ///     // create an intermediate variant proxy
+    ///     // (look at the next assert for what what looks like).
+    ///     assert_eq!( car.fields(fp!(::Car=>name,km)), Some((&"initial-c",&9001)) );
+    ///
+    ///     assert_eq!(
+    ///         // This is equivalent to the field access in the previous assert
+    ///         car.field_(fp!(::Car)).map(|vp| vp.fields(fp!(name,km)) ),
+    ///         Some((&"initial-c",&9001))
+    ///     );
+    ///
+    ///     assert_eq!( car.cloned_fields(fp!(::Truck=>weight_kg,driven_km)), None);
     /// }
     ///
     /// #[derive(Structural)]
     /// enum Vehicle{
     ///     Car{name: &'static str, km:u32},
-    ///     Truck,
+    ///     Truck{ weight_kg:u32, driven_km:u32 },
     /// }
     ///
     /// #[derive(Structural)]
     /// # #[struc(no_trait)]
     /// enum MoreVehicles{
     ///     Car{name: &'static str, km:u32},
-    ///     Truck,
+    ///     Truck{ weight_kg:u32, driven_km:u32 },
     ///     Boat,
     /// }
     ///
@@ -254,21 +265,32 @@ pub trait GetFieldExt: IsStructural {
     ///         ( Some("dawn"), Some(2038) )
     ///     );
     ///
-    ///     //TODO:
-    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
+    ///     // this allows accessing multiple fields inside an enum variant without having to
+    ///     // create an intermediate variant proxy
+    ///     // (look at the next assert for what what looks like).
+    ///     assert_eq!( pc.cloned_fields(fp!(::Pc=>manufacturer,year)), Some(("dawn",2038)) );
+    ///
+    ///     assert_eq!(
+    ///         // This is equivalent to the field access in the previous assert
+    ///         pc.field_(fp!(::Pc)).map(|vp| vp.cloned_fields(fp!(manufacturer,year)) ),
+    ///         Some(("dawn",2038))
+    ///     );
+    ///
+    ///     assert_eq!( pc.cloned_fields(fp!(::Phone=>number,charge)), None);
     /// }
     ///
     /// #[derive(Structural)]
     /// enum Device{
     ///     Pc{manufacturer: &'static str, year:u32},
-    ///     Phone,
+    ///     Phone{number:&'static str,charge:u8},
     /// }
     ///
     /// #[derive(Structural)]
     /// # #[struc(no_trait)]
     /// enum MoreDevices{
     ///     Pc{manufacturer: &'static str, year:u32},
-    ///     Phone,
+    ///     Phone{number:&'static str,charge:u8},
     ///     Tablet,
     /// }
     ///
@@ -457,31 +479,45 @@ pub trait GetFieldExt: IsStructural {
     /// with_book( &mut Medium::Book{ pages:500, title:"Dracular" } );
     /// with_book( &mut MoreMedia::Book{ pages:500, title:"Dracular" } );
     ///
-    /// fn with_book<T>(circle:&mut T)
+    /// fn with_book<T>(book:&mut T)
     /// where
     ///     // `Medium_SI` was generated for Medium by the `Structural` derive.
     ///     T: Medium_SI
     /// {
     ///     assert_eq!(
-    ///         circle.fields_mut(fp!(::Book.pages, ::Book.title)),
+    ///         book.fields_mut(fp!(::Book.pages, ::Book.title)),
     ///         ( Some(&mut 500), Some(&mut "Dracular") )
     ///     );
     ///
-    ///     //TODO:
-    ///     //Write the VariantProxy example when accessor chaining is implemented.
+    ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
+    ///     // this allows accessing multiple fields inside an enum variant without having to
+    ///     // create an intermediate variant proxy
+    ///     // (look at the next assert for what what looks like).
+    ///     assert_eq!(
+    ///         book.fields_mut(fp!(::Book=>pages,title)),
+    ///         Some((&mut 500,&mut "Dracular")),
+    ///     );
+    ///
+    ///     assert_eq!(
+    ///         // This is equivalent to the field access in the previous assert
+    ///         book.field_mut(fp!(::Book)).map(|vp| vp.fields_mut(fp!(pages,title)) ),
+    ///         Some((&mut 500,&mut "Dracular"))
+    ///     );
+    ///
+    ///     assert_eq!( book.fields_mut(fp!(::Comic=>artist,in_color)), None);
     /// }
     ///
     /// #[derive(Structural)]
     /// enum Medium{
     ///     Book{ pages:u32, title:&'static str },
-    ///     Comic,
+    ///     Comic{artist:&'static str,in_color:bool},
     /// }
     ///
     /// #[derive(Structural)]
     /// # #[struc(no_trait)]
     /// enum MoreMedia{
     ///     Book{ pages:u32, title:&'static str },
-    ///     Comic,
+    ///     Comic{artist:&'static str,in_color:bool},
     ///     Television,
     /// }
     ///
