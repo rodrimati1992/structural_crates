@@ -42,7 +42,7 @@ unsafe_delegate_structural_with!{
         T:Trait,
     ]
 
-    // This is the identifier used for `self` in the blocks bellow.
+    // This is the identifier used for `self` in the blocks below.
     self_ident=this;
 
     // This is the type of the variable we delegate to,

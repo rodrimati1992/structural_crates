@@ -22,19 +22,67 @@ use std_::marker::PhantomData;
 /// use structural::enums::VariantCount;
 ///
 /// # fn main(){
-/// assert_eq!( exhaustive_a(Enum::Foo), 0 );
-/// assert_eq!( exhaustive_b(Enum::Foo), 0 );
+/// {
+///     // Enum
 ///
-/// let bar=Enum::Bar(0);
-/// assert_eq!( exhaustive_a(bar.clone()), 1 );
-/// assert_eq!( exhaustive_b(bar), 1 );
+///     assert_eq!( nonexhaustive(Enum::Foo), Some(0) );
+///     assert_eq!( exhaustive_a(Enum::Foo), 0 );
+///     assert_eq!( exhaustive_b(Enum::Foo), 0 );
+///    
+///     let bar=Enum::Bar(0);
+///     assert_eq!( nonexhaustive(bar.clone()), Some(1) );
+///     assert_eq!( exhaustive_a(bar.clone()), 1 );
+///     assert_eq!( exhaustive_b(bar), 1 );
+///    
+///     let baz=Enum::Baz{wha:"whoah".into()};
+///     assert_eq!( nonexhaustive(baz.clone()), Some(2) );
+///     assert_eq!( exhaustive_a(baz.clone()), 2 );
+///     assert_eq!( exhaustive_b(baz), 2 );
+/// }
+/// {   
+///     // HyperEnum:
+///     // This enum has a superset of the variants required by `Ternary`.
+///     // The commented out lines below don't compile
+///     // because the `exhaustive_*` functions require the enum to only have
+///     // the `Foo`,`Bar`,and `Baz` variants
 ///
-/// let baz=Enum::Baz{wha:"whoah".into()};
-/// assert_eq!( exhaustive_a(baz.clone()), 2 );
-/// assert_eq!( exhaustive_b(baz), 2 );
+///     assert_eq!( nonexhaustive(HyperEnum::Foo), Some(0) );
+///     // assert_eq!( exhaustive_a(HyperEnum::Foo), 0 );
+///     // assert_eq!( exhaustive_b(HyperEnum::Foo), 0 );
+///    
+///     assert_eq!( nonexhaustive(HyperEnum::Bar), Some(1) );
+///     // assert_eq!( exhaustive_a(HyperEnum::Bar), 1 );
+///     // assert_eq!( exhaustive_b(HyperEnum::Bar), 1 );
+///    
+///     assert_eq!( nonexhaustive(HyperEnum::Baz), Some(2) );
+///     // assert_eq!( exhaustive_a(HyperEnum::Baz), 2 );
+///     // assert_eq!( exhaustive_b(HyperEnum::Baz), 2 );
 ///
+///     assert_eq!( nonexhaustive(HyperEnum::Boom), None );
+/// }
 /// # }
 ///
+/// // This function returns the index of the current variant of the enum,
+/// // but because `Ternary` is a nonexhaustive structural trait,
+/// // this function returns None for  handle the case where the enum is
+/// // none of the three variants.
+/// //
+/// fn nonexhaustive<T>(this: T)->Option<u8>
+/// where
+///     T: Ternary,
+/// {
+///     // The VariantCount bound allow this switch to be exhaustive.
+///     switch!{this;
+///         Foo=>Some(0),
+///         Bar=>Some(1),
+///         Baz=>Some(2),
+///         // This branch is required,
+///         // because `Ternary` doesn't require the enum to have exactly 3 variants
+///         _=>None.
+///     }
+/// }
+///
+/// // This function returns the index of the current variant of the enum,
 /// fn exhaustive_a<T>(this: T)->u8
 /// where
 ///     T: Ternary + VariantCount<Count=TStr!(3)>,
@@ -79,6 +127,15 @@ use std_::marker::PhantomData;
 ///     Foo,
 ///     Bar(u32),
 ///     Baz{wha:String},
+/// }
+///
+/// #[derive(Structural,Clone)]
+/// # #[struc(no_trait)]
+/// enum HyperEnum{
+///     Foo,
+///     Bar,
+///     Baz,
+///     Boom,
 /// }
 ///
 ///

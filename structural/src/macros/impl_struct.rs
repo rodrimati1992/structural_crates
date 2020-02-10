@@ -4,7 +4,7 @@ For declaring an anonymous structural type,this expands to an `impl Trait`.
 To construct an anonymous struct you can to use the
 [`make_struct` macro](./macro.make_struct.html).
 
-To declare a trait aliasing multipel accessor traits,you can use the
+To declare a trait aliasing multiple accessor traits,you can use the
 [`structural_alias` macro](./macro.structural_alias.html).
 
 # Non-accessor bounds

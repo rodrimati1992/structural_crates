@@ -12,7 +12,8 @@ With the attribute,any type that satisfy the bounds can be used.
 ie:`Bar::Foo((0,1))` would be  compatible with `Baz::Foo([0,1])` if the
 `#[struc(replace_bounds="ArrayVariant2<@variant,u64>")` attribute was used on the
 `Foo` variant in both types.
-<br>
+
+
 The `*_VSI` trait is generated for structs that derive `Structural` and
 don't have a `#[struc(no_trait)]` attribute.
 This trait allows the struct to be used as an enum variant,

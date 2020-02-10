@@ -107,11 +107,11 @@ Variants follow the same pattern as fields regarding access
 ```ignore
 mut Foo{
     // This is equivalent to `mut foo:String`,`mut` is inherited from the variant.
-    // Corresponds to `GetVariantFieldMut<FP!(foo),Ty= String>`
+    // Corresponds to `GetVariantFieldMut<TStr!(Foo),TStr!(foo),Ty= String>`
     foo:String,
-    // Corresponds to `GetVariantField<FP!(bar),Ty= u32>`
+    // Corresponds to `GetVariantField<TStr!(Foo),TStr!(bar),Ty= u32>`
     ref bar:u32,
-    // Corresponds to `IntoVariantFieldMut<FP!(baz),Ty= Vec<u32>>`
+    // Corresponds to `IntoVariantFieldMut<TStr!(Foo),TStr!(baz),Ty= Vec<u32>>`
     mut move baz:Vec<u32>,
 },
 
@@ -162,6 +162,9 @@ Without any attributes,an enum can have a superset of the required variants.
 
 Structural aliases are regular traits,
 so you can use them as supertraits in your own traits.
+
+The defaulted methods in `MyTrait` could move to `Fields` if MyTrait had a blanket impl,
+or because the defaulted methods are not supposed to be overriden.
 
 ```
 use structural::{GetFieldExt,structural_alias,fp};
@@ -438,12 +441,12 @@ use dependency::YesWith;
 #[derive(Structural)]
 #[struc(no_trait)]
 enum WasFileFound{
-    Yes(PathBuf,()), //Workaround before removing implicit delegation ot newtype variants.
+    Yes(PathBuf),
     No,
 }
 
 fn find_file(name:&str)->WasFileFound{
-    WasFileFound::Yes( PathBuf::from(name),() )
+    WasFileFound::Yes( PathBuf::from(name) )
 }
 
 fn main(){
@@ -476,14 +479,14 @@ structural_alias!{
         fn is_yes(&self)->bool{
             switch!{ref self;
                 Yes=>true,
-                _=>false
+                No=>false
             }
         }
 
         fn is_no(&self)->bool{
             switch!{ref self;
                 No=>true,
-                _=>false
+                Yes=>false
             }
         }
     }
