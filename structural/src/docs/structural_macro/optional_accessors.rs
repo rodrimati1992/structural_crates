@@ -1,20 +1,24 @@
 /*!
 
 Optional accessors are field accessors that return `Option<_>`s in GetFieldExt methods.
+For example: `GetFieldExt::field_` returns an `Option<&_>`,
+and `GetFieldExt::field_mut` returns an `Option<&mut _>`.
 
 You can use the same `GetFieldExt` methods for optional accessors that
 you can use for non-optional ones,
 because structural uses some type-level machinery to figure out whether it returns an
 `&Option<Foo>` or an `Option<&Foo>` for an accessor impl.
 
-Every enum field has accessors impls with `FP!(::Foo.bar)` type parameters,
+Every enum field has accessors impls callable with `fp!(::Foo.bar)`,
 all of which are optional accessors.
 
+# Return types of GetFieldExt methods
+
 For structs,making a field optional causes calling `GetFieldExt::field_` for
- `Option<T>` fields goes from returning an `&Option<T>` to `Option<&T>`.
+ `Option<T>` fields to go from returning an `&Option<T>` to returning an `Option<&T>`.
 
 For enums,making a field optional causes calling `GetFieldExt::field_` for
-`Option<T>` fields goes from returning an `Option<&Option<T>>` to `Option<&T>`.
+`Option<T>` fields to go from returning an `Option<&Option<T>>` to returning an `Option<&T>`.
 
 The same goes for every other method in `GetFieldExt`.
 
@@ -65,18 +69,17 @@ let mut this=Foo{
 // This works like always
 assert_eq!( this.field_(fp!(a)), &0 );
 
-// This evaluates to an `&Option<_>` instead of `Option<&_>`
-// because of the `#[struc(not_optional)]` attribute.
+// A `#[struc(not_optional)]` field inside a `#[struc(implicit_optionality)]` type.
 assert_eq!( this.field_(fp!(b)), &Some(99) );
 
-// This evaluates to an `Option<&_>` because of the `implicit_optionality`.
+// An optional field inside a `#[struc(implicit_optionality)]` type.
 assert_eq!( this.field_(fp!(c)), Some(&33) );
 
-// This evaluates to an `Option<&_>` because of the `implicit_optionality`.
+// An optional field inside a `#[struc(implicit_optionality)]` type.
 assert_eq!( this.field_(fp!(d)), None );
 
-// This evaluates to an `&Option<u32>` because the field was not written as `Option<_>`.
-// If the field had a `#[struc(optional)]` attribute,this would evaluate to an `Option<&u32>`.
+// An non-optional field inside a `#[struc(implicit_optionality)]` type,
+// this is because the macro only recognizes `Òption<_>` as an `Option`.
 assert_eq!( this.field_(fp!(e)), &None );
 this.e=Some(13);
 assert_eq!( this.field_(fp!(e)), &Some(13) );
@@ -112,10 +115,31 @@ let this=Foo::Bar{
     d:None,
 };
 
+//A regular field
 assert_eq!( this.field_(fp!(::Bar.a)), Some(&0) );
+
+// A regular `Option<u32>` field,this is not an optional field
+// because the `#[struc(optional)]` attribute wasn't used.
 assert_eq!( this.field_(fp!(::Bar.b)), Some(&Some(99)) );
+
+// An optional `u32` field,because of the `#[struc(optional)]` attribute
 assert_eq!( this.field_(fp!(::Bar.c)), Some(&33) );
+
+// An optional `u32` field,because of the `#[struc(optional)]` attribute
 assert_eq!( this.field_(fp!(::Bar.d)), None );
+
+assert_eq!(
+    // `=>` allows accessing multiple fields inside an optional field/variant,
+    // without having to unwrap them individually
+    // (half of this enum's fields are optional,so it makes less of a difference).
+    this.fields(fp!(::Bar=>a,b,c,d)),
+    Some((
+        &0,        //A regular field
+        &Some(99), //A regular `Option<u32>` field
+        Some(&33), //An optional `u32` field
+        None,      //An optional `u32` field
+    )),
+);
 
 ```
 

@@ -13,7 +13,7 @@ or branching on the value of fields.
 
 # Exhaustiveness
 
-structural enums can handle both exhaustive and nonexhaustive enums.
+Switch can handle both exhaustive and nonexhaustive enums.
 
 When matching exhaustive enums,eiher all variants must be matched,
 or the last branch must be the default branch (`_=>....`).
@@ -23,8 +23,11 @@ the last branch must be the default branch (`_=>....`).
 
 The `Structural` derive macro by default generates
 the `*_SI` nonexhaustive enum trait alias,
-and the `*_ESI` exhaustive enum trait alias,
-which one of those you use will determine whether the switch considers the enum exhaustive.
+and the `*_ESI` exhaustive enum trait alias.
+
+The `switch` macro considers enums it knows implement `VariantCount`
+(a supertrait of `*_ESI` traits) to be exhaustive,
+otherwise they're considered non-exhaustive.
 
 # Syntax Example
 
@@ -130,7 +133,8 @@ let text="99";
 //
 // If it was just the expression,then the `VariantProxy` would be inaccessible.
 let number = switch!{ other = Enum::Baz{ c:"55" } ;
-    // `if`s cannot be used as pattern guardss
+    // `if`s can only be used as guards on the `_` pattern,
+    // never as a guard when matching on a variant
     if 2+2!=4 => unreachable!("2+2 is 4, silly!"),
 
     Baz => other
@@ -138,7 +142,8 @@ let number = switch!{ other = Enum::Baz{ c:"55" } ;
         .parse::<u32>()
         .unwrap(),  // The `,` is required here
 
-    // `if let`s cannot be used as pattern guards
+    // `if can only be used as guards on the `_` pattern,
+    // never as a guard when matching on a variant
     if let Ok(x@99)=text.parse::<u32>() => {
         println!("{:?} parses to {}u32",text,x);
 
@@ -254,18 +259,19 @@ and the name of the proxy for accessing fields of a variant.
 
 Syntax(in the order in which the syntax is matched):
 
-- ` $($default_access:access_mode)? $proxy:identifier ;
+- ` $($default_access:access_mode)? $proxy:identifier ;`
+
+- ` $($default_access:access_mode)? $proxy:identifier = $matched_value:expression` ;
 
 - ` $($default_access:access_mode)? $matched_value:expression` ;
 
-- ` $($default_access:access_mode)? $proxy:identifier $( = $matched_value:expression )?` ;
 
 
 $default_access determins the default access mode for branches that don't specify it.
 When it's not specified in the switch header,it is `move`.
 
 If no `$matched_value` is passed,and `$proxy` is specified,
-`$proxy` will be the matched enum.
+the identifier of the matched enum will be reused for `$proxy`.
 
 If `$matched_value` *is* passed,and `$proxy` is not specified,
 it'll be stored into an anonymous proxy variable,inaccessible inside the switch branches.
@@ -300,10 +306,11 @@ You can manually convert the variant into a single field by doing
 
 A `switch_branch` is any of:
 
-- ` $variant:ident $fields:fields => $branch_expr:branch_expr`:
+- `$($access:access_mode)? $variant:ident $fields:fields => $branch_expr:branch_expr`:
 Checks whether the enum is the `$variant` variant,and if it is that variant,
 destructures the fields,and runs the `$branch_expr` code
-with the enum variant bound (a `VariantProxy<_,FP!($variant)>`) to the `$proxy` variable.
+with the enum variant bound (a `VariantProxy<_,FP!($variant)>`) to the `$proxy` variable
+(if it was declared).
 
 - `$(_)? if $condition:expression => $branch_expr:branch_expr`:
 A regular if expression,where `$branch_expr` is run if `$condition` evaluates to `true`.
@@ -319,7 +326,7 @@ with access to the variables declared inside the pattern.
 
 `fields` can be any of:
 
-- `{ $( $field_name:ident $( : $pattern:pattern )? ),* }`:
+- `{ $( $field:named_field_destructure ),* }`:
     A braced variant,with named fields,
     in which the fields can be bound by their names,
     or into an optional pattern.<br>

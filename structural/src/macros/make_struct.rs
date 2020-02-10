@@ -38,7 +38,7 @@
 ///     }
 /// }
 ///
-/// // Everything bellow could be on a separate crate (ignoring imports)
+/// // Everything below could be on a separate crate (ignoring imports)
 ///
 /// # fn main(){
 ///

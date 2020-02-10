@@ -33,6 +33,7 @@
 ///
 /// This is most useful when accessing multiple fields inside of an
 /// optional field or inside an enum variant.
+///
 /// The `=>` operator was defined for ergonomics,
 /// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
 /// `this.field_(fp!(::Foo)).map(|v| v.fields(fp!(0,1,2)) )`.
@@ -564,6 +565,8 @@ field_path_aliases!{
     a,
     b=b,
     c=d.e,
+    // field paths used to access multiple fields must be wrapped in parentheses.
+    d=(a,b,c),
 }
 # fn main(){}
 ```
@@ -583,6 +586,8 @@ fn hello(){
             a,
             b=b,
             c=d.e,
+            // field paths used to access multiple fields must be wrapped in parentheses.
+            d=(a,b,c),
         }
     }
 }

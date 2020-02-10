@@ -57,7 +57,7 @@ and you will be required to use the `#[struc(optional)]` attribute.
 
 # Variant Attributes
 
-### `#[struc(replace_bounds="bounds")]
+### `#[struc(replace_bounds="bounds")]`
 
 Replaces (in the generated trait) the bounds for this particular variant with
 the ones in the attribute.
