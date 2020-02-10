@@ -9,8 +9,8 @@ use crate::{
         NonOptField, OptionalField,
     },
     type_level::_private::TStr_,
-    type_level::{FieldPath, FieldPath1, VariantField, VariantName},
-    GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
+    type_level::{FieldPath, FieldPath1, IsSingleFieldPath, VariantField, VariantName},
+    FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl,
 };
 
 #[cfg(feature = "alloc")]
@@ -65,21 +65,31 @@ use core_extensions::MarkerType;
 ///     pub strand:String,
 /// }
 /// ```
-pub type RevGetFieldType<'a, FieldName, This> = <FieldName as RevGetField<'a, This>>::Ty;
+pub type RevGetFieldType<FieldName, This> = <FieldName as RevFieldType<This>>::Ty;
 
+/// The type returned by `RevIntoField::rev_box_into_field`.
 pub type RevIntoBoxedFieldType<'a, FieldName, This> =
     <FieldName as RevIntoField<'a, This>>::BoxedTy;
 
+/// Queries the error type returned by `Rev*Field` methods.
 pub type RevGetFieldErr<'a, FieldName, This> = <FieldName as RevGetField<'a, This>>::Err;
+
+/////////////////////////////////////////////////////////////////////////////
+
+/// Like FieldType,except that the parameters are reversed.
+/// `This` is the type we are accessing,and `Self` is a field path.
+pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
+    /// The type of the field.
+    type Ty: ?Sized;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
 /// Like GetFieldImpl,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
-pub trait RevGetField<'a, This: ?Sized> {
-    /// The reference-containing type this returns.
-    type Ty: ?Sized + 'a;
-    type Err;
+pub trait RevGetField<'a, This: ?Sized>: RevFieldType<This> {
+    /// The error returned by `rev_*` methods.
+    type Err: IsFieldErr;
 
     /// Accesses the field(s) that `self` represents inside of `this`,by reference.
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err>;
@@ -102,7 +112,7 @@ pub trait RevGetFieldMut<'a, This: ?Sized>: RevGetField<'a, This> {
 /// Like IntoFieldImpl,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 pub trait RevIntoField<'a, This: ?Sized>: RevGetField<'a, This> {
-    type BoxedTy: 'a;
+    type BoxedTy;
 
     /// Accesses the field(s) that `self` represents inside of `this`,by value.
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err>
@@ -136,6 +146,17 @@ macro_rules! impl_get_nested_field_inner {
         )
         last($fname_l:ident $ferr_l:ident $fty_l:ident)
     )=>{
+        impl<$($fname_a,$fty_a,)* This> RevFieldType<This> for FieldPath<($($fname_a,)*)>
+        where
+            This:?Sized,
+            $(
+                $fname_a: RevFieldType<$receiver, Ty=$fty_a>,
+                $fty_a:?Sized,
+            )*
+        {
+            type Ty=$fty_l;
+        }
+
         impl<'a,$($fname_a,$fty_a, $ferr_a,)* This,CombErr>
             RevGetField<'a,This>
         for FieldPath<($($fname_a,)*)>
@@ -149,7 +170,6 @@ macro_rules! impl_get_nested_field_inner {
             ( $($ferr_a,)* ): CombinedErrs<Combined= CombErr >,
             CombErr:IsFieldErr,
         {
-            type Ty=$fty_l;
             type Err=CombErr;
 
             #[inline(always)]
@@ -214,7 +234,7 @@ macro_rules! impl_get_nested_field_inner {
             $fname1: RevIntoField<
                 'a,
                 BoxedTy0,
-                Ty= RevGetFieldType<'a,$fname1,$fty0>,
+                Ty= RevGetFieldType<$fname1,$fty0>,
                 Err= RevGetFieldErr<'a,$fname1,$fty0>,
             >,
 
@@ -344,11 +364,17 @@ impl_get_nested_field_inner! {
 /////           Implementations for FP!() (The empty field path)
 ////////////////////////////////////////////////////////////////////////////////
 
+impl<This> RevFieldType<This> for FieldPath<()>
+where
+    This: ?Sized,
+{
+    type Ty = This;
+}
+
 impl<'a, This> RevGetField<'a, This> for FieldPath<()>
 where
     This: ?Sized + 'a,
 {
-    type Ty = This;
     type Err = NonOptField;
 
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err> {
@@ -389,12 +415,19 @@ where
 /////           Implementations for single path field paths
 ////////////////////////////////////////////////////////////////////////////////
 
+impl<This, F0> RevFieldType<This> for FieldPath1<F0>
+where
+    This: ?Sized,
+    F0: MarkerType + RevFieldType<This>,
+{
+    type Ty = F0::Ty;
+}
+
 impl<'a, This, F0> RevGetField<'a, This> for FieldPath1<F0>
 where
     This: ?Sized + 'a,
     F0: MarkerType + RevGetField<'a, This>,
 {
-    type Ty = F0::Ty;
     type Err = F0::Err;
 
     fn rev_get_field(self, this: &'a This) -> Result<&'a F0::Ty, F0::Err> {
@@ -446,6 +479,14 @@ macro_rules! impl_rev_traits {
         impl[ $($typarams:tt)*] $self_:ty
         where[ $($where_:tt)* ]
     ) => (
+        impl<This,$($typarams)*> RevFieldType<This> for $self_
+        where
+            This: ?Sized + FieldType<FieldPath1<Self>>,
+            $($where_)*
+        {
+            type Ty =GetFieldType<This,FieldPath1<Self>>;
+        }
+
         impl<'a,This,_Ty,_Err,$($typarams)*> RevGetField<'a,This> for $self_
         where
             This: ?Sized + 'a + GetFieldImpl<FieldPath1<Self>, Ty=_Ty, Err=_Err>,
@@ -453,7 +494,6 @@ macro_rules! impl_rev_traits {
             _Err: IsFieldErr,
             $($where_)*
         {
-            type Ty =_Ty;
             type Err=_Err;
 
             #[inline(always)]
@@ -546,12 +586,19 @@ impl_rev_traits! {
 
 ////////////////////////////////////////////
 
+impl<This, V> RevFieldType<This> for VariantName<V>
+where
+    This: ?Sized + IsVariant<FieldPath1<V>>,
+    V: 'static,
+{
+    type Ty = VariantProxy<This, FieldPath1<V>>;
+}
+
 impl<'a, This, V> RevGetField<'a, This> for VariantName<V>
 where
     This: ?Sized + 'a + IsVariant<FieldPath1<V>>,
     V: 'static,
 {
-    type Ty = VariantProxy<This, FieldPath1<V>>;
     type Err = OptionalField;
 
     #[inline(always)]

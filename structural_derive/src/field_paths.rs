@@ -108,7 +108,7 @@ impl FieldPaths {
             if let Some(prefix) = &self.prefix {
                 let prefix = prefix.tuple_tokens(char_path);
                 quote!(
-                    ::structural::pmr::NestedFieldSet<
+                    ::structural::pmr::NestedFieldPathSet<
                         #prefix,
                         (#(#path,)*),
                         #uniqueness
@@ -135,7 +135,7 @@ impl FieldPaths {
         ret.append_all(match (&self.prefix, self.is_set()) {
             (None, false) => quote!(structural::pmr::MarkerType::MTVAL),
             (None, true) => quote!(unsafe { structural::pmr::FieldPathSet::new_unchecked() }),
-            (Some(_), _) => quote!(unsafe { structural::pmr::NestedFieldSet::new_unchecked() }),
+            (Some(_), _) => quote!(unsafe { structural::pmr::NestedFieldPathSet::new_unchecked() }),
         });
         <Token!(;)>::default().to_tokens(&mut ret);
         ret
@@ -158,7 +158,7 @@ impl FieldPaths {
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
             if self.prefix.is_some() {
-                quote!(unsafe { structural::pmr::NestedFieldSet::new_unchecked() })
+                quote!(unsafe { structural::pmr::NestedFieldPathSet::new_unchecked() })
             } else {
                 quote!(unsafe { structural::pmr::FieldPathSet::new_unchecked() })
             }

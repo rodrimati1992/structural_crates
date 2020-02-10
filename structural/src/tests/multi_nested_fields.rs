@@ -141,23 +141,23 @@ fn get_nested_field_types() {
         let _: AssertEq<GetFieldType2<Tuple, FP0, FP0>, Void>;
         let _: AssertEq<GetFieldType2<Tuple, FP0, FP1>, SStr>;
 
-        let _: AssertEq<RevGetFieldType<'_, FP_0_0, Tuple>, Void>;
-        let _: AssertEq<RevGetFieldType<'_, FP_0_1, Tuple>, SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_0, Tuple>, Void>;
+        let _: AssertEq<RevGetFieldType<FP_0_1, Tuple>, SStr>;
     }
     {
         type Tuple = Unary<((), (), (u64, SStr))>;
         let _: AssertEq<GetFieldType3<Tuple, FP0, FP2, FP0>, u64>;
         let _: AssertEq<GetFieldType3<Tuple, FP0, FP2, FP1>, SStr>;
 
-        let _: AssertEq<RevGetFieldType<'_, FP_0_2_0, Tuple>, u64>;
-        let _: AssertEq<RevGetFieldType<'_, FP_0_2_1, Tuple>, SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_0, Tuple>, u64>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1, Tuple>, SStr>;
     }
     {
         type Tuple = Unary<((), (), ((), (SStr, VVec)))>;
         let _: AssertEq<GetFieldType4<Tuple, FP0, FP2, FP1, FP0>, SStr>;
         let _: AssertEq<GetFieldType4<Tuple, FP0, FP2, FP1, FP1>, VVec>;
 
-        let _: AssertEq<RevGetFieldType<'_, FP_0_2_1_0, Tuple>, SStr>;
-        let _: AssertEq<RevGetFieldType<'_, FP_0_2_1_1, Tuple>, VVec>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1_0, Tuple>, SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1_1, Tuple>, VVec>;
     }
 }

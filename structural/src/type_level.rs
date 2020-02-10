@@ -28,8 +28,8 @@ pub mod to_value_traits;
 pub use self::list::{TList, TNil};
 
 pub use self::field_path::{
-    AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsFieldPath, IsFieldPathSet, IsTStr,
-    NestedFieldSet, UncheckedVariantField, UniquePaths, VariantField, VariantFieldPath,
+    AliasedPaths, FieldPath, FieldPath1, FieldPathSet, IsMultiFieldPath, IsSingleFieldPath, IsTStr,
+    NestedFieldPathSet, UncheckedVariantField, UniquePaths, VariantField, VariantFieldPath,
     VariantName,
 };
 

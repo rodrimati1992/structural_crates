@@ -64,7 +64,7 @@ use std_::marker::PhantomData;
 ///
 /// // This function returns the index of the current variant of the enum,
 /// // but because `Ternary` is a nonexhaustive structural trait,
-/// // this function returns None for  handle the case where the enum is
+/// // it returns None to handle the case where the enum is
 /// // none of the three variants.
 /// //
 /// fn nonexhaustive<T>(this: T)->Option<u8>
@@ -78,7 +78,7 @@ use std_::marker::PhantomData;
 ///         Baz=>Some(2),
 ///         // This branch is required,
 ///         // because `Ternary` doesn't require the enum to have exactly 3 variants
-///         _=>None.
+///         _=>None,
 ///     }
 /// }
 ///
@@ -99,9 +99,10 @@ use std_::marker::PhantomData;
 /// where
 ///     // `TernaryExhaustive` is equivalent to `Ternary + VariantCount<Count=TStr!(3)>`.
 ///     //
-///     // You would use a `+ VariantCount<Count=_>` bound if the structural alias
-///     // came from somewhere else,it's a nonexhaustive structural alias,
-///     // and you don't want to do declare another alias like `TernarySuper`.
+///     // You would use a `+ VariantCount<Count=_>` bound if all of thse happen:
+///     // - The structural alias came from somewhere else.
+///     // - It's a nonexhaustive structural alias.
+///     // - You don't want to do declare another alias,like `TernarySuper`.
 ///     T: TernaryExhaustive
 /// {
 ///     exhaustive_a(this)
