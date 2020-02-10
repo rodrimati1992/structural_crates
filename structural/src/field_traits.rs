@@ -3,7 +3,7 @@ Accessor and extension traits for fields.
 */
 
 use crate::{
-    type_level::{FieldPath, FieldPathSet, IsFieldPath, IsFieldPathSet, UniquePaths},
+    type_level::{FieldPath, FieldPathSet, UniquePaths},
     IsStructural, Structural,
 };
 
@@ -150,6 +150,7 @@ macro_rules! declare_accessor_trait_alias {
 /// ```
 ///
 pub trait GetFieldImpl<FieldName, P = ()>: FieldType<FieldName> {
+    /// The error type returned by the accessor methods.
     type Err: IsFieldErr;
 
     /// Accesses the `FieldName` field by reference.
@@ -221,14 +222,29 @@ pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
 pub type GetFieldErr<This, FieldName, P = ()> = <This as GetFieldImpl<FieldName, P>>::Err;
 
 /// Queries the type of a double nested field (eg:`.a.b`).
+///
+/// Example usage(before Rust 1.40.0):
+/// `GetFieldType2<T,FP!(f o o),FP!(b a r)>`<br>
+/// Example usage(since  Rust 1.40.0):
+/// `GetFieldType2<T,FP!(foo),FP!(bar)>`
 pub type GetFieldType2<This, FieldName, FieldName2> =
     GetFieldType<GetFieldType<This, FieldName>, FieldName2>;
 
 /// Queries the type of a triple nested field (eg:`.a.b.c`).
+///
+/// Example usage(before Rust 1.40.0):
+/// `GetFieldType3<T,FP!(f o o),FP!(b a r),FP!(b a z)>`<br>
+/// Example usage(since  Rust 1.40.0):
+/// `GetFieldType3<T,FP!(foo),FP!(bar),FP!(baz)>`
 pub type GetFieldType3<This, FieldName, FieldName2, FieldName3> =
     GetFieldType<GetFieldType2<This, FieldName, FieldName2>, FieldName3>;
 
 /// Queries the type of a quadruple nested field (eg:`.a.b.c.d`).
+///
+/// Example usage(before Rust 1.40.0):
+/// `GetFieldType4<T,FP!(f o o),FP!(b a r),FP!(b a z),FP!(b o o m)>`<br>
+/// Example usage(since  Rust 1.40.0):
+/// `GetFieldType4<T,FP!(foo),FP!(bar),FP!(baz),FP!(boom)>`
 pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
     GetFieldType2<GetFieldType2<This, FieldName, FieldName2>, FieldName3, FieldName4>;
 

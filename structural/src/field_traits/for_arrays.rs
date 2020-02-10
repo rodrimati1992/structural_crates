@@ -74,7 +74,7 @@ use crate::{
     type_level::{
         cmp::{Compare_, TGreater},
         integer::*,
-        IsFieldPath,
+        IsSingleFieldPath,
     },
 };
 
@@ -99,7 +99,7 @@ mod sealed {
 use self::sealed::Sealed;
 
 /// A FieldPath that is usable for indexing (some) arrays.
-pub trait ArrayPath: IsFieldPath + Sealed {
+pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
 
     type Index: IsUnsigned;

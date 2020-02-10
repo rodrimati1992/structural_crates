@@ -56,6 +56,10 @@ struct Foo{
     c:Option<u32>,
     d:Option<u32>,
     e:OptionU32,
+    #[struc(not_optional)]
+    f:Option<(u32,u32,u32)>,
+    #[struc(optional)]
+    g:Option<(u32,u32,u32)>,
 }
 
 let mut this=Foo{
@@ -64,6 +68,8 @@ let mut this=Foo{
     c:Some(33),
     d:None,
     e:None,
+    f:Some((3,5,8)),
+    g:Some((13,21,34)),
 };
 
 // This works like always
@@ -83,6 +89,12 @@ assert_eq!( this.field_(fp!(d)), None );
 assert_eq!( this.field_(fp!(e)), &None );
 this.e=Some(13);
 assert_eq!( this.field_(fp!(e)), &Some(13) );
+
+// Here we access multiple fields inside the `f` `#[struc(not_optional)]` Option field.
+assert_eq!( this.fields(fp!(f::Some=>0,1,2)), Some((&3,&5,&8)) );
+
+// Here we access multiple fields inside the `g` optional field.
+assert_eq!( this.fields(fp!(g=>0,1,2)), Some((&13,&21,&34)) );
 
 
 ```
