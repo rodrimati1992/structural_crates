@@ -41,7 +41,8 @@ mod for_better_macros {
 fn identifier_macros_equality() {
     use self::for_better_macros::*;
     use crate::chars;
-    use crate::type_level::{FieldPath, _private::TStr_};
+    use crate::field_path::FieldPath;
+    use crate::type_level::_private::TStr_;
 
     type S_abcd = TStr_<(chars::_a, chars::_b, chars::_c, chars::_d)>;
     type S_21 = TStr_<(chars::_2, chars::_1)>;
@@ -82,7 +83,7 @@ fn identifier_macros_equality() {
 #[cfg(feature = "better_macros")]
 #[test]
 fn field_paths_equality() {
-    use crate::type_level::{FieldPath, FieldPathSet, UniquePaths};
+    use crate::field_path::{FieldPath, FieldPathSet, UniquePaths};
 
     use self::for_better_macros::*;
 
@@ -132,7 +133,7 @@ fn field_paths_equality() {
 }
 
 mod make_struct_tests {
-    use crate::{type_level::FieldPath, GetFieldExt};
+    use crate::{field_path::FieldPath, GetFieldExt};
 
     crate::structural_alias! {
         trait Hi<T>{

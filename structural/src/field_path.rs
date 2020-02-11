@@ -1,6 +1,5 @@
 /*!
-Type-level representatins of a chain of field accesses (`FieldPath`),
-and multiple field accesses (`FieldPathSet`).
+Type-level representatins of access to one or multiple fields.
 */
 
 #![allow(non_snake_case, non_camel_case_types)]
@@ -27,6 +26,7 @@ mod to_usize;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Aliases for field paths.
 pub mod aliases {
     field_path_aliases! {
         index_0=0,

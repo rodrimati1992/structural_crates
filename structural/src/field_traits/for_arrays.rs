@@ -67,6 +67,7 @@ print_first_3( ["baz";32] );
 */
 
 use crate::{
+    field_path::IsSingleFieldPath,
     field_traits::{
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField,
     },
@@ -74,7 +75,6 @@ use crate::{
     type_level::{
         cmp::{Compare_, TGreater},
         integer::*,
-        IsSingleFieldPath,
     },
 };
 
@@ -128,7 +128,7 @@ macro_rules! declare_array_paths {
         )*
     ) => (
         pub(crate) mod names{
-            use crate::type_level::FieldPath1;
+            use crate::field_path::FieldPath1;
 
             $(
                 pub type $index_name= FieldPath1<super::strings::$index_name>;

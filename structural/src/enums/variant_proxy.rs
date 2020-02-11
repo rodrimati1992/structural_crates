@@ -1,9 +1,9 @@
 use crate::{
+    field_path::{FieldPath1, UncheckedVariantField, VariantFieldPath},
     field_traits::{
         variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,
     },
-    type_level::{FieldPath1, UncheckedVariantField, VariantFieldPath},
 };
 
 #[cfg(feature = "alloc")]

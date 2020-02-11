@@ -3,7 +3,7 @@ use crate::alloc::boxed::Box;
 
 use crate::{
     enums::{IsVariant, VariantProxy},
-    type_level::FieldPath1,
+    field_path::FieldPath1,
 };
 
 /// Extension trait for enums.

@@ -1,3 +1,5 @@
+//! Traits for converting type-level-value to a value.
+
 use crate::chars;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,6 +18,7 @@ mod sealed {
 use self::sealed::Sealed;
 
 /// Converts this type-level digit to a u8.
+#[doc(hidden)]
 pub trait ToDigit: Sealed {
     const DIGIT: u8;
 }

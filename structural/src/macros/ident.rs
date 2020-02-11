@@ -194,15 +194,15 @@ macro_rules! _delegate_fp {
     ($ident:ident) => (
         $crate::_delegate_fp_inner!( [ident] $ident )
     );
-    (0)=>{ $crate::type_level::field_path::aliases::index_0 };
-    (1)=>{ $crate::type_level::field_path::aliases::index_1 };
-    (2)=>{ $crate::type_level::field_path::aliases::index_2 };
-    (3)=>{ $crate::type_level::field_path::aliases::index_3 };
-    (4)=>{ $crate::type_level::field_path::aliases::index_4 };
-    (5)=>{ $crate::type_level::field_path::aliases::index_5 };
-    (6)=>{ $crate::type_level::field_path::aliases::index_6 };
-    (7)=>{ $crate::type_level::field_path::aliases::index_7 };
-    (8)=>{ $crate::type_level::field_path::aliases::index_8 };
+    (0)=>{ $crate::field_path::aliases::index_0 };
+    (1)=>{ $crate::field_path::aliases::index_1 };
+    (2)=>{ $crate::field_path::aliases::index_2 };
+    (3)=>{ $crate::field_path::aliases::index_3 };
+    (4)=>{ $crate::field_path::aliases::index_4 };
+    (5)=>{ $crate::field_path::aliases::index_5 };
+    (6)=>{ $crate::field_path::aliases::index_6 };
+    (7)=>{ $crate::field_path::aliases::index_7 };
+    (8)=>{ $crate::field_path::aliases::index_8 };
     ($($everything:tt)*) => ({
         $crate::_delegate_fp_inner!( [normal] $($everything)* )
     })
@@ -925,7 +925,7 @@ type parameter with the `*VariantField*` traits,to access a variant field.
 /**
 use structural::{GetFieldExt,FP,Structural,TStr};
 use structural::field_traits::{GetFieldType,GetVariantFieldType,IntoVariantFieldMut};
-use structural::type_level::VariantFieldPath;
+use structural::field_path::VariantFieldPath;
 
 // `GetFieldType<This,FP!(::Ok.0)>` can also be written as
 // `GetVariantFieldType<This,TStr!(Ok),TStr!(0)>`.
@@ -965,7 +965,7 @@ instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
 use structural::{GetField,GetFieldExt,Structural,TStr};
-use structural::type_level::FieldPath1;
+use structural::field_path::FieldPath1;
 
 fn main(){
     let phone=CellPhone{
