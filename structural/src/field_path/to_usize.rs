@@ -1,7 +1,7 @@
+use crate::field_path::FieldPath1;
 use crate::type_level::{
-    to_value_traits::{ToDigit, ToUsize},
-    FieldPath1,
     _private::TStr_,
+    to_value_traits::{ToDigit, ToUsize},
 };
 
 macro_rules! impl_to_usize {
@@ -56,6 +56,8 @@ impl_to_usize! { P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 P12 P13 P14 P15 P16 P17 }
 impl_to_usize! { P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 P12 P13 P14 P15 P16 P17 P18 }
 impl_to_usize! { P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 P12 P13 P14 P15 P16 P17 P18 P19 }
 
+/// Single index `FieldPath`s up to 19 digits can be converted to usize
+/// (assuming that usize can store that number)
 impl<S> ToUsize for FieldPath1<S>
 where
     S: ToUsize,

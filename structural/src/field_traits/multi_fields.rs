@@ -5,7 +5,7 @@ Contains traits for accessing multiple fields at once.
 
 use super::*;
 
-use crate::type_level::{IsMultiFieldPath, NestedFieldPathSet};
+use crate::field_path::{IsMultiFieldPath, NestedFieldPathSet};
 
 use core_extensions::SelfOps;
 

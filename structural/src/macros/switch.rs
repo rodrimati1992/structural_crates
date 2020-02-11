@@ -67,7 +67,7 @@ where
     //
     // To match the enum by reference only, you can use `switch{ref this; .... }`,
     // and not override it in switch branches.
-    // Overriding it is `ref mut Foo{x}=>{}`,not overriding it is `Foo{x}=>{}`
+    // Overriding looks like `ref mut Foo{x}=>{}`,and not overriding looks like `Foo{x}=>{}`
     //
     // To match the enum by mutable reference only, you can use `switch{ref mut this; .... }`,
     // and not override it in switch branches.
@@ -250,9 +250,8 @@ switch!{
 }
 ```
 
-- ``
+<br/>
 
-<br>
 The `switch_header` allows passing the matched expression,
 declaring the default access mode for all variants,
 and the name of the proxy for accessing fields of a variant.

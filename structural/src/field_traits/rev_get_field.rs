@@ -4,12 +4,12 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
+    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         NonOptField, OptionalField,
     },
     type_level::_private::TStr_,
-    type_level::{FieldPath, FieldPath1, IsSingleFieldPath, VariantField, VariantName},
     FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl,
 };
 

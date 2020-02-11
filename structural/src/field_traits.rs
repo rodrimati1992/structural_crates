@@ -3,7 +3,7 @@ Accessor and extension traits for fields.
 */
 
 use crate::{
-    type_level::{FieldPath, FieldPathSet, UniquePaths},
+    field_path::{FieldPath, FieldPathSet, UniquePaths},
     IsStructural, Structural,
 };
 

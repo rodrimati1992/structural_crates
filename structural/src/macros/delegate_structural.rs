@@ -206,6 +206,13 @@ unsafe_delegate_structural_with!{
 */
 #[macro_export]
 macro_rules! unsafe_delegate_structural_with {
+    ( $($params:tt)* )=>{
+        $crate::unsafe_delegate_structural_with_inner!{ $($params)* }
+    }
+}
+
+#[macro_export]
+macro_rules! unsafe_delegate_structural_with_inner {
     (
         impl $impl_params:tt $self:ty
         where $where_clause:tt
@@ -230,7 +237,7 @@ macro_rules! unsafe_delegate_structural_with {
         )?
     ) => (
 
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-structural;
             impl $impl_params $self
             where $where_clause
@@ -241,7 +248,7 @@ macro_rules! unsafe_delegate_structural_with {
             GetFieldImpl $get_field_closure
         }
 
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner;
             impl $impl_params $self
             where $where_clause
@@ -252,7 +259,7 @@ macro_rules! unsafe_delegate_structural_with {
         }
 
         $(
-            $crate::unsafe_delegate_structural_with!{
+            $crate::unsafe_delegate_structural_with_inner!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
@@ -268,7 +275,7 @@ macro_rules! unsafe_delegate_structural_with {
         )?
 
         $(
-            $crate::unsafe_delegate_structural_with!{
+            $crate::unsafe_delegate_structural_with_inner!{
                 inner;
                 impl $impl_params $self
                 where $where_clause
@@ -379,7 +386,7 @@ macro_rules! unsafe_delegate_structural_with {
             $delegating_to_type: $crate::IsStructural + $crate::GetFieldImpl<$fname_ty,__P>,
             $($where_clause)*
         {
-            type Err=$crate::unsafe_delegate_structural_with!{
+            type Err=$crate::unsafe_delegate_structural_with_inner!{
                 get_err;
                 delegating_to_type=$delegating_to_type;
                 field_name=$fname_ty;
@@ -414,7 +421,7 @@ macro_rules! unsafe_delegate_structural_with {
         unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
         as_delegating_raw $as_field_mutref_closure:block
     )=>{
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-mut-0;
 
             (
@@ -432,7 +439,7 @@ macro_rules! unsafe_delegate_structural_with {
         }
     };
     (inner-mut-0; $inner_mut_stuff:tt )=>{
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-mut-1;
 
             $inner_mut_stuff
@@ -455,7 +462,7 @@ macro_rules! unsafe_delegate_structural_with {
 
         $inner_mut_stuff:tt
     )=>{
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-mut-2;
 
             $inner_mut_stuff
@@ -502,7 +509,7 @@ macro_rules! unsafe_delegate_structural_with {
 
         $inner_mut_stuff:tt
     )=>{
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-mut-2;
 
             $inner_mut_stuff
@@ -551,7 +558,7 @@ macro_rules! unsafe_delegate_structural_with {
 
         $inner_mut_stuff:tt
     )=>{
-        $crate::unsafe_delegate_structural_with!{
+        $crate::unsafe_delegate_structural_with_inner!{
             inner-mut-2;
 
             $inner_mut_stuff

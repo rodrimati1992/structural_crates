@@ -374,6 +374,7 @@ mod macros;
 
 pub mod docs;
 pub mod enums;
+pub mod field_path;
 pub mod field_traits;
 pub mod mut_ref;
 pub mod structural_trait;
@@ -432,6 +433,7 @@ pub mod pmr {
     pub use crate::chars::*;
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
+    pub use crate::field_path::*;
     pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
     pub use crate::structural_trait::IsStructural;

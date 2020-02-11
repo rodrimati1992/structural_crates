@@ -22,6 +22,9 @@ mod enum_derivation;
 #[macro_use]
 mod switch;
 
+#[macro_use]
+mod type_level_internal;
+
 /// Implements an infallible getter
 #[doc(hidden)]
 #[macro_export]

@@ -28,6 +28,7 @@ impl<T> IsUnsigned for Unsigned<T> {}
 
 /////////////////////////////////////////////////////////////////////
 
+/// Marker trait for the `Bit0` and `Bit1` types .
 pub trait IsBit: Sealed {
     const VALUE: bool;
 }

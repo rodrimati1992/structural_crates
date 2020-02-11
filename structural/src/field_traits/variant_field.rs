@@ -4,10 +4,10 @@ Traits for getting a field from an enum variant.
 
 use crate::{
     enums::IsVariant,
+    field_path::{FieldPath1, UncheckedVariantField, VariantFieldPath},
     field_traits::{
         FieldType, NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField,
     },
-    type_level::{FieldPath1, UncheckedVariantField, VariantFieldPath},
     GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
 
