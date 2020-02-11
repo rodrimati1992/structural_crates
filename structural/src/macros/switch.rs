@@ -29,12 +29,13 @@ The `switch` macro considers enums it knows implement `VariantCount`
 (a supertrait of `*_ESI` traits) to be exhaustive,
 otherwise they're considered non-exhaustive.
 
-# Syntax Example
+# Syntax Examples
 
-This example demonstrates all the syntax of the `switch` macro.
+These examples demonstrates all the syntax of the `switch` macro.
 
 [For a detailed description of the syntax look here](#syntax)
 
+This demonstrates variant access modes:
 ```
 use structural::{GetFieldExt,Structural,fp,switch};
 
@@ -106,6 +107,28 @@ where
     }
 }
 
+```
+
+This demonstates that you can use access modes in the switch header,
+and how you can copy Copy fields in with different access modes:
+```rust
+use structural::{GetFieldExt,Structural,fp,switch};
+
+# #[derive(Debug,Copy,Clone,Structural)]
+# #[struc(no_trait)]
+# enum Enum{
+#     Foo{a:u32},
+#     Bar{b:u64},
+#     Baz{c:&'static str},
+#     Bam{
+#       #[struc(optional)]
+#       d:Option<usize>
+#     },
+# }
+
+// The same enum as the first example
+let mut this=Enum::Foo{a:100};
+
 // `ref` here sets default access for all variants,
 // which is overridable per-variant,destructuring fields into references by default.
 switch!{ ref this ;
@@ -125,14 +148,37 @@ switch!{ ref this ;
     // The `ref` here is redundant,since it's inherited from the switch header
     ref Bam{d}=>assert_eq!( d, Some(&400) )// The `,` is optional after the last switch arm.
 }
+```
+
+This demonstrates `if`,`if let`,and `_=>` branches,
+as well as using the variant proxy after the matches fields(in the `Bam` branch).
+
+```rust
+use structural::{GetFieldExt,Structural,fp,switch};
+
+# #[derive(Debug,Copy,Clone,Structural)]
+# #[struc(no_trait)]
+# enum Enum{
+#     Foo{a:u32},
+#     Bar{b:u64},
+#     Baz{c:&'static str},
+#     Bam{
+#       #[struc(optional)]
+#       d:Option<usize>
+#     },
+# }
+
+// The same enum as the first example
+let this=Enum::Baz{ c:"55" };
 
 let text="99";
+
 // `other = <expression>` is used here to be able to use
 // the `VariantProxy<Enum,FP!(VariantName)>` inside the switch branch,
 // to access any field of the matched variant(especially those that weren't destructured).
 //
 // If it was just the expression,then the `VariantProxy` would be inaccessible.
-let number = switch!{ other = Enum::Baz{ c:"55" } ;
+let number = switch!{ other = this;
     // `if`s can only be used as guards on the `_` pattern,
     // never as a guard when matching on a variant
     if 2+2!=4 => unreachable!("2+2 is 4, silly!"),
@@ -227,7 +273,8 @@ enum GenericDirection4<T>{
 
 # More Examples
 
-For more examples you can look at the ones [in the docs for enums](TODO)
+For more examples you can look at the ones
+[in the docs for enums](./docs/structural_macro/enums/index.html)
 
 
 # Syntax

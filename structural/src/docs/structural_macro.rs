@@ -14,6 +14,10 @@ By default,this derive generates:
 - A trait named `<deriving_type>_SI`,aliasing the accessor traits for the type,
 with a blanket implementation for all types with the same fields.
 
+- A trait named `<deriving_type>_VSI`,
+for use of the struct as a newtype variant,by annotating the variant with
+`#[struc(newtype(bound="<deriving_type>_VSI<@variant>"))]`.
+
 All of these can be overriden.
 
 # Container Attributes

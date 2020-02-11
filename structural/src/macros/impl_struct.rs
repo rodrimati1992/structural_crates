@@ -1,6 +1,8 @@
 /**
 For declaring an anonymous structural type,this expands to an `impl Trait`.
 
+**This is only usable from Rust 1.40 onwards**
+
 To construct an anonymous struct you can to use the
 [`make_struct` macro](./macro.make_struct.html).
 
