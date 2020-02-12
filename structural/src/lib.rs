@@ -238,7 +238,7 @@ pub struct UnsupportedCommand<T>(pub T);
 
 ```
 
-### Structural alias
+### Structural alias for struct
 
 This demonstrates how you can define a trait aliasing field accessors,
 using a fields-in-traits syntax.
@@ -372,6 +372,111 @@ struct SmallHouse{
     dim:Dimension3D,
     residents:u32,
 }
+
+```
+
+### Structural alias for enums
+
+This demonstrates how you can use structural aliases for enums.
+
+This shows both exhaustive and nonexhaustive enum structural aliases,
+by using the `#[struc(and_exhaustive_enum(suffix="_Ex"))]` attribute when declaring the
+trait inside of `structural_alias`.
+You can use the `#[struc(exhaustive_enum)]` attribute to make the annotated trait
+itself exhaustive.
+
+```rust
+use structural::{GetFieldExt,Structural,structural_alias,switch,fp};
+use std::fmt::Debug;
+
+# fn main(){
+pet_animal_ex(&SomeMammals::Dog{years:1,volume_cm3:1});
+pet_animal_ex(&SomeMammals::Horse);
+
+// `MoreAnimals` cannot be passed to `pet_animal_ex`
+// since that one requires an enum with only `Dog` and `Horse` variants.
+assert_eq!( pet_animal(&MoreAnimals::Dog{years:10,volume_cm3:100}), Ok(()) );
+assert_eq!( pet_animal(&MoreAnimals::Horse), Ok(()) );
+assert_eq!( pet_animal(&MoreAnimals::Cat{lives:9}), Err(CouldNotPet) );
+assert_eq!( pet_animal(&MoreAnimals::Seal), Err(CouldNotPet) );
+# }
+
+fn pet_animal(animal: &dyn Animal)-> Result<(),CouldNotPet> {
+    // `::Dog` accesses the `Dog` variant
+    // (without the `::` it'd be interpreted as a field access),
+    // => allows accessing multiple fields inside its left operand
+    // `years,volume_cm3` are field accesses from inside `::Dog`
+    let dog_fields = fp!(::Dog=>years,volume_cm3);
+
+    if animal.is_variant(fp!(Horse)) {
+        println!("You are petting the horse");
+    }else if let Some((years,volume_cm3))= animal.fields(dog_fields) {
+        println!("You are petting the {} year old,{} cm³ dog",years,volume_cm3);
+    }else{
+        return Err(CouldNotPet);
+    }
+    Ok(())
+}
+
+// This can't take a `&dyn Animal_Ex` because traits objects don't
+// automatically support upcasting into other trait objects
+// (except for auto traits like Send and Sync ).
+fn pet_animal_ex(animal: &impl Animal_Ex) {
+    pet_animal(animal)
+        .expect("`pet_animal` must match on all variants from the `Animal` trait");
+}
+
+// The same as `pet_animal` ,except that this uses a `switch`
+fn pet_animal_switch(animal: &dyn Animal)-> Result<(),CouldNotPet> {
+    switch!{animal;
+        ref Horse=>{
+            println!("You are petting the horse");
+        }
+        ref Dog{years,volume_cm3}=>{
+            println!("You are petting the {} year old,{} cm³ dog",years,volume_cm3);
+        }
+        _=>return Err(CouldNotPet)
+    }
+    Ok(())
+}
+
+
+#[derive(Debug,PartialEq)]
+struct CouldNotPet;
+
+structural_alias!{
+    // The `#[struc(and_exhaustive_enum(suffix="_Ex"))]` attribute
+    // generates the `Animal_Ex` trait with this trait as a supertrait,
+    // and with the additional requirement that the enum
+    // only has the `horse` and `Dog` variants
+    // (They variants can have more fields than required,in this case that's zero).
+    //
+    // structural aliases can have supertraits,here it's `Debug`
+    #[struc(and_exhaustive_enum(suffix="_Ex"))]
+    trait Animal: Debug{
+        Horse,
+        Dog{years:u16,volume_cm3:u64},
+    }
+}
+
+
+#[derive(Debug,Structural)]
+# #[struc(no_trait)]
+enum SomeMammals{
+    Horse,
+    Dog{years:u16,volume_cm3:u64},
+}
+
+#[derive(Debug,Structural)]
+# #[struc(no_trait)]
+enum MoreAnimals{
+    Cat{lives:u8},
+    Dog{years:u16,volume_cm3:u64},
+    Horse,
+    Seal,
+}
+
+
 
 ```
 
