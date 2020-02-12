@@ -54,7 +54,7 @@ impl<T> Sealed for TStr_<T> {}
 /// # Expectations
 ///
 /// This type is expected to implement `RevGetField`,`RevGetFieldMut`,and `RevIntoField`.
-pub trait IsSingleFieldPath: Debug + Copy + MarkerType {}
+pub trait IsSingleFieldPath: Debug + Copy {}
 
 /// A marker trait for field paths that refer to multiple fields
 ///
@@ -124,6 +124,10 @@ impl<T> TStr_<T> {
 }
 
 impl<T> IsSingleFieldPath for TStr_<T> {}
+
+impl<T> IsMultiFieldPath for TStr_<T> {
+    type PathUniqueness = UniquePaths;
+}
 
 impl<T> Copy for TStr_<T> {}
 impl<T> Clone for TStr_<T> {
@@ -272,6 +276,10 @@ pub struct FieldPath<T>(PhantomData<T>);
 pub type FieldPath1<Str> = FieldPath<(Str,)>;
 
 impl<T> IsSingleFieldPath for FieldPath<T> {}
+
+impl<T> IsMultiFieldPath for FieldPath<T> {
+    type PathUniqueness = UniquePaths;
+}
 
 impl<T> Copy for FieldPath<T> {}
 impl<T> Clone for FieldPath<T> {
