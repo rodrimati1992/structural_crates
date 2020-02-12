@@ -346,10 +346,12 @@ mod tests {
     where
         This: Tuple4,
     {
+        assert_eq!(this.fields(fp!(0)), (&6,));
         assert_eq!(this.fields(fp!(0, 1)), (&6, &5));
         assert_eq!(this.fields(fp!(0, 1, 2)), (&6, &5, &4));
         assert_eq!(this.fields(fp!(0, 1, 2, 3)), (&6, &5, &4, &3));
 
+        assert_eq!(this.fields_mut(fp!(0)), (&mut 6,));
         assert_eq!(this.fields_mut(fp!(0, 1)), (&mut 6, &mut 5));
         assert_eq!(this.fields_mut(fp!(0, 1, 2)), (&mut 6, &mut 5, &mut 4));
         assert_eq!(

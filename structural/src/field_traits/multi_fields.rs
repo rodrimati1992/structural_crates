@@ -5,7 +5,7 @@ Contains traits for accessing multiple fields at once.
 
 use super::*;
 
-use crate::field_path::{IsMultiFieldPath, NestedFieldPathSet};
+use crate::field_path::{IsMultiFieldPath, NestedFieldPathSet, UniquePaths};
 
 use core_extensions::SelfOps;
 
@@ -38,7 +38,9 @@ pub trait RevGetMultiField<'a, This: ?Sized + 'a>: IsMultiFieldPath {
 ///
 /// The `rev_get_multi_field_raw_mut` function must return non-aliasing pointers,
 /// where all of them are safe to dereference.
-pub unsafe trait RevGetMultiFieldMut<'a, This: ?Sized + 'a>: IsMultiFieldPath {
+pub unsafe trait RevGetMultiFieldMut<'a, This: ?Sized + 'a>:
+    IsMultiFieldPath<PathUniqueness = UniquePaths>
+{
     /// A collection of mutable references to fields.
     type FieldsMut: 'a + NormalizeFields;
     /// A collection of mutable pointers to fields.
@@ -179,6 +181,47 @@ impl_get_multi_field! {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+impl<'a, Ty_, Err_, This: ?Sized, P> RevGetMultiField<'a, This> for FieldPath<P>
+where
+    This: 'a,
+    Self: RevGetField<'a, This, Ty = Ty_, Err = Err_>,
+    Ty_: 'a,
+    Err_: IsFieldErr,
+    Result<&'a Ty_, Err_>: NormalizeFields,
+{
+    type Fields = (Result<&'a Ty_, Err_>,);
+
+    #[inline(always)]
+    fn rev_get_multi_field(self, this: &'a This) -> Self::Fields {
+        (self.rev_get_field(this),)
+    }
+}
+
+unsafe impl<'a, Ty_, Err_, This: ?Sized, P> RevGetMultiFieldMut<'a, This> for FieldPath<P>
+where
+    This: 'a,
+    Self: RevGetFieldMut<'a, This, Ty = Ty_, Err = Err_>,
+    Ty_: 'a,
+    Err_: IsFieldErr,
+    Result<&'a mut Ty_, Err_>: NormalizeFields,
+    Result<*mut Ty_, Err_>: NormalizeFields,
+{
+    type FieldsMut = (Result<&'a mut Ty_, Err_>,);
+    type FieldsRawMut = (Result<*mut Ty_, Err_>,);
+
+    #[inline(always)]
+    fn rev_get_multi_field_mut(self, this: &'a mut This) -> Self::FieldsMut {
+        (self.rev_get_field_mut(this),)
+    }
+
+    #[inline(always)]
+    unsafe fn rev_get_multi_field_raw_mut(self, this: *mut This) -> Self::FieldsRawMut {
+        (self.rev_get_field_raw_mut(this),)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 impl<'a, F, S, U, This, Mid, OutTy, OutErr> RevGetMultiField<'a, This>
     for NestedFieldPathSet<F, S, U>
 where
@@ -204,11 +247,12 @@ where
     }
 }
 
-unsafe impl<'a, F, S, U, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMut<'a, This>
-    for NestedFieldPathSet<F, S, U>
+unsafe impl<'a, F, S, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMut<'a, This>
+    for NestedFieldPathSet<F, S, UniquePaths>
 where
     FieldPath<F>: RevGetFieldMut<'a, This, Ty = Mid, Err = OutErr>,
-    FieldPathSet<S, U>: RevGetMultiFieldMut<'a, Mid, FieldsMut = OutTy, FieldsRawMut = OutRawTy>,
+    FieldPathSet<S, UniquePaths>:
+        RevGetMultiFieldMut<'a, Mid, FieldsMut = OutTy, FieldsRawMut = OutRawTy>,
     This: 'a + ?Sized,
     OutErr: IsFieldErr,
     Mid: 'a + ?Sized,
