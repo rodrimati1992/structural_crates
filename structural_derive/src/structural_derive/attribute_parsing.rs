@@ -29,6 +29,7 @@ use std::marker::PhantomData;
 pub(crate) struct StructuralOptions<'a> {
     pub(crate) variants: Vec<VariantConfig>,
     pub(crate) fields: FieldMap<FieldConfig>,
+    pub(crate) make_variant_count_alias: bool,
     pub(crate) bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
     pub(crate) debug_print: bool,
@@ -44,6 +45,7 @@ impl<'a> StructuralOptions<'a> {
         let StructuralAttrs {
             variants,
             fields,
+            make_variant_count_alias,
             bounds,
             debug_print,
             with_trait_alias,
@@ -56,6 +58,7 @@ impl<'a> StructuralOptions<'a> {
         Ok(Self {
             variants,
             fields,
+            make_variant_count_alias,
             bounds,
             debug_print,
             with_trait_alias,
@@ -103,6 +106,7 @@ pub(crate) struct FieldConfig {
 struct StructuralAttrs<'a> {
     variants: Vec<VariantConfig>,
     fields: FieldMap<FieldConfig>,
+    make_variant_count_alias: bool,
     bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
     debug_print: bool,
@@ -117,9 +121,17 @@ struct StructuralAttrs<'a> {
 
 #[derive(Debug, Copy, Clone)]
 enum ParseContext<'a> {
-    TypeAttr { name: &'a Ident },
-    Variant { name: &'a Ident, index: usize },
-    Field { field: &'a Field<'a> },
+    TypeAttr {
+        name: &'a Ident,
+        data_variant: DataVariant,
+    },
+    Variant {
+        name: &'a Ident,
+        index: usize,
+    },
+    Field {
+        field: &'a Field<'a>,
+    },
 }
 
 /// Parses the attributes for the `Structural` derive macro.
@@ -140,7 +152,11 @@ pub(crate) fn parse_attrs_for_structural<'a>(
 
     let name = ds.name;
 
-    parse_inner(&mut this, ds.attrs, ParseContext::TypeAttr { name })?;
+    let ty_ctx = ParseContext::TypeAttr {
+        name,
+        data_variant: ds.data_variant,
+    };
+    parse_inner(&mut this, ds.attrs, ty_ctx)?;
 
     for (var_i, variant) in ds.variants.iter().enumerate() {
         let ctx = ParseContext::Variant {
@@ -304,7 +320,12 @@ fn parse_sabi_attr<'a>(
                 return Err(make_err(&list.path))?;
             }
         }
-        (ParseContext::TypeAttr { .. }, Meta::Path(ref path)) => {
+        (
+            ParseContext::TypeAttr {
+                name, data_variant, ..
+            },
+            Meta::Path(ref path),
+        ) => {
             if path.is_ident("debug_print") {
                 this.debug_print = true;
             } else if path.is_ident("implicit_optionality") {
@@ -315,6 +336,14 @@ fn parse_sabi_attr<'a>(
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;
                 }
+            } else if path.is_ident("variant_count_alias") {
+                if data_variant != DataVariant::Enum {
+                    return_spanned_err! {
+                        name,
+                        "Can only use `#[struc(variant_count_alias)]` on enums"
+                    }
+                }
+                this.make_variant_count_alias = true;
             } else if path.is_ident("not_public") || path.is_ident("private") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = false;

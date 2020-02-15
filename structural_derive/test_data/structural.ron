@@ -110,5 +110,36 @@
         ),
       ],
     ),
+    (
+      name:"variant count alias struct",
+      code:r##"
+        #[struc(variant_count_alias)]
+        struct Huh;
+      "##,
+      subcase: [
+        ( replacements: {}, error_count: 1 ),
+      ],
+    ),
+    (
+      name:"variant count alias enum",
+      code:r##"
+        #[struc(variant_count_alias)]
+        #vis enum Enum{
+          Foo
+        }
+      "##,
+      subcase: [
+        (
+          replacements: { "#vis":"pub" },
+          find_all:[regex(r#"pub +type *Enum_VC"#)],
+          error_count: 0,
+        ),
+        (
+          replacements: { "#vis":"pub(self)" },
+          find_all:[regex(r#"pub *\( *self *\) *type *Enum_VC"#)],
+          error_count: 0,
+        ),
+      ],
+    ),
   ]
 )

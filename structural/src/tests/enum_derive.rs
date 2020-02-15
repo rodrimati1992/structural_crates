@@ -374,3 +374,64 @@ fn test_replace_bounds_trait_object() {
         &mut HuhRB::V { a: "55", b: 66 },
     )
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+mod with_variant_count_attr_1 {
+    use crate::enums::VariantCountOut;
+    use crate::{Structural, TStr};
+
+    #[derive(Structural)]
+    #[struc(variant_count_alias)]
+    enum Enum {
+        A,
+    }
+
+    #[test]
+    fn variant_count_1() {
+        let _: TStr!(1) = Enum_VC::NEW;
+        let _: TStr!(1) = VariantCountOut::<Enum>::NEW;
+    }
+}
+
+mod with_variant_count_attr_4 {
+    use crate::enums::VariantCountOut;
+    use crate::{Structural, TStr};
+
+    #[derive(Structural)]
+    #[struc(variant_count_alias)]
+    pub enum Enum {
+        A,
+        B,
+        C,
+        D,
+    }
+
+    #[test]
+    fn variant_count_4() {
+        let _: TStr!(4) = Enum_VC::NEW;
+        let _: TStr!(4) = VariantCountOut::<Enum>::NEW;
+    }
+}
+
+#[test]
+#[allow(unused_imports)]
+fn publicness_of_variant_count_alias() {
+    pub use with_variant_count_attr_4::Enum_VC;
+}
+
+mod without_variant_count_attr {
+    use crate::Structural;
+
+    #[derive(Structural)]
+    enum Enum {
+        A,
+    }
+
+    type Enum_VC = ();
+
+    #[test]
+    fn no_variant_count() {
+        let _: Enum_VC = ();
+    }
+}

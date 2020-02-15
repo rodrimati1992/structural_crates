@@ -36,6 +36,17 @@ Disables the generation of the `*SI` traits.
 
 [Here is an example using this attribute](#disabling-the-trait-alias)
 
+### `#[struc(variant_count_alias)]`
+
+This is only usable on enums.
+
+This generates a type alias with the amount of variants in the enum.
+
+Small example:<br>
+For this enum:`pub enum Foo{Bar,Baz}`<br>
+This macro would generate:`pub type Foo_VC=TStr!(2);`<br>
+As well as documentaion explaining what the alias is.
+
 ### `#[struc(implicit_optionality)]`
 
 Changes accessors of `Option<_>` fields to be optional.

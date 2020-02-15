@@ -711,13 +711,3 @@ pub mod pmr {
 
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
-
-// #[derive(Structural)]
-// #[struc(debug_print)]
-// enum Hello{
-//     #[struc(newtype(bounds="SBar_VSI<@variant>"))]
-//     Bar((u32,u64)),
-// }
-
-// #[derive(Structural)]
-// struct SBar(pub u32,pub u64);
