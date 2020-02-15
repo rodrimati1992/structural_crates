@@ -7,7 +7,7 @@
 /// to access a field.
 ///
 /// When passed multiple arguments,this instantiates a `FieldPathSet`.
-/// It can then be passed to the `GetFieldExt::fields` method.<br>
+/// It can then be passed to the `GetFieldExt::{fields,cloned_fields}` methods.<br>
 ///
 /// To be passed to `GetFieldExt::fields_mut`,
 /// the arguments to`fp!()` must be unique paths,
@@ -567,6 +567,10 @@ field_path_aliases!{
     c=d.e,
     // field paths used to access multiple fields must be wrapped in parentheses.
     d=(a,b,c),
+    // Accesses the variant,if the enum is currently that variant
+    e=::Foo,
+    // Accesses the a,b,and c fields inside of the Foo variant.
+    f=(::Foo=>a,b,c),
 }
 # fn main(){}
 ```
@@ -588,6 +592,10 @@ fn hello(){
             c=d.e,
             // field paths used to access multiple fields must be wrapped in parentheses.
             d=(a,b,c),
+            // Accesses the variant,if the enum is currently that variant
+            e=::Foo,
+            // Accesses the a,b,and c fields inside of the Foo variant.
+            f=(::Foo=>a,b,c),
         }
     }
 }
@@ -596,7 +604,8 @@ fn hello(){
 # Example
 
 ```rust
-use structural::{field_path_aliases,GetField,GetFieldExt};
+use structural::{field_path_aliases,structural_alias,GetField,GetFieldExt,Structural};
+use structural::enums::VariantProxy;
 
 field_path_aliases!{
     // Equivalent to hello=hello
@@ -617,6 +626,13 @@ field_path_aliases!{
 
     j=(p), // The identifier can also be parenthesised
 
+    boom=Boom,
+    boom_variant=::Boom,
+    boom_a=::Boom.a,
+    boom_b=::Boom.b,
+    boom_both=(::Boom=>a,b),
+    boom_both_individually=(::Boom.a,::Boom.b),
+
 }
 
 
@@ -632,12 +648,68 @@ where
     assert_eq!( this.fields(FirstThree), (&2,&3,&5) );
 }
 
+structural_alias!{
+    trait BoomVariant{
+        Boom {
+            a: &'static [u8],
+            b: &'static [u16],
+        }
+    }
+}
+
+fn assert_variant<T>(this:&T)
+where
+    // Field paths cannot be used to bound enum fields,
+    // for that you need to use type-level-strings.
+    // The `tstr_aliases` macro
+    // (which is the equivalent of this macro for type-level-strings)
+    // has an example for how to manually write bounds for enum fields.
+    T: BoomVariant,
+{
+    let _:&VariantProxy<T,boom>=this.field_(boom_variant).unwrap();
+
+    // Accessing individual enum fields
+    assert_eq!( this.field_(boom_a), Some(&&b"hello"[..]) );
+    assert_eq!( this.field_(boom_b), Some(&&[0,1,2,3][..]) );
+
+    // Accessing multiple enum fields.
+    assert_eq!(
+        this.fields(boom_both),
+        Some(( &&b"hello"[..], &&[0,1,2,3][..] ))
+    );
+
+    // Accessing multiple enum fields,individually.
+    // Note how you have to match on multiple options,
+    // even though all of them are Some or None at the same time,
+    // this is why `fp!(::Foo=>a,b,c)` was created.
+    assert_eq!(
+        this.fields(boom_both_individually),
+        ( Some(&&b"hello"[..]), Some(&&[0,1,2,3][..]) )
+    );
+
+}
+
 fn main(){
     assert_fields(&(2,3,5));
     assert_fields(&(2,3,5,8));
     assert_fields(&(2,3,5,8,13));
     assert_fields(&(2,3,5,8,13,21));
+
+    assert_variant(&Variants::Boom {
+        a: b"hello",
+        b: &[0,1,2,3],
+    })
 }
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+# #[struc(no_trait)]
+pub enum Variants {
+    Boom {
+        a: &'static [u8],
+        b: &'static [u16],
+    },
+}
+
 ```
 
 # Example

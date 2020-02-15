@@ -12,6 +12,12 @@ pub const fn coerce_slice<'a, T>(slic: &'a [T]) -> &'a [T] {
     slic
 }
 
+/// Used to coerce `&mut [T;N]` to `&mut [T]`.
+#[inline(always)]
+pub fn coerce_slice_mut<'a, T>(slic: &'a mut [T]) -> &'a mut [T] {
+    slic
+}
+
 /////////////////////////////////////////////////////////
 
 mod opsealed {

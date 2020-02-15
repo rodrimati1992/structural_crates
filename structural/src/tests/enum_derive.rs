@@ -1,3 +1,5 @@
+use crate::enums::{IsVariant, VariantCount};
+use crate::field_path::FieldPath1;
 use crate::field_traits::variant_field::IntoVariantFieldMut;
 use crate::*;
 
@@ -82,6 +84,7 @@ _private_impl_getters_for_derive_enum! {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Structural, Debug, Clone)]
+// #[struc(debug_print)]
 enum DerivingPair<T, U> {
     #[struc(newtype)]
     AllCorrect(T),
@@ -90,6 +93,30 @@ enum DerivingPair<T, U> {
         right: U,
     },
     Unit,
+}
+
+tstr_aliases! {
+    mod dp_strs{
+        AllCorrect,
+        Pair,
+        left,
+        right,
+        Unit,
+        vc=3,
+    }
+}
+
+assert_equal_bounds! {
+    trait AssertDP[T,U,],
+    (DerivingPair_ESI<T,U>),
+    (
+          IsVariant<FieldPath1<dp_strs::AllCorrect>>
+        + IntoVariantFieldMut<dp_strs::Pair, dp_strs::left, Ty = T>
+        + IntoVariantFieldMut<dp_strs::Pair, dp_strs::right, Ty = U>
+        + IsVariant<FieldPath1<dp_strs::Unit>>
+        + VariantCount<Count = dp_strs::vc>
+        + IsStructural
+    ),
 }
 
 ///////////////////////////////////////////////////////////////////////////////

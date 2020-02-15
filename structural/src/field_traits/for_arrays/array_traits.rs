@@ -140,16 +140,16 @@ macro_rules! declare_array_traits {
     ) => (
         $(
             /// A structural alias for an array newtype variant
-            pub trait $variant_trait_name<V,T>:
-                $($super_trait<V,T>+)*
+            pub trait $variant_trait_name<T,V>:
+                $($super_trait<T,V>+)*
                 $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
             {}
 
-            impl<This,V,T>  $variant_trait_name<V,T> for This
+            impl<This,V,T>  $variant_trait_name<T,V> for This
             where
                 This:
                     ?Sized+
-                    $($super_trait<V,T>+)*
+                    $($super_trait<T,V>+)*
                     $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
             {}
         )*
@@ -160,37 +160,37 @@ declare_array_traits! {
     (ArrayVariant_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
     (ArrayVariant_8_16 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
     (ArrayVariant_16_24 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )
-    (ArrayVariant0 [] [] )
-    (ArrayVariant1 [] [I0 ] )
-    (ArrayVariant2 [] [I0 I1 ] )
-    (ArrayVariant3 [] [I0 I1 I2 ] )
-    (ArrayVariant4 [] [I0 I1 I2 I3 ] )
-    (ArrayVariant5 [] [I0 I1 I2 I3 I4 ] )
-    (ArrayVariant6 [] [I0 I1 I2 I3 I4 I5 ] )
-    (ArrayVariant7 [] [I0 I1 I2 I3 I4 I5 I6 ] )
-    (ArrayVariant8 [ArrayVariant_0_8 ] [] )
-    (ArrayVariant9 [ArrayVariant_0_8 ] [I8 ] )
-    (ArrayVariant10 [ArrayVariant_0_8 ] [I8 I9 ] )
-    (ArrayVariant11 [ArrayVariant_0_8 ] [I8 I9 I10 ] )
-    (ArrayVariant12 [ArrayVariant_0_8 ] [I8 I9 I10 I11 ] )
-    (ArrayVariant13 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 ] )
-    (ArrayVariant14 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 ] )
-    (ArrayVariant15 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 I14 ] )
-    (ArrayVariant16 [ArrayVariant_8_16 ] [] )
-    (ArrayVariant17 [ArrayVariant_8_16 ] [I16 ] )
-    (ArrayVariant18 [ArrayVariant_8_16 ] [I16 I17 ] )
-    (ArrayVariant19 [ArrayVariant_8_16 ] [I16 I17 I18 ] )
-    (ArrayVariant20 [ArrayVariant_8_16 ] [I16 I17 I18 I19 ] )
-    (ArrayVariant21 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 ] )
-    (ArrayVariant22 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 ] )
-    (ArrayVariant23 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 I22 ] )
-    (ArrayVariant24 [ArrayVariant_16_24 ] [] )
-    (ArrayVariant25 [ArrayVariant_16_24 ] [I24 ] )
-    (ArrayVariant26 [ArrayVariant_16_24 ] [I24 I25 ] )
-    (ArrayVariant27 [ArrayVariant_16_24 ] [I24 I25 I26 ] )
-    (ArrayVariant28 [ArrayVariant_16_24 ] [I24 I25 I26 I27 ] )
-    (ArrayVariant29 [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 ] )
-    (ArrayVariant30 [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 ] )
-    (ArrayVariant31 [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 ] )
-    (ArrayVariant32 [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 I31 ] )
+    (Array0Variant [] [] )
+    (Array1Variant [] [I0 ] )
+    (Array2Variant [] [I0 I1 ] )
+    (Array3Variant [] [I0 I1 I2 ] )
+    (Array4Variant [] [I0 I1 I2 I3 ] )
+    (Array5Variant [] [I0 I1 I2 I3 I4 ] )
+    (Array6Variant [] [I0 I1 I2 I3 I4 I5 ] )
+    (Array7Variant [] [I0 I1 I2 I3 I4 I5 I6 ] )
+    (Array8Variant [ArrayVariant_0_8 ] [] )
+    (Array9Variant [ArrayVariant_0_8 ] [I8 ] )
+    (Array10Variant [ArrayVariant_0_8 ] [I8 I9 ] )
+    (Array11Variant [ArrayVariant_0_8 ] [I8 I9 I10 ] )
+    (Array12Variant [ArrayVariant_0_8 ] [I8 I9 I10 I11 ] )
+    (Array13Variant [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 ] )
+    (Array14Variant [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 ] )
+    (Array15Variant [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 I14 ] )
+    (Array16Variant [ArrayVariant_8_16 ] [] )
+    (Array17Variant [ArrayVariant_8_16 ] [I16 ] )
+    (Array18Variant [ArrayVariant_8_16 ] [I16 I17 ] )
+    (Array19Variant [ArrayVariant_8_16 ] [I16 I17 I18 ] )
+    (Array20Variant [ArrayVariant_8_16 ] [I16 I17 I18 I19 ] )
+    (Array21Variant [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 ] )
+    (Array22Variant [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 ] )
+    (Array23Variant [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 I22 ] )
+    (Array24Variant [ArrayVariant_16_24 ] [] )
+    (Array25Variant [ArrayVariant_16_24 ] [I24 ] )
+    (Array26Variant [ArrayVariant_16_24 ] [I24 I25 ] )
+    (Array27Variant [ArrayVariant_16_24 ] [I24 I25 I26 ] )
+    (Array28Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 ] )
+    (Array29Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 ] )
+    (Array30Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 ] )
+    (Array31Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 ] )
+    (Array32Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 I31 ] )
 }

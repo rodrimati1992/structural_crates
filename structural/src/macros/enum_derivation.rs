@@ -73,14 +73,14 @@ macro_rules! _private_impl_getter_enum{
             type Ty=$crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>;
         }
 
-        impl<$($typarams)* _F>
+        impl<$($typarams)* _F,_Ty>
             $crate::GetFieldImpl<
                 $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             >
         for $self_
         where
-            $field_ty: $crate::GetFieldImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::GetFieldImpl<$crate::pmr::FieldPath1<_F>,Ty=_Ty>,
             $($where_)*
         {
             type Err=$crate::vf_err!($optionality,$field_ty,_F);
@@ -91,7 +91,7 @@ macro_rules! _private_impl_getter_enum{
                 _:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
-                &$crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                &_Ty,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
                 match self {
@@ -265,14 +265,14 @@ macro_rules! _private_impl_getter_enum{
             $($where_)*
         {}
 
-        unsafe impl<$($typarams)* _F>
+        unsafe impl<$($typarams)* _F,_Ty>
             $crate::pmr::GetFieldMutImpl<
                 $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             >
         for $self_
         where
-            $field_ty: $crate::GetFieldMutImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::GetFieldMutImpl<$crate::pmr::FieldPath1<_F>,Ty=_Ty>,
             $($where_)*
         {
             #[inline(always)]
@@ -281,7 +281,7 @@ macro_rules! _private_impl_getter_enum{
                 _:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
-                &mut $crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                &mut _Ty,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
                 match self {

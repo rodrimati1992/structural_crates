@@ -63,7 +63,16 @@ pub trait IsSingleFieldPath: Debug + Copy {}
 /// This type is expected to implement `RevGetMultiField`,
 /// and to only implement `RevGetMultiFieldMut` if and only if `PathUniqueness == UniquePaths`.
 pub trait IsMultiFieldPath: Debug + Copy {
-    /// Whether the pats in the set can contain duplicate paths.
+    /// Whether the paths in the set can contain duplicate paths.
+    ///
+    /// This is expected to be either:
+    ///
+    /// - `structural::field_path::AliasedPaths`:
+    /// for a field path that might refer to the same field multiple times.
+    ///
+    /// - `structural::field_path::UniquePaths`:
+    /// for a field path that only refers to a field once.
+    ///
     type PathUniqueness;
 }
 
@@ -402,8 +411,8 @@ pub struct FieldPathSet<T, U>(PhantomData<(T, U)>);
 pub struct UniquePaths;
 
 /// A merker type indicating that FieldPathSet may not contain unique `FielsPath`s,
-/// which means that its not safe to pass the FieldPathSet to `GetFieldExt::fields_mut`
-/// (this is why it requires `FieldPathSet<_,UniquePaths>`).
+/// which means that its possible to pass a `FieldPathSet<__,AliasedPaths>` to
+/// `GetFieldExt::fields_mut`.
 #[derive(Debug, Copy, Clone)]
 pub struct AliasedPaths;
 

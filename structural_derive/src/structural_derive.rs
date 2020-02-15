@@ -243,11 +243,15 @@ fn deriving_structural<'a>(
                 .variants
                 .iter()
                 .enumerate()
-                .map(|(vari, variant)| StructuralVariant {
-                    name: &variant.name,
-                    alias_index: names_module.push_str(variant.name.into()),
-                    fields: make_fields(&mut names_module, variant),
-                    replace_bounds: options.variants[vari].replace_bounds.as_ref(),
+                .map(|(vari, variant)| {
+                    let config_v = &options.variants[vari];
+                    StructuralVariant {
+                        name: &variant.name,
+                        alias_index: names_module.push_str(variant.name.into()),
+                        fields: make_fields(&mut names_module, variant),
+                        is_newtype: config_v.is_newtype,
+                        replace_bounds: config_v.replace_bounds.as_ref(),
+                    }
                 })
                 .collect(),
         },

@@ -67,6 +67,7 @@ pub struct StructuralVariant<'a> {
     pub(crate) name: &'a Ident,
     pub(crate) alias_index: NamesModuleIndex,
     pub(crate) fields: Vec<StructuralField<'a>>,
+    pub(crate) is_newtype: bool,
     pub(crate) replace_bounds: Option<&'a ReplaceBounds>,
 }
 
@@ -529,7 +530,9 @@ where
             }
             None => {
                 for field in &variant.fields {
-                    process_field(field, variant_ident, names_mod, &mut field_bounds);
+                    if !variant.is_newtype {
+                        process_field(field, variant_ident, names_mod, &mut field_bounds);
+                    }
 
                     let _ = write_field_docs(&mut docs, SPACES_X8, variant_ident, field);
                 }
