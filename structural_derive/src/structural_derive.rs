@@ -420,22 +420,39 @@ fn deriving_structural<'a>(
                     )
                 });
 
-            let variant_count_docs = format!("The amount of variants in the {} enum", ds.name);
-            let variant_count_type =
-                syn::Ident::new(&format!("{}_VariantCount", ds.name), Span::call_site());
-
-            let variant_count = tident_tokens(ds.variants.len().to_string(), FullPathForChars::Yes);
             let enum_ = ds.name;
+            let variant_count = tident_tokens(ds.variants.len().to_string(), FullPathForChars::Yes);
 
-            (
-                quote!(_private_impl_getters_for_derive_enum),
+            let variant_count_tokens = if options.make_variant_count_alias {
+                let variant_count_ident_str = format!("{}_VC", ds.name);
+                let variant_count_docs = format!(
+                    "\
+                        The amount of variants in the {} enum\n\
+                        \n\
+                        A value of this can be instantiated with {}::NEW.\n\
+                        \n\
+                        For more information on `TStr_` you can look at the docs for \
+                        [::structural::field_path::IsTStr].
+                    ",
+                    ds.name, variant_count_ident_str,
+                );
+                let variant_count_type =
+                    syn::Ident::new(&variant_count_ident_str, Span::call_site());
+
                 quote!(
                     #[doc=#variant_count_docs]
                     #vis type #variant_count_type=#variant_count;
-                ),
+                )
+            } else {
+                quote!()
+            };
+
+            (
+                quote!(_private_impl_getters_for_derive_enum),
+                variant_count_tokens,
                 quote! {
                     enum=#enum_
-                    variant_count=#variant_count_type,
+                    variant_count=#variant_count,
                     #((#variants))*
                 },
             )

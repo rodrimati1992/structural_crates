@@ -23,6 +23,11 @@ used to implement [`VariantProxy`](../../enums/struct.VariantProxy.html).
 - IsVariant impls for every variant,
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
+- Enums with the `#[struc(variant_count_alias)]` attribute
+have the `<DerivingType_VC>` type alias,
+a `TStr_` with the amount of variants in the enum,
+which can be used in `VariantCount<Count= _ >` bounds.
+
 - A `<DerivingType>_SI` trait,aliasing the traits implemented by the enum,
 this allows using other enums that have a similar structure
 (they can have more variants or more fields in the variants).
