@@ -72,6 +72,128 @@ Every variant also gets a `IsVariant<_>` bound.
 
 # Examples
 
+### Accessing Fields
+
+This example shows many of the ways that fields can be accessed.
+
+```
+use structural::{
+    enums::VariantProxy,
+    FP,GetFieldExt,Structural,
+    fp,switch,
+};
+
+use std::fmt::Debug;
+
+fn main(){
+    with_enum( FooEnum::Foo(3,false) );
+
+    with_enum( BarEnum::Foo(3,false,5) );
+}
+
+fn with_enum<This>(mut foo:This)
+where
+    This: FooEnum_SI<bool> + Clone + Debug,
+{
+
+    assert_eq!( foo.field_(fp!(::Foo.0)), Some(&3) );
+    assert_eq!( foo.field_(fp!(::Foo.1)), Some(&false) );
+
+    assert_eq!( foo.field_mut(fp!(::Foo.0)), Some(&mut 3) );
+    assert_eq!( foo.field_mut(fp!(::Foo.1)), Some(&mut false) );
+
+    assert_eq!( foo.clone().into_field(fp!(::Foo.0)), Some(3) );
+    assert_eq!( foo.clone().into_field(fp!(::Foo.1)), Some(false) );
+
+    assert_eq!( foo.fields(fp!(::Foo.0, ::Foo.1)), (Some(&3),Some(&false)) );
+    assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some((&3,&false)) );
+
+    assert_eq!( foo.fields_mut(fp!(::Foo.0, ::Foo.1)), (Some(&mut 3),Some(&mut false)) );
+    assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some((&mut 3,&mut false)) );
+
+    //////////////////////////////////////////////
+    ////    Demonstrating variant proxies
+
+    // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
+    let _: &VariantProxy<This,FP!(F o o)>= foo.field_(fp!(::Foo)).unwrap();
+    let _: &mut VariantProxy<This,FP!(F o o)>= foo.field_mut(fp!(::Foo)).unwrap();
+    {
+        let mut proxy: VariantProxy<This,FP!(F o o)>=
+            foo.clone().into_field(fp!(::Foo)).unwrap();
+
+        assert_eq!( proxy.field_(fp!(0)), &3 );
+        assert_eq!( proxy.field_mut(fp!(0)), &mut 3 );
+        assert_eq!( proxy.clone().into_field(fp!(0)), 3 );
+
+        assert_eq!( proxy.field_(fp!(1)), &false );
+        assert_eq!( proxy.field_mut(fp!(1)), &mut false );
+        assert_eq!( proxy.clone().into_field(fp!(1)), false );
+
+        assert_eq!( proxy.fields(fp!(0, 1)), (&3,&false) );
+        assert_eq!( proxy.fields_mut(fp!(0, 1)), (&mut 3,&mut false) );
+
+        assert_eq!( proxy.fields(fp!(=>0,1)), (&3,&false) );
+        assert_eq!( proxy.fields_mut(fp!(=>0,1)), (&mut 3,&mut false) );
+    }
+
+    //////////////////////////////////////////////
+    ////    Demonstrating the `switch` macro
+
+    switch!{foo;
+        ref Foo(f0,f1)=>{
+            assert_eq!( f0, &3 );
+            assert_eq!( f1, &false );
+
+            // `foo` is a `&VariantProxy<_,_>` inside here
+            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
+            let _: &VariantProxy<This,FP!(F o o)>= foo;
+
+            assert_eq!( foo.fields(fp!(0,1)), (&3,&false) );
+        }
+        _=>{}
+    }
+    switch!{foo;
+        ref mut Foo(f0,f1)=>{
+            assert_eq!( f0, &mut 3 );
+            assert_eq!( f1, &mut false );
+
+            // `foo` is a `&mut VariantProxy<_,_>` inside here
+            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
+            let _: &mut VariantProxy<This,FP!(F o o)>= foo;
+
+            assert_eq!( foo.fields_mut(fp!(0,1)), (&mut 3,&mut false) );
+        }
+        _=>{}
+    }
+    switch!{variant = foo.clone();
+        // Can't destructure an enum into multiple fields by value yet.
+        Foo=>{
+            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
+            let _: VariantProxy<This,FP!(F o o)>= variant;
+
+            assert_eq!( variant.clone().into_field(fp!(0)), 3 );
+            assert_eq!( variant.clone().into_field(fp!(1)), false );
+        }
+        _=>{}
+    }
+}
+
+#[derive(Structural,Debug,Clone)]
+enum FooEnum<T>{
+    Foo(u32,T),
+    Bar,
+}
+
+#[derive(Structural,Debug,Clone)]
+# #[struc(no_trait)]
+enum BarEnum<T>{
+    Foo(u32,T,u64),
+    Bar
+}
+
+
+```
+
 ### Exhaustiveness
 
 This example demonstrates the `switch` macro,
