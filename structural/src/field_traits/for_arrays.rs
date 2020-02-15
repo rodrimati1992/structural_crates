@@ -91,6 +91,15 @@ pub use self::array_traits::{
     Array8, Array9,
 };
 
+pub use self::array_traits::{
+    Array0Variant, Array10Variant, Array11Variant, Array12Variant, Array13Variant, Array14Variant,
+    Array15Variant, Array16Variant, Array17Variant, Array18Variant, Array19Variant, Array1Variant,
+    Array20Variant, Array21Variant, Array22Variant, Array23Variant, Array24Variant, Array25Variant,
+    Array26Variant, Array27Variant, Array28Variant, Array29Variant, Array2Variant, Array30Variant,
+    Array31Variant, Array32Variant, Array3Variant, Array4Variant, Array5Variant, Array6Variant,
+    Array7Variant, Array8Variant, Array9Variant,
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 mod sealed {
