@@ -205,6 +205,7 @@ impl<'a> StructuralVariant<'a> {
             name,
             alias_index,
             fields,
+            is_newtype: false,
             replace_bounds: None,
         })
     }

@@ -30,13 +30,13 @@ the `Structural` derive macro.
 
 Container attributes:
 
-- [`#[struc(implicit_optionality)]`](../index.html#strucimplicit_optionality)
+- [`#[struc(implicit_optionality)]`](../structural_macro/index.html#strucimplicit_optionality)
 
 Field Attributes
 
-- [`#[struc(not_optional)]`](../index.html#strucnot_optional)
+- [`#[struc(not_optional)]`](../structural_macro/index.html#strucnot_optional)
 
-- [`#[struc(optional)]`](../index.html#strucoptional)
+- [`#[struc(optional)]`](../structural_macro/index.html#strucoptional)
 
 # Struct Example
 

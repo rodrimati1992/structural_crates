@@ -51,14 +51,20 @@ macro_rules! impl_tuple {
         {}
 
 
-        /// A structural alias for a tuple of the size.
-        pub trait $variant_trait<V,$($field_ty),*>:
+        /// A structural alias for a tuple variant of the size,
+        /// in which all fields have mutable and by-value accessors.
+        ///
+        /// The last generic parameter is the name of the variant.
+        /// Example of the `V` parameter for a variant named `Foo`:
+        /// - (since Rust 1.40): `TStr!(Foo)`  <br>
+        /// - (before Rust 1.40):`TStr!(F o o)`<br>
+        pub trait $variant_trait<$($field_ty,)* V>:
             $(
                 IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
             )*
         {}
 
-        impl<$($field_ty,)* This,V> $variant_trait<V,$($field_ty),*> for This
+        impl<$($field_ty,)* This,V> $variant_trait<$($field_ty,)* V> for This
         where
             This:
                 $(
@@ -87,7 +93,7 @@ fn main(){
         println!(
             "impl_tuple!{{\n\
                 {I4}Tuple{},\n\
-                {I4}TupleVariant{},\n\
+                {I4}Tuple{}Variant,\n\
                 {I4}[\n\
                 {I8}{}\n\
                 {I4}]\n\
@@ -106,7 +112,7 @@ fn main(){
 
 impl_tuple! {
     Tuple1,
-    TupleVariant1,
+    Tuple1Variant,
     [
         (0,C0,I0)
     ]
@@ -114,7 +120,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple2,
-    TupleVariant2,
+    Tuple2Variant,
     [
         (0,C0,I0),
         (1,C1,I1)
@@ -123,7 +129,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple3,
-    TupleVariant3,
+    Tuple3Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -133,7 +139,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple4,
-    TupleVariant4,
+    Tuple4Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -144,7 +150,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple5,
-    TupleVariant5,
+    Tuple5Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -156,7 +162,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple6,
-    TupleVariant6,
+    Tuple6Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -169,7 +175,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple7,
-    TupleVariant7,
+    Tuple7Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -183,7 +189,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple8,
-    TupleVariant8,
+    Tuple8Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -198,7 +204,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple9,
-    TupleVariant9,
+    Tuple9Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -214,7 +220,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple10,
-    TupleVariant10,
+    Tuple10Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -231,7 +237,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple11,
-    TupleVariant11,
+    Tuple11Variant,
     [
         (0,C0,I0),
         (1,C1,I1),
@@ -249,7 +255,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple12,
-    TupleVariant12,
+    Tuple12Variant,
     [
         (0,C0,I0),
         (1,C1,I1),

@@ -16,7 +16,7 @@ with a blanket implementation for all types with the same fields.
 
 - A trait named `<deriving_type>_VSI`,
 for use of the struct as a newtype variant,by annotating the variant with
-`#[struc(newtype(bound="<deriving_type>_VSI<@variant>"))]`.
+`#[struc(newtype(bounds="<deriving_type>_VSI<@variant>"))]`.
 
 All of these can be overriden.
 
@@ -32,7 +32,7 @@ Adds a bound to every accessor trait impl.
 
 ### `#[struc(no_trait)]`
 
-Disables the generation of the `<deriving_type>_SI` trait.
+Disables the generation of the `*SI` traits.
 
 [Here is an example using this attribute](#disabling-the-trait-alias)
 
@@ -73,11 +73,11 @@ All `@variant` in the bounds will be replaced with the name of the variant,
 Marks a variant as a newtype variant,
 delegating access to fields in the variant to the single field of the variant.
 
-This attribute can an optional argumen:
+This attribute can have an optional argumen:
 
-- `#[struc(newtype(bounds="Baz_VSI<'a,u8,@variant>"))]:
+- `#[struc(newtype(bounds="Baz_VSI<'a,u8,@variant>"))]`:
 
-All `@variant` in the bounds will be replaced with the name of the variant,
+All `@variant` in the bounds will be replaced with the name of the variant.
 
 Example:`#[struc(newtype(bounds = "Foo_VSI<@variant>"))]` <br>
 Example:`#[struc(newtype(bounds = "Bar_VSI<T,U,@variant>"))]` <br>
@@ -126,7 +126,7 @@ Forces a field to have an optional accessor.
 As opposed to `#[struc(implicit_optionality)]`,
 this also allows type aliases of Option to be used,
 
-[Here are more details on how optional fields work](./optional_accessors/index.html)
+[Here are more details on how optional fields work](../optional_accessors/index.html)
 
 Example:
 ```rust
@@ -164,7 +164,7 @@ Forces a field to not have an optional accessor.
 This allows using `Option<_>` fields with `#[struc(implicit_optionality)]`,
 without making their accessor optional.
 
-[Here are more details on how optional fields work](./optional_accessors/index.html)
+[Here are more details on how optional fields work](../optional_accessors/index.html)
 
 Example:
 ```rust
@@ -584,6 +584,3 @@ impl Add for AddableString{
 
 
 */
-
-pub mod enums;
-pub mod optional_accessors;

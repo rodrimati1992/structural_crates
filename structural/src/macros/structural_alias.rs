@@ -428,7 +428,7 @@ structural_alias!{
 
 ### Exhaustive enums
 
-This also demonstrates how you can define a trait alias for exhaustive enums,
+This demonstrates how you can define a trait alias for exhaustive enums,
 along with extension methods.
 
 ```rust
