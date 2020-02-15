@@ -231,6 +231,144 @@ it'll mark the field as public for the purpose of generating accessor trait impl
 
 # Examples
 
+
+### Accessing Fields
+
+This example shows many of the ways that fields can be accessed.
+
+```
+use structural::{GetFieldExt,Structural,fp};
+
+fn main(){
+    with_enum(Foo{
+        name: "foo",
+        year: 2020,
+        tuple: Some((3,5,8)),
+        opt_tuple: Some((13,21,34)),
+    });
+
+    with_enum(Bar{
+        name: "foo",
+        surname:"metavariable",
+        year: 2020,
+        tuple: Some((3,5,8)),
+        opt_tuple: Some((13,21,34)),
+    });
+}
+
+fn with_enum<This>(mut foo:This)
+where
+    This: Foo_SI + Clone,
+{
+    ////////////////////////////////////////////////////
+    ////            field_ method
+    assert_eq!( foo.field_(fp!(name)), &"foo" );
+    assert_eq!( foo.field_(fp!(year)), &2020 );
+
+    assert_eq!( foo.field_(fp!(tuple)), &Some((3,5,8)) );
+    assert_eq!( foo.field_(fp!(tuple.Some)), Some(&(3,5,8)) );
+    assert_eq!( foo.field_(fp!(tuple.Some.0)), Some(&3) );
+    assert_eq!( foo.field_(fp!(tuple.Some.1)), Some(&5) );
+    assert_eq!( foo.field_(fp!(tuple.Some.2)), Some(&8) );
+
+    // `#[struc(optional)]` fields implicitly do what `.Some` does above
+    assert_eq!( foo.field_(fp!(opt_tuple)), Some(&(13,21,34)) );
+    assert_eq!( foo.field_(fp!(opt_tuple.0)), Some(&13) );
+    assert_eq!( foo.field_(fp!(opt_tuple.1)), Some(&21) );
+    assert_eq!( foo.field_(fp!(opt_tuple.2)), Some(&34) );
+
+    ////////////////////////////////////////////////////
+    ////            field_mut method
+    assert_eq!( foo.field_mut(fp!(name)), &mut "foo" );
+    assert_eq!( foo.field_mut(fp!(year)), &mut 2020 );
+
+    assert_eq!( foo.field_mut(fp!(tuple)), &mut Some((3,5,8)) );
+    assert_eq!( foo.field_mut(fp!(tuple.Some)), Some(&mut (3,5,8)) );
+    assert_eq!( foo.field_mut(fp!(tuple.Some.0)), Some(&mut 3) );
+    assert_eq!( foo.field_mut(fp!(tuple.Some.1)), Some(&mut 5) );
+    assert_eq!( foo.field_mut(fp!(tuple.Some.2)), Some(&mut 8) );
+
+    // `#[struc(optional)]` fields implicitly do what `.Some` does above
+    assert_eq!( foo.field_mut(fp!(opt_tuple)), Some(&mut (13,21,34)) );
+    assert_eq!( foo.field_mut(fp!(opt_tuple.0)), Some(&mut 13) );
+    assert_eq!( foo.field_mut(fp!(opt_tuple.1)), Some(&mut 21) );
+    assert_eq!( foo.field_mut(fp!(opt_tuple.2)), Some(&mut 34) );
+
+    ////////////////////////////////////////////////////
+    ////            into_field method
+    assert_eq!( foo.clone().into_field(fp!(name)), "foo" );
+    assert_eq!( foo.clone().into_field(fp!(year)), 2020 );
+
+    assert_eq!( foo.clone().into_field(fp!(tuple)), Some((3,5,8)) );
+    assert_eq!( foo.clone().into_field(fp!(tuple.Some)), Some((3,5,8)) );
+    assert_eq!( foo.clone().into_field(fp!(tuple.Some.0)), Some(3) );
+    assert_eq!( foo.clone().into_field(fp!(tuple.Some.1)), Some(5) );
+    assert_eq!( foo.clone().into_field(fp!(tuple.Some.2)), Some(8) );
+
+    // `#[struc(optional)]` fields implicitly do what `.Some` does above
+    assert_eq!( foo.clone().into_field(fp!(opt_tuple)), Some((13,21,34)) );
+    assert_eq!( foo.clone().into_field(fp!(opt_tuple.0)), Some(13) );
+    assert_eq!( foo.clone().into_field(fp!(opt_tuple.1)), Some(21) );
+    assert_eq!( foo.clone().into_field(fp!(opt_tuple.2)), Some(34) );
+
+    ////////////////////////////////////////////////////
+    ////            fields method
+    assert_eq!( foo.fields(fp!(name, year)), (&"foo",&2020) );
+    assert_eq!( foo.fields(fp!(=>name,year)), (&"foo",&2020) );
+
+    // Where you place the `Some` field matters,
+    // if it's after the `=>`,it returns an `Option` for every single field.
+    assert_eq!(
+        foo.fields(fp!(tuple=> Some.0, Some.1, Some.2)),
+        (Some(&3),Some(&5),Some(&8))
+    );
+    // If the `Some` field is before the `=>`,
+    // it returns an `Option` wrapping all references to the fields.
+    assert_eq!( foo.fields(fp!(tuple.Some=>0,1,2)), Some((&3,&5,&8)) );
+
+    // `#[struc(optional)]` fields implicitly do what `.Some` does above
+    assert_eq!( foo.fields(fp!(opt_tuple=>0,1,2)), Some((&13,&21,&34)) );
+
+    ////////////////////////////////////////////////////
+    ////            fields_mut method
+    assert_eq!( foo.fields_mut(fp!(name, year)), (&mut "foo",&mut 2020) );
+    assert_eq!( foo.fields_mut(fp!(=>name,year)), (&mut "foo",&mut 2020) );
+
+    assert_eq!(
+        foo.fields_mut(fp!(tuple=> Some.0, Some.1, Some.2)),
+        (Some(&mut 3),Some(&mut 5),Some(&mut 8))
+    );
+    assert_eq!( foo.fields_mut(fp!(tuple.Some=>0,1,2)), Some((&mut 3, &mut 5, &mut 8)) );
+
+    // `#[struc(optional)]` fields implicitly do what `.Some` does above
+    assert_eq!( foo.fields_mut(fp!(opt_tuple=>0,1,2)), Some((&mut 13, &mut 21, &mut 34)) );
+}
+
+#[derive(Structural,Clone)]
+#[struc(public)]
+struct Foo{
+    name: &'static str,
+    year: i64,
+    tuple: Option<(u32,u32,u32)>,
+    #[struc(optional)]
+    opt_tuple: Option<(u32,u32,u32)>,
+}
+
+#[derive(Structural,Clone)]
+# #[struc(no_trait)]
+#[struc(public)]
+struct Bar{
+    name:&'static str,
+    surname:&'static str,
+    year:i64,
+    tuple: Option<(u32,u32,u32)>,
+    #[struc(optional)]
+    opt_tuple: Option<(u32,u32,u32)>,
+}
+
+
+```
+
 ### Basic example
 
 ```rust
