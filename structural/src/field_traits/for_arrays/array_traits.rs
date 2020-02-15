@@ -140,6 +140,11 @@ macro_rules! declare_array_traits {
     ) => (
         $(
             /// A structural alias for an array newtype variant
+            ///
+            /// The `V` generic parameter is the name of the variant.
+            /// Example of the `V` parameter for a variant named `Foo`:
+            /// - (since Rust 1.40): `TStr!(Foo)`  <br>
+            /// - (before Rust 1.40):`TStr!(F o o)`<br>
             pub trait $variant_trait_name<T,V>:
                 $($super_trait<T,V>+)*
                 $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
@@ -193,4 +198,55 @@ declare_array_traits! {
     (Array30Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 ] )
     (Array31Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 ] )
     (Array32Variant [ArrayVariant_16_24 ] [I24 I25 I26 I27 I28 I29 I30 I31 ] )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::field_traits::for_arrays::*;
+    use crate::{GetFieldExt, Structural, TStr};
+
+    fn with_array_32<A>(mut this: A)
+    where
+        A: Array32<u32> + Clone,
+    {
+        assert_eq!(
+            this.fields(fp!(0, 1, 10, 11, 20, 21, 30, 31)),
+            (&0, &10, &100, &110, &200, &210, &300, &310),
+        );
+        assert_eq!(
+            this.fields_mut(fp!(0, 1, 10, 11, 20, 21, 30, 31)),
+            (&mut 0, &mut 10, &mut 100, &mut 110, &mut 200, &mut 210, &mut 300, &mut 310),
+        );
+        assert_eq!(this.clone().into_field(fp!(0)), 0);
+        assert_eq!(this.clone().into_field(fp!(1)), 10);
+        assert_eq!(this.clone().into_field(fp!(10)), 100);
+        assert_eq!(this.clone().into_field(fp!(11)), 110);
+        assert_eq!(this.clone().into_field(fp!(20)), 200);
+        assert_eq!(this.clone().into_field(fp!(21)), 210);
+        assert_eq!(this.clone().into_field(fp!(30)), 300);
+        assert_eq!(this.clone().into_field(fp!(31)), 310);
+    }
+    fn with_array_32_variant<A>(this: A)
+    where
+        A: Array32Variant<u32, TStr!(F o o)> + Clone,
+    {
+        with_array_32(this.into_field(fp!(::Foo)).unwrap());
+    }
+
+    #[test]
+    fn array_32_test() {
+        let mut arr = [0u32; 32];
+        for i in 0..32u32 {
+            arr[i as usize] = i * 10;
+        }
+
+        with_array_32(arr);
+        with_array_32_variant(Enum::Foo(arr));
+    }
+
+    #[derive(Structural, Clone)]
+    enum Enum {
+        #[struc(newtype)]
+        Foo([u32; 32]),
+    }
 }

@@ -275,7 +275,8 @@ impl_tuple! {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::field_traits::for_tuples::*;
+    use crate::{fp, GetField, GetFieldExt, Structural};
 
     fn get_field_1<T>(val: &T) -> &u64
     where
@@ -339,18 +340,9 @@ mod tests {
         }
     }
 
-    structural_alias! {
-        trait Tuple4{
-            mut move 0:u32,
-            mut move 1:u32,
-            mut move 2:u32,
-            mut move 3:u32,
-        }
-    }
-
     fn takes_tuple4<This>(mut this: This)
     where
-        This: Tuple4,
+        This: Tuple4<u32, u32, u32, u32> + Clone,
     {
         assert_eq!(this.fields(fp!(0)), (&6,));
         assert_eq!(this.fields(fp!(0, 1)), (&6, &5));
@@ -364,6 +356,11 @@ mod tests {
             this.fields_mut(fp!(0, 1, 2, 3)),
             (&mut 6, &mut 5, &mut 4, &mut 3)
         );
+
+        assert_eq!(this.clone().into_field(fp!(0)), 6);
+        assert_eq!(this.clone().into_field(fp!(1)), 5);
+        assert_eq!(this.clone().into_field(fp!(2)), 4);
+        assert_eq!(this.clone().into_field(fp!(3)), 3);
     }
 
     #[test]
@@ -371,5 +368,25 @@ mod tests {
         takes_tuple4((6, 5, 4, 3, 2, 1));
         takes_tuple4((6, 5, 4, 3, 2));
         takes_tuple4((6, 5, 4, 3));
+    }
+
+    fn takes_tuple4_variant<This>(this: This)
+    where
+        This: Tuple4Variant<u32, u32, u32, u32, TStr!(F o o)> + Clone,
+    {
+        takes_tuple4(this.into_field(fp!(::Foo)).unwrap())
+    }
+
+    #[test]
+    fn tuple4_variant_test() {
+        takes_tuple4_variant(Enum::Foo((6, 5, 4, 3, 2, 1)));
+        takes_tuple4_variant(Enum::Foo((6, 5, 4, 3, 2)));
+        takes_tuple4_variant(Enum::Foo((6, 5, 4, 3)));
+    }
+
+    #[derive(Structural, Clone)]
+    enum Enum<T> {
+        #[struc(newtype)]
+        Foo(T),
     }
 }
