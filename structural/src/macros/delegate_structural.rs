@@ -45,6 +45,25 @@ unsafe_delegate_structural_with!{
     // This is the identifier used for `self` in the blocks below.
     self_ident=this;
 
+    // An optional macro argument that tells it how to specialize pointer methods.
+    //
+    // `specialization_params(Sized);` is the default when this the parameter is not passed,
+    // it means that no specialization is used,always requiring `Self:Sized`.
+    specialization_params(Sized);
+
+    // This means that the type is `?Sized` and not specialization is used,
+    // this may be slower in debug builds because this always uses a
+    // function pointer call in raw-pointer-taking methods.
+    // specialization_params(?Sized);
+
+    // This means that the type is `?Sized` by default.
+    // The `cfg(anything)` argument enables specialization conditionally,
+    // with a default impl for `Self:?Sized` which may be slower in debug builds,
+    // because this always uses a function pointer call in raw-pointer methods.
+    // It specializes on `Self:Sized` to remove the overhead of raw-pointer methods.
+    // specialization_params(cfg(anything));
+
+
     // This is the type of the variable we delegate to,
     // this is required because Rust doesn't have a `typeof`/`decltype` construct.
     delegating_to_type=T;
@@ -131,6 +150,7 @@ unsafe_delegate_structural_with!{
         T:Clone,
     ]
     self_ident=this;
+    specialization_params(Sized);
     delegating_to_type=T;
     field_name_param=( field_name : FieldName );
 
@@ -206,18 +226,37 @@ unsafe_delegate_structural_with!{
 */
 #[macro_export]
 macro_rules! unsafe_delegate_structural_with {
-    ( $($params:tt)* )=>{
-        $crate::unsafe_delegate_structural_with_inner!{ $($params)* }
-    }
+    (
+        impl $impl_params:tt $self:ty
+        where $where_clause:tt
+        self_ident=$this:ident;
+        $( specialization_params($($raw_mut_impl:tt)*); )?
+        delegating_to_type=$delegating_to_type:ty;
+        field_name_param=( $fname_var:ident : $fname_ty:ident );
+
+        $($rest:tt)*
+    ) => (
+        $crate::unsafe_delegate_structural_with_inner!{
+            impl $impl_params $self
+            where $where_clause
+            self_ident=$this;
+            specialization_params( $( $($raw_mut_impl)* )? );
+            delegating_to_type=$delegating_to_type;
+            field_name_param=( $fname_var : $fname_ty );
+
+            $($rest)*
+        }
+    )
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! unsafe_delegate_structural_with_inner {
     (
         impl $impl_params:tt $self:ty
         where $where_clause:tt
         self_ident=$this:ident;
-        $(override_err=$override_err:ty;)?
+        specialization_params $raw_mut_impl:tt;
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
@@ -227,8 +266,6 @@ macro_rules! unsafe_delegate_structural_with_inner {
             $( where[ $($mut_where_clause:tt)* ] )?
             $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
-
-            $( raw_mut_impl($($raw_mut_impl:tt)*) )?
         )?
         $(
             IntoFieldImpl
@@ -242,7 +279,6 @@ macro_rules! unsafe_delegate_structural_with_inner {
             impl $impl_params $self
             where $where_clause
             self_ident=$this;
-            $(override_err=$override_err;)?
             delegating_to_type=$delegating_to_type;
             field_name_param=( $fname_var : $fname_ty );
             GetFieldImpl $get_field_closure
@@ -265,8 +301,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 where $where_clause
                 where[ $( $($mut_where_clause)* )? ]
                 self_ident=$this;
+                specialization_params $raw_mut_impl;
                 delegating_to_type=$delegating_to_type;
-                raw_mut_impl( $($($raw_mut_impl)*)? ),
                 field_name_param=( $fname_var : $fname_ty );
 
                 unsafe GetFieldMutImpl $unsafe_get_field_mut_closure
@@ -307,26 +343,10 @@ macro_rules! unsafe_delegate_structural_with_inner {
             };
         }
     };
-    (get_err;
-        delegating_to_type=$delegating_to_type:ty;
-        field_name=$fname_ty:ty;
-        param_type=$param_type:ty;
-    )=>{
-        $crate::field_traits::GetFieldErr<$delegating_to_type, $fname_ty, $param_type>
-    };
-    (get_err;
-        delegating_to_type=$delegating_to_type:ty;
-        field_name=$fname_ty:ty;
-        param_type=$param_type:ty;
-        override_err=$override_err:ty;
-    )=>{
-        $override_err
-    };
     (inner;
         impl [$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         self_ident=$this:ident;
-        $(override_err=$override_err:ty;)?
         delegating_to_type=$delegating_to_type:ty;
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
@@ -386,13 +406,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             $delegating_to_type: $crate::IsStructural + $crate::GetFieldImpl<$fname_ty,__P>,
             $($where_clause)*
         {
-            type Err=$crate::unsafe_delegate_structural_with_inner!{
-                get_err;
-                delegating_to_type=$delegating_to_type;
-                field_name=$fname_ty;
-                param_type=__P;
-                $(override_err=$override_err;)?
-            };
+            type Err=$crate::field_traits::GetFieldErr<$delegating_to_type, $fname_ty, __P>;
 
             #[inline(always)]
             fn get_field_(
@@ -414,8 +428,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
         where [$($where_clause:tt)*]
         where [$($mut_where_clause:tt)*]
         self_ident=$this:ident;
+        specialization_params($($raw_mut_impl:tt)*);
         delegating_to_type=$delegating_to_type:ty;
-        raw_mut_impl($($raw_mut_impl:tt)*),
         field_name_param=( $fname_var:ident : $fname_ty:ident );
 
         unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -429,8 +443,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 where [$($where_clause)*]
                 where [$($mut_where_clause)*]
                 self_ident=$this;
+                specialization_params($($raw_mut_impl)*);
                 delegating_to_type=$delegating_to_type;
-                raw_mut_impl($($raw_mut_impl)*)
                 field_name_param=( $fname_var : $fname_ty );
 
                 unsafe GetFieldMutImpl $unsafe_get_field_mut_closure
@@ -452,8 +466,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
             where [$($where_clause:tt)*]
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
+            specialization_params( $(Sized)? );
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl( $(Sized)? )
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -499,8 +513,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
             where [$($where_clause:tt)*]
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
+            specialization_params( ?Sized );
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl( ?Sized )
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -548,8 +562,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
             where [$($where_clause:tt)*]
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
+            specialization_params( specialize_cfg( $($specialize_cfg:tt)* ) );
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl( specialize_cfg( $($specialize_cfg:tt)* ) )
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block
@@ -634,8 +648,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
             where [$($where_clause:tt)*]
             where [$($mut_where_clause:tt)*]
             self_ident=$this:ident;
+            specialization_params($($raw_mut_impl:tt)*);
             delegating_to_type=$delegating_to_type:ty;
-            raw_mut_impl($($raw_mut_impl:tt)*)
             field_name_param=( $fname_var:ident : $fname_ty:ident );
 
             unsafe GetFieldMutImpl $unsafe_get_field_mut_closure:block

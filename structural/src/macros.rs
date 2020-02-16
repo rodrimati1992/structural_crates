@@ -152,8 +152,7 @@ macro_rules! _private_impl_getter{
 /// with the option to return `OptionalField` when the delegated to type does not.
 ///
 /// Example:in `impl<V,F> GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
-/// it must gelegate to the `GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>>`
-/// impl of the delegated to type.
+/// it must gelegate that trait to the same trait impl of the delegated-to type.
 #[macro_export]
 macro_rules! unsafe_delegate_variant_field {
     (
