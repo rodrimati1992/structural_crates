@@ -401,7 +401,7 @@ fn parse_delegate_to<'a>(
 
     let mut delegate_to = DelegateTo {
         field,
-        raw_mut_impl_param: RawMutImplParam::Unspecified,
+        delegation_params: RawMutImplParam::Unspecified,
         bounds: Vec::new(),
         mut_bounds: Vec::new(),
         move_bounds: Vec::new(),

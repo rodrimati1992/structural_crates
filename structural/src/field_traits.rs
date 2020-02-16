@@ -567,6 +567,7 @@ mod alloc_impls {
         where[T:?Sized,]
 
         self_ident=this;
+        specialization_params(specialize_cfg(feature="specialization"));
         delegating_to_type=T;
         field_name_param=( field_name : FieldName );
 
@@ -580,7 +581,6 @@ mod alloc_impls {
         as_delegating_raw{
             *(this as *mut Box<T> as *mut *mut T)
         }
-        raw_mut_impl(specialize_cfg(feature="specialization"))
 
 
         IntoFieldImpl{

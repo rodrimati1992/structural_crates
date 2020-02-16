@@ -108,6 +108,7 @@ unsafe_delegate_structural_with! {
     impl[T,] ManuallyDrop<T>
     where[]
     self_ident=this;
+    specialization_params(Sized);
     delegating_to_type=T;
     field_name_param=( fname : FnameTy );
 
@@ -115,7 +116,6 @@ unsafe_delegate_structural_with! {
 
     unsafe GetFieldMutImpl { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
-    raw_mut_impl(Sized)
 
     IntoFieldImpl { ManuallyDrop::into_inner(this) }
 }

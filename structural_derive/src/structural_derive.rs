@@ -78,7 +78,7 @@ fn delegating_structural<'a>(
 ) -> Result<TokenStream2, syn::Error> {
     let DelegateTo {
         field,
-        raw_mut_impl_param,
+        delegation_params,
         bounds,
         mut_bounds,
         move_bounds,
@@ -107,6 +107,7 @@ fn delegating_structural<'a>(
         ]
 
         self_ident=this;
+        #delegation_params
         delegating_to_type= #fieldty;
         field_name_param=( _field_name : __FieldName );
 
@@ -120,7 +121,6 @@ fn delegating_structural<'a>(
         as_delegating_raw{
             &mut (*this).#the_field as *mut #fieldty
         }
-        #raw_mut_impl_param
 
 
         IntoFieldImpl

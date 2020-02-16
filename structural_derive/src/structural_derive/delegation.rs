@@ -9,7 +9,7 @@ use syn::{punctuated::Punctuated, NestedMeta, WherePredicate};
 #[derive(Debug, Clone)]
 pub(crate) struct DelegateTo<'a> {
     pub(crate) field: &'a Field<'a>,
-    pub(crate) raw_mut_impl_param: RawMutImplParam,
+    pub(crate) delegation_params: RawMutImplParam,
     pub(crate) bounds: Vec<WherePredicate>,
     pub(crate) mut_bounds: Vec<WherePredicate>,
     pub(crate) move_bounds: Vec<WherePredicate>,
@@ -35,5 +35,6 @@ impl ToTokens for RawMutImplParam {
             }
         }
         .to_tokens(ts);
+        <syn::Token!(;)>::default().to_tokens(ts);
     }
 }

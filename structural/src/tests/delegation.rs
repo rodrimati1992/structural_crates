@@ -153,6 +153,7 @@ unsafe_delegate_structural_with! {
     impl['a,T:'a+?Sized,] MaybeSizedFoo<'a,T>
     where[]
     self_ident=this;
+    specialization_params(?Sized);
     delegating_to_type=T;
     field_name_param=( fname : FnameTy );
 
@@ -162,7 +163,6 @@ unsafe_delegate_structural_with! {
     as_delegating_raw{
         (*(this as *mut MaybeSizedFoo<'a,T>)).value as *mut T
     }
-    raw_mut_impl(?Sized)
 }
 
 #[test]
@@ -184,6 +184,7 @@ unsafe_delegate_structural_with! {
     impl['a,T:'a+?Sized,] SpecializedFoo<'a,T>
     where[]
     self_ident=this;
+    specialization_params(specialize_cfg(feature="specialization"));
     delegating_to_type=T;
     field_name_param=( fname : FnameTy );
 
@@ -193,7 +194,6 @@ unsafe_delegate_structural_with! {
     as_delegating_raw{
         (*(this as *mut SpecializedFoo<'a,T>)).value as *mut T
     }
-    raw_mut_impl(specialize_cfg(feature="specialization"))
 }
 
 #[test]
