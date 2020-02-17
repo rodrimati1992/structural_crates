@@ -105,6 +105,8 @@ The methods and constants turn into defaulted methods and defaulted constants in
 Variants follow the same pattern as fields regarding access
 (`<none>`/`ref`/`mut`/`move`/`mut move`).
 ```ignore
+// The `mut` here defines the default access for fields of the variant,
+// if none had been specified it would be equivalent to `mut move`.
 mut Foo{
     // This is equivalent to `mut foo:String`,`mut` is inherited from the variant.
     // Corresponds to `GetVariantFieldMut<TStr!(Foo),TStr!(foo),Ty= String>`
@@ -117,9 +119,13 @@ mut Foo{
 
 ```
 
+Aside from the bounds of the fields,
+variants add an `IsVariant` bound to query whether the enum is currently that variant.
+
 ### Functions and constants
 
-You can define defaulted functions and constants.
+You can define defaulted functions and constants,which are defined directly in the trait,
+and cannot be overriden.
 
 
 # Attributes
@@ -132,8 +138,8 @@ Causes a compiletime error,printing the generated code for a trait.
 
 ### `#[struc(exhaustive_enum)]`
 
-Makes the structural alias require an enum that has the same variants,
-with at least the required fields.
+Makes the structural alias require an enum that has the same variants
+(it can't have any more variants), with at least the required fields.
 
 Without this attribute,an enum can also have a superset of the required variants.
 

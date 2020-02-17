@@ -14,7 +14,7 @@ To declare a trait aliasing multiple accessor traits,you can use the
 You can add non-accessor bounds by listing them before fields,
 then separating them from the fields with `;`.
 
-Example: `impl_struct!{ Clone; foo:u32, bar:u64 }`
+Example: `impl_struct!{ Clone + Debug; foo:u32, bar:u64 }`
 
 # Access modifiers
 
