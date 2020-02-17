@@ -813,6 +813,9 @@ Declares type aliases for `TStr_<_>`(type-level string).
 the right to change its generic parameter from a tuple of type-level characters,
 to a `&'static str` const parameter (or `&'static [char]`).
 
+For more information on `TStr_` you can look at the docs for
+[::structural::field_path::IsTStr].
+
 # Variants
 
 ### Inline

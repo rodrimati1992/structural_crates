@@ -101,22 +101,6 @@ struct Point5D<T>{
 
 This demonstrates how you can use structural enums.
 
-Types can be used as exhaustive or nonexhautive structural enums,
-depending on whether they are known to implement `VariantCount`
-(used for querying the amount of variants in the type level).
-The `*_SI` trait generated for enums by the `Structural` derive does not have
-`VariantCount` as a supertrait,while the *_ESI` trait does.
-
-Types bounded by an exhaustive enum trait
-can be matched exhaustively in the switch macro.<br>
-Exhaustive enum traits only allow enums with the variants they specify,
-neither more nor less
-(they can have a superset of the fields though).
-
-Types bounded by a nonexhaustive enum trait
-cannot be matched exhaustively in `switch!`,requiring the `_=>` branch.<br>
-Nonexhaustive enum traitt allow enums with additional variants than required to be used.
-
 For details on [enums look here](./docs/structural_macro/enums/index.html).
 
 ```rust
@@ -384,9 +368,9 @@ This demonstrates how you can use structural aliases for enums.
 
 This shows both exhaustive and nonexhaustive enum structural aliases,
 by using the `#[struc(and_exhaustive_enum(suffix="_Ex"))]` attribute when declaring the
-trait inside of `structural_alias`.
-You can use the `#[struc(exhaustive_enum)]` attribute to make the annotated trait
-itself exhaustive.
+trait inside of `structural_alias`.<br>
+You can also use the `#[struc(exhaustive_enum)]` attribute to make the annotated trait
+itself exhaustive instead of having two traits.
 
 ```rust
 use structural::{GetFieldExt,Structural,structural_alias,switch,fp};
@@ -407,8 +391,9 @@ assert_eq!( pet_animal(&MoreAnimals::Seal), Err(CouldNotPet) );
 fn pet_animal(animal: &dyn Animal)-> Result<(),CouldNotPet> {
     // `::Dog` accesses the `Dog` variant
     // (without the `::` it'd be interpreted as a field access),
-    // => allows accessing multiple fields inside its left operand
-    // `years,volume_cm3` are field accesses from inside `::Dog`
+    // The `=>` allows getting multiple fields from inside a nested field
+    // (this includes enum variants).
+    // `years,volume_cm3` are the field accessed from inside `::Dog`
     let dog_fields = fp!(::Dog=>years,volume_cm3);
 
     if animal.is_variant(fp!(Horse)) {
@@ -452,7 +437,7 @@ structural_alias!{
     // generates the `Animal_Ex` trait with this trait as a supertrait,
     // and with the additional requirement that the enum
     // only has the `horse` and `Dog` variants
-    // (They variants can have more fields than required,in this case that's zero).
+    // (They variants can still have more fields than required).
     //
     // structural aliases can have supertraits,here it's `Debug`
     #[struc(and_exhaustive_enum(suffix="_Ex"))]
@@ -511,7 +496,7 @@ structural_alias!{
 
 // From Rust 1.40 you can use
 // `impl_struct!{ ref name:String, value:() }` as the return type,
-// which is equivalent to `Person<T>`.
+// which is equivalent to `Person<()>`.
 fn make_person(name:String)->impl Person<()> {
     make_struct!{
         name,

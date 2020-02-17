@@ -130,11 +130,11 @@ impl<'a> Parse for StructuralAliasesHack {
 }
 
 macro_rules! declare_structural_field_methods {
-    () => (
-        pub(crate) fn access_and_optionality(&self)-> AccessAndIsOptional {
-            self.access.and_optionality( self.inner_optionality )
+    () => {
+        pub(crate) fn access_and_optionality(&self) -> AccessAndIsOptional {
+            self.access.and_optionality(self.inner_optionality)
         }
-    )
+    };
 }
 impl<'a> TinyStructuralField<'a> {
     declare_structural_field_methods! {}

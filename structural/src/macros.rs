@@ -154,6 +154,7 @@ macro_rules! _private_impl_getter{
 /// Example:in `impl<V,F> GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
 /// it must gelegate that trait to the same trait impl of the delegated-to type.
 #[macro_export]
+#[doc(hidden)]
 macro_rules! unsafe_delegate_variant_field {
     (
         impl[$($typarams:tt)*] GetVariantFieldImpl for $self_:ty
@@ -343,34 +344,32 @@ macro_rules! z_impl_box_into_field_method {
 #[macro_export]
 #[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_field_method {
-    ($field_name:ty) => (
-        $crate::z_impl_box_into_field_method!{
+    ($field_name:ty) => {
+        $crate::z_impl_box_into_field_method! {
             $field_name,
             (),
             $crate::GetFieldType<Self,$field_name>,
             $crate::pmr::GetFieldErr<Self,$field_name>,
         }
-    );
-    ($field_name:ty, $field_ty:ty, $field_err:ty $(,)*) => (
-        $crate::z_impl_box_into_field_method!{
+    };
+    ($field_name:ty, $field_ty:ty, $field_err:ty $(,)*) => {
+        $crate::z_impl_box_into_field_method! {
             $field_name,
             (),
             $field_ty,
             $field_err,
         }
-    );
-    ($field_name:ty, $param_ty:ty, $field_ty:ty, $field_err:ty $(,)*) => (
+    };
+    ($field_name:ty, $param_ty:ty, $field_ty:ty, $field_err:ty $(,)*) => {
         #[inline(always)]
         fn box_into_field_(
-            self:$crate::pmr::Box<Self>,
-            name:$field_name,
-            param:$param_ty,
-        )->Result<$field_ty,$field_err>{
-            <Self as
-                $crate::IntoFieldImpl::<$field_name,$param_ty>
-            >::into_field_(*self,name,param)
+            self: $crate::pmr::Box<Self>,
+            name: $field_name,
+            param: $param_ty,
+        ) -> Result<$field_ty, $field_err> {
+            <Self as $crate::IntoFieldImpl<$field_name, $param_ty>>::into_field_(*self, name, param)
         }
-    );
+    };
 }
 
 #[doc(hidden)]

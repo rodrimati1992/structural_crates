@@ -112,9 +112,8 @@ macro_rules! make_struct {
                 #[allow(unused_imports)]
                 use super::*;
 
-                pub mod _names_module_{
-                    use super::*;
-                    $crate::field_path_aliases!{
+                $crate::tstr_aliases!{
+                    pub mod _names_module_{
                         $( $field_name, )*
                     }
                 }
@@ -134,7 +133,7 @@ macro_rules! make_struct {
                         $((
                             IntoFieldMut<
                                 $field_name : $field_name,
-                                _names_module_::$field_name,
+                                $crate::pmr::FieldPath1<_names_module_::$field_name>,
                                 opt=nonopt,
                                 stringify!($field_name),
                             >
