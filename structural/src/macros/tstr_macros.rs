@@ -1,12 +1,5 @@
 /**
-Declares type aliases for `TStr_<_>`(type-level string).
-
-`TStr_<_>` itself is hidden from the docs because this library reserves
-the right to change its generic parameter from a tuple of type-level characters,
-to a `&'static str` const parameter (or `&'static [char]`).
-
-For more information on `TStr_` you can look at the docs for
-[::structural::field_path::IsTStr].
+Declares type aliases for [`TStr_<_>`(type-level string)](::structural::field_path::TStr_).
 
 # Variants
 
@@ -295,7 +288,7 @@ macro_rules! TStr {
         $crate::_delegate_TStr!($string)
     };
     (@chars $($char:tt)*)=>{
-        $crate::pmr::TStr_<($($crate::TChar!($char),)*)>
+        $crate::pmr::TStr_<$crate::p::TS<($($crate::TChar!($char),)*)>>
     };
     ($($char:tt)*) => {
         $crate::_delegate_TStr!($($char)*)
@@ -336,10 +329,9 @@ macro_rules! _delegate_TStr {
 }
 
 /**
-Constructs a `TStr_` value,a type-level string used for identifiers in field paths.
-
-For more information on `TStr_` you can look at the docs for
-[::structural::field_path::IsTStr].
+Constructs a
+[`TStr_`](::structural::field_path::TStr_)
+value,a type-level string used for identifiers in field paths..
 
 # Example
 
@@ -561,7 +553,7 @@ fn main() {
     for b in 0..=255u8 {
         let c=b as char;
         if c.is_alphanumeric() && b<128 || c=='_' {
-            println!("({})=>( $crate::chars::_{} );",c,c)
+            println!("({})=>( $crate::p::_{} );",c,c)
         }
     }
 }
@@ -572,195 +564,195 @@ fn main() {
 #[macro_export]
 macro_rules! TChar {
     (0) => {
-        $crate::chars::_0
+        $crate::p::_0
     };
     (1) => {
-        $crate::chars::_1
+        $crate::p::_1
     };
     (2) => {
-        $crate::chars::_2
+        $crate::p::_2
     };
     (3) => {
-        $crate::chars::_3
+        $crate::p::_3
     };
     (4) => {
-        $crate::chars::_4
+        $crate::p::_4
     };
     (5) => {
-        $crate::chars::_5
+        $crate::p::_5
     };
     (6) => {
-        $crate::chars::_6
+        $crate::p::_6
     };
     (7) => {
-        $crate::chars::_7
+        $crate::p::_7
     };
     (8) => {
-        $crate::chars::_8
+        $crate::p::_8
     };
     (9) => {
-        $crate::chars::_9
+        $crate::p::_9
     };
     (A) => {
-        $crate::chars::_A
+        $crate::p::_A
     };
     (B) => {
-        $crate::chars::_B
+        $crate::p::_B
     };
     (C) => {
-        $crate::chars::_C
+        $crate::p::_C
     };
     (D) => {
-        $crate::chars::_D
+        $crate::p::_D
     };
     (E) => {
-        $crate::chars::_E
+        $crate::p::_E
     };
     (F) => {
-        $crate::chars::_F
+        $crate::p::_F
     };
     (G) => {
-        $crate::chars::_G
+        $crate::p::_G
     };
     (H) => {
-        $crate::chars::_H
+        $crate::p::_H
     };
     (I) => {
-        $crate::chars::_I
+        $crate::p::_I
     };
     (J) => {
-        $crate::chars::_J
+        $crate::p::_J
     };
     (K) => {
-        $crate::chars::_K
+        $crate::p::_K
     };
     (L) => {
-        $crate::chars::_L
+        $crate::p::_L
     };
     (M) => {
-        $crate::chars::_M
+        $crate::p::_M
     };
     (N) => {
-        $crate::chars::_N
+        $crate::p::_N
     };
     (O) => {
-        $crate::chars::_O
+        $crate::p::_O
     };
     (P) => {
-        $crate::chars::_P
+        $crate::p::p
     };
     (Q) => {
-        $crate::chars::_Q
+        $crate::p::_Q
     };
     (R) => {
-        $crate::chars::_R
+        $crate::p::_R
     };
     (S) => {
-        $crate::chars::_S
+        $crate::p::_S
     };
     (T) => {
-        $crate::chars::_T
+        $crate::p::_T
     };
     (U) => {
-        $crate::chars::_U
+        $crate::p::_U
     };
     (V) => {
-        $crate::chars::_V
+        $crate::p::_V
     };
     (W) => {
-        $crate::chars::_W
+        $crate::p::_W
     };
     (X) => {
-        $crate::chars::_X
+        $crate::p::_X
     };
     (Y) => {
-        $crate::chars::_Y
+        $crate::p::_Y
     };
     (Z) => {
-        $crate::chars::_Z
+        $crate::p::_Z
     };
     (_) => {
-        $crate::chars::__
+        $crate::p::__
     };
     (a) => {
-        $crate::chars::_a
+        $crate::p::_a
     };
     (b) => {
-        $crate::chars::_b
+        $crate::p::_b
     };
     (c) => {
-        $crate::chars::_c
+        $crate::p::_c
     };
     (d) => {
-        $crate::chars::_d
+        $crate::p::_d
     };
     (e) => {
-        $crate::chars::_e
+        $crate::p::_e
     };
     (f) => {
-        $crate::chars::_f
+        $crate::p::_f
     };
     (g) => {
-        $crate::chars::_g
+        $crate::p::_g
     };
     (h) => {
-        $crate::chars::_h
+        $crate::p::_h
     };
     (i) => {
-        $crate::chars::_i
+        $crate::p::_i
     };
     (j) => {
-        $crate::chars::_j
+        $crate::p::_j
     };
     (k) => {
-        $crate::chars::_k
+        $crate::p::_k
     };
     (l) => {
-        $crate::chars::_l
+        $crate::p::_l
     };
     (m) => {
-        $crate::chars::_m
+        $crate::p::_m
     };
     (n) => {
-        $crate::chars::_n
+        $crate::p::_n
     };
     (o) => {
-        $crate::chars::_o
+        $crate::p::_o
     };
     (p) => {
-        $crate::chars::_p
+        $crate::p::p
     };
     (q) => {
-        $crate::chars::_q
+        $crate::p::_q
     };
     (r) => {
-        $crate::chars::_r
+        $crate::p::_r
     };
     (s) => {
-        $crate::chars::_s
+        $crate::p::_s
     };
     (t) => {
-        $crate::chars::_t
+        $crate::p::_t
     };
     (u) => {
-        $crate::chars::_u
+        $crate::p::_u
     };
     (v) => {
-        $crate::chars::_v
+        $crate::p::_v
     };
     (w) => {
-        $crate::chars::_w
+        $crate::p::_w
     };
     (x) => {
-        $crate::chars::_x
+        $crate::p::_x
     };
     (y) => {
-        $crate::chars::_y
+        $crate::p::_y
     };
     (z) => {
-        $crate::chars::_z
+        $crate::p::_z
     };
     ($byte:ident) => {
-        $crate::chars::$byte
+        $crate::p::$byte
     };
 }

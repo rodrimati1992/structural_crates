@@ -431,8 +431,7 @@ fn deriving_structural<'a>(
                         \n\
                         A value of this can be instantiated with {}::NEW.\n\
                         \n\
-                        For more information on `TStr_` you can look at the docs for \
-                        [::structural::field_path::IsTStr].
+                        [Docs for TStr_](::structural::field_path::TStr_).
                     ",
                     ds.name, variant_count_ident_str,
                 );

@@ -4,6 +4,10 @@ Type-level representatins of access to one or multiple fields.
 
 #![allow(non_snake_case, non_camel_case_types)]
 
+use crate::type_level::collection_traits::{
+    Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
+};
+
 use core_extensions::MarkerType;
 
 use std_::{
@@ -12,18 +16,16 @@ use std_::{
     mem::ManuallyDrop,
 };
 
-use crate::type_level::_private::TStr_;
-
-use crate::type_level::collection_traits::{
-    Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests;
 
 mod to_usize;
+
+mod path_components;
+
+pub use self::path_components::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -40,33 +42,6 @@ pub mod aliases {
         index_7=7,
         index_8=8,
     }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-macro_rules! impl_to_path_to_set {
-    (
-        impl[ $($impl_params:tt)* ] $self:ty
-        $(where[ $($where_clause:tt)* ])?
-    ) => (
-        impl< $($impl_params)* > $self
-        where
-            $($($where_clause)*)?
-        {
-            /// Constructs a FieldPath from this.
-            #[inline(always)]
-            pub const fn to_path(self) -> FieldPath<(Self,)> {
-                FieldPath::one(self)
-            }
-
-            /// Constructs a FieldPathSet from this.
-            #[inline(always)]
-            pub const fn to_set(self) -> FieldPathSet<(FieldPath<(Self,)>,), UniquePaths> {
-                FieldPathSet::one(
-                    FieldPath::one(self)
-                )
-            }
-        }
-    )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,255 +78,6 @@ pub trait IsMultiFieldPath: Sized {
     /// for a field path that only refers to a field once.
     ///
     type PathUniqueness;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// A marker trait for type-level string.
-///
-/// This is only implemented on `TStr_<_>`,
-/// which is not in the documentation so that its type parameter
-/// can be turned into a `const NAME:&'static str` const parameter.
-///
-/// # TStr construction
-///
-/// `TStr_<_>` can be constructed with:
-///
-/// - the `tstr` macro,which takes a string literal/ident/integer as an input.
-///
-/// - the `NEW` inherent associated constant,
-///
-/// - The `<TStr_<_> as MarkerType>::MTVAL` associated constant.
-///
-/// Examples of constructing a `TStr_<_>`:
-///
-/// - `tstr!(foo)` (in every Rust version)
-///
-/// - `tstr!(f o o)` (in every Rust version)
-///
-/// - `tstr!("bar")` (in every Rust version)
-///
-/// - `tstr!(1)` (in every Rust version)
-///
-/// - `tstr!(100)` (in every Rust version)
-///
-/// - `tstr!(1 0 0)` (in every Rust version)
-///
-/// - `<TStr!("hello")>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(world)>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(100)>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(w o r l d)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(0)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(1 0 0)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(0)>::MTVAL`(requires importing the `MarkerType` trait)
-///
-/// # TStr methods
-///
-/// These are the methods on `TStr_`:
-///
-/// - `const fn to_path(self) -> FieldPath<(Self,)>`
-///
-/// - `const fn to_set(self) -> FieldPathSet<(FieldPath<(Self,)>,), UniquePaths>`
-///
-pub trait IsTStr: Sealed + Debug + Copy + MarkerType {}
-
-impl<T> IsTStr for TStr_<T> {}
-
-impl<T> Debug for TStr_<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TStr_").finish()
-    }
-}
-
-impl<T> TStr_<T> {
-    /// Constructs the TStr_.
-    pub const NEW: Self = TStr_(PhantomData);
-}
-
-impl_to_path_to_set! {
-    impl[T] TStr_<T>
-}
-
-impl<T> IsSingleFieldPath for TStr_<T> {}
-
-impl<T> IsMultiFieldPath for TStr_<T> {
-    type PathUniqueness = UniquePaths;
-}
-
-impl<T> Copy for TStr_<T> {}
-impl<T> Clone for TStr_<T> {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-unsafe impl<T> MarkerType for TStr_<T> {}
-
-impl<T> ToTString_ for TStr_<T> {
-    type Output = Self;
-}
-
-impl_cmp_traits! {
-    impl[T] TStr_<T>
-    where[]
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// A pair of identifiers for the `F` field inside the `V` variant.
-///
-/// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo.bar)`.
-///
-/// Both the V and F type parameters are `TStr_`s,
-/// the docs for `TStr_` are in [::structural::field_path::IsTStr]
-#[derive(Copy, Clone)]
-pub struct VariantField<V, F> {
-    pub variant: V,
-    pub field: F,
-}
-
-impl<V, F> VariantField<V, F>
-where
-    V: MarkerType,
-    F: MarkerType,
-{
-    pub const NEW: Self = MarkerType::MTVAL;
-}
-
-impl_to_path_to_set! {
-    impl[V,F] VariantField<V,F>
-}
-
-impl<V, F> VariantField<V, F> {
-    /// Constructs a VariantField from the name of the variant,and field.
-    ///
-    /// Both `name` and `field` is expected to be a `TStr_`
-    /// the docs for `TStr_` are in [::structural::field_path::IsTStr]
-    pub const fn new(variant: V, field: F) -> Self {
-        Self { variant, field }
-    }
-}
-
-impl<V, F> IsSingleFieldPath for VariantField<V, F> {}
-
-impl<T, U> Debug for VariantField<T, U> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("VariantField").finish()
-    }
-}
-
-unsafe impl<V, F> MarkerType for VariantField<V, F>
-where
-    V: MarkerType,
-    F: MarkerType,
-{
-}
-
-/// A FieldPath for the `F` field inside the `V` variant.
-pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
-
-impl_cmp_traits! {
-    impl[V,F] VariantField<V,F>
-    where[]
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// The identifier for the `V` variant.
-///
-/// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo)`.
-/// Note that `fp!(::Foo.bar)` constructs a `FieldPath<(VariantField<_,_>,)>` instead.
-///
-/// The V type parameters is a `TStr_`,
-/// the docs for `TStr_` are in [::structural::field_path::IsTStr]
-#[derive(Default, Copy, Clone)]
-pub struct VariantName<V> {
-    pub name: V,
-}
-
-impl<V> VariantName<V>
-where
-    V: MarkerType,
-{
-    /// Constructs a VariantName.
-    const NEW: Self = Self {
-        name: MarkerType::MTVAL,
-    };
-}
-
-impl_to_path_to_set! {
-    impl[V] VariantName<V>
-}
-
-impl<V> VariantName<V> {
-    /// Constructs a VariantName from `name`.
-    ///
-    /// `name` is expected to be a `TStr_`
-    /// the docs for `TStr_` are in [::structural::field_path::IsTStr]
-    pub fn new(name: V) -> Self {
-        Self { name }
-    }
-}
-
-impl<V> IsSingleFieldPath for VariantName<V> {}
-
-impl<T> Debug for VariantName<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("VariantName").finish()
-    }
-}
-
-unsafe impl<V> MarkerType for VariantName<V> where V: MarkerType {}
-
-impl_cmp_traits! {
-    impl[T] VariantName<T>
-    where[]
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// A marker type passed to accessor trait methods called on an enum,
-/// which guarantees that the enum is the variant that `V` represents.
-pub struct UncheckedVariantField<V, F>(PhantomData<(V, F)>);
-
-// MarkerType is intentionally not implemented
-// // // unsafe impl<V, F> !MarkerType for VariantField<V, F>{}
-
-impl<V, F> UncheckedVariantField<V, F> {
-    /// Constructs an UncheckedVariantField.
-    ///
-    /// # Safety
-    ///
-    /// This must only be passed to an accessor method of an enum with the `V` variant,
-    /// eg:you can only soundly pass `UncheckedVariantField::<TStr!(A),TStr!(b)>::new()`
-    /// for an enum whose current variant is `A`.
-    ///
-    /// One example correspondance:
-    /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TStr!(Foo),TStr!(bar)> >`
-    /// corresponds to the
-    /// `GetVariantFieldImpl<TStr!(Foo),TStr!(bar)>` unsafe marker trait.
-    ///
-    /// A `GetVariantFieldImpl` impl guarantees
-    /// that the corresponding impl of the `GetFieldImpl` trait does what's expected.
-    ///
-    pub const unsafe fn new() -> Self {
-        UncheckedVariantField(PhantomData)
-    }
-}
-
-// No UncheckedVariantFieldPath because UncheckedVariantField is not
-// going to be part of any `FieldPath`.
-// pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
-
-impl_cmp_traits! {
-    impl[V,F] UncheckedVariantField<V,F>
-    where[]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -480,8 +206,6 @@ impl<T> FieldPath<T> {
 
 impl<S> FieldPath<(TStr_<S>,)> {
     /// Converts this single field path to a `TStr_`.
-    ///
-    /// The docs for `TStr_` are in [::structural::field_path::IsTStr]
     pub const fn to_tstr(self) -> TStr_<S> {
         MarkerType::MTVAL
     }
@@ -588,7 +312,7 @@ where
     /// This can also be used to construct a `FieldPathSet<T, UniquePaths>`
     /// in a const context where `T` can be inferred,
     /// by doing `unsafe{ FieldPathSet::NEW.upgrade_unchecked() }`
-    /// (read the docs for [upgrade_unchecked] first).
+    /// (read the docs for `upgrade_unchecked` first).
     pub const NEW: Self = FieldPathSet {
         paths: ManuallyDrop::new(T::MTVAL),
         uniqueness: PhantomData,
@@ -602,7 +326,7 @@ where
     /// This can be used to construct a `FieldPathSet<T, UniquePaths>`
     /// from a type alias in a const context,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
-    /// (read the docs for [upgrade_unchecked] first).
+    /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: FieldPathSet<T, AliasedPaths> = FieldPathSet::NEW;
 }
 
@@ -737,9 +461,7 @@ impl_cmp_traits! {
 /// - Constructing it from a FieldPath and a FieldPathSet using the struct literal.
 /// Example:
 /// `NestedFieldPathSet::new( fp!(a.b.c), fp!(foo,bar,baz) )`,
-/// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.
-///
-/// - Constructing it from a FieldPath and a FieldPathSet using a constructor.
+/// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.<br>
 /// Example:
 /// `NestedFieldPathSet::new( fp!(::Foo), fp!(a,b) ),
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.
@@ -776,7 +498,7 @@ where
     /// This can be used to construct a `NestedFieldPathSet<T, UniquePaths>`
     /// from a type alias in a const context,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
-    /// (read the docs for [upgrade_unchecked] first).
+    /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: NestedFieldPathSet<F, S, AliasedPaths> = NestedFieldPathSet::NEW;
 }
 

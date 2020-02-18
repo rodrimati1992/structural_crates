@@ -1,10 +1,33 @@
-/*!
+//! This module defines many types that are `#[doc(hidden)] pub`
+//! and required not to be used by users.
+#![allow(non_snake_case, non_camel_case_types)]
+
+use crate::field_path::TStr_;
+
+use crate::std_::marker::PhantomData;
+
+// `TStr_` takes this as a type parameter so that
+// this library can start using const generics in the future by replacing the
+// `T:?Sized` parameter with `const STR:&'static str`.
+#[doc(hidden)]
+pub struct TS<T: ?Sized>(PhantomData<T>);
+
+// Used inside structural in tests and impls.
+#[doc(hidden)]
+pub(crate) type TStrPriv<T> = TStr_<TS<T>>;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                  Type Level Characters
+//
+///////////////////////////////////////////////////////////////////////////////
+
+/*
 Type-level ascii characters and bytes.
 
 This module is declared at the root so that error messages will print a shorter type.
 
 */
-#![allow(non_snake_case, non_camel_case_types)]
 
 /*
 
@@ -34,6 +57,7 @@ fn main() {
 
 macro_rules! create_unit_struct {
     (inner; ($struct_:ident ,$alias:ident ) )=>{
+        #[doc(hidden)]
         #[derive(Debug)]
         pub struct $struct_;
 
@@ -84,3 +108,5 @@ create_unit_struct! {
     (B240),(B241),(B242),(B243),(B244),(B245),(B246),(B247),
     (B248),(B249),(B250),(B251),(B252),(B253),(B254),(B255),
 }
+
+///////////////////////////////////////////////////////////////////////////////
