@@ -1,22 +1,24 @@
+use crate::p as chars;
+
 #[cfg(feature = "better_macros")]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 #[macro_use]
 mod for_better_macros {
-    use crate::{chars, type_level::_private::TStr_};
+    use crate::{p as chars, p::TStrPriv};
 
-    pub type S_foo = TStr_<(chars::_f, chars::_o, chars::_o)>;
-    pub type S_bar = TStr_<(chars::_b, chars::_a, chars::_r)>;
-    pub type S_baz = TStr_<(chars::_b, chars::_a, chars::_z)>;
-    pub type S_a = TStr_<(chars::_a,)>;
-    pub type S_b = TStr_<(chars::_b,)>;
-    pub type S_c = TStr_<(chars::_c,)>;
-    pub type S_d = TStr_<(chars::_d,)>;
-    pub type S_0 = TStr_<(chars::_0,)>;
-    pub type S_1 = TStr_<(chars::_1,)>;
-    pub type S_2 = TStr_<(chars::_2,)>;
-    pub type S_3 = TStr_<(chars::_3,)>;
-    pub type S_4 = TStr_<(chars::_4,)>;
+    pub type S_foo = TStrPriv<(chars::_f, chars::_o, chars::_o)>;
+    pub type S_bar = TStrPriv<(chars::_b, chars::_a, chars::_r)>;
+    pub type S_baz = TStrPriv<(chars::_b, chars::_a, chars::_z)>;
+    pub type S_a = TStrPriv<(chars::_a,)>;
+    pub type S_b = TStrPriv<(chars::_b,)>;
+    pub type S_c = TStrPriv<(chars::_c,)>;
+    pub type S_d = TStrPriv<(chars::_d,)>;
+    pub type S_0 = TStrPriv<(chars::_0,)>;
+    pub type S_1 = TStrPriv<(chars::_1,)>;
+    pub type S_2 = TStrPriv<(chars::_2,)>;
+    pub type S_3 = TStrPriv<(chars::_3,)>;
+    pub type S_4 = TStrPriv<(chars::_4,)>;
 
     pub fn assert_ty<T, U>(_ident: U)
     where
@@ -40,13 +42,12 @@ mod for_better_macros {
 #[test]
 fn identifier_macros_equality() {
     use self::for_better_macros::*;
-    use crate::chars;
     use crate::field_path::FieldPath;
-    use crate::type_level::_private::TStr_;
+    use crate::p::TStrPriv;
 
-    type S_abcd = TStr_<(chars::_a, chars::_b, chars::_c, chars::_d)>;
-    type S_21 = TStr_<(chars::_2, chars::_1)>;
-    type S_ab0 = TStr_<(chars::_a, chars::_b, chars::_0)>;
+    type S_abcd = TStrPriv<(chars::_a, chars::_b, chars::_c, chars::_d)>;
+    type S_21 = TStrPriv<(chars::_2, chars::_1)>;
+    type S_ab0 = TStrPriv<(chars::_a, chars::_b, chars::_0)>;
 
     path_assertion!(fp!(abcd), FieldPath<(S_abcd,)>);
     path_assertion!(fp!(0), FieldPath<(S_0,)>);
@@ -203,7 +204,7 @@ mod names_module_tests {
 }
 
 mod tstr_aliases_tests {
-    use crate::{chars, type_level::_private::TStr_};
+    use crate::{p as chars, p::TStrPriv};
 
     #[test]
     fn just_aliases() {
@@ -219,12 +220,12 @@ mod tstr_aliases_tests {
             }
         }
 
-        let _: TStr_<(chars::_a,)> = strs::a::NEW;
-        let _: TStr_<(chars::_b,)> = strs::b::NEW;
-        let _: TStr_<(chars::_w, chars::_o, chars::_r, chars::_d)> = strs::word::NEW;
-        let _: TStr_<(chars::_d, chars::_d)> = strs::d::NEW;
-        let _: TStr_<(chars::_0,)> = strs::p0::NEW;
-        let _: TStr_<(chars::_1, chars::_0)> = strs::p10::NEW;
+        let _: TStrPriv<(chars::_a,)> = strs::a::NEW;
+        let _: TStrPriv<(chars::_b,)> = strs::b::NEW;
+        let _: TStrPriv<(chars::_w, chars::_o, chars::_r, chars::_d)> = strs::word::NEW;
+        let _: TStrPriv<(chars::_d, chars::_d)> = strs::d::NEW;
+        let _: TStrPriv<(chars::_0,)> = strs::p0::NEW;
+        let _: TStrPriv<(chars::_1, chars::_0)> = strs::p10::NEW;
     }
 
     #[test]
@@ -255,23 +256,24 @@ mod tstr_aliases_tests {
                 }
             }
         }
-        let _: TStr_<(chars::_0,)> = strs::m0::__TString_Aliases_Count::NEW;
+        let _: TStrPriv<(chars::_0,)> = strs::m0::__TString_Aliases_Count::NEW;
 
-        let _: TStr_<(chars::_1, chars::_0)> = strs::a0::NEW;
+        let _: TStrPriv<(chars::_1, chars::_0)> = strs::a0::NEW;
 
-        let _: TStr_<(chars::_2,)> = strs::m1::__TString_Aliases_Count::NEW;
-        let _: TStr_<(chars::_1, chars::_1)> = strs::m1::a0::NEW;
-        let _: TStr_<(chars::_a, chars::_1)> = strs::m1::a1::NEW;
+        let _: TStrPriv<(chars::_2,)> = strs::m1::__TString_Aliases_Count::NEW;
+        let _: TStrPriv<(chars::_1, chars::_1)> = strs::m1::a0::NEW;
+        let _: TStrPriv<(chars::_a, chars::_1)> = strs::m1::a1::NEW;
 
-        let _: TStr_<(chars::_a, chars::_1)> = strs::a1::NEW;
+        let _: TStrPriv<(chars::_a, chars::_1)> = strs::a1::NEW;
 
-        let _: TStr_<(chars::_f, chars::_o, chars::_o)> = strs::m2::foo::NEW;
-        let _: TStr_<(chars::_0,)> = strs::m2::bar::NEW;
-        let _: TStr_<(chars::_b, chars::_a, chars::_a, chars::_a, chars::_a)> = strs::m2::baz::NEW;
+        let _: TStrPriv<(chars::_f, chars::_o, chars::_o)> = strs::m2::foo::NEW;
+        let _: TStrPriv<(chars::_0,)> = strs::m2::bar::NEW;
+        let _: TStrPriv<(chars::_b, chars::_a, chars::_a, chars::_a, chars::_a)> =
+            strs::m2::baz::NEW;
 
-        let _: TStr_<(chars::_0,)> = strs::m3::__TString_Aliases_Count::NEW;
-        let _: TStr_<(chars::_2,)> = strs::m3::m3m0::__TString_Aliases_Count::NEW;
-        let _: TStr_<(chars::_a, chars::_a, chars::_a)> = strs::m3::m3m0::aaa::NEW;
-        let _: TStr_<(chars::_b, chars::_b, chars::_b)> = strs::m3::m3m0::bbb::NEW;
+        let _: TStrPriv<(chars::_0,)> = strs::m3::__TString_Aliases_Count::NEW;
+        let _: TStrPriv<(chars::_2,)> = strs::m3::m3m0::__TString_Aliases_Count::NEW;
+        let _: TStrPriv<(chars::_a, chars::_a, chars::_a)> = strs::m3::m3m0::aaa::NEW;
+        let _: TStrPriv<(chars::_b, chars::_b, chars::_b)> = strs::m3::m3m0::bbb::NEW;
     }
 }

@@ -632,7 +632,7 @@ pub mod tests {
 pub mod type_level;
 
 #[doc(hidden)]
-pub mod chars;
+pub mod p;
 
 #[doc(inline)]
 pub use crate::field_traits::GetFieldExt;
@@ -662,14 +662,12 @@ pub mod reexports {
 // explicitly disallowed,and is likely to break.
 #[doc(hidden)]
 pub mod pmr {
-    pub use crate::chars::*;
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
     pub use crate::field_path::*;
     pub use crate::field_traits::variant_field::*;
     pub use crate::field_traits::*;
     pub use crate::structural_trait::IsStructural;
-    pub use crate::type_level::_private::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
     pub use crate::utils::{as_phantomdata, OptionParam, _Structural_BorrowSelf};
@@ -689,3 +687,15 @@ pub mod pmr {
 
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
+
+///
+/// ```
+/// use structural::{GetFieldExt,fp};
+///
+/// Some(0).field_(fp!(::Hello.world));
+///
+/// ```
+pub fn what() {}
+
+#[doc(hidden)]
+pub use crate::field_path::*;

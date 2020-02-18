@@ -113,7 +113,7 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
     use crate::tstring_aliases::TString;
 
     parse_or_compile_err(input, |s: TString| {
-        let ty = tident_tokens(s.0, FullPathForChars::StructPmr);
+        let ty = tident_tokens(s.0, FullPathForChars::Yes);
         Ok(quote::quote! {
             pub const VALUE: #ty= ::structural::pmr::TStr_::NEW;
         })

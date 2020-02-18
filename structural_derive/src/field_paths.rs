@@ -108,7 +108,7 @@ impl FieldPaths {
             if let Some(prefix) = &self.prefix {
                 let prefix = prefix.tuple_tokens(char_path);
                 quote!(
-                    ::structural::pmr::NestedFieldPathSet<
+                    ::structural::NestedFieldPathSet<
                         #prefix,
                         (#(#path,)*),
                         #uniqueness
@@ -116,7 +116,7 @@ impl FieldPaths {
                 )
             } else {
                 quote!(
-                    ::structural::pmr::FieldPathSet<(#(#path,)*),#uniqueness>
+                    ::structural::FieldPathSet<(#(#path,)*),#uniqueness>
                 )
             }
         } else {
@@ -134,10 +134,8 @@ impl FieldPaths {
         let mut ret = quote!(pub const #name:#type_=);
         ret.append_all(match (&self.prefix, self.is_set()) {
             (None, false) => quote!(structural::pmr::MarkerType::MTVAL),
-            (None, true) => quote!(unsafe { structural::pmr::FieldPathSet::NEW.set_uniqueness() }),
-            (Some(_), _) => {
-                quote!(unsafe { structural::pmr::NestedFieldPathSet::NEW.set_uniqueness() })
-            }
+            (None, true) => quote!(unsafe { structural::FieldPathSet::NEW.set_uniqueness() }),
+            (Some(_), _) => quote!(unsafe { structural::NestedFieldPathSet::NEW.set_uniqueness() }),
         });
         <Token!(;)>::default().to_tokens(&mut ret);
         ret
@@ -151,7 +149,7 @@ impl FieldPaths {
     ) -> TokenStream2 {
         let type_ = tident_tokens(value.to_string(), char_path);
         quote!(
-            pub const #const_name: ::structural::pmr::FieldPath1<#type_>=
+            pub const #const_name: ::structural::FieldPath<(#type_,)>=
                 structural::pmr::MarkerType::MTVAL;
         )
     }
@@ -160,9 +158,9 @@ impl FieldPaths {
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
             if self.prefix.is_some() {
-                quote!(unsafe { structural::pmr::NestedFieldPathSet::NEW.set_uniqueness() })
+                quote!(unsafe { structural::NestedFieldPathSet::NEW.set_uniqueness() })
             } else {
-                quote!(unsafe { structural::pmr::FieldPathSet::NEW.set_uniqueness() })
+                quote!(unsafe { structural::FieldPathSet::NEW.set_uniqueness() })
             }
         } else {
             quote!(structural::pmr::MarkerType::MTVAL)
@@ -290,7 +288,7 @@ impl FieldPath {
 
     pub(crate) fn to_token_stream(&self, char_path: FullPathForChars) -> TokenStream2 {
         let tuple = self.tuple_tokens(char_path);
-        quote!( structural::pmr::FieldPath<#tuple> )
+        quote!( structural::FieldPath<#tuple> )
     }
 
     pub(crate) fn tuple_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {

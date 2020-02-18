@@ -6,12 +6,11 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
-    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, IsTStr, VariantField, VariantName},
+    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, TStr_, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         NonOptField, OptionalField,
     },
-    type_level::_private::TStr_,
     FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl,
 };
 
@@ -585,18 +584,18 @@ impl_rev_traits! {
 
 ////////////////////////////////////////////
 
-impl<This, V> RevFieldType<This> for VariantName<V>
+impl<This, S> RevFieldType<This> for VariantName<TStr_<S>>
 where
-    This: ?Sized + IsVariant<FieldPath1<V>>,
-    V: IsTStr + 'static,
+    This: ?Sized + IsVariant<FieldPath1<TStr_<S>>>,
+    S: 'static,
 {
-    type Ty = VariantProxy<This, FieldPath1<V>>;
+    type Ty = VariantProxy<This, FieldPath1<TStr_<S>>>;
 }
 
-impl<'a, This, V> RevGetField<'a, This> for VariantName<V>
+impl<'a, This, S> RevGetField<'a, This> for VariantName<TStr_<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<V>>,
-    V: IsTStr + 'static,
+    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    S: 'static,
 {
     type Err = OptionalField;
 
@@ -604,21 +603,21 @@ where
     fn rev_get_field(
         self,
         this: &'a This,
-    ) -> Result<&'a VariantProxy<This, FieldPath1<V>>, OptionalField> {
+    ) -> Result<&'a VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
         map_of!(this.as_variant(FieldPath::one(self.name)))
     }
 }
 
-impl<'a, This, V> RevGetFieldMut<'a, This> for VariantName<V>
+impl<'a, This, S> RevGetFieldMut<'a, This> for VariantName<TStr_<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<V>>,
-    V: IsTStr + 'static,
+    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    S: 'static,
 {
     #[inline(always)]
     fn rev_get_field_mut(
         self,
         this: &'a mut This,
-    ) -> Result<&'a mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
+    ) -> Result<&'a mut VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
         map_of!(this.as_mut_variant(FieldPath::one(self.name)))
     }
 
@@ -626,20 +625,23 @@ where
     unsafe fn rev_get_field_raw_mut(
         self,
         this: *mut This,
-    ) -> Result<*mut VariantProxy<This, FieldPath1<V>>, OptionalField> {
+    ) -> Result<*mut VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
         map_of!(EnumExt::as_raw_mut_variant(this, FieldPath::one(self.name)))
     }
 }
 
-impl<'a, This, V> RevIntoField<'a, This> for VariantName<V>
+impl<'a, This, S> RevIntoField<'a, This> for VariantName<TStr_<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<V>>,
-    V: IsTStr + 'static,
+    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    S: 'static,
 {
-    type BoxedTy = VariantProxy<Box<This>, FieldPath1<V>>;
+    type BoxedTy = VariantProxy<Box<This>, FieldPath1<TStr_<S>>>;
 
     #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<VariantProxy<This, FieldPath1<V>>, OptionalField>
+    fn rev_into_field(
+        self,
+        this: This,
+    ) -> Result<VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField>
     where
         This: Sized,
     {
@@ -651,7 +653,7 @@ where
     fn rev_box_into_field(
         self,
         this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<Box<This>, FieldPath1<V>>, OptionalField> {
+    ) -> Result<VariantProxy<Box<This>, FieldPath1<TStr_<S>>>, OptionalField> {
         map_of!(this.box_into_variant(FieldPath::one(self.name)))
     }
 }

@@ -1,7 +1,5 @@
 //! Traits for converting type-level-value to a value.
 
-use crate::chars;
-
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Converts this type-level value to a usize.
@@ -35,14 +33,14 @@ macro_rules! impl_to_digit {
 }
 
 impl_to_digit! {
-    chars::_0=0,
-    chars::_1=1,
-    chars::_2=2,
-    chars::_3=3,
-    chars::_4=4,
-    chars::_5=5,
-    chars::_6=6,
-    chars::_7=7,
-    chars::_8=8,
-    chars::_9=9,
+    crate::p::_0=0,
+    crate::p::_1=1,
+    crate::p::_2=2,
+    crate::p::_3=3,
+    crate::p::_4=4,
+    crate::p::_5=5,
+    crate::p::_6=6,
+    crate::p::_7=7,
+    crate::p::_8=8,
+    crate::p::_9=9,
 }

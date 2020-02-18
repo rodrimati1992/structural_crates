@@ -41,11 +41,9 @@ pub(crate) fn low_fp_impl(params: LowFpParams) -> Result<TokenStream2, syn::Erro
     let const_name = Ident::new("VALUE", proc_macro2::Span::call_site());
     let constant = match params {
         LowFpParams::Ident(ident) => {
-            FieldPaths::constant_from_single(&const_name, &ident, FullPathForChars::StructPmr)
+            FieldPaths::constant_from_single(&const_name, &ident, FullPathForChars::Yes)
         }
-        LowFpParams::FieldPaths(fps) => {
-            fps.constant_named(&const_name, FullPathForChars::StructPmr)
-        }
+        LowFpParams::FieldPaths(fps) => fps.constant_named(&const_name, FullPathForChars::Yes),
     };
 
     Ok(quote!(

@@ -315,7 +315,7 @@ macro_rules! FP {
 macro_rules! _delegate_FP {
     ($($char:tt)*) => (
         $crate::pmr::FieldPath<(
-            $crate::pmr::TStr_<($($crate::TChar!($char),)*)>,
+            $crate::pmr::TStr_<$crate::p::TS<($($crate::TChar!($char),)*)>>,
         )>
     )
 }
