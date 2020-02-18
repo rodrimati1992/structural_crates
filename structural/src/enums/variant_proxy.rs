@@ -1,9 +1,10 @@
 use crate::{
-    field_path::{FieldPath1, UncheckedVariantField, VariantFieldPath},
+    field_path::{FieldPath, FieldPath1, UncheckedVariantField, VariantField, VariantFieldPath},
     field_traits::{
         variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,
     },
+    reexports::MarkerType,
 };
 
 #[cfg(feature = "alloc")]
@@ -12,6 +13,7 @@ use crate::alloc::boxed::Box;
 use std_::{
     fmt::{self, Debug},
     marker::PhantomData,
+    mem::ManuallyDrop,
     ops::Deref,
 };
 
@@ -194,10 +196,11 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     #[inline(always)]
-    pub const unsafe fn new(value: T, _: FieldPath1<V>) -> Self
+    pub const unsafe fn new(value: T, name: FieldPath1<V>) -> Self
     where
         T: Sized,
     {
+        let _ = ManuallyDrop::new(name);
         Self {
             value,
             _marker: PhantomData,
@@ -355,7 +358,8 @@ impl<T: ?Sized, V> VariantProxy<T, FieldPath1<V>> {
     ///
     /// ```
     #[inline(always)]
-    pub const unsafe fn from_raw_mut(ptr: *mut T, _: FieldPath1<V>) -> *mut Self {
+    pub const unsafe fn from_raw_mut(ptr: *mut T, name: FieldPath1<V>) -> *mut Self {
+        let _ = ManuallyDrop::new(name);
         ptr as *mut VariantProxy<T, FieldPath1<V>>
     }
 
@@ -513,6 +517,7 @@ impl<T: ?Sized, V> crate::IsStructural for VariantProxy<T, FieldPath1<V>> {}
 impl<T, V, F> FieldType<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: ?Sized + FieldType<VariantFieldPath<V, F>>,
+    V: MarkerType,
 {
     type Ty = T::Ty;
 }
@@ -520,16 +525,17 @@ where
 impl<T, V, F> GetFieldImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: ?Sized + GetVariantFieldImpl<V, F>,
+    V: MarkerType,
 {
     type Err = T::Err;
 
     #[inline(always)]
-    fn get_field_(&self, _: FieldPath1<F>, _: ()) -> Result<&T::Ty, T::Err> {
+    fn get_field_(&self, path: FieldPath1<F>, _: ()) -> Result<&T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         unsafe {
             self.value.get_field_(
-                VariantFieldPath::<V, F>::NEW,
+                FieldPath::one(VariantField::new(V::MTVAL, path.list.0)),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -539,14 +545,15 @@ where
 unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: ?Sized + GetVariantFieldMutImpl<V, F>,
+    V: MarkerType,
 {
     #[inline(always)]
-    fn get_field_mut_(&mut self, _: FieldPath1<F>, _: ()) -> Result<&mut T::Ty, T::Err> {
+    fn get_field_mut_(&mut self, path: FieldPath1<F>, _: ()) -> Result<&mut T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         unsafe {
             self.value.get_field_mut_(
-                VariantFieldPath::<V, F>::NEW,
+                FieldPath::one(VariantField::new(V::MTVAL, path.list.0)),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -557,7 +564,7 @@ where
         cfg(feature="specialization")
         unsafe fn get_field_raw_mut(
             this: *mut (),
-            _: FieldPath1<F>,
+            path: FieldPath1<F>,
             _: (),
         ) -> Result<*mut T::Ty, T::Err>
         where
@@ -568,7 +575,7 @@ where
             // with the variant that `V` names.
             func(
                 this,
-                VariantFieldPath::<V, F>::new(),
+                FieldPath::one(VariantField::new(V::MTVAL, path.list.0)),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -599,17 +606,18 @@ where
 unsafe impl<T, V, F> GetFieldMutImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: GetVariantFieldMutImpl<V, F>,
+    V: MarkerType,
 {
     unsafe fn get_field_raw_mut(
         this: *mut (),
-        _: FieldPath1<F>,
+        path: FieldPath1<F>,
         _: (),
     ) -> Result<*mut T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         T::get_field_raw_mut(
             this,
-            VariantFieldPath::<V, F>::new(),
+            FieldPath::one(VariantField::new(V::MTVAL, path.list.0)),
             UncheckedVariantField::<V, F>::new(),
         )
     }
@@ -618,9 +626,10 @@ where
 impl<T, V, F> IntoFieldImpl<FieldPath1<F>> for VariantProxy<T, FieldPath1<V>>
 where
     T: IntoVariantFieldImpl<V, F>,
+    V: MarkerType,
 {
     #[inline(always)]
-    fn into_field_(self, _: FieldPath1<F>, _: ()) -> Result<T::Ty, T::Err>
+    fn into_field_(self, path: FieldPath1<F>, _: ()) -> Result<T::Ty, T::Err>
     where
         Self: Sized,
     {
@@ -628,7 +637,7 @@ where
         // with the variant that `V` names.
         unsafe {
             self.value.into_field_(
-                VariantFieldPath::<V, F>::NEW,
+                FieldPath::one(VariantField::new(V::MTVAL, path.list.0)),
                 UncheckedVariantField::<V, F>::new(),
             )
         }

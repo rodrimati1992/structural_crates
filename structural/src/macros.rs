@@ -5,7 +5,10 @@ mod delegate_structural;
 mod list;
 
 #[macro_use]
-mod ident;
+mod field_paths;
+
+#[macro_use]
+mod tstr_macros;
 
 #[macro_use]
 mod impl_struct;

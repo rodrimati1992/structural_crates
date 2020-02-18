@@ -40,7 +40,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
                 __struct_pmr::UniquePaths
             >;
             pub const #vari_name:#vari_name=unsafe{
-                #vari_name::new_unchecked()
+                __struct_pmr::FieldPathSet::NEW.upgrade_unchecked()
             };
         }
     });
