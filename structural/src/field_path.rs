@@ -9,6 +9,7 @@ use core_extensions::MarkerType;
 use std_::{
     fmt::{self, Debug},
     marker::PhantomData,
+    mem::ManuallyDrop,
 };
 
 use crate::type_level::_private::TStr_;
@@ -42,6 +43,34 @@ pub mod aliases {
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+macro_rules! impl_to_path_to_set {
+    (
+        impl[ $($impl_params:tt)* ] $self:ty
+        $(where[ $($where_clause:tt)* ])?
+    ) => (
+        impl< $($impl_params)* > $self
+        where
+            $($($where_clause)*)?
+        {
+            /// Constructs a FieldPath from this.
+            #[inline(always)]
+            pub const fn to_path(self) -> FieldPath<(Self,)> {
+                FieldPath::one(self)
+            }
+
+            /// Constructs a FieldPathSet from this.
+            #[inline(always)]
+            pub const fn to_set(self) -> FieldPathSet<(FieldPath<(Self,)>,), UniquePaths> {
+                FieldPathSet::one(
+                    FieldPath::one(self)
+                )
+            }
+        }
+    )
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 mod sealed {
     pub trait Sealed {}
 }
@@ -54,7 +83,7 @@ impl<T> Sealed for TStr_<T> {}
 /// # Expectations
 ///
 /// This type is expected to implement `RevGetField`,`RevGetFieldMut`,and `RevIntoField`.
-pub trait IsSingleFieldPath: Debug + Copy {}
+pub trait IsSingleFieldPath: Sized {}
 
 /// A marker trait for field paths that refer to multiple fields
 ///
@@ -62,7 +91,7 @@ pub trait IsSingleFieldPath: Debug + Copy {}
 ///
 /// This type is expected to implement `RevGetMultiField`,
 /// and to only implement `RevGetMultiFieldMut` if and only if `PathUniqueness == UniquePaths`.
-pub trait IsMultiFieldPath: Debug + Copy {
+pub trait IsMultiFieldPath: Sized {
     /// Whether the paths in the set can contain duplicate paths.
     ///
     /// This is expected to be either:
@@ -86,10 +115,27 @@ pub trait IsMultiFieldPath: Debug + Copy {
 ///
 /// # TStr construction
 ///
-/// `TStr_<_>` can be constructed with the `NEW` inherent associated constant,
-/// or the `<TStr_<_> as MarkerType>::MTVAL` associated constant.
+/// `TStr_<_>` can be constructed with:
+///
+/// - the `tstr` macro,which takes a string literal/ident/integer as an input.
+///
+/// - the `NEW` inherent associated constant,
+///
+/// - The `<TStr_<_> as MarkerType>::MTVAL` associated constant.
 ///
 /// Examples of constructing a `TStr_<_>`:
+///
+/// - `tstr!(foo)` (in every Rust version)
+///
+/// - `tstr!(f o o)` (in every Rust version)
+///
+/// - `tstr!("bar")` (in every Rust version)
+///
+/// - `tstr!(1)` (in every Rust version)
+///
+/// - `tstr!(100)` (in every Rust version)
+///
+/// - `tstr!(1 0 0)` (in every Rust version)
 ///
 /// - `<TStr!("hello")>::NEW` (from Rust 1.40 onwards)
 ///
@@ -126,16 +172,10 @@ impl<T> Debug for TStr_<T> {
 impl<T> TStr_<T> {
     /// Constructs the TStr_.
     pub const NEW: Self = TStr_(PhantomData);
+}
 
-    #[inline(always)]
-    pub const fn to_path(self) -> FieldPath<(TStr_<T>,)> {
-        FieldPath::NEW
-    }
-
-    #[inline(always)]
-    pub const fn to_set(self) -> FieldPathSet<(FieldPath<(TStr_<T>,)>,), UniquePaths> {
-        FieldPath::NEW.to_set()
-    }
+impl_to_path_to_set! {
+    impl[T] TStr_<T>
 }
 
 impl<T> IsSingleFieldPath for TStr_<T> {}
@@ -167,26 +207,38 @@ impl_cmp_traits! {
 /// A pair of identifiers for the `F` field inside the `V` variant.
 ///
 /// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo.bar)`.
-pub struct VariantField<V, F>(PhantomData<(V, F)>);
+///
+/// Both the V and F type parameters are `TStr_`s,
+/// the docs for `TStr_` are in [::structural::field_path::IsTStr]
+#[derive(Copy, Clone)]
+pub struct VariantField<V, F> {
+    pub variant: V,
+    pub field: F,
+}
+
+impl<V, F> VariantField<V, F>
+where
+    V: MarkerType,
+    F: MarkerType,
+{
+    pub const NEW: Self = MarkerType::MTVAL;
+}
+
+impl_to_path_to_set! {
+    impl[V,F] VariantField<V,F>
+}
 
 impl<V, F> VariantField<V, F> {
-    pub const NEW: Self = VariantField(PhantomData);
-
-    #[inline(always)]
-    pub const fn new() -> Self {
-        VariantField(PhantomData)
+    /// Constructs a VariantField from the name of the variant,and field.
+    ///
+    /// Both `name` and `field` is expected to be a `TStr_`
+    /// the docs for `TStr_` are in [::structural::field_path::IsTStr]
+    pub const fn new(variant: V, field: F) -> Self {
+        Self { variant, field }
     }
 }
 
 impl<V, F> IsSingleFieldPath for VariantField<V, F> {}
-
-impl<V, F> Copy for VariantField<V, F> {}
-
-impl<V, F> Clone for VariantField<V, F> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
 
 impl<T, U> Debug for VariantField<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -194,7 +246,12 @@ impl<T, U> Debug for VariantField<T, U> {
     }
 }
 
-unsafe impl<V, F> MarkerType for VariantField<V, F> {}
+unsafe impl<V, F> MarkerType for VariantField<V, F>
+where
+    V: MarkerType,
+    F: MarkerType,
+{
+}
 
 /// A FieldPath for the `F` field inside the `V` variant.
 pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
@@ -210,24 +267,39 @@ impl_cmp_traits! {
 ///
 /// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo)`.
 /// Note that `fp!(::Foo.bar)` constructs a `FieldPath<(VariantField<_,_>,)>` instead.
-//
-// Notes:
-// Don't add constructors for VariantName,
-// `VariantName<V>` can be constructed using MarkerType::MTVAL,
-// and it only needs to be constructed in the impls for `RevGetField*`.
-//
-pub struct VariantName<V>(PhantomData<V>);
+///
+/// The V type parameters is a `TStr_`,
+/// the docs for `TStr_` are in [::structural::field_path::IsTStr]
+#[derive(Default, Copy, Clone)]
+pub struct VariantName<V> {
+    pub name: V,
+}
 
-impl<V> IsSingleFieldPath for VariantName<V> {}
+impl<V> VariantName<V>
+where
+    V: MarkerType,
+{
+    /// Constructs a VariantName.
+    const NEW: Self = Self {
+        name: MarkerType::MTVAL,
+    };
+}
 
-impl<V> Copy for VariantName<V> {}
+impl_to_path_to_set! {
+    impl[V] VariantName<V>
+}
 
-impl<V> Clone for VariantName<V> {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        *self
+impl<V> VariantName<V> {
+    /// Constructs a VariantName from `name`.
+    ///
+    /// `name` is expected to be a `TStr_`
+    /// the docs for `TStr_` are in [::structural::field_path::IsTStr]
+    pub fn new(name: V) -> Self {
+        Self { name }
     }
 }
+
+impl<V> IsSingleFieldPath for VariantName<V> {}
 
 impl<T> Debug for VariantName<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -235,7 +307,7 @@ impl<T> Debug for VariantName<T> {
     }
 }
 
-unsafe impl<V> MarkerType for VariantName<V> {}
+unsafe impl<V> MarkerType for VariantName<V> where V: MarkerType {}
 
 impl_cmp_traits! {
     impl[T] VariantName<T>
@@ -286,7 +358,11 @@ impl_cmp_traits! {
 
 /// A type-level representation of a chain of field accesses,like `.a.b.c.d`.
 ///
-pub struct FieldPath<T>(PhantomData<T>);
+#[repr(transparent)]
+#[derive(Default, Copy, Clone)]
+pub struct FieldPath<T> {
+    pub list: T,
+}
 
 /// A FieldPath for accesing a single non-nested field.
 pub type FieldPath1<Str> = FieldPath<(Str,)>;
@@ -297,39 +373,55 @@ impl<T> IsMultiFieldPath for FieldPath<T> {
     type PathUniqueness = UniquePaths;
 }
 
-impl<T> Copy for FieldPath<T> {}
-impl<T> Clone for FieldPath<T> {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
 impl<T> Debug for FieldPath<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FieldPath").finish()
     }
 }
 
-impl<T> Default for FieldPath<T> {
+impl<T> FieldPath<T>
+where
+    T: MarkerType,
+{
+    /// Constructs a `FieldPath<T>`
+    pub const NEW: Self = FieldPath { list: T::MTVAL };
+}
+
+impl<T> FieldPath<(T,)> {
+    /// Construcst a field path from a single path component.
+    ///
+    /// Example: `FieldPath::one(tstr!(a))` is equivalent to `fp!(a)`
+    ///
+    /// Example:
+    /// `FieldPath::one(VariantField::new(tstr!(a),tstr!(b)))`
+    /// is equivalent to `fp!(::a.b)`
+    ///
+    /// Example:
+    /// `FieldPath::one(VariantName::new(tstr!(Left)))`
+    /// is equivalent to `fp!(::Left)`
     #[inline(always)]
-    fn default() -> Self {
-        Self::NEW
+    pub const fn one(value: T) -> Self {
+        Self { list: (value,) }
     }
 }
 
 impl<T> FieldPath<T> {
-    /// Constructs a `FieldPath<T>`
-    pub const NEW: Self = FieldPath(PhantomData);
-
-    /// Constructs a `FieldPath<T>`
+    /// Constructs a field path for a nested field.
+    ///
+    /// Example:
+    /// `FieldPath::many(( tstr!(a), tstr!(b) ))`
+    /// is equivalent to `fp!(a.b)`
+    ///
+    /// Example:
+    /// `FieldPath::many(( VariantField::new(tstr!(A), tstr!(b)), tstr!(c) ))`
+    /// is equivalent to `fp!(::A.b.c)`
     #[inline(always)]
-    pub const fn new() -> FieldPath<T> {
-        FieldPath(PhantomData)
+    pub const fn many(list: T) -> Self {
+        Self { list }
     }
 }
 
-unsafe impl<T> MarkerType for FieldPath<T> {}
+unsafe impl<T> MarkerType for FieldPath<T> where T: MarkerType {}
 
 impl<S> ToTString_ for FieldPath<(TStr_<S>,)> {
     type Output = TStr_<S>;
@@ -342,14 +434,7 @@ where
     type Output = ToTList<T>;
 }
 
-impl<T, S> PushBack_<TStr_<S>> for FieldPath<T>
-where
-    T: PushBack_<TStr_<S>>,
-{
-    type Output = FieldPath<PushBack<T, TStr_<S>>>;
-}
-
-impl<T, S> PushBack_<FieldPath<(S,)>> for FieldPath<T>
+impl<T, S> PushBack_<S> for FieldPath<T>
 where
     T: PushBack_<S>,
 {
@@ -371,6 +456,7 @@ impl<T> FieldPath<T> {
     pub fn push<U, V>(self, _other: U) -> FieldPath<V>
     where
         Self: PushBack_<U, Output = FieldPath<V>>,
+        FieldPath<V>: MarkerType,
     {
         MarkerType::MTVAL
     }
@@ -380,6 +466,7 @@ impl<T> FieldPath<T> {
     pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<Append<T, U>>
     where
         T: Append_<U>,
+        FieldPath<Append<T, U>>: MarkerType,
     {
         MarkerType::MTVAL
     }
@@ -387,7 +474,7 @@ impl<T> FieldPath<T> {
     /// Converts this `FieldPath` to a `FieldPathSet`.
     #[inline(always)]
     pub const fn to_set(self) -> FieldPathSet<(Self,), UniquePaths> {
-        unsafe { FieldPathSet::new_unchecked() }
+        FieldPathSet::one(self)
     }
 }
 
@@ -417,7 +504,19 @@ impl_cmp_traits! {
 /// and this cannot be passed to `GetFieldExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
 ///
-pub struct FieldPathSet<T, U>(PhantomData<(T, U)>);
+/// # Drop Types
+///
+/// To make all the inherent methods in this type `const fn`
+/// this type wraps the `T` inside a `ManuallyDrop`,
+/// which means that `T` won't be dropped inside.
+/// If that is a problem don't construct a FieldPathSet with a `T` that owns some resource.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone)]
+pub struct FieldPathSet<T, U> {
+    // The ManuallyDrop allows every const fn to be defined as that.
+    paths: ManuallyDrop<T>,
+    uniqueness: PhantomData<U>,
+}
 
 /// A merker type indicating that FieldPathSet contains unique paths,
 /// in which no path is a prefix of any other path in the set,
@@ -435,21 +534,6 @@ impl<T, U> IsMultiFieldPath for FieldPathSet<T, U> {
     type PathUniqueness = U;
 }
 
-impl<T, U> Copy for FieldPathSet<T, U> {}
-
-impl<T, U> Clone for FieldPathSet<T, U> {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<T, U> Debug for FieldPathSet<T, U> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FieldPathSet").finish()
-    }
-}
-
 // `MarkerType` is not implemented for `FieldPathSet<T.UniquePaths>`
 // because `FieldPathSet<T.UniquePaths>` ought only be constructible
 // by satisfying the safety requirements of `FieldPathSet::<T.UniquePaths>::new`,
@@ -457,53 +541,83 @@ impl<T, U> Debug for FieldPathSet<T, U> {
 //
 // impl<T> !MarkerType for FieldPathSet<T.UniquePaths>{}
 
-unsafe impl<T> MarkerType for FieldPathSet<T, AliasedPaths> {}
+unsafe impl<T> MarkerType for FieldPathSet<T, AliasedPaths> where T: MarkerType {}
 
-impl<T, U> FieldPathSet<T, U> {
-    // The constructor function used by proc macros,
-    #[doc(hidden)]
-    #[inline(always)]
-    pub const unsafe fn new_unchecked() -> Self {
-        FieldPathSet(PhantomData)
-    }
-}
-
-impl<T> FieldPathSet<T, UniquePaths> {
-    /// Constructs a `FieldPathSet`.
-    ///
-    /// # Safety
-    ///
-    /// `T` must be a tuple of `FieldPaths<_>`s,
-    /// where none of them is a subset of each other.
-    #[inline(always)]
-    pub const unsafe fn new() -> Self {
-        FieldPathSet(PhantomData)
-    }
-
-    /// Converts a `FieldPathSet<T,UniquePaths>` to a `FieldPathSet<T,AliasedPaths>`
-    #[inline(always)]
-    pub const fn downgrade(self) -> FieldPathSet<T, AliasedPaths> {
-        FieldPathSet(PhantomData)
-    }
-}
-
-impl<T> Default for FieldPathSet<T, AliasedPaths> {
+impl<T> Default for FieldPathSet<T, AliasedPaths>
+where
+    T: Default,
+{
     #[inline(always)]
     fn default() -> Self {
-        Self::NEW
+        Self::many(T::default())
+    }
+}
+
+impl<T> FieldPathSet<(FieldPath<T>,), UniquePaths> {
+    /// Constructs a FieldPathSet from a single field path.
+    pub const fn one(val: FieldPath<T>) -> Self {
+        FieldPathSet {
+            paths: ManuallyDrop::new((val,)),
+            uniqueness: PhantomData,
+        }
     }
 }
 
 impl<T> FieldPathSet<T, AliasedPaths> {
-    /// Constructs a `FieldPathSet`.
-    #[inline(always)]
-    pub const fn new() -> Self {
-        FieldPathSet(PhantomData)
+    /// Constructs a FieldPathSet from a tuple of field paths.
+    ///
+    /// Note that this doesn't enforce that its input is in fact a tuple of FieldPath,
+    /// so you can use type inference for the arguments to this function.
+    ///
+    /// To be able to access multiple fields mutably at the same time,
+    /// must call the unsafe `.upgrade()` method.
+    pub const fn many(paths: T) -> Self {
+        FieldPathSet {
+            paths: ManuallyDrop::new(paths),
+            uniqueness: PhantomData,
+        }
     }
+}
 
+impl<T> FieldPathSet<T, AliasedPaths>
+where
+    T: MarkerType,
+{
     /// Constructs a `FieldPathSet`.
-    pub const NEW: Self = FieldPathSet(PhantomData);
+    ///
+    /// This can also be used to construct a `FieldPathSet<T, UniquePaths>`
+    /// in a const context where `T` can be inferred,
+    /// by doing `unsafe{ FieldPathSet::NEW.upgrade_unchecked() }`
+    /// (read the docs for [upgrade_unchecked] first).
+    pub const NEW: Self = FieldPathSet {
+        paths: ManuallyDrop::new(T::MTVAL),
+        uniqueness: PhantomData,
+    };
+}
 
+impl<T, U> FieldPathSet<T, U>
+where
+    T: MarkerType,
+{
+    /// This can be used to construct a `FieldPathSet<T, UniquePaths>`
+    /// from a type alias in a const context,
+    /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
+    /// (read the docs for [upgrade_unchecked] first).
+    pub const NEW_ALIASED: FieldPathSet<T, AliasedPaths> = FieldPathSet::NEW;
+}
+
+impl<T> FieldPathSet<T, UniquePaths> {
+    /// Converts a `FieldPathSet<T,UniquePaths>` to a `FieldPathSet<T,AliasedPaths>`
+    #[inline(always)]
+    pub const fn downgrade(self) -> FieldPathSet<T, AliasedPaths> {
+        FieldPathSet {
+            paths: self.paths,
+            uniqueness: PhantomData,
+        }
+    }
+}
+
+impl<T> FieldPathSet<T, AliasedPaths> {
     /// Converts a `FieldPathSet<T,AliasedPaths>` to a `FieldPathSet<T,UniquePaths>`
     ///
     /// # Safety
@@ -512,7 +626,28 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> FieldPathSet<T, UniquePaths> {
-        FieldPathSet(PhantomData)
+        self.set_uniqueness()
+    }
+
+    /// Converts a `FieldPathSet<T,AliasedPaths>` to a `FieldPathSet<T,U>`
+    ///
+    /// # Safety
+    ///
+    /// You must ensure that if `U==UniquePaths`,then all the `FieldPath`s are unique,
+    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    #[inline(always)]
+    pub const unsafe fn set_uniqueness<U>(self) -> FieldPathSet<T, U> {
+        FieldPathSet {
+            paths: self.paths,
+            uniqueness: PhantomData,
+        }
+    }
+}
+impl<T, U> FieldPathSet<T, U> {
+    /// Gets the tuple of field paths out of this FieldPathSet.
+    #[inline(always)]
+    pub const fn into_paths(self) -> T {
+        ManuallyDrop::into_inner(self.paths)
     }
 }
 
@@ -520,25 +655,20 @@ impl<T, U> FieldPathSet<(FieldPath<T>,), U> {
     /// Converts a `FieldPathSet` containing a single `FieldPath`
     /// into that `FieldPath`.
     #[inline(always)]
-    pub const fn to_path(self) -> FieldPath<T> {
-        MarkerType::MTVAL
+    pub fn to_path(self) -> FieldPath<T> {
+        ManuallyDrop::into_inner(self.paths).0
     }
 }
 
 impl<T, U> FieldPathSet<T, U> {
     /// Constructs a new FieldPathSet with `_other` appended at the end.
     ///
-    /// Currently this accepts:
-    ///
-    /// - A FieldPath
-    /// (ie:`fp!(a)`/`fp!(foo)`/`fp!(bar)`)
-    ///
-    /// - A FieldPathSet containing a single FieldPath
-    /// (ie:`fp!(a).to_set()`/`fp!(foo).to_set()`/`fp!(bar).to_set()`)
+    /// Example arguments`fp!(a)`/`fp!(a.b.c)`/`fp!(::foo)`/`fp!(::bar.baz.bam)`
     #[inline(always)]
     pub fn push<O, Out>(self, _other: O) -> FieldPathSet<Out, AliasedPaths>
     where
         Self: PushBack_<O, Output = FieldPathSet<Out, AliasedPaths>>,
+        FieldPathSet<Out, AliasedPaths>: MarkerType,
     {
         MarkerType::MTVAL
     }
@@ -552,6 +682,7 @@ impl<T, U> FieldPathSet<T, U> {
     ) -> FieldPathSet<Append<T, T2>, AliasedPaths>
     where
         T: Append_<T2>,
+        FieldPathSet<Append<T, T2>, AliasedPaths>: MarkerType,
     {
         MarkerType::MTVAL
     }
@@ -597,72 +728,121 @@ impl_cmp_traits! {
 /// This is useful for accessing multiple fields inside of an optional one,
 /// including accessing the fields in an enum variant.
 ///
+/// # Construction
+///
 /// NestedFieldPathSet can be constructed in these ways:
 ///
 /// - Using `fp!`.Examples:`fp!(::Foo=>a,b)`,`fp!(a.b=>a,b)`
 ///
 /// - Constructing it from a FieldPath and a FieldPathSet using the struct literal.
 /// Example:
-/// `NestedFieldPathSet{ nested: fp!(a.b.c), set:fp!(foo,bar,baz) }`,
+/// `NestedFieldPathSet::new( fp!(a.b.c), fp!(foo,bar,baz) )`,
 /// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.
 ///
 /// - Constructing it from a FieldPath and a FieldPathSet using a constructor.
 /// Example:
-/// `NestedFieldPathSet{nested: fp!(::Foo), set: fp!(a,b)}`,
+/// `NestedFieldPathSet::new( fp!(::Foo), fp!(a,b) ),
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.
 ///
+/// # Drop Types
 ///
+/// To make all the inherent methods in this type `const fn`
+/// this type wraps the `FieldPath<F>` inside a `ManuallyDrop`,
+/// which means that `F` won't be dropped inside.
+/// If that is a problem don't construct a NestedFieldPathSet with an `F`
+/// that owns some resource.
+#[derive(Debug, Clone, Copy)]
 pub struct NestedFieldPathSet<F, S, U> {
     /// The path to a nested field.
-    pub nested: FieldPath<F>,
+    nested: ManuallyDrop<FieldPath<F>>,
     /// The field path for fields accessed inside of the nested field.
-    pub set: FieldPathSet<S, U>,
+    set: FieldPathSet<S, U>,
 }
 
-impl<F, S> Default for NestedFieldPathSet<F, S, AliasedPaths> {
-    #[inline(always)]
+impl<F, S> NestedFieldPathSet<F, S, AliasedPaths>
+where
+    F: MarkerType,
+    S: MarkerType,
+{
+    /// Constructs a `NestedFieldPathSet`.
+    pub const NEW: Self = Self::MTVAL;
+}
+
+impl<F, S, U> NestedFieldPathSet<F, S, U>
+where
+    F: MarkerType,
+    S: MarkerType,
+{
+    /// This can be used to construct a `NestedFieldPathSet<T, UniquePaths>`
+    /// from a type alias in a const context,
+    /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
+    /// (read the docs for [upgrade_unchecked] first).
+    pub const NEW_ALIASED: NestedFieldPathSet<F, S, AliasedPaths> = NestedFieldPathSet::NEW;
+}
+
+impl<F, S> Default for NestedFieldPathSet<F, S, AliasedPaths>
+where
+    F: Default,
+    S: Default,
+{
     fn default() -> Self {
-        Self::NEW
-    }
-}
-
-impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
-    /// Constructs a `NestedFieldPathSet`.
-    pub const NEW: Self = Self {
-        nested: FieldPath::NEW,
-        set: FieldPathSet::NEW,
-    };
-
-    /// Constructs a `NestedFieldPathSet`.
-    #[inline(always)]
-    pub const fn new() -> Self {
-        Self::NEW
+        Self::new(Default::default(), Default::default())
     }
 }
 
 impl<F, S, U> NestedFieldPathSet<F, S, U> {
-    /// Constructs a `NestedFieldPathSet`.
-    /// This must only be called by macros from `structural`.
-    #[inline(always)]
-    #[doc(hidden)]
-    pub const unsafe fn new_unchecked() -> Self {
+    /// Constructs a `NestedFieldPathSet` from a `FieldPath` and a `FieldPathSet`
+    pub const fn new(nested: FieldPath<F>, set: FieldPathSet<S, U>) -> Self {
         Self {
-            nested: FieldPath::NEW,
-            set: FieldPathSet::new_unchecked(),
+            nested: ManuallyDrop::new(nested),
+            set,
         }
+    }
+
+    /// Unwraps a `NestedFieldPathSet` into a `FieldPath` and a `FieldPathSet`
+    pub const fn into_inner(self) -> (FieldPath<F>, FieldPathSet<S, U>) {
+        (ManuallyDrop::into_inner(self.nested), self.set)
+    }
+
+    /// Unwraps a `NestedFieldPathSet` into the `FieldPath` for the nested field.
+    pub const fn into_nested(self) -> FieldPath<F> {
+        ManuallyDrop::into_inner(self.nested)
+    }
+
+    /// Unwraps a `NestedFieldPathSet` into the `FieldPathSet` used to
+    /// access the multiple fields inside a nested field.
+    pub const fn into_set(self) -> FieldPathSet<S, U> {
+        self.set
     }
 }
 
-impl<F, S> NestedFieldPathSet<F, S, UniquePaths> {
-    /// Constructs a `NestedFieldPathSet`.
+impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
+    /// Converts a `NestedFieldPathSet<F, S, AliasedPaths>` to a
+    /// `NestedFieldPathSet<F, S, UniquePaths>`
     ///
     /// # Safety
     ///
-    /// `S` must be a tuple of `FieldPaths<_>`s,
-    /// where none of them is a subset of each other.
+    /// You must ensure that all the `FieldPath`s in `S` are unique,
+    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
     #[inline(always)]
-    pub const unsafe fn new() -> Self {
-        Self::new_unchecked()
+    pub const unsafe fn upgrade_unchecked(self) -> NestedFieldPathSet<F, S, UniquePaths> {
+        self.set_uniqueness()
+    }
+
+    /// Converts a `NestedFieldPathSet<F, S, AliasedPaths>` to a
+    /// `NestedFieldPathSet<F, S, UniquePaths>`
+    ///
+    /// # Safety
+    ///
+    /// If `U == UniquePaths`,
+    /// you must ensure that all the `FieldPath`s in `S` are unique,
+    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    #[inline(always)]
+    pub const unsafe fn set_uniqueness<U>(self) -> NestedFieldPathSet<F, S, U> {
+        NestedFieldPathSet {
+            nested: self.nested,
+            set: self.set.set_uniqueness(),
+        }
     }
 }
 
@@ -670,42 +850,32 @@ impl<F, S, U> IsMultiFieldPath for NestedFieldPathSet<F, S, U> {
     type PathUniqueness = U;
 }
 
-unsafe impl<F, S> MarkerType for NestedFieldPathSet<F, S, AliasedPaths> {}
-
-impl<F, S, U> Debug for NestedFieldPathSet<F, S, U> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("NestedFieldPathSet").finish()
-    }
-}
-
-impl<F, S, U> Copy for NestedFieldPathSet<F, S, U> {}
-
-impl<F, S, U> Clone for NestedFieldPathSet<F, S, U> {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        *self
-    }
+unsafe impl<F, S> MarkerType for NestedFieldPathSet<F, S, AliasedPaths>
+where
+    F: MarkerType,
+    S: MarkerType,
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<S> From<FieldPath<(TStr_<S>,)>> for TStr_<S> {
     #[inline(always)]
-    fn from(_this: FieldPath<(TStr_<S>,)>) -> Self {
-        MarkerType::MTVAL
+    fn from(this: FieldPath<(TStr_<S>,)>) -> Self {
+        this.list.0
     }
 }
 
 impl<S> From<TStr_<S>> for FieldPath<(TStr_<S>,)> {
     #[inline(always)]
-    fn from(_this: TStr_<S>) -> Self {
-        MarkerType::MTVAL
+    fn from(this: TStr_<S>) -> Self {
+        FieldPath::one(this)
     }
 }
 impl<T, U> From<FieldPathSet<(FieldPath<T>,), U>> for FieldPath<T> {
     #[inline(always)]
-    fn from(_this: FieldPathSet<(FieldPath<T>,), U>) -> Self {
-        MarkerType::MTVAL
+    fn from(this: FieldPathSet<(FieldPath<T>,), U>) -> Self {
+        this.into_paths().0
     }
 }
 

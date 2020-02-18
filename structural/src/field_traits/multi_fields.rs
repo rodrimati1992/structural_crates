@@ -79,9 +79,10 @@ macro_rules! impl_get_multi_field {
 
             #[allow(unused_variables)]
             fn rev_get_multi_field(self,this:&'a This)->Self::Fields{
+                let ($($fpath,)*)=self.into_paths();
                 (
                     $(
-                        FieldPath::<$fpath>::NEW.rev_get_field(this),
+                        $fpath.rev_get_field(this),
                     )*
                 )
             }
@@ -118,9 +119,10 @@ macro_rules! impl_get_multi_field {
                     let ($($fpath,)*)={
                         #[allow(unused_variables)]
                         let this=this as *mut This;
+                        let ($($fpath,)*)=self.into_paths();
                         (
                             $(
-                                FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),
+                                $fpath.rev_get_field_raw_mut(this),
                             )*
                         )
                     };
@@ -138,9 +140,10 @@ macro_rules! impl_get_multi_field {
 
             #[allow(unused_variables)]
             unsafe fn rev_get_multi_field_raw_mut(self,this:*mut This)->Self::FieldsRawMut{
+                let ($($fpath,)*)=self.into_paths();
                 (
                     $(
-                        FieldPath::<$fpath>::NEW.rev_get_field_raw_mut(this),
+                        $fpath.rev_get_field_raw_mut(this),
                     )*
                 )
             }
@@ -237,11 +240,12 @@ where
 
     #[inline(always)]
     fn rev_get_multi_field(self, this: &'a This) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        self.nested
+        let (nested, set) = self.into_inner();
+        nested
             .rev_get_field(this)
             .map({
                 #[inline(always)]
-                |mid| self.set.rev_get_multi_field(mid)
+                |mid| set.rev_get_multi_field(mid)
             })
             .piped(NestedFieldPathSetOutput)
     }
@@ -268,11 +272,12 @@ where
         self,
         this: &'a mut This,
     ) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        self.nested
+        let (nested, set) = self.into_inner();
+        nested
             .rev_get_field_mut(this)
             .map({
                 #[inline(always)]
-                |mid| self.set.rev_get_multi_field_mut(mid)
+                |mid| set.rev_get_multi_field_mut(mid)
             })
             .piped(NestedFieldPathSetOutput)
     }
@@ -281,11 +286,12 @@ where
         self,
         this: *mut This,
     ) -> NestedFieldPathSetOutput<OutRawTy, OutErr> {
-        self.nested
+        let (nested, set) = self.into_inner();
+        nested
             .rev_get_field_raw_mut(this)
             .map({
                 #[inline(always)]
-                |mid| self.set.rev_get_multi_field_raw_mut(mid)
+                |mid| set.rev_get_multi_field_raw_mut(mid)
             })
             .piped(NestedFieldPathSetOutput)
     }

@@ -45,6 +45,7 @@ pub trait EnumExt {
     ) -> Result<&VariantProxy<Self, FieldPath1<V>>, &Self>
     where
         Self: IsVariant<FieldPath1<V>>,
+        V: Copy,
     {
         if IsVariant::is_variant_(self, vari) {
             unsafe { Ok(VariantProxy::from_ref(self, vari)) }
@@ -87,6 +88,7 @@ pub trait EnumExt {
     ) -> Result<&mut VariantProxy<Self, FieldPath1<V>>, &mut Self>
     where
         Self: IsVariant<FieldPath1<V>>,
+        V: Copy,
     {
         if IsVariant::is_variant_(&*self, vari) {
             unsafe { Ok(VariantProxy::from_mut(self, vari)) }
@@ -138,6 +140,7 @@ pub trait EnumExt {
     ) -> Result<*mut VariantProxy<Self, FieldPath1<V>>, *mut Self>
     where
         Self: IsVariant<FieldPath1<V>>,
+        V: Copy,
     {
         if IsVariant::is_variant_(&*this, vari) {
             Ok(VariantProxy::from_raw_mut(this, vari))
@@ -179,6 +182,7 @@ pub trait EnumExt {
     fn into_variant<V>(self, vari: FieldPath1<V>) -> Result<VariantProxy<Self, FieldPath1<V>>, Self>
     where
         Self: IsVariant<FieldPath1<V>> + Sized,
+        V: Copy,
     {
         if IsVariant::is_variant_(&self, vari) {
             unsafe { Ok(VariantProxy::new(self, vari)) }
@@ -231,6 +235,7 @@ pub trait EnumExt {
     ) -> Result<VariantProxy<Box<Self>, FieldPath1<V>>, Box<Self>>
     where
         Self: IsVariant<FieldPath1<V>>,
+        V: Copy,
     {
         if IsVariant::is_variant_(&*self, vari) {
             unsafe { Ok(VariantProxy::from_box(self, vari)) }

@@ -108,6 +108,22 @@ pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
 #[proc_macro]
 #[allow(non_snake_case)]
 #[doc(hidden)]
+pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
+    use crate::tokenizers::{tident_tokens, FullPathForChars};
+    use crate::tstring_aliases::TString;
+
+    parse_or_compile_err(input, |s: TString| {
+        let ty = tident_tokens(s.0, FullPathForChars::StructPmr);
+        Ok(quote::quote! {
+            pub const VALUE: #ty= ::structural::pmr::TStr_::NEW;
+        })
+    })
+    .into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
 pub fn _impl_struct_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, impl_struct::impl_).into()
 }
