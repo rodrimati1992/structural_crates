@@ -27,6 +27,9 @@ mod path_components;
 
 pub use self::path_components::*;
 
+#[doc(inline)]
+pub use crate::*;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Aliases for field paths.
@@ -81,14 +84,6 @@ pub trait IsMultiFieldPath: Sized {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// A type-level representation of a chain of field accesses,like `.a.b.c.d`.
-///
-#[repr(transparent)]
-#[derive(Default, Copy, Clone)]
-pub struct FieldPath<T> {
-    pub list: T,
-}
 
 /// A FieldPath for accesing a single non-nested field.
 pub type FieldPath1<Str> = FieldPath<(Str,)>;
@@ -217,30 +212,6 @@ impl_cmp_traits! {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// A list of `FieldPath`s whose uniqueness is determined by `U`.
-///
-/// If `U` is a `UniquePaths` then all the `FieldPath`s are unique,
-/// and this can be passed to `GetFieldExt::fields_mut`,
-/// since you can't have aliasing mutable references to the same field.
-///
-/// If `U` is a `AliasedPaths` then there might be repeated `FieldPath`s,
-/// and this cannot be passed to `GetFieldExt::fields_mut`,
-/// because it might borrow the same field mutably twice.
-///
-/// # Drop Types
-///
-/// To make all the inherent methods in this type `const fn`
-/// this type wraps the `T` inside a `ManuallyDrop`,
-/// which means that `T` won't be dropped inside.
-/// If that is a problem don't construct a FieldPathSet with a `T` that owns some resource.
-#[repr(transparent)]
-#[derive(Debug, Copy, Clone)]
-pub struct FieldPathSet<T, U> {
-    // The ManuallyDrop allows every const fn to be defined as that.
-    paths: ManuallyDrop<T>,
-    uniqueness: PhantomData<U>,
-}
 
 /// A merker type indicating that FieldPathSet contains unique paths,
 /// in which no path is a prefix of any other path in the set,
@@ -446,40 +417,6 @@ impl_cmp_traits! {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// Allows accessing multiple fields inside of some nested field.
-///
-/// This is useful for accessing multiple fields inside of an optional one,
-/// including accessing the fields in an enum variant.
-///
-/// # Construction
-///
-/// NestedFieldPathSet can be constructed in these ways:
-///
-/// - Using `fp!`.Examples:`fp!(::Foo=>a,b)`,`fp!(a.b=>a,b)`
-///
-/// - Constructing it from a FieldPath and a FieldPathSet using the struct literal.
-/// Example:
-/// `NestedFieldPathSet::new( fp!(a.b.c), fp!(foo,bar,baz) )`,
-/// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.<br>
-/// Example:
-/// `NestedFieldPathSet::new( fp!(::Foo), fp!(a,b) ),
-/// this gets the `a`,and `b` fields from inside the `Foo` variant.
-///
-/// # Drop Types
-///
-/// To make all the inherent methods in this type `const fn`
-/// this type wraps the `FieldPath<F>` inside a `ManuallyDrop`,
-/// which means that `F` won't be dropped inside.
-/// If that is a problem don't construct a NestedFieldPathSet with an `F`
-/// that owns some resource.
-#[derive(Debug, Clone, Copy)]
-pub struct NestedFieldPathSet<F, S, U> {
-    /// The path to a nested field.
-    nested: ManuallyDrop<FieldPath<F>>,
-    /// The field path for fields accessed inside of the nested field.
-    set: FieldPathSet<S, U>,
-}
 
 impl<F, S> NestedFieldPathSet<F, S, AliasedPaths>
 where

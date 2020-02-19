@@ -16,6 +16,17 @@ pub(crate) enum FullPathForChars {
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+#[cfg(feature = "use_const_str")]
+pub(crate) fn tident_tokens<S>(string: S, _: FullPathForChars) -> TokenStream2
+where
+    S: AsRef<str>,
+{
+    let string = string.as_ref();
+
+    quote!( ::structural::TStr_<::structural::p::TS<#string>> )
+}
+
+#[cfg(not(feature = "use_const_str"))]
 /// Tokenizes a `TStr_<>` in which each character is written as a type.
 pub(crate) fn tident_tokens<S>(string: S, char_verbosity: FullPathForChars) -> TokenStream2
 where

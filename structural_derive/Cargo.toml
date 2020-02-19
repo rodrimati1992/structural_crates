@@ -28,6 +28,9 @@ testing=["as_derive_utils/testing"]
 test_asserts=[]
 impl_fields=[]
 
+# Re-enable this feature every time you want to test whether const generics work.
+use_const_str=[]
+
 [badges]
 travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 
