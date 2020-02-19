@@ -121,6 +121,39 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
     .into()
 }
 
+// A workaround for `TStr<TS<{ concat!( $( stringify!($char) ),* ) }>>` not working
+//
+// It causes this error:
+// error[E0391]: cycle detected when const-evaluating + checking
+// `field_traits::tuple_impls::tests::takes_tuple4_variant::{{constant}}#0`
+//    --> structural/src/macros/tstr_macros.rs:312:42
+//     |
+// 312 |           $crate::pmr::TStr_<$crate::p::TS<{
+//     |  __________________________________________^
+// 313 | |             concat!($( stringify!($char) ),*)
+// 314 | |         }>>
+//     | |_________^
+//
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _TStr_from_concatenated_chars(input: TokenStream1) -> TokenStream1 {
+    use crate::ident_or_index::IdentOrIndex;
+    use crate::tokenizers::{tident_tokens, FullPathForChars};
+    use parse_utils::ParseVec;
+
+    parse_or_compile_err(input, |s: ParseVec<IdentOrIndex>| {
+        let string = s
+            .list
+            .into_iter()
+            .map(|id| id.to_string())
+            .collect::<String>();
+        let ty = tident_tokens(string, FullPathForChars::Yes);
+        Ok(quote::quote! { #ty })
+    })
+    .into()
+}
+
 #[proc_macro]
 #[allow(non_snake_case)]
 #[doc(hidden)]

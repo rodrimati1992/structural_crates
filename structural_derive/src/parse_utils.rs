@@ -22,6 +22,25 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pub struct ParseVec<T> {
+    pub list: Vec<T>,
+}
+
+impl<T> parse::Parse for ParseVec<T>
+where
+    T: parse::Parse,
+{
+    fn parse(input: ParseStream) -> parse::Result<Self> {
+        let mut list = Vec::new();
+        while !input.is_empty() {
+            list.push(input.parse::<T>()?);
+        }
+        Ok(Self { list })
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 pub(crate) trait ParseBufferExt {
     fn peek_parse<F, X, P>(&self, f: F) -> Result<Option<P>, syn::Error>
     where

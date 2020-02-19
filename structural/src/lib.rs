@@ -570,6 +570,8 @@ struct Cents(u64);
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
 #![cfg_attr(feature = "nightly_specialization", feature(specialization))]
 #![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
+#![cfg_attr(feature = "use_const_str", feature(const_if_match))]
+#![cfg_attr(feature = "use_const_str", feature(const_generics))]
 #![deny(rust_2018_idioms)]
 #![no_std]
 
@@ -597,13 +599,16 @@ pub use structural_derive::Structural;
 
 #[doc(hidden)]
 pub use structural_derive::{
-    _FP_impl_, _TStr_impl_, _field_path_aliases_impl, _impl_struct_impl, _switch_tstring_aliases,
-    _tstr_impl_, _tstring_aliases_impl, low_fp_impl_, structural_alias_impl,
+    _FP_impl_, _TStr_from_concatenated_chars, _TStr_impl_, _field_path_aliases_impl,
+    _impl_struct_impl, _switch_tstring_aliases, _tstr_impl_, _tstring_aliases_impl, low_fp_impl_,
+    structural_alias_impl,
 };
 
 #[macro_use]
 mod macros;
 
+#[cfg(feature = "use_const_str")]
+pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
 pub mod field_path;
@@ -621,6 +626,8 @@ pub mod tests {
     mod enum_derive;
     #[cfg(feature = "rust_1_40")]
     mod impl_struct;
+    //TODO: Adapt these tests to also work with const generics
+    #[cfg(not(feature = "use_const_str"))]
     mod macro_tests;
     mod multi_nested_fields;
     mod optional_fields;
@@ -688,14 +695,11 @@ pub mod pmr {
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
 
-///
-/// ```
-/// use structural::{GetFieldExt,fp};
-///
-/// Some(0).field_(fp!(::Hello.world));
-///
-/// ```
-pub fn what() {}
+//////////////////////////////
 
-#[doc(hidden)]
-pub use crate::field_path::*;
+use std_::marker::PhantomData;
+use std_::mem::ManuallyDrop;
+
+include! {"field_path/declare_field_path_types.rs"}
+
+//////////////////////////////

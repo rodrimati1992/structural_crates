@@ -288,11 +288,28 @@ macro_rules! TStr {
         $crate::_delegate_TStr!($string)
     };
     (@chars $($char:tt)*)=>{
-        $crate::pmr::TStr_<$crate::p::TS<($($crate::TChar!($char),)*)>>
+        $crate::_TStr_from_chars!( $($char)* )
+
     };
     ($($char:tt)*) => {
         $crate::_delegate_TStr!($($char)*)
     };
+}
+
+#[macro_export]
+#[cfg(not(feature = "use_const_str"))]
+macro_rules! _TStr_from_chars {
+    ($($char:tt)*)=>{
+        $crate::TStr_<$crate::p::TS<($($crate::TChar!($char),)*)>>
+    }
+}
+
+#[macro_export]
+#[cfg(feature = "use_const_str")]
+macro_rules! _TStr_from_chars {
+    ($($char:tt)*)=>{
+        $crate::_TStr_from_concatenated_chars!( $($char)* )
+    }
 }
 
 #[macro_export]
@@ -536,10 +553,28 @@ macro_rules! _delegate_tstr {
         $crate::_delegate_tstr!(@emit $string )
     };
     ($ident:tt) => {
-        $crate::_delegate_tstr!(@emit $ident )
+        $crate::_construct_tstr_from_ident!($ident)
     };
     ($char0:tt $($char:tt)+) => {
         <$crate::TStr!(@chars $char0 $($char)*)>::NEW
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "use_const_str")]
+macro_rules! _construct_tstr_from_ident {
+    ($ident:ident) => {
+        $crate::TStr_::<$crate::p::TS<{ stringify!($ident) }>>::NEW
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "use_const_str"))]
+macro_rules! _construct_tstr_from_ident {
+    ($ident:ident) => {
+        $crate::_delegate_tstr!(@emit $ident )
     };
 }
 

@@ -1,6 +1,7 @@
 use super::Sealed;
 use crate::field_path::{FieldPath, FieldPathSet, IsSingleFieldPath, UniquePaths};
 use crate::type_level::collection_traits::ToTString_;
+use crate::{TStr_, VariantField, VariantName};
 
 use core_extensions::MarkerType;
 
@@ -38,50 +39,6 @@ macro_rules! impl_to_path_to_set {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// A type-level string.
-///
-/// This cannot be converted to a `&'static str` constant
-/// (if you can figure out a cheap way to do that please create an issue/pull request).
-///
-/// # TStr construction
-///
-/// `TStr_<_>` can be constructed with:
-///
-/// - the `tstr` macro,which takes a string literal/ident/integer as an input.
-///
-/// - the `NEW` inherent associated constant,
-///
-/// - The `<TStr_<_> as MarkerType>::MTVAL` associated constant.
-///
-/// Examples of constructing a `TStr_<_>`:
-///
-/// - `tstr!(foo)` (in every Rust version)
-///
-/// - `tstr!(f o o)` (in every Rust version)
-///
-/// - `tstr!("bar")` (in every Rust version)
-///
-/// - `tstr!(1)` (in every Rust version)
-///
-/// - `tstr!(100)` (in every Rust version)
-///
-/// - `tstr!(1 0 0)` (in every Rust version)
-///
-/// - `<TStr!("hello")>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(world)>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(100)>::NEW` (from Rust 1.40 onwards)
-///
-/// - `<TStr!(w o r l d)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(0)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(1 0 0)>::NEW` (in every Rust version)
-///
-/// - `<TStr!(0)>::MTVAL`(requires importing the `MarkerType` trait)
-pub struct TStr_<T>(pub(crate) PhantomData<T>);
 
 /// A marker trait for type-level string.
 ///
@@ -129,17 +86,6 @@ impl_cmp_traits! {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A pair of identifiers for the `F` field inside the `V` variant.
-///
-/// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo.bar)`.
-///
-/// Both the V and F type parameters are [::structural::field_path::TStr_]s,
-#[derive(Copy, Clone)]
-pub struct VariantField<V, F> {
-    pub variant: V,
-    pub field: F,
-}
-
 impl<V, F> VariantField<V, F>
 where
     V: MarkerType,
@@ -185,17 +131,6 @@ impl_cmp_traits! {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// The identifier for the `V` variant.
-///
-/// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo)`.
-/// Note that `fp!(::Foo.bar)` constructs a `FieldPath<(VariantField<_,_>,)>` instead.
-///
-/// The V type parameters is a [::structural::field_path::TStr_]s.
-#[derive(Default, Copy, Clone)]
-pub struct VariantName<V> {
-    pub name: V,
-}
 
 impl<V> VariantName<V>
 where
