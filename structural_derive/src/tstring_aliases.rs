@@ -22,6 +22,7 @@ use std::collections::HashSet;
 
 pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     let mut doc_fp_inner = String::new();
+    let mut doc_fpc_inner = String::new();
 
     let mut ident_set = HashSet::new();
 
@@ -62,6 +63,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                 use std::fmt::Write;
 
                 doc_fp_inner.clear();
+                doc_fpc_inner.clear();
 
                 let span = alias_name.span();
 
@@ -73,7 +75,8 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     }
                 }
 
-                let _ = writeln!(doc_fp_inner, "The type-level equivalent of {:?}", string,);
+                let _ = writeln!(doc_fp_inner, "The type-level equivalent of {:?}", string);
+                let _ = writeln!(doc_fpc_inner, "A value of the `{}` TStr_.", alias_name);
 
                 let string = tident_tokens(string, FullPathForChars::Yes);
 
@@ -81,6 +84,10 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     #[doc=#doc_fp_inner]
                     #[allow(non_camel_case_types,dead_code)]
                     pub type #alias_name=#string;
+
+                    #[doc=#doc_fpc_inner]
+                    #[allow(non_camel_case_types,dead_code)]
+                    pub const #alias_name:#alias_name=#alias_name::NEW;
                 ))
             })
             .collect::<Result<TokenStream2, syn::Error>>()?,

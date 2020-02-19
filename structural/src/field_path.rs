@@ -47,6 +47,23 @@ pub mod aliases {
     }
 }
 
+/// Aliases for TStr_.
+pub mod string_aliases {
+    tstr_aliases! {
+        str_0=0,
+        str_1=1,
+        str_2=2,
+        str_3=3,
+        str_4=4,
+        str_5=5,
+        str_6=6,
+        str_7=7,
+        str_8=8,
+        str_9=9,
+        str_underscore="_",
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 mod sealed {

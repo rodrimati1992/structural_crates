@@ -15,3 +15,29 @@ pub(crate) const fn str_to_usize(s: &str) -> usize {
     }
     inner(s.as_bytes(), 0, 0)
 }
+
+pub struct StrFromLiteral<T> {
+    pub literal: T,
+    pub stringified: &'static str,
+}
+
+impl<T> StrFromLiteral<T> {
+    pub const fn new(literal: T, stringified: &'static str) -> Self {
+        Self {
+            literal,
+            stringified,
+        }
+    }
+}
+
+impl StrFromLiteral<&'static str> {
+    pub const fn str_from_lit(self) -> &'static str {
+        self.literal
+    }
+}
+
+impl StrFromLiteral<u128> {
+    pub const fn str_from_lit(self) -> &'static str {
+        self.stringified
+    }
+}
