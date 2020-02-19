@@ -138,20 +138,45 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 pub fn _TStr_from_concatenated_chars(input: TokenStream1) -> TokenStream1 {
-    use crate::ident_or_index::IdentOrIndex;
-    use crate::tokenizers::{tident_tokens, FullPathForChars};
-    use parse_utils::ParseVec;
+    use core_extensions::SelfOps;
+    use proc_macro::{Literal, TokenTree};
 
-    parse_or_compile_err(input, |s: ParseVec<IdentOrIndex>| {
-        let string = s
-            .list
-            .into_iter()
-            .map(|id| id.to_string())
-            .collect::<String>();
-        let ty = tident_tokens(string, FullPathForChars::Yes);
-        Ok(quote::quote! { #ty })
-    })
-    .into()
+    if input.is_empty() {
+        return quote::quote!("").into();
+    }
+
+    let mut string = input.to_string();
+
+    let mut is_error = false;
+
+    string.retain(|c| {
+        if c == ' ' {
+            return false;
+        }
+        let keep = c.is_ascii_alphanumeric() || c == '_' || c == '-';
+        is_error = is_error || !keep;
+        keep
+    });
+
+    let mut iter = input.into_iter();
+    let mut span: proc_macro2::Span = iter.next().unwrap().span().into();
+    for tt in iter {
+        span = span.join(tt.span().into()).unwrap_or(span);
+    }
+
+    if is_error {
+        quote::quote_spanned!(span=>{
+            compile_error!("\n\
+                Expected only space separated ascii identifiers,integers,underscores,and/or dashes.\n\
+                help: You can write arbitrary charcters with quotes,eg: tstr!(\"∀∏@~\").\n\
+            ");
+            ::structural::TStr_<::structural::p::TS<"">>
+        })
+    }else {
+        quote::quote_spanned!(span=>
+            ::structural::TStr_<::structural::p::TS< #string >>
+        )
+    }.into()
 }
 
 #[proc_macro]

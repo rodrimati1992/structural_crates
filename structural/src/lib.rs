@@ -607,6 +607,7 @@ pub use structural_derive::{
 #[macro_use]
 mod macros;
 
+#[doc(hidden)]
 #[cfg(feature = "use_const_str")]
 pub mod const_generic_utils;
 pub mod docs;
@@ -626,8 +627,6 @@ pub mod tests {
     mod enum_derive;
     #[cfg(feature = "rust_1_40")]
     mod impl_struct;
-    //TODO: Adapt these tests to also work with const generics
-    #[cfg(not(feature = "use_const_str"))]
     mod macro_tests;
     mod multi_nested_fields;
     mod optional_fields;

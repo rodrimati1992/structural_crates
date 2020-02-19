@@ -192,7 +192,7 @@ macro_rules! fp {
 //#[cfg(not(feature="better_macros"))]
 macro_rules! _delegate_fp {
     ($ident:ident) => (
-        $crate::FieldPath::one($crate::_construct_tstr_from_ident!{$ident})
+        $crate::FieldPath::one($crate::_construct_tstr_from_token!{$ident})
     );
     (0)=>{ $crate::field_path::aliases::index_0 };
     (1)=>{ $crate::field_path::aliases::index_1 };

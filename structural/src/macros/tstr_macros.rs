@@ -273,29 +273,42 @@ struct Charge{
 */
 #[macro_export]
 macro_rules! TStr {
-    (0)=>{ $crate::TStr!(@chars 0) };
-    (1)=>{ $crate::TStr!(@chars 1) };
-    (2)=>{ $crate::TStr!(@chars 2) };
-    (3)=>{ $crate::TStr!(@chars 3) };
-    (4)=>{ $crate::TStr!(@chars 4) };
-    (5)=>{ $crate::TStr!(@chars 5) };
-    (6)=>{ $crate::TStr!(@chars 6) };
-    (7)=>{ $crate::TStr!(@chars 7) };
-    (8)=>{ $crate::TStr!(@chars 8) };
-    (9)=>{ $crate::TStr!(@chars 9) };
-    (_)=>{ $crate::TStr!(@chars _) };
+    (0)=>{ $crate::field_path::string_aliases::str_0 };
+    (1)=>{ $crate::field_path::string_aliases::str_1 };
+    (2)=>{ $crate::field_path::string_aliases::str_2 };
+    (3)=>{ $crate::field_path::string_aliases::str_3 };
+    (4)=>{ $crate::field_path::string_aliases::str_4 };
+    (5)=>{ $crate::field_path::string_aliases::str_5 };
+    (6)=>{ $crate::field_path::string_aliases::str_6 };
+    (7)=>{ $crate::field_path::string_aliases::str_7 };
+    (8)=>{ $crate::field_path::string_aliases::str_8 };
+    (9)=>{ $crate::field_path::string_aliases::str_9 };
+    (_)=>{ $crate::field_path::string_aliases::str_underscore };
     ( $string:literal )=>{
-        $crate::_delegate_TStr!($string)
+        $crate::_TStr_from_literal!($string)
     };
     (@chars $($char:tt)*)=>{
         $crate::_TStr_from_chars!( $($char)* )
-
+    };
+    ($ident:ident) => {
+        $crate::_TStr_from_ident!($ident)
     };
     ($($char:tt)*) => {
-        $crate::_delegate_TStr!($($char)*)
+        $crate::_TStr_from_chars!( $($char)* )
     };
 }
 
+//////////
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "use_const_str")]
+macro_rules! _TStr_from_chars {
+    ($($char:tt)*)=>{
+        $crate::_TStr_from_concatenated_chars!( $($char)* )
+    }
+}
+#[doc(hidden)]
 #[macro_export]
 #[cfg(not(feature = "use_const_str"))]
 macro_rules! _TStr_from_chars {
@@ -304,45 +317,82 @@ macro_rules! _TStr_from_chars {
     }
 }
 
+//////////
+
+#[doc(hidden)]
 #[macro_export]
 #[cfg(feature = "use_const_str")]
-macro_rules! _TStr_from_chars {
-    ($($char:tt)*)=>{
-        $crate::_TStr_from_concatenated_chars!( $($char)* )
+macro_rules! _TStr_from_literal {
+    ( $string:literal )=>{
+        $crate::TStr_<$crate::p::TS<{
+            $crate::const_generic_utils::StrFromLiteral::new($string,stringify!($string))
+                .str_from_lit()
+        }>>
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(all(not(feature = "use_const_str"), feature = "better_macros"))]
+macro_rules! _TStr_from_literal {
+    ( $string:literal ) => {
+        $crate::_TStr_impl_!($string)
+    };
+}
+
+#[doc(hidden)]
+#[cfg(all(not(feature = "use_const_str"), not(feature = "better_macros")))]
+#[macro_export]
+macro_rules! _TStr_from_literal {
+    ( $string:literal ) => {
+        $crate::_TStr_error! {$string}
+    };
+}
+
+//////////
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "use_const_str")]
+macro_rules! _TStr_from_ident {
+    ( $string:ident )=>{
+        $crate::TStr_<$crate::p::TS<{ stringify!($string) }>>
     }
 }
 
-#[macro_export]
 #[doc(hidden)]
-#[cfg(not(feature = "better_macros"))]
-macro_rules! _delegate_TStr {
-    ($string:literal) => {
-        compile_error!(
-            "\
-`TStr!(\"foo\")` requires either Rust 1.40 or the \"better_macros\" cargo feature.
-
-You can always use the `tstr_aliases` macro to declare aliases for type level strings.
-        "
-        )
-    };
-    ($($char:tt)*) => {
-        $crate::TStr!(@chars $($char)*)
+#[macro_export]
+#[cfg(all(not(feature = "use_const_str"), feature = "better_macros"))]
+macro_rules! _TStr_from_ident {
+    ( $string:ident ) => {
+        $crate::_TStr_impl_!($string)
     };
 }
 
+#[doc(hidden)]
+#[macro_export]
+#[cfg(all(not(feature = "use_const_str"), not(feature = "better_macros")))]
+macro_rules! _TStr_from_ident {
+    ( $string:ident ) => {
+        $crate::_TStr_error! {$string}
+    };
+}
+
+//////////
+
 #[macro_export]
 #[doc(hidden)]
-#[cfg(feature = "better_macros")]
-macro_rules! _delegate_TStr {
-    ($string:literal) => {
-        $crate::_TStr_impl_!($string)
-    };
-    ($ident:tt) => {
-        $crate::_TStr_impl_!($ident)
-    };
-    ($char0:tt $($char:tt)+) => {
-        $crate::TStr!(@chars $char0 $($char)*)
-    };
+macro_rules! _TStr_error{
+    ($($args:tt)*)=>{
+        compile_error!(concat!(
+            "`TStr!(",
+            $(stringify!($args),)*
+            ")` requires either Rust 1.40 or the \"better_macros\" cargo feature.\n\
+            \n\
+            You can always use the `tstr_aliases` macro to declare aliases for type level strings.\n\
+            "
+        ))
+    }
 }
 
 /**
@@ -519,63 +569,57 @@ assert_eq!( right.cloned_fields(fp!(::Right=>c,is_true)), Some(('a',false)) );
 */
 #[macro_export]
 macro_rules! tstr {
-    (0)=>{ <$crate::TStr!(@chars 0)>::NEW };
-    (1)=>{ <$crate::TStr!(@chars 1)>::NEW };
-    (2)=>{ <$crate::TStr!(@chars 2)>::NEW };
-    (3)=>{ <$crate::TStr!(@chars 3)>::NEW };
-    (4)=>{ <$crate::TStr!(@chars 4)>::NEW };
-    (5)=>{ <$crate::TStr!(@chars 5)>::NEW };
-    (6)=>{ <$crate::TStr!(@chars 6)>::NEW };
-    (7)=>{ <$crate::TStr!(@chars 7)>::NEW };
-    (8)=>{ <$crate::TStr!(@chars 8)>::NEW };
-    (9)=>{ <$crate::TStr!(@chars 9)>::NEW };
-    (_)=>{ <$crate::TStr!(@chars _)>::NEW };
+    (0)=>{ $crate::field_path::string_aliases::str_0 };
+    (1)=>{ $crate::field_path::string_aliases::str_1 };
+    (2)=>{ $crate::field_path::string_aliases::str_2 };
+    (3)=>{ $crate::field_path::string_aliases::str_3 };
+    (4)=>{ $crate::field_path::string_aliases::str_4 };
+    (5)=>{ $crate::field_path::string_aliases::str_5 };
+    (6)=>{ $crate::field_path::string_aliases::str_6 };
+    (7)=>{ $crate::field_path::string_aliases::str_7 };
+    (8)=>{ $crate::field_path::string_aliases::str_8 };
+    (9)=>{ $crate::field_path::string_aliases::str_9 };
+    (_)=>{ $crate::field_path::string_aliases::str_underscore };
     ( $string:literal )=>{
-        $crate::_delegate_tstr!($string)
+        $crate::_construct_tstr_from_token!($string)
     };
-    ($($char:tt)*) => {
-        $crate::_delegate_tstr!($($char)*)
+    ($ident:tt) => {
+        $crate::_construct_tstr_from_token!($ident)
+    };
+    ($($char:tt)+) => {
+        <$crate::_TStr_from_chars!($($char)*)>::NEW
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(any(feature = "use_const_str", feature = "better_macros"))]
+macro_rules! _construct_tstr_from_token {
+    ($token:tt) => {
+        <$crate::TStr!($token)>::NEW
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(any(feature = "use_const_str", feature = "better_macros")))]
+macro_rules! _construct_tstr_from_token {
+    ($token:tt) => {
+        $crate::_construct_tstr_in_module!($token)
     };
 }
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! _delegate_tstr {
-    (@emit $param:tt )=>{{
-        mod dummy{
+macro_rules! _construct_tstr_in_module {
+    ( $param:tt ) => {{
+        mod dummy {
             #[allow(unused_imports)]
             use structural::pmr as __struct_pmr;
-            $crate::_tstr_impl_!{$param}
+            $crate::_tstr_impl_! {$param}
         }
         dummy::VALUE
     }};
-    ($string:literal) => {
-        $crate::_delegate_tstr!(@emit $string )
-    };
-    ($ident:tt) => {
-        $crate::_construct_tstr_from_ident!($ident)
-    };
-    ($char0:tt $($char:tt)+) => {
-        <$crate::TStr!(@chars $char0 $($char)*)>::NEW
-    };
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(feature = "use_const_str")]
-macro_rules! _construct_tstr_from_ident {
-    ($ident:ident) => {
-        $crate::TStr_::<$crate::p::TS<{ stringify!($ident) }>>::NEW
-    };
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(not(feature = "use_const_str"))]
-macro_rules! _construct_tstr_from_ident {
-    ($ident:ident) => {
-        $crate::_delegate_tstr!(@emit $ident )
-    };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -709,6 +753,9 @@ macro_rules! TChar {
     (_) => {
         $crate::p::__
     };
+    (-) => {
+        $crate::p::B45
+    };
     (a) => {
         $crate::p::_a
     };
@@ -786,8 +833,5 @@ macro_rules! TChar {
     };
     (z) => {
         $crate::p::_z
-    };
-    ($byte:ident) => {
-        $crate::p::$byte
     };
 }

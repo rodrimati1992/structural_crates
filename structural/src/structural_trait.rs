@@ -110,7 +110,7 @@ impl IsOptional {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "alloc")]
-pub fn names<T>() -> alloc_::vec::Vec<Name>
+pub fn names<T>() -> crate::alloc::vec::Vec<Name>
 where
     T: Structural,
 {
@@ -118,7 +118,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-fn names_inner(infos: &FieldInfos) -> alloc_::vec::Vec<Name> {
+fn names_inner(infos: &FieldInfos) -> crate::alloc::vec::Vec<Name> {
     match infos {
         FieldInfos::Option(x) => names_inner(x),
         FieldInfos::Enum(x) => x.iter().map(|x| x.name).collect(),
