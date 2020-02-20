@@ -21,6 +21,7 @@ mod field_path_aliases_macro;
 mod field_paths;
 mod fp_impl;
 mod ident_or_index;
+mod ignored_wrapper;
 mod impl_struct;
 mod parse_utils;
 mod structural_alias_impl_mod;
@@ -138,9 +139,6 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 pub fn _TStr_from_concatenated_chars(input: TokenStream1) -> TokenStream1 {
-    use core_extensions::SelfOps;
-    use proc_macro::{Literal, TokenTree};
-
     if input.is_empty() {
         return quote::quote!("").into();
     }

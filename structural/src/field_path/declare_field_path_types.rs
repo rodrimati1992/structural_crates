@@ -1,4 +1,4 @@
-/// A type-level string.
+/// Type-level string,used for identifiers in field paths.
 ///
 /// This cannot be converted to a `&'static str` constant
 /// (if you can figure out a cheap way to do that please create an issue/pull request).

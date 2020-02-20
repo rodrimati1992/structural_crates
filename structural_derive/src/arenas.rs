@@ -51,6 +51,7 @@ macro_rules! declare_arenas {
 }
 
 declare_arenas! {
+    string: String,
     ident: syn::Ident,
     types: syn::Type,
     lit_int: syn::LitInt,
