@@ -208,6 +208,8 @@ mod make_struct_tests {
 }
 
 mod names_module_tests {
+    use core_extensions::type_asserts::*;
+
     field_path_aliases! {
         mod names_a{
             _a,
@@ -220,6 +222,14 @@ mod names_module_tests {
             h=(a,b,c),
             i=(0,3,5),
             j=(p),
+            k0=(::p),
+            k1=(::"p"),
+            l0=(a,b,c,d,e),
+            l1=(a,"b",c,"d",e),
+            m0=(::a.b),
+            m1=(::"a"."b"),
+            n0=(0=>"1","2"),
+            n1=("0"=>1,2),
         }
     }
     #[test]
@@ -234,6 +244,13 @@ mod names_module_tests {
         let _: names_a::h = fp!(a, b, c);
         let _: names_a::i = fp!(0, 3, 5);
         let _: names_a::j = fp!(p);
+
+        let _: AssertEq3<names_a::k0, _, _> = AssertEq3::new(names_a::k0, names_a::k1, fp!(::p));
+
+        let _: AssertEq3<names_a::l0, _, _> = AssertEq3::new(names_a::l0, names_a::l1, fp!(a,b,c,d,e));
+
+        let _: AssertEq3<names_a::n0, _, _> =
+            AssertEq3::new(names_a::n0, names_a::n1, fp!(0=>1,2));
     }
 }
 

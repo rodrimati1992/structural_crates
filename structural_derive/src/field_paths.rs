@@ -306,11 +306,11 @@ pub(crate) enum FieldPathComponent {
     /// A field
     Ident(IdentOrIndex),
     VariantField {
-        variant: Ident,
+        variant: IdentOrIndex,
         field: IdentOrIndex,
     },
     VariantName {
-        variant: Ident,
+        variant: IdentOrIndex,
     },
 }
 
@@ -335,20 +335,20 @@ impl FieldPathComponent {
                 }
             }
             FPC::Ident(ident) => {
-                let _ = write!(buff, ".{}", ident);
+                let _ = write!(buff, ".{}", ident.to_token_stream());
             }
             FPC::VariantField { variant, field } => {
-                let _ = write!(buff, "::{}.{}", variant, field);
+                let _ = write!(buff, "::{}.{}", variant.to_token_stream(), field.to_token_stream());
             }
             FPC::VariantName { variant } => {
-                let _ = write!(buff, "::{}", variant);
+                let _ = write!(buff, "::{}", variant.to_token_stream());
             }
         }
     }
 
     pub(crate) fn parse(input: ParseStream, is_period: IsPeriod) -> parse::Result<Self> {
         if is_period == IsPeriod::No && input.peek_parse(Token!(::))?.is_some() {
-            let variant = input.parse::<Ident>()?;
+            let variant = input.parse::<IdentOrIndex>()?;
 
             if input.peek_parse(Token!(.))?.is_some() {
                 let field = input.parse::<IdentOrIndex>()?;

@@ -226,14 +226,13 @@ fn parse_sabi_attr<'a>(
         (
             ParseContext::Field { field, .. },
             Meta::NameValue(MetaNameValue {
-                lit: Lit::Str(ref value),
-                ref path,
+                lit: Lit::Str(value),
+                path,
                 ..
             }),
         ) => {
             if path.is_ident("rename") {
-                let renamed = value.parse::<IdentOrIndex>()?;
-                this.fields[field].renamed = Some(renamed);
+                this.fields[field].renamed = Some(IdentOrIndex::from(value));
             } else if path.is_ident("access") {
                 let access = value.parse::<Access>()?;
                 let fa = &mut this.fields[field];
@@ -250,7 +249,7 @@ fn parse_sabi_attr<'a>(
                         ",
                     }
                 } else if !this.with_trait_alias {
-                    return Err(trait_alias_err(path));
+                    return Err(trait_alias_err(&path));
                 }
                 let bounds: TypeParamBounds = value.parse::<ParsePunctuated<_, _>>()?.list;
                 this.fields[field].is_impl = Some(bounds)

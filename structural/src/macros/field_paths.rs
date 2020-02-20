@@ -15,6 +15,23 @@
 /// All paths are checked against every other path to ensure that
 /// none of them is a prefix of any other.
 ///
+/// ### Identifier
+///
+/// The macro takes in identifiers,integers,or strings for the names of variants and fields.
+///
+/// Examples:
+///
+/// - `FP!(hello)`
+///
+/// - `FP!(100)`
+///
+/// - `FP!(::"@hello")`,accesses the `@hello` variant.
+///
+/// - `FP!(::1337."wh.at")`,accesses the `wh.at` field in the `1337` variant.
+/// (the `.` in `"wh.at"` is part of the field name)
+///
+/// - `FP!("hello")` (equivalent to `FP!(hello)`)
+///
 /// ### Nested fields
 ///
 /// You can construct field paths to access nested fields with `fp!(a.b.c)`,
@@ -239,9 +256,18 @@ macro_rules! _delegate_fp_inner {
 ///
 /// <span id="improved-macro"></span>
 ///
-/// The variant of the macro takes in an identifier,or an integer.
+/// The variant of the macro takes in an identifier,an integer,
+/// or a string(for arbitrary identifiers).
 ///
-/// Examples: `FP!(hello)`,`FP!(100)`
+/// Examples:
+///
+/// - `FP!(hello)`
+///
+/// - `FP!(100)`
+///
+/// - `FP!("@hello")`,for arbitrary field identifiers.
+///
+/// - `FP!("hello")` (equivalent to `FP!(hello)`)
 ///
 /// This variant of the macro requires one of these:
 ///
@@ -264,7 +290,9 @@ macro_rules! _delegate_fp_inner {
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,fp,FP};
+/// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
+///
+/// greet_entity(&make_struct!{ name: "Bob" });
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
@@ -276,6 +304,18 @@ macro_rules! _delegate_fp_inner {
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
+///     println!("Goodbye, {}!",entity.field_(fp!("name")).as_ref() );
+///
+///     // The two `fp!` invocations  below are equivalent.
+///     //
+///     // Quotes allow for arbitrary identifiers,
+///     // useful for non-ascii identifiers before they are supported by Rust.
+///     //
+///     // Before Rust 1.40,the only way to write bounds for accessors parameterized by
+///     // non-ascii identifiers is to use `field_path_alaises` or `tstr_aliases`
+///     //
+///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
+///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
 /// }
 ///
 /// ```
@@ -286,18 +326,36 @@ macro_rules! _delegate_fp_inner {
 ///
 #[cfg_attr(feature = "better_macros", doc = " ```rust")]
 #[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
-/// use structural::{GetField,GetFieldExt,fp,FP};
+/// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
 ///
-/// fn greet_entity<This,S>(entity:&This)
+/// let struc=make_struct!{
+///     name: "Bob",
+///     huh: "John",
+/// };
+///
+/// greet_entity(&struc,&(99,999,999));
+///
+/// type Path_0=FP!(0);
+/// type Path_huh=FP!(huh);
+/// type Path_name=FP!("name"); // Equivalent to FP!("name")
+///
+/// fn greet_entity<This,S,Tup>(entity:&This, tuple:&Tup)
 /// where
-///     This:GetField<FP!(name),Ty=S>,
+///     This: GetField<FP!(name), Ty= S> + GetField<Path_huh, Ty= &'static str>,
+///     Tup : GetField<Path_0,Ty=u64>,
 ///     S:AsRef<str>,
 /// {
-///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
-/// }
+///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
+///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
+///     assert_eq!( entity.field_(Path_name::NEW).as_ref(), "Bob" );
 ///
-/// type NumericIdent=FP!(0);
-/// type StringyIdent=FP!(huh);
+///     assert_eq!( entity.field_(fp!(huh)), &"John" );
+///     assert_eq!( entity.field_(fp!("huh")), &"John" );
+///     assert_eq!( entity.field_(Path_huh::NEW), &"John" );
+///
+///     assert_eq!( tuple.field_(fp!(0)), &99 );
+///     assert_eq!( tuple.field_(Path_0::NEW), &99 );
+/// }
 ///
 /// ```
 ///
@@ -351,13 +409,19 @@ use structural::field_path_aliases;
 field_path_aliases!{
     a,
     b=b,
+    // This has the same value as the `b` alias
+    b_str="b",
+    // strings allow for arbitrary identifiers.
+    at_me="@me",
     c=d.e,
     // field paths used to access multiple fields must be wrapped in parentheses.
-    d=(a,b,c),
+    d=(a,b,c,"#D"),
     // Accesses the variant,if the enum is currently that variant
     e=::Foo,
     // Accesses the a,b,and c fields inside of the Foo variant.
     f=(::Foo=>a,b,c),
+    // Accesses the a,b,and c fields inside of the `ñ` variant.
+    g=(::"ñ"=>a,b,c),
 }
 # fn main(){}
 ```
@@ -376,13 +440,19 @@ fn hello(){
         mod hello{
             a,
             b=b,
+            // This has the same value as the `b` alias
+            b_str="b",
+            // strings allow for arbitrary identifiers.
+            at_me="@me",
             c=d.e,
             // field paths used to access multiple fields must be wrapped in parentheses.
-            d=(a,b,c),
+            d=(a,b,c,"#D"),
             // Accesses the variant,if the enum is currently that variant
             e=::Foo,
             // Accesses the a,b,and c fields inside of the Foo variant.
             f=(::Foo=>a,b,c),
+            // Accesses the a,b,and c fields inside of the `ñ` variant.
+            g=(::"ñ"=>a,b,c),
         }
     }
 }
