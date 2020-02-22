@@ -166,7 +166,7 @@ pub fn _TStr_from_concatenated_chars(input: TokenStream1) -> TokenStream1 {
         quote::quote_spanned!(span=>{
             compile_error!("\n\
                 Expected only space separated ascii identifiers,integers,underscores,and/or dashes.\n\
-                help: You can write arbitrary charcters with quotes,eg: tstr!(\"∀∏@~\").\n\
+                help: You can write arbitrary charcters with quotes,eg: ts!(\"∀∏@~\").\n\
             ");
             ::structural::TStr_<::structural::p::TS<"">>
         })

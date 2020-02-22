@@ -50,9 +50,9 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 
 /// Gets the type of a variant field,
 ///
-/// Example(since 1.40): `GetVariantFieldType<This, TStr!(Foo), TStr!(0)>`
+/// Example(since 1.40): `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
 ///
-/// Example(before 1.40): `GetVariantFieldType<This, TStr!(F o o), TStr!(0)>`
+/// Example(before 1.40): `GetVariantFieldType<This, TS!(F o o), TS!(0)>`
 pub type GetVariantFieldType<This, Variant, Field> =
     <This as FieldType<VariantFieldPath<Variant, Field>>>::Ty;
 
@@ -97,7 +97,7 @@ pub unsafe trait IntoVariantFieldImpl<V, F>:
 declare_trait_alias! {
     /// A bound for shared access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `GetVariantField<TStr!(Foo),TStr!(x)>`
+    /// This takes TStr as parameters,eg: `GetVariantField<TS!(Foo),TS!(x)>`
     pub trait GetVariantField<V,F>=
         OptGetField<VariantFieldPath<V, F>> +
         GetVariantFieldImpl<V, F, Err= NonOptField> +
@@ -106,7 +106,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for mutable access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `GetVariantFieldMut<TStr!(Bar),TStr!(y)>`
+    /// This takes TStr as parameters,eg: `GetVariantFieldMut<TS!(Bar),TS!(y)>`
     pub trait GetVariantFieldMut<V, F>=
         OptGetFieldMut<VariantFieldPath<V, F>> +
         GetVariantFieldMutImpl<V, F, Err= NonOptField> +
@@ -115,7 +115,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for by-value access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `IntoVariantField<TStr!(Baz),TStr!(z)>`
+    /// This takes TStr as parameters,eg: `IntoVariantField<TS!(Baz),TS!(z)>`
     pub trait IntoVariantField<V, F>=
         OptIntoField<VariantFieldPath<V, F>> +
         IntoVariantFieldImpl<V, F, Err= NonOptField> +
@@ -124,7 +124,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for mutable and by-value access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `IntoVariantFieldMut<TStr!(Boom),TStr!(dynamite)>`
+    /// This takes TStr as parameters,eg: `IntoVariantFieldMut<TS!(Boom),TS!(dynamite)>`
     pub trait IntoVariantFieldMut<V, F>=
         GetVariantFieldMut<V, F>+
         IntoVariantField<V, F>+
@@ -135,7 +135,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional shared access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `OptGetVariantField<TStr!(Illegal),TStr!(errors)>`
+    /// This takes TStr as parameters,eg: `OptGetVariantField<TS!(Illegal),TS!(errors)>`
     pub trait OptGetVariantField<V, F>=
         OptGetField<VariantFieldPath<V, F>> +
         GetVariantFieldImpl<V, F, Err= OptionalField> +
@@ -144,7 +144,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional mutable access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `OptGetVariantFieldMut<TStr!(Other),TStr!(0)>`
+    /// This takes TStr as parameters,eg: `OptGetVariantFieldMut<TS!(Other),TS!(0)>`
     pub trait OptGetVariantFieldMut<V, F>=
         OptGetFieldMut<VariantFieldPath<V, F>> +
         GetVariantFieldMutImpl<V, F, Err= OptionalField> +
@@ -153,7 +153,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional by-value access to the field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `OptIntoVariantField<TStr!(Enum),TStr!(variants)>`
+    /// This takes TStr as parameters,eg: `OptIntoVariantField<TS!(Enum),TS!(variants)>`
     pub trait OptIntoVariantField<V, F>=
         OptIntoField<VariantFieldPath<V, F>> +
         IntoVariantFieldImpl<V, F, Err= OptionalField> +
@@ -163,7 +163,7 @@ declare_trait_alias! {
     /// A bound for optional mutable and by-value access to the
     /// field `F` inside of the `V` variant.
     ///
-    /// This takes TStr as parameters,eg: `OptIntoVariantFieldMut<TStr!(Struct),TStr!(value)>`
+    /// This takes TStr as parameters,eg: `OptIntoVariantFieldMut<TS!(Struct),TS!(value)>`
     pub trait OptIntoVariantFieldMut<V, F>=
         OptGetVariantFieldMut<V, F>+
         OptIntoVariantField<V, F>+

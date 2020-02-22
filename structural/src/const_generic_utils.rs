@@ -2,7 +2,7 @@
 // when `TStr_` internally uses a `&'static str` const parameter instead of
 // a tuple of char type-level characters(a bunch of structs).
 
-/// For converting a `tstr!(99)` to a 99 constant,for example.
+/// For converting a `ts!(99)` to a 99 constant,for example.
 pub(crate) const fn str_to_usize(s: &str) -> usize {
     const fn inner(s: &[u8], index: usize, curr: usize) -> usize {
         if index < s.len() {

@@ -59,7 +59,7 @@ The `*_VSI` trait is generated for structs that derive `Structural` and
 don't have a `#[struc(no_trait)]` attribute,
 it is for enum variants with the same structure as the struct.<br>
 Example:
-`Foo_VSI<'a,T,TStr!(Bar)>` is the trait for a `Bar` variant with the same structure as `Foo`
+`Foo_VSI<'a,T,TS!(Bar)>` is the trait for a `Bar` variant with the same structure as `Foo`
 
 ### Bounds for Variants
 
@@ -71,7 +71,7 @@ Regarding what bounds are generated for the variant in the
 - #[struc(newtype)]` variants only get the `IsVariant<_>` bound(like every variant).
 
 - `#[struc(newtype(bounds="Foo_VSI<'a,T,@variant>"))]` variants
-will get `Foo_VSI<'a,T,TStr!(NameOfTheVariant)>` as the bound for the variant.<br>
+will get `Foo_VSI<'a,T,TS!(NameOfTheVariant)>` as the bound for the variant.<br>
 
 Every variant also gets a `IsVariant<_>` bound.
 
@@ -320,7 +320,7 @@ This example demonstrates the ways that the `*_VSI` traits
 (which are generated for structs by the Structural derive macro) can be used.
 
 ```rust
-use structural::{Structural,TStr,switch,tstr_aliases};
+use structural::{Structural,TS,switch,tstr_aliases};
 use structural::enums::VariantCount;
 
 fn main(){
@@ -352,7 +352,7 @@ fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
 // The `Wrapper_VSI<'a,u64,U64_STR>` bound:
 // is for a `u64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
 //
-// `VariantCount<Count=TStr!(2)>`
+// `VariantCount<Count=TS!(2)>`
 // makes this require an enum with only 2 variants
 // without it the enum would be nonexhaustive,
 // and the switch would require a `_=>` branch.
@@ -360,7 +360,7 @@ fn with_wrapper_vsi<'a>(
     this: impl
         Wrapper_VSI<'a,u32,U32_STR> +
         Wrapper_VSI<'a,u64,U64_STR> +
-        VariantCount<Count=TStr!(2)>
+        VariantCount<Count=TS!(2)>
 ){
     switch!{ref this;
         U32(field0,field1)=>{
@@ -413,13 +413,13 @@ enum Enum<'a>{
     // `#[struc(newtype)]` allows accessing `Wrapper`'s fields as though they
     // were declared in the variant itself.
     // The `bound="..."` part replaces the bounds for the variant in the
-    // generated `Enum_SI` and `Enum_ESI` traits with `Wrapper_VSI<'a,u32,TStr!(U32)>`
+    // generated `Enum_SI` and `Enum_ESI` traits with `Wrapper_VSI<'a,u32,TS!(U32)>`
     // `Wrapper_VSI` was generated for `Wrapper` by the `Structural` derive macro,
     // it's for enum variants with the same structure as `Wrapper`.
     #[struc(newtype(bounds="Wrapper_VSI<'a,u32,@variant>"))]
     U32(Wrapper<'a,u32>),
     // The `bound="..."` here replaces the bounds for the variant in the
-    // generated traits with `Wrapper_VSI<'a,u64,TStr!(U64)>`
+    // generated traits with `Wrapper_VSI<'a,u64,TS!(U64)>`
     #[struc(newtype(bounds="Wrapper_VSI<'a,u64,@variant>"))]
     U64(Wrapper<'a,u64>),
 }

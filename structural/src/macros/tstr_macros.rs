@@ -43,7 +43,7 @@ fn hello(){
 
 Writing a function that takes a `::Foo.bar` field.
 
-You can use `tstr_aliases` or `TStr` to manually declare
+You can use `tstr_aliases` or `TS` to manually declare
 variant field accessor trait bounds.
 
 ```
@@ -144,13 +144,13 @@ Small Example:
 #[cfg_attr(not(feature = "better_macros"), doc = "```ignore")]
 #[cfg_attr(feature = "better_macros", doc = "```rust")]
 /**
-use structural::TStr;
+use structural::TS;
 
-type Foo=TStr!("foo");
+type Foo=TS!("foo");
 
-type Bar=TStr!(foo); // Equivalent to `TStr!("foo")`
+type Bar=TS!(foo); // Equivalent to `TS!("foo")`
 
-type Baz=TStr!(100); // Equivalent to `TStr!("100")`
+type Baz=TS!(100); // Equivalent to `TS!("100")`
 
 ```
 
@@ -167,9 +167,9 @@ and you are using Rust version older than 1.40.
 Small Example:
 
 ```rust
-use structural::TStr;
+use structural::TS;
 
-type Foo=TStr!(f o o);
+type Foo=TS!(f o o);
 ```
 
 # Example
@@ -183,21 +183,21 @@ type parameter with the `*VariantField*` traits,to access a variant field.
 #[cfg_attr(not(feature = "better_macros"), doc = "```ignore")]
 #[cfg_attr(feature = "better_macros", doc = "```rust")]
 /**
-use structural::{GetFieldExt,FP,Structural,TStr};
+use structural::{GetFieldExt,FP,Structural,TS};
 use structural::field_traits::{GetFieldType,GetVariantFieldType,IntoVariantFieldMut};
 use structural::field_path::VariantFieldPath;
 
 // `GetFieldType<This,FP!(::Ok.0)>` can also be written as
-// `GetVariantFieldType<This,TStr!(Ok),TStr!(0)>`.
+// `GetVariantFieldType<This,TS!(Ok),TS!(0)>`.
 //
 // `GetVariantFieldType` is useful in generic contexts where
 // the name of the variant is taken  separately from the name of the field.
 fn into_ok<This>(this: This)->Option<GetFieldType<This,FP!(::Ok.0)>>
 where
-    This: IntoVariantFieldMut<TStr!(Ok),TStr!(0)>
+    This: IntoVariantFieldMut<TS!(Ok),TS!(0)>
 {
     // Equivalent to: `this.into_field(fp!(::Ok.0))`
-    this.into_field(VariantFieldPath::<TStr!("Ok"),TStr!("0")>::NEW)
+    this.into_field(VariantFieldPath::<TS!("Ok"),TS!("0")>::NEW)
 }
 
 #[derive(Structural)]
@@ -224,7 +224,7 @@ and uses the TStr macro to access a field,
 instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
-use structural::{GetField,GetFieldExt,Structural,TStr};
+use structural::{GetField,GetFieldExt,Structural,TS};
 use structural::field_path::FieldPath1;
 
 fn main(){
@@ -240,8 +240,8 @@ fn main(){
     assert_eq!( get_charge(&battery).percent, 70 );
 }
 
-fn get_charge( this:&dyn GetField<FieldPath1<TStr!(c h a r g e)>, Ty=Charge> )-> Charge {
-    this.field_(FieldPath1::<TStr!(c h a r g e)>::NEW).clone()
+fn get_charge( this:&dyn GetField<FieldPath1<TS!(c h a r g e)>, Ty=Charge> )-> Charge {
+    this.field_(FieldPath1::<TS!(c h a r g e)>::NEW).clone()
 }
 
 #[derive(Structural)]
@@ -272,7 +272,7 @@ struct Charge{
 
 */
 #[macro_export]
-macro_rules! TStr {
+macro_rules! TS {
     (0)=>{ $crate::field_path::string_aliases::str_0 };
     (1)=>{ $crate::field_path::string_aliases::str_1 };
     (2)=>{ $crate::field_path::string_aliases::str_2 };
@@ -385,7 +385,7 @@ macro_rules! _TStr_from_ident {
 macro_rules! _TStr_error{
     ($($args:tt)*)=>{
         compile_error!(concat!(
-            "`TStr!(",
+            "`TS!(",
             $(stringify!($args),)*
             ")` requires either Rust 1.40 or the \"better_macros\" cargo feature.\n\
             \n\
@@ -406,7 +406,7 @@ Here are examples of constructing field paths using this macro,
 they are paired up with the `fp` macro for comparison.
 
 ```
-use structural::{GetFieldExt, Structural, tstr, fp, field_path_aliases};
+use structural::{GetFieldExt, Structural, ts, fp, field_path_aliases};
 use structural::enums::VariantProxy;
 use structural::field_path::{
     VariantField, VariantName, FieldPath, FieldPathSet, NestedFieldPathSet,
@@ -417,31 +417,31 @@ let tuple=( 3, 5, (8,80,800), (13,21,(34,55)), Some(('a','b','c')) );
 ////////////////////////////////////////////////////////////////////
 ////               Constructing `FieldPath`
 
-let path_0=tstr!(0).to_path();
+let path_0=ts!(0).to_path();
 assert_eq!( tuple.field_(path_0), &3 );
 assert_eq!( tuple.field_(fp!(0)), &3 );
 
-let path_1=tstr!(1).to_path();
+let path_1=ts!(1).to_path();
 assert_eq!( tuple.field_(path_1), &5 );
 assert_eq!( tuple.field_(fp!(1)), &5 );
 
-let path_2_0=FieldPath::many((tstr!(2), tstr!(0)));
+let path_2_0=FieldPath::many((ts!(2), ts!(0)));
 assert_eq!( tuple.field_(path_2_0), &8 );
 assert_eq!( tuple.field_(fp!(2.0)), &8 );
 
-let path_2_1=FieldPath::many((tstr!(2), tstr!(1)));
+let path_2_1=FieldPath::many((ts!(2), ts!(1)));
 assert_eq!( tuple.field_(path_2_1), &80 );
 assert_eq!( tuple.field_(fp!(2.1)), &80 );
 
-let path_2_2=FieldPath::many((tstr!(2), tstr!(2)));
+let path_2_2=FieldPath::many((ts!(2), ts!(2)));
 assert_eq!( tuple.field_(path_2_2), &800 );
 assert_eq!( tuple.field_(fp!(2.2)), &800 );
 
-let path_3_2_0=FieldPath::many((tstr!(3), tstr!(2), tstr!(0)));
+let path_3_2_0=FieldPath::many((ts!(3), ts!(2), ts!(0)));
 assert_eq!( tuple.field_(path_3_2_0), &34 );
 assert_eq!( tuple.field_(fp!(3.2.0)), &34 );
 
-let path_3_2_1=FieldPath::many((tstr!(3), tstr!(2), tstr!(1)));
+let path_3_2_1=FieldPath::many((ts!(3), ts!(2), ts!(1)));
 assert_eq!( tuple.field_(path_3_2_1), &55 );
 assert_eq!( tuple.field_(fp!(3.2.1)), &55 );
 
@@ -466,34 +466,34 @@ field_path_aliases!{
 }
 
 let _:&VariantProxy<Binary, paths::Left>=
-    left.field_(VariantName::new(tstr!(Left)).to_path()).unwrap();
+    left.field_(VariantName::new(ts!(Left)).to_path()).unwrap();
 let _:&VariantProxy<Binary, paths::Left>=
     left.field_(fp!(::Left)).unwrap();
 
-assert_eq!( left.field_(VariantName::new(tstr!(Right)).to_path()), None);
+assert_eq!( left.field_(VariantName::new(ts!(Right)).to_path()), None);
 assert_eq!( left.field_(fp!(::Right)), None);
 
 
 let _:&VariantProxy<Binary, paths::Right>=
-    right.field_(VariantName::new(tstr!(Right)).to_path()).unwrap();
+    right.field_(VariantName::new(ts!(Right)).to_path()).unwrap();
 let _:&VariantProxy<Binary, paths::Right>=
     right.field_(fp!(::Right)).unwrap();
 
-assert_eq!( right.field_(VariantName::new(tstr!(Left)).to_path()), None);
+assert_eq!( right.field_(VariantName::new(ts!(Left)).to_path()), None);
 assert_eq!( right.field_(fp!(::Left)), None);
 
 
 ////////////////////////////////////////////////////////////////////
 ////            Constructing VariantField
 
-assert_eq!( left.field_(VariantField::new(tstr!(Left),tstr!(0)).to_path()), Some(&3) );
+assert_eq!( left.field_(VariantField::new(ts!(Left),ts!(0)).to_path()), Some(&3) );
 assert_eq!( left.field_(fp!(::Left.0)), Some(&3) );
-assert_eq!( left.field_(VariantField::new(tstr!(Right),tstr!(c)).to_path()), None );
+assert_eq!( left.field_(VariantField::new(ts!(Right),ts!(c)).to_path()), None );
 assert_eq!( left.field_(fp!(::Right.c)), None );
 
-assert_eq!( right.field_(VariantField::new(tstr!(Right),tstr!(c)).to_path()), Some(&'a') );
+assert_eq!( right.field_(VariantField::new(ts!(Right),ts!(c)).to_path()), Some(&'a') );
 assert_eq!( right.field_(fp!(::Right.c)), Some(&'a') );
-assert_eq!( right.field_(VariantField::new(tstr!(Left),tstr!(0)).to_path()), None );
+assert_eq!( right.field_(VariantField::new(ts!(Left),ts!(0)).to_path()), None );
 assert_eq!( right.field_(fp!(::Left.0)), None );
 
 
@@ -537,12 +537,12 @@ let left=Binary::Left(3,5);
 let right=Binary::Right{c: 'a', is_true: false};
 
 let nested_a=NestedFieldPathSet::new(
-    VariantName::new(tstr!(Left)).to_path(),
-    FieldPathSet::many((tstr!(0).to_path(), tstr!(1).to_path())),
+    VariantName::new(ts!(Left)).to_path(),
+    FieldPathSet::many((ts!(0).to_path(), ts!(1).to_path())),
 );
 let nested_b=NestedFieldPathSet::new(
-    VariantName::new(tstr!(Right)).to_path(),
-    FieldPathSet::many(( tstr!(c).to_path(), tstr!(is_true).to_path() )),
+    VariantName::new(ts!(Right)).to_path(),
+    FieldPathSet::many(( ts!(c).to_path(), ts!(is_true).to_path() )),
 );
 
 assert_eq!( left.cloned_fields(nested_a), Some((3,5)) );
@@ -568,7 +568,7 @@ assert_eq!( right.cloned_fields(fp!(::Right=>c,is_true)), Some(('a',false)) );
 
 */
 #[macro_export]
-macro_rules! tstr {
+macro_rules! ts {
     (0)=>{ $crate::field_path::string_aliases::str_0 };
     (1)=>{ $crate::field_path::string_aliases::str_1 };
     (2)=>{ $crate::field_path::string_aliases::str_2 };
@@ -596,7 +596,7 @@ macro_rules! tstr {
 #[cfg(any(feature = "use_const_str", feature = "better_macros"))]
 macro_rules! _construct_tstr_from_token {
     ($token:tt) => {
-        <$crate::TStr!($token)>::NEW
+        <$crate::TS!($token)>::NEW
     };
 }
 

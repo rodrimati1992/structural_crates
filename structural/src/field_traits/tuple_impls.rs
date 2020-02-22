@@ -56,8 +56,8 @@ macro_rules! impl_tuple {
         ///
         /// The last generic parameter is the name of the variant.
         /// Example of the `V` parameter for a variant named `Foo`:
-        /// - (since Rust 1.40): `TStr!(Foo)`  <br>
-        /// - (before Rust 1.40):`TStr!(F o o)`<br>
+        /// - (since Rust 1.40): `TS!(Foo)`  <br>
+        /// - (before Rust 1.40):`TS!(F o o)`<br>
         pub trait $variant_trait<$($field_ty,)* V>:
             $(
                 IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
@@ -372,7 +372,7 @@ mod tests {
 
     fn takes_tuple4_variant<This>(this: This)
     where
-        This: Tuple4Variant<u32, u32, u32, u32, TStr!(F o o)> + Clone,
+        This: Tuple4Variant<u32, u32, u32, u32, TS!(F o o)> + Clone,
     {
         takes_tuple4(this.into_field(fp!(::Foo)).unwrap())
     }

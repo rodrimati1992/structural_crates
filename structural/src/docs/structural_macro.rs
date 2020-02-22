@@ -44,7 +44,7 @@ This generates a type alias with the amount of variants in the enum.
 
 Small example:<br>
 For this enum:`pub enum Foo{Bar,Baz}`<br>
-This macro would generate:`pub type Foo_VC=TStr!(2);`<br>
+This macro would generate:`pub type Foo_VC=TS!(2);`<br>
 As well as documentaion explaining what the alias is.
 
 ### `#[struc(implicit_optionality)]`

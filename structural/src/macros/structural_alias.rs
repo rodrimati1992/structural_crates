@@ -109,11 +109,11 @@ Variants follow the same pattern as fields regarding access
 // if none had been specified it would be equivalent to `mut move`.
 mut Foo{
     // This is equivalent to `mut foo:String`,`mut` is inherited from the variant.
-    // Corresponds to `GetVariantFieldMut<TStr!(Foo),TStr!(foo),Ty= String>`
+    // Corresponds to `GetVariantFieldMut<TS!(Foo),TS!(foo),Ty= String>`
     foo:String,
-    // Corresponds to `GetVariantField<TStr!(Foo),TStr!(bar),Ty= u32>`
+    // Corresponds to `GetVariantField<TS!(Foo),TS!(bar),Ty= u32>`
     ref bar:u32,
-    // Corresponds to `IntoVariantFieldMut<TStr!(Foo),TStr!(baz),Ty= Vec<u32>>`
+    // Corresponds to `IntoVariantFieldMut<TS!(Foo),TS!(baz),Ty= Vec<u32>>`
     mut move baz:Vec<u32>,
 },
 

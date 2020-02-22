@@ -128,14 +128,14 @@ where
 impl<T> FieldPath<(T,)> {
     /// Construcst a field path from a single path component.
     ///
-    /// Example: `FieldPath::one(tstr!(a))` is equivalent to `fp!(a)`
+    /// Example: `FieldPath::one(ts!(a))` is equivalent to `fp!(a)`
     ///
     /// Example:
-    /// `FieldPath::one(VariantField::new(tstr!(a),tstr!(b)))`
+    /// `FieldPath::one(VariantField::new(ts!(a),ts!(b)))`
     /// is equivalent to `fp!(::a.b)`
     ///
     /// Example:
-    /// `FieldPath::one(VariantName::new(tstr!(Left)))`
+    /// `FieldPath::one(VariantName::new(ts!(Left)))`
     /// is equivalent to `fp!(::Left)`
     #[inline(always)]
     pub const fn one(value: T) -> Self {
@@ -147,11 +147,11 @@ impl<T> FieldPath<T> {
     /// Constructs a field path for a nested field.
     ///
     /// Example:
-    /// `FieldPath::many(( tstr!(a), tstr!(b) ))`
+    /// `FieldPath::many(( ts!(a), ts!(b) ))`
     /// is equivalent to `fp!(a.b)`
     ///
     /// Example:
-    /// `FieldPath::many(( VariantField::new(tstr!(A), tstr!(b)), tstr!(c) ))`
+    /// `FieldPath::many(( VariantField::new(ts!(A), ts!(b)), ts!(c) ))`
     /// is equivalent to `fp!(::A.b.c)`
     #[inline(always)]
     pub const fn many(list: T) -> Self {

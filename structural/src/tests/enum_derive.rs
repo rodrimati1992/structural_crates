@@ -56,7 +56,7 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
-        variant_count=TStr!(3),
+        variant_count=TS!(3),
         (
             AllCorrect,
             pair_strs::AllCorrect,
@@ -379,7 +379,7 @@ fn test_replace_bounds_trait_object() {
 
 mod with_variant_count_attr_1 {
     use crate::enums::VariantCountOut;
-    use crate::{Structural, TStr};
+    use crate::{Structural, TS};
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
@@ -389,14 +389,14 @@ mod with_variant_count_attr_1 {
 
     #[test]
     fn variant_count_1() {
-        let _: TStr!(1) = Enum_VC::NEW;
-        let _: TStr!(1) = VariantCountOut::<Enum>::NEW;
+        let _: TS!(1) = Enum_VC::NEW;
+        let _: TS!(1) = VariantCountOut::<Enum>::NEW;
     }
 }
 
 mod with_variant_count_attr_4 {
     use crate::enums::VariantCountOut;
-    use crate::{Structural, TStr};
+    use crate::{Structural, TS};
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
@@ -409,8 +409,8 @@ mod with_variant_count_attr_4 {
 
     #[test]
     fn variant_count_4() {
-        let _: TStr!(4) = Enum_VC::NEW;
-        let _: TStr!(4) = VariantCountOut::<Enum>::NEW;
+        let _: TS!(4) = Enum_VC::NEW;
+        let _: TS!(4) = VariantCountOut::<Enum>::NEW;
     }
 }
 

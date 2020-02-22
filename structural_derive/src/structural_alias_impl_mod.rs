@@ -179,7 +179,7 @@ impl ReplaceBounds {
 
         let doc_bounds = self
             .bounds
-            .replace(Self::NEEDLE, &format!("TStr!({})", variant_name));
+            .replace(Self::NEEDLE, &format!("TS!({})", variant_name));
 
         let _ = writeln!(buffer, "Using these bounds for the variant: {}", doc_bounds);
     }

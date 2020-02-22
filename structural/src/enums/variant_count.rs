@@ -7,7 +7,7 @@ use std_::marker::PhantomData;
 /// # Safety
 ///
 /// Count must be a type-level string with the amount of enum variants written in decimal.
-/// For example:`TStr!(9)` would be used for an enum with 9 variant.
+/// For example:`TS!(9)` would be used for an enum with 9 variant.
 ///
 /// Specifying fewer variants than the enum actually has may result in undefined behavior
 /// when the enum is matched in the `switch` macro.
@@ -18,7 +18,7 @@ use std_::marker::PhantomData;
 /// restrict a pre-existing structural alias.
 ///
 /// ```rust
-/// use structural::{Structural,TStr,structural_alias,switch};
+/// use structural::{Structural,TS,structural_alias,switch};
 /// use structural::enums::VariantCount;
 ///
 /// # fn main(){
@@ -85,7 +85,7 @@ use std_::marker::PhantomData;
 /// // This function returns the index of the current variant of the enum,
 /// fn exhaustive_a<T>(this: T)->u8
 /// where
-///     T: Ternary + VariantCount<Count=TStr!(3)>,
+///     T: Ternary + VariantCount<Count=TS!(3)>,
 /// {
 ///     // The VariantCount bound allow this switch to be exhaustive.
 ///     switch!{this;
@@ -97,7 +97,7 @@ use std_::marker::PhantomData;
 ///
 /// fn exhaustive_b<T>(this: T)->u8
 /// where
-///     // `TernaryExhaustive` is equivalent to `Ternary + VariantCount<Count=TStr!(3)>`.
+///     // `TernaryExhaustive` is equivalent to `Ternary + VariantCount<Count=TS!(3)>`.
 ///     //
 ///     // You would use a `+ VariantCount<Count=_>` bound if all of thse happen:
 ///     // - The structural alias came from somewhere else.
@@ -110,7 +110,7 @@ use std_::marker::PhantomData;
 ///
 /// structural_alias!{
 ///     // `#[struc(and_exhaustive_enum(...))]` generates a subtrait with
-///     //`VariantCount<Count=TStr!($variant_count)>` as an additional bound
+///     //`VariantCount<Count=TS!($variant_count)>` as an additional bound
 ///     // (the `$variant_count` stands for the number of variants in the structural alias)
 ///     #[struc(and_exhaustive_enum(name="TernaryExhaustive"))]
 ///     pub trait Ternary{
@@ -119,7 +119,7 @@ use std_::marker::PhantomData;
 ///         Baz,
 ///     }
 ///
-///     pub trait TernarySuper: Ternary + VariantCount<Count=TStr!(3)> {}
+///     pub trait TernarySuper: Ternary + VariantCount<Count=TS!(3)> {}
 /// }
 ///
 /// #[derive(Structural,Clone)]
@@ -142,7 +142,7 @@ use std_::marker::PhantomData;
 ///
 /// ```
 pub unsafe trait VariantCount {
-    /// This is a type-level string(eg:`TStr!(3)`)
+    /// This is a type-level string(eg:`TS!(3)`)
     /// representing the amount of variants of the enum.
     ///
     /// This is a type instead of a `&'static str` constant so that
@@ -152,7 +152,7 @@ pub unsafe trait VariantCount {
 
 /// Queries the amount of variants of `This`.
 ///
-/// This evaluates to a TStr,like `TStr!(9)`
+/// This evaluates to a TStr,like `TS!(9)`
 ///
 /// # Example
 ///

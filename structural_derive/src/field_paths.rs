@@ -338,7 +338,12 @@ impl FieldPathComponent {
                 let _ = write!(buff, ".{}", ident.to_token_stream());
             }
             FPC::VariantField { variant, field } => {
-                let _ = write!(buff, "::{}.{}", variant.to_token_stream(), field.to_token_stream());
+                let _ = write!(
+                    buff,
+                    "::{}.{}",
+                    variant.to_token_stream(),
+                    field.to_token_stream()
+                );
             }
             FPC::VariantName { variant } => {
                 let _ = write!(buff, "::{}", variant.to_token_stream());
