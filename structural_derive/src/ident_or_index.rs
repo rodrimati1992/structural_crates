@@ -1,7 +1,4 @@
-use crate::{
-    arenas::Arenas,
-    ignored_wrapper::Ignored,
-};
+use crate::{arenas::Arenas, ignored_wrapper::Ignored};
 
 use std::fmt::{self, Display};
 
@@ -22,7 +19,7 @@ use syn::{
 pub(crate) enum IdentOrIndex {
     Ident(Ident),
     Index(SynIndex),
-    Str{str:String,span:Ignored<Span>},
+    Str { str: String, span: Ignored<Span> },
 }
 
 impl IdentOrIndex {
@@ -30,7 +27,10 @@ impl IdentOrIndex {
         match self {
             IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(x),
             IdentOrIndex::Index(x) => x.into(),
-            IdentOrIndex::Str{str,span} => IdentOrIndexRef::Str{str,span:span.value},
+            IdentOrIndex::Str { str, span } => IdentOrIndexRef::Str {
+                str,
+                span: span.value,
+            },
         }
     }
 }
@@ -43,8 +43,11 @@ impl Parse for IdentOrIndex {
         } else if lookahead.peek(syn::LitInt) {
             Ok(IdentOrIndex::Index(input.parse()?))
         } else if lookahead.peek(syn::LitStr) {
-            let lit=input.parse::<syn::LitStr>()?;
-            Ok(IdentOrIndex::Str{str:lit.value(),span:Ignored::new(lit.span())})
+            let lit = input.parse::<syn::LitStr>()?;
+            Ok(IdentOrIndex::Str {
+                str: lit.value(),
+                span: Ignored::new(lit.span()),
+            })
         } else {
             Err(lookahead.error())
         }
@@ -62,16 +65,16 @@ impl Display for IdentOrIndex {
         match self {
             IdentOrIndex::Ident(x) => Display::fmt(x, f),
             IdentOrIndex::Index(x) => Display::fmt(&x.index, f),
-            IdentOrIndex::Str{str,..} => f.write_str(str),
+            IdentOrIndex::Str { str, .. } => f.write_str(str),
         }
     }
 }
 
-impl From<syn::LitStr> for IdentOrIndex{
-    fn from(lit: syn::LitStr)->Self{
-        IdentOrIndex::Str{
-            str:lit.value(),
-            span:Ignored::new(lit.span()),
+impl From<syn::LitStr> for IdentOrIndex {
+    fn from(lit: syn::LitStr) -> Self {
+        IdentOrIndex::Str {
+            str: lit.value(),
+            span: Ignored::new(lit.span()),
         }
     }
 }
@@ -120,7 +123,10 @@ impl<'a> IdentOrIndexRef<'a> {
         IdentOrIndex::parse(input).map(|ioi| match ioi {
             IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(arenas.alloc(x)),
             IdentOrIndex::Index(x) => x.into(),
-            IdentOrIndex::Str{str,span} => IdentOrIndexRef::Str{str:arenas.alloc(str),span:span.value},
+            IdentOrIndex::Str { str, span } => IdentOrIndexRef::Str {
+                str: arenas.alloc(str),
+                span: span.value,
+            },
         })
     }
 
@@ -128,7 +134,7 @@ impl<'a> IdentOrIndexRef<'a> {
         match self {
             IdentOrIndexRef::Ident(x) => x.span(),
             IdentOrIndexRef::Index { span, .. } => *span,
-            IdentOrIndexRef::Str{span,..} => *span,
+            IdentOrIndexRef::Str { span, .. } => *span,
         }
     }
 }
@@ -138,12 +144,12 @@ impl ToTokens for IdentOrIndexRef<'_> {
         match self {
             IdentOrIndexRef::Ident(x) => x.to_tokens(tokens),
             IdentOrIndexRef::Index { index, span } => {
-                let mut lit=Literal::u32_unsuffixed(*index);
+                let mut lit = Literal::u32_unsuffixed(*index);
                 lit.set_span(*span);
                 lit.to_tokens(tokens);
             }
-            IdentOrIndexRef::Str{str,span} => {
-                let mut lit=Literal::string(*str);
+            IdentOrIndexRef::Str { str, span } => {
+                let mut lit = Literal::string(*str);
                 lit.set_span(*span);
                 lit.to_tokens(tokens);
             }
@@ -156,7 +162,7 @@ impl Display for IdentOrIndexRef<'_> {
         match self {
             IdentOrIndexRef::Ident(x) => Display::fmt(x, f),
             IdentOrIndexRef::Index { index, .. } => Display::fmt(index, f),
-            IdentOrIndexRef::Str{str,..} => f.write_str(str),
+            IdentOrIndexRef::Str { str, .. } => f.write_str(str),
         }
     }
 }

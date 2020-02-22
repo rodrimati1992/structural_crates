@@ -7,7 +7,7 @@
 ///
 /// `TStr_<_>` can be constructed with:
 ///
-/// - the `tstr` macro,which takes a string literal/ident/integer as an input.
+/// - the `ts` macro,which takes a string literal/ident/integer as an input.
 ///
 /// - the `NEW` inherent associated constant,
 ///
@@ -15,31 +15,31 @@
 ///
 /// Examples of constructing a `TStr_<_>`:
 ///
-/// - `tstr!(foo)` (in every Rust version)
+/// - `ts!(foo)` (in every Rust version)
 ///
-/// - `tstr!(f o o)` (in every Rust version)
+/// - `ts!(f o o)` (in every Rust version)
 ///
-/// - `tstr!("bar")` (in every Rust version)
+/// - `ts!("bar")` (in every Rust version)
 ///
-/// - `tstr!(1)` (in every Rust version)
+/// - `ts!(1)` (in every Rust version)
 ///
-/// - `tstr!(100)` (in every Rust version)
+/// - `ts!(100)` (in every Rust version)
 ///
-/// - `tstr!(1 0 0)` (in every Rust version)
+/// - `ts!(1 0 0)` (in every Rust version)
 ///
-/// - `<TStr!("hello")>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!("hello")>::NEW` (from Rust 1.40 onwards)
 ///
-/// - `<TStr!(world)>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!(world)>::NEW` (from Rust 1.40 onwards)
 ///
-/// - `<TStr!(100)>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!(100)>::NEW` (from Rust 1.40 onwards)
 ///
-/// - `<TStr!(w o r l d)>::NEW` (in every Rust version)
+/// - `<TS!(w o r l d)>::NEW` (in every Rust version)
 ///
-/// - `<TStr!(0)>::NEW` (in every Rust version)
+/// - `<TS!(0)>::NEW` (in every Rust version)
 ///
-/// - `<TStr!(1 0 0)>::NEW` (in every Rust version)
+/// - `<TS!(1 0 0)>::NEW` (in every Rust version)
 ///
-/// - `<TStr!(0)>::MTVAL`(requires importing the `MarkerType` trait)
+/// - `<TS!(0)>::MTVAL`(requires importing the `MarkerType` trait)
 pub struct TStr_<T>(pub(crate) PhantomData<T>);
 
 /// A pair of identifiers for the `F` field inside the `V` variant.

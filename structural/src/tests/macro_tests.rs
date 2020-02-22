@@ -230,6 +230,9 @@ mod names_module_tests {
             m1=(::"a"."b"),
             n0=(0=>"1","2"),
             n1=("0"=>1,2),
+
+            // o0=(::0.1),
+            // o1=(::"0".1),
         }
     }
     #[test]
@@ -247,10 +250,13 @@ mod names_module_tests {
 
         let _: AssertEq3<names_a::k0, _, _> = AssertEq3::new(names_a::k0, names_a::k1, fp!(::p));
 
-        let _: AssertEq3<names_a::l0, _, _> = AssertEq3::new(names_a::l0, names_a::l1, fp!(a,b,c,d,e));
+        let _: AssertEq3<names_a::l0, _, _> =
+            AssertEq3::new(names_a::l0, names_a::l1, fp!(a, b, c, d, e));
 
-        let _: AssertEq3<names_a::n0, _, _> =
-            AssertEq3::new(names_a::n0, names_a::n1, fp!(0=>1,2));
+        let _: AssertEq3<names_a::n0, _, _> = AssertEq3::new(names_a::n0, names_a::n1, fp!(0=>1,2));
+
+        // let _: AssertEq3<names_a::o0, _, _> =
+        //     AssertEq3::new(names_a::o0, names_a::o1, fp!(::0."1"));
     }
 }
 
@@ -273,15 +279,15 @@ mod tstr_aliases_tests {
         }
 
         tstr_asserts! {
-            ((chars::_a,),"a") = (strs::a::NEW,tstr!("a"),tstr!(a));
-            ((chars::_b,),"b") = (strs::b::NEW,tstr!("b"),tstr!(b));
+            ((chars::_a,),"a") = (strs::a::NEW,ts!("a"),ts!(a));
+            ((chars::_b,),"b") = (strs::b::NEW,ts!("b"),ts!(b));
             ((chars::_w, chars::_o, chars::_r, chars::_d),"word") =
-                (strs::word::NEW,tstr!("word"),tstr!(word));
-            ((chars::_d, chars::_d),"dd") = (strs::d::NEW,tstr!("dd"),tstr!(dd));
-            ((chars::_c, chars::_c),"cc") = (strs::c::NEW,tstr!("cc"),tstr!(cc));
-            ((chars::_0,),"0") = (strs::p0::NEW,tstr!("0"),tstr!(0));
-            ((chars::_1, chars::_0),"10") = (strs::p10::NEW,tstr!("10"),tstr!(10));
-            ((chars::_1, chars::_0, chars::_0),"100") = (strs::p100::NEW,tstr!("100"),tstr!(100));
+                (strs::word::NEW,ts!("word"),ts!(word));
+            ((chars::_d, chars::_d),"dd") = (strs::d::NEW,ts!("dd"),ts!(dd));
+            ((chars::_c, chars::_c),"cc") = (strs::c::NEW,ts!("cc"),ts!(cc));
+            ((chars::_0,),"0") = (strs::p0::NEW,ts!("0"),ts!(0));
+            ((chars::_1, chars::_0),"10") = (strs::p10::NEW,ts!("10"),ts!(10));
+            ((chars::_1, chars::_0, chars::_0),"100") = (strs::p100::NEW,ts!("100"),ts!(100));
         }
     }
 
@@ -315,25 +321,25 @@ mod tstr_aliases_tests {
         }
 
         tstr_asserts! {
-            ((chars::_0,),"0") = (strs::m0::__TString_Aliases_Count::NEW,tstr!("0"),tstr!(0));
+            ((chars::_0,),"0") = (strs::m0::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
 
-            ((chars::_1, chars::_0),"10") = (strs::a0::NEW,tstr!("10"),tstr!(10));
+            ((chars::_1, chars::_0),"10") = (strs::a0::NEW,ts!("10"),ts!(10));
 
-            ((chars::_2,),"2") = (strs::m1::__TString_Aliases_Count::NEW,tstr!("2"),tstr!(2));
-            ((chars::_1, chars::_1),"11") = (strs::m1::a0::NEW,tstr!("11"),tstr!(11));
-            ((chars::_a, chars::_1),"a1") = (strs::m1::a1::NEW,tstr!("a1"),tstr!(a1));
+            ((chars::_2,),"2") = (strs::m1::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
+            ((chars::_1, chars::_1),"11") = (strs::m1::a0::NEW,ts!("11"),ts!(11));
+            ((chars::_a, chars::_1),"a1") = (strs::m1::a1::NEW,ts!("a1"),ts!(a1));
 
-            ((chars::_a, chars::_1),"a1") = (strs::a1::NEW,tstr!("a1"),tstr!(a1));
+            ((chars::_a, chars::_1),"a1") = (strs::a1::NEW,ts!("a1"),ts!(a1));
 
-            ((chars::_f, chars::_o, chars::_o),"foo") = (strs::m2::foo::NEW,tstr!("foo"),tstr!(foo));
-            ((chars::_0,),"0") = (strs::m2::bar::NEW,tstr!("0"),tstr!(0));
+            ((chars::_f, chars::_o, chars::_o),"foo") = (strs::m2::foo::NEW,ts!("foo"),ts!(foo));
+            ((chars::_0,),"0") = (strs::m2::bar::NEW,ts!("0"),ts!(0));
             ((chars::_b, chars::_a, chars::_a, chars::_a, chars::_a),"baaaa") =
-                (strs::m2::baz::NEW,tstr!("baaaa"),tstr!(baaaa));
+                (strs::m2::baz::NEW,ts!("baaaa"),ts!(baaaa));
 
-            ((chars::_0,),"0") = (strs::m3::__TString_Aliases_Count::NEW,tstr!("0"),tstr!(0));
-            ((chars::_2,),"2") = (strs::m3::m3m0::__TString_Aliases_Count::NEW,tstr!("2"),tstr!(2));
-            ((chars::_a, chars::_a, chars::_a),"aaa") = (strs::m3::m3m0::aaa::NEW,tstr!("aaa"),tstr!(aaa));
-            ((chars::_b, chars::_b, chars::_b),"bbb") = (strs::m3::m3m0::bbb::NEW,tstr!("bbb"),tstr!(bbb));
+            ((chars::_0,),"0") = (strs::m3::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
+            ((chars::_2,),"2") = (strs::m3::m3m0::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
+            ((chars::_a, chars::_a, chars::_a),"aaa") = (strs::m3::m3m0::aaa::NEW,ts!("aaa"),ts!(aaa));
+            ((chars::_b, chars::_b, chars::_b),"bbb") = (strs::m3::m3m0::bbb::NEW,ts!("bbb"),ts!(bbb));
         }
     }
 }

@@ -173,7 +173,7 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=EnumManual
-        variant_count=TStr!(3),
+        variant_count=TS!(3),
         (
             A,
             strings::A,

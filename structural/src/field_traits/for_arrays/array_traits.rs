@@ -143,8 +143,8 @@ macro_rules! declare_array_traits {
             ///
             /// The `V` generic parameter is the name of the variant.
             /// Example of the `V` parameter for a variant named `Foo`:
-            /// - (since Rust 1.40): `TStr!(Foo)`  <br>
-            /// - (before Rust 1.40):`TStr!(F o o)`<br>
+            /// - (since Rust 1.40): `TS!(Foo)`  <br>
+            /// - (before Rust 1.40):`TS!(F o o)`<br>
             pub trait $variant_trait_name<T,V>:
                 $($super_trait<T,V>+)*
                 $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
@@ -203,7 +203,7 @@ declare_array_traits! {
 #[cfg(test)]
 mod tests {
     use crate::field_traits::for_arrays::*;
-    use crate::{GetFieldExt, Structural, TStr};
+    use crate::{GetFieldExt, Structural, TS};
 
     fn with_array_32<A>(mut this: A)
     where
@@ -228,7 +228,7 @@ mod tests {
     }
     fn with_array_32_variant<A>(this: A)
     where
-        A: Array32Variant<u32, TStr!(F o o)> + Clone,
+        A: Array32Variant<u32, TS!(F o o)> + Clone,
     {
         with_array_32(this.into_field(fp!(::Foo)).unwrap());
     }

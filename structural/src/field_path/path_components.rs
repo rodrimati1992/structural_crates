@@ -185,13 +185,13 @@ impl<V, F> UncheckedVariantField<V, F> {
     /// # Safety
     ///
     /// This must only be passed to an accessor method of an enum with the `V` variant,
-    /// eg:you can only soundly pass `UncheckedVariantField::<TStr!(A),TStr!(b)>::new()`
+    /// eg:you can only soundly pass `UncheckedVariantField::<TS!(A),TS!(b)>::new()`
     /// for an enum whose current variant is `A`.
     ///
     /// One example correspondance:
-    /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TStr!(Foo),TStr!(bar)> >`
+    /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TS!(Foo),TS!(bar)> >`
     /// corresponds to the
-    /// `GetVariantFieldImpl<TStr!(Foo),TStr!(bar)>` unsafe marker trait.
+    /// `GetVariantFieldImpl<TS!(Foo),TS!(bar)>` unsafe marker trait.
     ///
     /// A `GetVariantFieldImpl` impl guarantees
     /// that the corresponding impl of the `GetFieldImpl` trait does what's expected.
