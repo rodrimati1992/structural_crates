@@ -54,6 +54,32 @@ impl Parse for IdentOrIndex {
     }
 }
 
+impl IdentOrIndex {
+    #[allow(dead_code)]
+    pub(crate) fn peek(input: ParseStream) -> bool {
+        input.peek(syn::Ident) || input.peek(syn::LitInt) || input.peek(syn::LitStr)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn peek_parse(input: ParseStream) -> Result<Option<Self>, syn::Error> {
+        let lookahead = input.lookahead1();
+        let ret = if lookahead.peek(syn::Ident) {
+            IdentOrIndex::Ident(input.parse()?)
+        } else if lookahead.peek(syn::LitInt) {
+            IdentOrIndex::Index(input.parse()?)
+        } else if lookahead.peek(syn::LitStr) {
+            let lit = input.parse::<syn::LitStr>()?;
+            IdentOrIndex::Str {
+                str: lit.value(),
+                span: Ignored::new(lit.span()),
+            }
+        } else {
+            return Ok(None);
+        };
+        Ok(Some(ret))
+    }
+}
+
 impl ToTokens for IdentOrIndex {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         self.borrowed().to_tokens(tokens)
