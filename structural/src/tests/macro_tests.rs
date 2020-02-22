@@ -94,24 +94,6 @@ fn identifier_macros_equality() {
     path_assertion!(fp!(0.foo), FieldPath<(S_0, S_foo)>);
     path_assertion!(fp!(0.foo.1), FieldPath<(S_0, S_foo, S_1)>);
     path_assertion!(fp!(0.foo.1.bar), FieldPath<(S_0, S_foo, S_1, S_bar)>);
-
-    /*
-    path_assertion!(fp!(0[FP!(0)]),FieldPath<(S_0,S_0)>);
-    path_assertion!(fp!(0.[FP!(0)]),FieldPath<(S_0,S_0)>);
-    path_assertion!(fp!(0[FP!(1)].2),FieldPath<(S_0,S_1,S_2)>);
-    path_assertion!(fp!(0.[FP!(1)].2),FieldPath<(S_0,S_1,S_2)>);
-    path_assertion!(fp!([FP!(0)].2),FieldPath<(S_0,S_2)>);
-    path_assertion!(fp!([FP!(0)]),FieldPath<(S_0,)>);
-
-    path_assertion!(fp!(0.(FP!(0.1))),FieldPath<(S_0,S_0,S_1)>);
-    path_assertion!(fp!((FP!(0.1)).2),FieldPath<(S_0,S_1,S_2)>);
-    path_assertion!(fp!(0.(FP!(0.1)).2),FieldPath<(S_0,S_0,S_1,S_2)>);
-    path_assertion!(fp!((FP!(0.1))),FieldPath<(S_0,S_1)>);
-
-    path_assertion!(fp!((FP!(0.1))[S_3]),FieldPath<(S_0,S_1,S_3)>);
-    path_assertion!(fp!([S_3].(FP!(0.1))),FieldPath<(S_3,S_0,S_1)>);
-    path_assertion!(fp!([S_3].(FP!(0.1)).[S_a]),FieldPath<(S_3,S_0,S_1,S_a)>);
-    */
 }
 
 #[allow(non_camel_case_types)]
@@ -231,8 +213,10 @@ mod names_module_tests {
             n0=(0=>"1","2"),
             n1=("0"=>1,2),
 
-            // o0=(::0.1),
-            // o1=(::"0".1),
+            o0=(::0.1),
+            o1=(::"0".1),
+            o2=(::0."1"),
+            o3=(::"0"."1"),
         }
     }
     #[test]
@@ -255,8 +239,14 @@ mod names_module_tests {
 
         let _: AssertEq3<names_a::n0, _, _> = AssertEq3::new(names_a::n0, names_a::n1, fp!(0=>1,2));
 
-        // let _: AssertEq3<names_a::o0, _, _> =
-        //     AssertEq3::new(names_a::o0, names_a::o1, fp!(::0."1"));
+        let _: AssertEq3<names_a::o0, _, _> =
+            AssertEq3::new(names_a::o0, names_a::o1, fp!(::0."1"));
+        let _: AssertEq3<names_a::o0, _, _> =
+            AssertEq3::new(names_a::o0, names_a::o2, fp!(::"0".1));
+        let _: AssertEq3<names_a::o0, _, _> =
+            AssertEq3::new(names_a::o0, names_a::o3, fp!(::0."1"));
+        let _: AssertEq3<names_a::o0, _, _> =
+            AssertEq3::new(names_a::o0, names_a::o3, fp!(::"0"."1"));
     }
 }
 

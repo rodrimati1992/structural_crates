@@ -4,7 +4,7 @@ use crate::{
     tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens, FullPathForChars},
 };
 
-use as_derive_utils::spanned_err;
+// use as_derive_utils::spanned_err;
 
 use core_extensions::SelfOps;
 
@@ -224,38 +224,14 @@ pub(crate) struct FieldPath {
 impl Parse for FieldPath {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let mut list = Vec::<FieldPathComponent>::new();
-        let mut next_is_period = false;
+        let mut is_first = true;
         while !is_field_path_terminator(input) {
-            let is_period = std::mem::replace(&mut next_is_period, false)
-                || input.peek_parse(Token!(.))?.is_some();
-
-            if input.peek(syn::LitFloat) {
-                let f = input.parse::<syn::LitFloat>()?;
-                let digits = f.base10_digits();
-                let make_int = |digits: &str| -> syn::Result<FieldPathComponent> {
-                    syn::Index {
-                        index: digits.parse().map_err(|e| spanned_err!(f, "{}", e))?,
-                        span: f.span(),
-                    }
-                    .piped(FieldPathComponent::from_index)
-                    .piped(Ok)
-                };
-
-                let mut iter = digits.split('.');
-                if digits.starts_with('.') {
-                    let _ = iter.next();
-                    list.push(make_int(iter.next().unwrap().trim_start_matches('.'))?);
-                } else if digits.ends_with('.') {
-                    list.push(make_int(iter.next().unwrap())?);
-                    next_is_period = true;
-                } else {
-                    list.push(make_int(iter.next().unwrap())?);
-                    list.push(make_int(iter.next().unwrap())?);
-                }
-            } else {
-                let fpc = FieldPathComponent::parse(input, IsPeriod::new(is_period))?;
-                list.push(fpc);
+            let (fpc, second) = FieldPathComponent::parse(input, IsFirst::new(is_first))?;
+            list.push(fpc);
+            if let Some(second) = second {
+                list.push(second);
             }
+            is_first = false;
         }
 
         Ok(FieldPath { list })
@@ -319,11 +295,6 @@ impl FieldPathComponent {
         let x = IdentOrIndex::Ident(ident);
         FieldPathComponent::Ident(x)
     }
-    pub(crate) fn from_index(index: syn::Index) -> Self {
-        let x = IdentOrIndex::Index(index);
-        FieldPathComponent::Ident(x)
-    }
-
     pub(crate) fn write_str(&self, buff: &mut String) {
         use self::FieldPathComponent as FPC;
         use std::fmt::Write;
@@ -351,21 +322,69 @@ impl FieldPathComponent {
         }
     }
 
-    pub(crate) fn parse(input: ParseStream, is_period: IsPeriod) -> parse::Result<Self> {
-        if is_period == IsPeriod::No && input.peek_parse(Token!(::))?.is_some() {
-            let variant = input.parse::<IdentOrIndex>()?;
+    pub(crate) fn parse(
+        input: ParseStream,
+        is_first: IsFirst,
+    ) -> parse::Result<(Self, Option<Self>)> {
+        fn make_ioi(digits: &str) -> syn::Result<Option<IdentOrIndex>> {
+            if digits.is_empty() {
+                return Ok(None);
+            }
+            syn::parse_str::<IdentOrIndex>(digits).map(Some)
+        }
+        let fork = input.fork();
 
-            if input.peek_parse(Token!(.))?.is_some() {
+        let first;
+        let mut second = None;
+
+        let prefix_token = if input.peek_parse(Token!(::))?.is_some() {
+            PrefixToken::Colon2
+        } else if input.peek_parse(Token!(.))?.is_some() {
+            PrefixToken::Dot
+        } else {
+            PrefixToken::Nothing
+        };
+
+        if input.peek(syn::LitFloat) {
+            let f = input.parse::<syn::LitFloat>()?;
+            let digits = f.base10_digits();
+            let mut iter = digits.split('.');
+            first =
+                make_ioi(iter.next().unwrap())?.expect("float literals can't have a leading `.`");
+
+            // Handling non-integer fields ie:`0."hello"` and `0.world` here,
+            // so that I don't have to store whether a float was parsed.
+            second = match make_ioi(iter.next().unwrap())? {
+                Some(x) => Some(x),
+                None => Some(IdentOrIndex::parse(input)?),
+            };
+        } else {
+            first = IdentOrIndex::parse(input)?;
+        }
+
+        if let PrefixToken::Colon2 = prefix_token {
+            let variant = first;
+
+            if let Some(field) = second {
+                Ok((FieldPathComponent::VariantField { variant, field }, None))
+            } else if input.peek_parse(Token!(.))?.is_some() {
                 let field = input.parse::<IdentOrIndex>()?;
-                Ok(FieldPathComponent::VariantField { variant, field })
+                Ok((FieldPathComponent::VariantField { variant, field }, None))
             } else if is_field_path_terminator(input) {
-                Ok(FieldPathComponent::VariantName { variant })
+                Ok((FieldPathComponent::VariantName { variant }, None))
             } else {
-                Err(input.error("Expected either a `.field_name`,the end of the input,or a `,`."))
+                return Err(
+                    input.error("Expected either a `.field_name`,the end of the field path.")
+                );
             }
         } else {
-            let _ = input.peek_parse(Token!(.))?;
-            input.parse::<IdentOrIndex>().map(FieldPathComponent::Ident)
+            if let (PrefixToken::Nothing, IsFirst::No) = (prefix_token, is_first) {
+                return Err(fork.error("expected a period"));
+            }
+            Ok((
+                FieldPathComponent::Ident(first),
+                second.map(FieldPathComponent::Ident),
+            ))
         }
     }
 
@@ -397,17 +416,17 @@ fn is_field_path_terminator(input: ParseStream) -> bool {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) enum IsPeriod {
+pub(crate) enum IsFirst {
     No,
     Yes,
 }
 
-impl IsPeriod {
+impl IsFirst {
     pub(crate) fn new(v: bool) -> Self {
         if v {
-            IsPeriod::Yes
+            IsFirst::Yes
         } else {
-            IsPeriod::No
+            IsFirst::No
         }
     }
 }
@@ -431,3 +450,10 @@ impl ToTokens for PathUniqueness {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+
+#[derive(Copy, Clone)]
+enum PrefixToken {
+    Colon2,
+    Dot,
+    Nothing,
+}
