@@ -646,7 +646,7 @@ macro_rules! err_from_opt {
 #[macro_export]
 macro_rules! vf_err {
     ( nonopt,$field:ty,$field_name_string:ty ) => {
-        $crate::pmr::GetFieldErr<$field,$crate::pmr::FieldPath1<$field_name_string>>
+        $crate::pmr::GetFieldErr<$field,$field_name_string>
     };
     ( opt,$field:ty,$field_name:ty ) => {
         $crate::pmr::OptionalField

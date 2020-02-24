@@ -23,11 +23,11 @@ where
 {
     let string = string.as_ref();
 
-    quote!( ::structural::TStr_<::structural::p::TS<#string>> )
+    quote!( ::structural::TStr<::structural::p::TS<#string>> )
 }
 
 #[cfg(not(feature = "use_const_str"))]
-/// Tokenizes a `TStr_<>` in which each character is written as a type.
+/// Tokenizes a `TStr<>` in which each character is written as a type.
 pub(crate) fn tident_tokens<S>(string: S, char_verbosity: FullPathForChars) -> TokenStream2
 where
     S: AsRef<str>,
@@ -48,7 +48,7 @@ where
         };
         syn::Ident::new(&buffer, Span::call_site())
     });
-    quote!( ::structural::TStr_<::structural::p::TS<( #( #path_prefix #bytes,)* )>> )
+    quote!( ::structural::TStr<::structural::p::TS<( #( #path_prefix #bytes,)* )>> )
 }
 
 pub(crate) fn variant_field_tokens<S0, S1>(

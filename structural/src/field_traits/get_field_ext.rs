@@ -2,6 +2,7 @@ use super::*;
 
 use crate::{
     enums::IsVariant,
+    field_path::IsTStr,
     field_traits::{
         multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
         RevGetField, RevGetFieldMut, RevIntoField,
@@ -764,6 +765,7 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn is_variant<P>(&self, _path: P) -> bool
     where
+        P: IsTStr,
         Self: IsVariant<P>,
     {
         IsVariant::is_variant_(self, _path)

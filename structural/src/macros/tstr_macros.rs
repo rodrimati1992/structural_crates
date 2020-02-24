@@ -1,5 +1,5 @@
 /**
-Declares type aliases for [`TStr_<_>`(type-level string)](::structural::field_path::TStr_).
+Declares type aliases for [`TStr<_>`(type-level string)](::structural::field_path::TStr).
 
 # Variants
 
@@ -14,8 +14,8 @@ Small example:
 use structural::tstr_aliases;
 
 tstr_aliases!{
-    a, // Declares a type alias `a` with the "a" TStr_.
-    b="b", // Declares a type alias `b` with the "b" TStr_.
+    a, // Declares a type alias `a` with the "a" TStr.
+    b="b", // Declares a type alias `b` with the "b" TStr.
 }
 # fn main(){}
 ```
@@ -90,10 +90,10 @@ macro_rules! tstr_aliases {
             $($mod_contents:tt)*
         }
     ) => (
-        /// Type aliases for `TStr_` (type-level string)
+        /// Type aliases for `TStr` (type-level string)
         /// (from the structural crate).
         ///
-        /// `TStr_` values can be constructed with the NEW associated constant.
+        /// `TStr` values can be constructed with the NEW associated constant.
         ///
         /// The source code for this module can only be accessed from
         /// the type aliases.<br>
@@ -123,9 +123,9 @@ macro_rules! tstr_aliases {
 
 /**
 
-For getting the type of a `TStr_<_>`(type-level string).
+For getting the type of a `TStr<_>`(type-level string).
 
-`TStr_<_>` itself is hidden from the docs because this library reserves
+`TStr<_>` itself is hidden from the docs because this library reserves
 the right to change its generic parameter from a tuple of type-level characters,
 to a `&'static str` const parameter (or `&'static [char]`).
 
@@ -224,7 +224,7 @@ and uses the TStr macro to access a field,
 instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
-use structural::{GetField,GetFieldExt,Structural,TS};
+use structural::{GetField,GetFieldExt,Structural,FP,TS};
 use structural::field_path::FieldPath1;
 
 fn main(){
@@ -240,8 +240,14 @@ fn main(){
     assert_eq!( get_charge(&battery).percent, 70 );
 }
 
-fn get_charge( this:&dyn GetField<FieldPath1<TS!(c h a r g e)>, Ty=Charge> )-> Charge {
-    this.field_(FieldPath1::<TS!(c h a r g e)>::NEW).clone()
+// An `FP!(identifier)` is the same type as `TS!(identifier)`,
+// but because it's more flexible from Rust 1.40 onwards it's used for field paths by default.
+// Eg:You can write `GetField<FP!(::Foo.bar)>` with `FP` but not with `TS` from 1.40 onwards.
+//
+// `TS` always produces the `TStr` type,
+// while FP produces different types depending on the input.
+fn get_charge( this:&dyn GetField<FP!(c h a r g e), Ty=Charge> )-> Charge {
+    this.field_(<TS!(c h a r g e)>::NEW).clone()
 }
 
 #[derive(Structural)]
@@ -313,7 +319,7 @@ macro_rules! _TStr_from_chars {
 #[cfg(not(feature = "use_const_str"))]
 macro_rules! _TStr_from_chars {
     ($($char:tt)*)=>{
-        $crate::TStr_<$crate::p::TS<($($crate::TChar!($char),)*)>>
+        $crate::TStr<$crate::p::TS<($($crate::TChar!($char),)*)>>
     }
 }
 
@@ -324,7 +330,7 @@ macro_rules! _TStr_from_chars {
 #[cfg(feature = "use_const_str")]
 macro_rules! _TStr_from_literal {
     ( $string:literal )=>{
-        $crate::TStr_<$crate::p::TS<{
+        $crate::TStr<$crate::p::TS<{
             $crate::const_generic_utils::StrFromLiteral::new($string,stringify!($string))
                 .str_from_lit()
         }>>
@@ -356,7 +362,7 @@ macro_rules! _TStr_from_literal {
 #[cfg(feature = "use_const_str")]
 macro_rules! _TStr_from_ident {
     ( $string:ident )=>{
-        $crate::TStr_<$crate::p::TS<{ stringify!($string) }>>
+        $crate::TStr<$crate::p::TS<{ stringify!($string) }>>
     }
 }
 
@@ -397,7 +403,7 @@ macro_rules! _TStr_error{
 
 /**
 Constructs a
-[`TStr_`](::structural::field_path::TStr_)
+[`TStr`](::structural::field_path::TStr)
 value,a type-level string used for identifiers in field paths..
 
 # Example

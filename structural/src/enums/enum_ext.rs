@@ -3,7 +3,7 @@ use crate::alloc::boxed::Box;
 
 use crate::{
     enums::{IsVariant, VariantProxy},
-    field_path::FieldPath1,
+    field_path::{FieldPath1, IsTStr, TStr},
 };
 
 /// Extension trait for enums.
@@ -39,13 +39,9 @@ pub trait EnumExt {
     /// }
     /// ```
     #[inline(always)]
-    fn as_variant<V>(
-        &self,
-        vari: FieldPath1<V>,
-    ) -> Result<&VariantProxy<Self, FieldPath1<V>>, &Self>
+    fn as_variant<V>(&self, vari: TStr<V>) -> Result<&VariantProxy<Self, TStr<V>>, &Self>
     where
-        Self: IsVariant<FieldPath1<V>>,
-        V: Copy,
+        Self: IsVariant<TStr<V>>,
     {
         if IsVariant::is_variant_(self, vari) {
             unsafe { Ok(VariantProxy::from_ref(self, vari)) }
@@ -84,11 +80,10 @@ pub trait EnumExt {
     #[inline(always)]
     fn as_mut_variant<V>(
         &mut self,
-        vari: FieldPath1<V>,
-    ) -> Result<&mut VariantProxy<Self, FieldPath1<V>>, &mut Self>
+        vari: TStr<V>,
+    ) -> Result<&mut VariantProxy<Self, TStr<V>>, &mut Self>
     where
-        Self: IsVariant<FieldPath1<V>>,
-        V: Copy,
+        Self: IsVariant<TStr<V>>,
     {
         if IsVariant::is_variant_(&*self, vari) {
             unsafe { Ok(VariantProxy::from_mut(self, vari)) }
@@ -136,11 +131,10 @@ pub trait EnumExt {
     #[inline(always)]
     unsafe fn as_raw_mut_variant<V>(
         this: *mut Self,
-        vari: FieldPath1<V>,
-    ) -> Result<*mut VariantProxy<Self, FieldPath1<V>>, *mut Self>
+        vari: TStr<V>,
+    ) -> Result<*mut VariantProxy<Self, TStr<V>>, *mut Self>
     where
-        Self: IsVariant<FieldPath1<V>>,
-        V: Copy,
+        Self: IsVariant<TStr<V>>,
     {
         if IsVariant::is_variant_(&*this, vari) {
             Ok(VariantProxy::from_raw_mut(this, vari))
@@ -179,10 +173,9 @@ pub trait EnumExt {
     ///
     /// ```
     #[inline(always)]
-    fn into_variant<V>(self, vari: FieldPath1<V>) -> Result<VariantProxy<Self, FieldPath1<V>>, Self>
+    fn into_variant<V>(self, vari: TStr<V>) -> Result<VariantProxy<Self, TStr<V>>, Self>
     where
-        Self: IsVariant<FieldPath1<V>> + Sized,
-        V: Copy,
+        Self: IsVariant<TStr<V>> + Sized,
     {
         if IsVariant::is_variant_(&self, vari) {
             unsafe { Ok(VariantProxy::new(self, vari)) }
@@ -231,11 +224,10 @@ pub trait EnumExt {
     #[inline(always)]
     fn box_into_variant<V>(
         self: Box<Self>,
-        vari: FieldPath1<V>,
-    ) -> Result<VariantProxy<Box<Self>, FieldPath1<V>>, Box<Self>>
+        vari: TStr<V>,
+    ) -> Result<VariantProxy<Box<Self>, TStr<V>>, Box<Self>>
     where
-        Self: IsVariant<FieldPath1<V>>,
-        V: Copy,
+        Self: IsVariant<TStr<V>>,
     {
         if IsVariant::is_variant_(&*self, vari) {
             unsafe { Ok(VariantProxy::from_box(self, vari)) }

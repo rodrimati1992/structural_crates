@@ -18,6 +18,8 @@ pub use self::{
     variant_proxy::VariantProxy,
 };
 
+use crate::field_path::AssertTStrParam;
+
 /// Queries whether an enum is some variant (the `V` type parameter)
 ///
 /// Example bounds: `IsVariant<FP!(Foo)>`,`IsVariant<FP!(Bar)>`.
@@ -79,7 +81,7 @@ pub use self::{
 ///
 ///
 /// ```
-pub unsafe trait IsVariant<V> {
+pub unsafe trait IsVariant<V>: AssertTStrParam<V> {
     /// Checks whether this enum is the variant that `V` stands for.
     fn is_variant_(&self, variant: V) -> bool;
 }

@@ -116,7 +116,7 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, |s: TString| {
         let ty = tident_tokens(s.0, FullPathForChars::Yes);
         Ok(quote::quote! {
-            pub const VALUE: #ty= ::structural::pmr::TStr_::NEW;
+            pub const VALUE: #ty= ::structural::pmr::TStr::NEW;
         })
     })
     .into()
@@ -129,7 +129,7 @@ pub fn _tstr_impl_(input: TokenStream1) -> TokenStream1 {
 // `field_traits::tuple_impls::tests::takes_tuple4_variant::{{constant}}#0`
 //    --> structural/src/macros/tstr_macros.rs:312:42
 //     |
-// 312 |           $crate::pmr::TStr_<$crate::p::TS<{
+// 312 |           $crate::pmr::TStr<$crate::p::TS<{
 //     |  __________________________________________^
 // 313 | |             concat!($( stringify!($char) ),*)
 // 314 | |         }>>
@@ -168,11 +168,11 @@ pub fn _TStr_from_concatenated_chars(input: TokenStream1) -> TokenStream1 {
                 Expected only space separated ascii identifiers,integers,underscores,and/or dashes.\n\
                 help: You can write arbitrary charcters with quotes,eg: ts!(\"∀∏@~\").\n\
             ");
-            ::structural::TStr_<::structural::p::TS<"">>
+            ::structural::TStr<::structural::p::TS<"">>
         })
     }else {
         quote::quote_spanned!(span=>
-            ::structural::TStr_<::structural::p::TS< #string >>
+            ::structural::TStr<::structural::p::TS< #string >>
         )
     }.into()
 }

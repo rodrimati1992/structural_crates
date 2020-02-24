@@ -136,18 +136,12 @@ macro_rules! declare_array_paths {
             )
         )*
     ) => (
-        pub(crate) mod names{
-            use crate::field_path::FieldPath1;
-
-            $(
-                pub type $index_name= FieldPath1<super::strings::$index_name>;
-            )*
-        }
         tstr_aliases!{
-            pub(crate) mod strings{
+            pub(crate) mod names{
                 $( $index_name = $index_str ,)*
             }
         }
+
         use self::names::*;
 
         $(

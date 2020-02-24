@@ -47,7 +47,7 @@ pub mod aliases {
     }
 }
 
-/// Aliases for TStr_.
+/// Aliases for TStr.
 pub mod string_aliases {
     tstr_aliases! {
         str_0=0,
@@ -71,7 +71,7 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-impl<T> Sealed for TStr_<T> {}
+impl<T> Sealed for TStr<T> {}
 
 /// A marker trait for field paths that only refer to one field.
 ///
@@ -161,8 +161,8 @@ impl<T> FieldPath<T> {
 
 unsafe impl<T> MarkerType for FieldPath<T> where T: MarkerType {}
 
-impl<S> ToTString_ for FieldPath<(TStr_<S>,)> {
-    type Output = TStr_<S>;
+impl<S> ToTString_ for FieldPath<(TStr<S>,)> {
+    type Output = TStr<S>;
 }
 
 impl<T> ToTList_ for FieldPath<T>
@@ -216,9 +216,9 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<S> FieldPath<(TStr_<S>,)> {
-    /// Converts this single field path to a `TStr_`.
-    pub const fn to_tstr(self) -> TStr_<S> {
+impl<S> FieldPath<(TStr<S>,)> {
+    /// Converts this single field path to a `TStr`.
+    pub const fn to_tstr(self) -> TStr<S> {
         MarkerType::MTVAL
     }
 }
@@ -535,16 +535,16 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<S> From<FieldPath<(TStr_<S>,)>> for TStr_<S> {
+impl<S> From<FieldPath<(TStr<S>,)>> for TStr<S> {
     #[inline(always)]
-    fn from(this: FieldPath<(TStr_<S>,)>) -> Self {
+    fn from(this: FieldPath<(TStr<S>,)>) -> Self {
         this.list.0
     }
 }
 
-impl<S> From<TStr_<S>> for FieldPath<(TStr_<S>,)> {
+impl<S> From<TStr<S>> for FieldPath<(TStr<S>,)> {
     #[inline(always)]
-    fn from(this: TStr_<S>) -> Self {
+    fn from(this: TStr<S>) -> Self {
         FieldPath::one(this)
     }
 }

@@ -31,13 +31,13 @@ pub type ToTList<This> = <This as ToTList_>::Output;
 
 ///////////////////////////////////////////////////////////
 
-/// Gets the `TStr_` equivalent of `Self`.
+/// Gets the `TStr` equivalent of `Self`.
 #[doc(hidden)]
 pub trait ToTString_ {
     type Output;
 }
 
-/// Gets the `TStr_` equivalent of `This`.
+/// Gets the `TStr` equivalent of `This`.
 #[doc(hidden)]
 pub type ToTString<This> = <This as ToTString_>::Output;
 

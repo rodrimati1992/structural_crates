@@ -25,7 +25,7 @@ to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - Enums with the `#[struc(variant_count_alias)]` attribute
 have the `<DerivingType_VC>` type alias,
-a `TStr_` with the amount of variants in the enum,
+a `TStr` with the amount of variants in the enum,
 which can be used in `VariantCount<Count= _ >` bounds.
 
 - A `<DerivingType>_SI` trait,aliasing the traits implemented by the enum,
@@ -374,7 +374,7 @@ fn with_wrapper_vsi<'a>(
     }
 }
 
-// Creating `TStr_` aliases with the names of the `Enum` variants
+// Creating `TStr` aliases with the names of the `Enum` variants
 tstr_aliases!{
     U32_STR=U32,
     U64_STR=U64,

@@ -2,11 +2,11 @@
 //! and required not to be used by users.
 #![allow(non_snake_case, non_camel_case_types)]
 
-use crate::field_path::TStr_;
+use crate::field_path::TStr;
 
 use crate::std_::marker::PhantomData;
 
-// `TStr_` takes this as a type parameter so that
+// `TStr` takes this as a type parameter so that
 // this library can start using const generics in the future by replacing the
 // `T:?Sized` parameter with `const STR:&'static str`.
 #[doc(hidden)]
@@ -16,7 +16,7 @@ pub struct TS<T: ?Sized>(PhantomData<T>);
 // Used inside structural in tests and impls.
 #[doc(hidden)]
 #[cfg(not(feature = "use_const_str"))]
-pub(crate) type TStrPriv<T> = TStr_<TS<T>>;
+pub(crate) type TStrPriv<T> = TStr<TS<T>>;
 
 // macros can contain arbitrary syntax,
 // which allows this to be defined in this file even if Rust stops parsing `const IDENT:Foo`
@@ -24,9 +24,9 @@ macro_rules! declare_const_items {
     () => {
         #[doc(hidden)]
         #[cfg(feature = "use_const_str")]
-        pub(crate) type TStrPriv<const S: &'static str> = TStr_<TS<S>>;
+        pub(crate) type TStrPriv<const S: &'static str> = TStr<TS<S>>;
 
-        // `TStr_` takes this as a type parameter so that
+        // `TStr` takes this as a type parameter so that
         // this library can start using const generics in the future by replacing the
         // `T:?Sized` parameter with `const STR:&'static str`.
         #[doc(hidden)]

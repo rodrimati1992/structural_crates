@@ -203,7 +203,7 @@ impl<'a> TinyStructuralField<'a> {
 
         quote!(
             structural::pmr::#the_trait<
-                structural::pmr::FieldPath<(#ident,)>,
+                #ident,
                 Ty=#ty,
             >
         )
@@ -367,7 +367,7 @@ fn process_field(
             let trait_ = aaoo.trait_tokens();
             field_bounds.append_all(quote!(
                 structural::#trait_<
-                    structural::pmr::FieldPath1<#names_mod_path::#f_alias_name>,
+                    #names_mod_path::#f_alias_name,
                     #assoc_ty
                 >+
             ));
@@ -506,9 +506,7 @@ where
 
         field_bounds.append_all(quote!(
             structural::pmr::IsVariant<
-                structural::pmr::FieldPath1<
-                    #names_mod_path::#alias_ident
-                >
+                #names_mod_path::#alias_ident
             >
             +
         ));

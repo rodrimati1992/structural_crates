@@ -6,7 +6,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
-    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, TStr_, VariantField, VariantName},
+    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, TStr, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         NonOptField, OptionalField,
@@ -479,15 +479,15 @@ macro_rules! impl_rev_traits {
     ) => (
         impl<This,$($typarams)*> RevFieldType<This> for $self_
         where
-            This: ?Sized + FieldType<FieldPath1<Self>>,
+            This: ?Sized + FieldType<Self>,
             $($where_)*
         {
-            type Ty =GetFieldType<This,FieldPath1<Self>>;
+            type Ty =GetFieldType<This,Self>;
         }
 
         impl<'a,This,_Ty,_Err,$($typarams)*> RevGetField<'a,This> for $self_
         where
-            This: ?Sized + 'a + GetFieldImpl<FieldPath1<Self>, Ty=_Ty, Err=_Err>,
+            This: ?Sized + 'a + GetFieldImpl<Self, Ty=_Ty, Err=_Err>,
             _Ty: 'a,
             _Err: IsFieldErr,
             $($where_)*
@@ -496,14 +496,14 @@ macro_rules! impl_rev_traits {
 
             #[inline(always)]
             fn rev_get_field(self, this: &'a This) -> Result<&'a _Ty,_Err>{
-                GetFieldImpl::get_field_( this, FieldPath::one(self), () )
+                GetFieldImpl::get_field_( this, self, () )
             }
         }
 
 
         impl<'a,This,_Ty,_Err,$($typarams)*> RevGetFieldMut<'a,This> for $self_
         where
-            This: ?Sized + 'a + GetFieldMutImpl<FieldPath1<Self>, Ty=_Ty, Err=_Err>,
+            This: ?Sized + 'a + GetFieldMutImpl<Self, Ty=_Ty, Err=_Err>,
             _Ty: 'a,
             _Err: IsFieldErr,
             $($where_)*
@@ -511,7 +511,7 @@ macro_rules! impl_rev_traits {
             #[inline(always)]
             fn rev_get_field_mut(self,this:&'a mut This)->Result<&'a mut _Ty,_Err >{
                 map_fe!(
-                    GetFieldMutImpl::get_field_mut_( this, FieldPath::one(self), () )
+                    GetFieldMutImpl::get_field_mut_( this, self, () )
                 )
             }
 
@@ -522,7 +522,7 @@ macro_rules! impl_rev_traits {
                     let func=(*this).get_field_raw_mut_func();
                     func(
                         this as *mut (),
-                        FieldPath::one(self),
+                        self,
                         (),
                     )
                 }
@@ -532,23 +532,23 @@ macro_rules! impl_rev_traits {
         #[cfg(feature="specialization")]
         impl<'a,This,_Ty,_Err,$($typarams)*> RevGetFieldMut<'a,This> for $self_
         where
-            This: 'a + GetFieldMutImpl<FieldPath1<Self>, Ty=_Ty, Err=_Err>,
+            This: 'a + GetFieldMutImpl<Self, Ty=_Ty, Err=_Err>,
             _Ty: 'a,
             _Err: IsFieldErr,
             $($where_)*
         {
             #[inline(always)]
             unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Result<*mut _Ty,_Err>{
-                let name=FieldPath::one(self);
+                let name=self;
                 <This as
-                    GetFieldMutImpl<FieldPath1<Self>>
+                    GetFieldMutImpl<Self>
                 >::get_field_raw_mut(this as *mut (), name, ())
             }
         }
 
         impl<'a,This,_Ty,_Err,$($typarams)*> RevIntoField<'a,This> for $self_
         where
-            This: ?Sized + 'a + IntoFieldImpl<FieldPath1<Self>, Ty=_Ty, Err=_Err>,
+            This: ?Sized + 'a + IntoFieldImpl<Self, Ty=_Ty, Err=_Err>,
             _Ty: 'a,
             _Err: IsFieldErr,
             $($where_)*
@@ -560,20 +560,20 @@ macro_rules! impl_rev_traits {
             where
                 This:Sized
             {
-                this.into_field_(FieldPath::one(self),())
+                this.into_field_(self,())
             }
 
             #[cfg(feature="alloc")]
             #[inline(always)]
             fn rev_box_into_field(self,this:crate::pmr::Box<This>)->Result<_Ty,_Err>{
-                this.box_into_field_(FieldPath::one(self),())
+                this.box_into_field_(self,())
             }
         }
     )
 }
 
 impl_rev_traits! {
-    impl[T] TStr_<T>
+    impl[T] TStr<T>
     where[]
 }
 
@@ -584,17 +584,17 @@ impl_rev_traits! {
 
 ////////////////////////////////////////////
 
-impl<This, S> RevFieldType<This> for VariantName<TStr_<S>>
+impl<This, S> RevFieldType<This> for VariantName<TStr<S>>
 where
-    This: ?Sized + IsVariant<FieldPath1<TStr_<S>>>,
+    This: ?Sized + IsVariant<TStr<S>>,
     S: 'static,
 {
-    type Ty = VariantProxy<This, FieldPath1<TStr_<S>>>;
+    type Ty = VariantProxy<This, TStr<S>>;
 }
 
-impl<'a, This, S> RevGetField<'a, This> for VariantName<TStr_<S>>
+impl<'a, This, S> RevGetField<'a, This> for VariantName<TStr<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
     type Err = OptionalField;
@@ -603,49 +603,46 @@ where
     fn rev_get_field(
         self,
         this: &'a This,
-    ) -> Result<&'a VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
-        map_of!(this.as_variant(FieldPath::one(self.name)))
+    ) -> Result<&'a VariantProxy<This, TStr<S>>, OptionalField> {
+        map_of!(this.as_variant(self.name))
     }
 }
 
-impl<'a, This, S> RevGetFieldMut<'a, This> for VariantName<TStr_<S>>
+impl<'a, This, S> RevGetFieldMut<'a, This> for VariantName<TStr<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
     #[inline(always)]
     fn rev_get_field_mut(
         self,
         this: &'a mut This,
-    ) -> Result<&'a mut VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
-        map_of!(this.as_mut_variant(FieldPath::one(self.name)))
+    ) -> Result<&'a mut VariantProxy<This, TStr<S>>, OptionalField> {
+        map_of!(this.as_mut_variant(self.name))
     }
 
     #[inline(always)]
     unsafe fn rev_get_field_raw_mut(
         self,
         this: *mut This,
-    ) -> Result<*mut VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField> {
-        map_of!(EnumExt::as_raw_mut_variant(this, FieldPath::one(self.name)))
+    ) -> Result<*mut VariantProxy<This, TStr<S>>, OptionalField> {
+        map_of!(EnumExt::as_raw_mut_variant(this, self.name))
     }
 }
 
-impl<'a, This, S> RevIntoField<'a, This> for VariantName<TStr_<S>>
+impl<'a, This, S> RevIntoField<'a, This> for VariantName<TStr<S>>
 where
-    This: ?Sized + 'a + IsVariant<FieldPath1<TStr_<S>>>,
+    This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
-    type BoxedTy = VariantProxy<Box<This>, FieldPath1<TStr_<S>>>;
+    type BoxedTy = VariantProxy<Box<This>, TStr<S>>;
 
     #[inline(always)]
-    fn rev_into_field(
-        self,
-        this: This,
-    ) -> Result<VariantProxy<This, FieldPath1<TStr_<S>>>, OptionalField>
+    fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, OptionalField>
     where
         This: Sized,
     {
-        map_of!(this.into_variant(FieldPath::one(self.name)))
+        map_of!(this.into_variant(self.name))
     }
 
     #[cfg(feature = "alloc")]
@@ -653,7 +650,7 @@ where
     fn rev_box_into_field(
         self,
         this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<Box<This>, FieldPath1<TStr_<S>>>, OptionalField> {
-        map_of!(this.box_into_variant(FieldPath::one(self.name)))
+    ) -> Result<VariantProxy<Box<This>, TStr<S>>, OptionalField> {
+        map_of!(this.box_into_variant(self.name))
     }
 }
