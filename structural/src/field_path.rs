@@ -265,9 +265,9 @@ where
     }
 }
 
-impl<T> FieldPathSet<(FieldPath<T>,), UniquePaths> {
+impl<T> FieldPathSet<(T,), UniquePaths> {
     /// Constructs a FieldPathSet from a single field path.
-    pub const fn one(val: FieldPath<T>) -> Self {
+    pub const fn one(val: T) -> Self {
         FieldPathSet {
             paths: ManuallyDrop::new((val,)),
             uniqueness: PhantomData,
@@ -467,8 +467,8 @@ where
 }
 
 impl<F, S, U> NestedFieldPathSet<F, S, U> {
-    /// Constructs a `NestedFieldPathSet` from a `FieldPath` and a `FieldPathSet`
-    pub const fn new(nested: FieldPath<F>, set: FieldPathSet<S, U>) -> Self {
+    /// Constructs a `NestedFieldPathSet` from an `F` and a `FieldPathSet`
+    pub const fn new(nested: F, set: FieldPathSet<S, U>) -> Self {
         Self {
             nested: ManuallyDrop::new(nested),
             set,
@@ -476,12 +476,12 @@ impl<F, S, U> NestedFieldPathSet<F, S, U> {
     }
 
     /// Unwraps a `NestedFieldPathSet` into a `FieldPath` and a `FieldPathSet`
-    pub const fn into_inner(self) -> (FieldPath<F>, FieldPathSet<S, U>) {
+    pub const fn into_inner(self) -> (F, FieldPathSet<S, U>) {
         (ManuallyDrop::into_inner(self.nested), self.set)
     }
 
     /// Unwraps a `NestedFieldPathSet` into the `FieldPath` for the nested field.
-    pub const fn into_nested(self) -> FieldPath<F> {
+    pub const fn into_nested(self) -> F {
         ManuallyDrop::into_inner(self.nested)
     }
 
