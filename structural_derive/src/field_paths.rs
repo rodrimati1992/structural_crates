@@ -361,7 +361,7 @@ impl FieldPathComponent {
         let fork = input.fork();
 
         let first;
-        let mut second = None;
+        let second;
 
         let prefix_token = if input.peek_parse(Token!(::))?.is_some() {
             PrefixToken::Colon2

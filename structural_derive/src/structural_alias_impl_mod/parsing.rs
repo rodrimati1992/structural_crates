@@ -202,7 +202,7 @@ impl<'a> StructuralVariant<'a> {
             }
         }
         Ok(Self {
-            name,
+            name: name.into(),
             alias_index,
             fields,
             is_newtype: false,

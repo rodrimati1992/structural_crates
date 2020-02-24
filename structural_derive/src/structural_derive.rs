@@ -245,9 +245,17 @@ fn deriving_structural<'a>(
                 .enumerate()
                 .map(|(vari, variant)| {
                     let config_v = &options.variants[vari];
+
+                    let name: IdentOrIndexRef<'a> = match &config_v.renamed {
+                        Some(x) => x.borrowed(),
+                        None => (variant.name).into(),
+                    };
+
+                    let alias_index = names_module.push_str(name);
+
                     StructuralVariant {
-                        name: &variant.name,
-                        alias_index: names_module.push_str(variant.name.into()),
+                        name,
+                        alias_index,
                         fields: make_fields(&mut names_module, variant),
                         is_newtype: config_v.is_newtype,
                         replace_bounds: config_v.replace_bounds.as_ref(),

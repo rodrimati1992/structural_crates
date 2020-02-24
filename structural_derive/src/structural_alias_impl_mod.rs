@@ -64,7 +64,7 @@ pub struct StructuralDataType<'a> {
 
 #[derive(Debug, Clone)]
 pub struct StructuralVariant<'a> {
-    pub(crate) name: &'a Ident,
+    pub(crate) name: IdentOrIndexRef<'a>,
     pub(crate) alias_index: NamesModuleIndex,
     pub(crate) fields: Vec<StructuralField<'a>>,
     pub(crate) is_newtype: bool,
@@ -108,7 +108,7 @@ pub(crate) type TypeParamBounds = Punctuated<syn::TypeParamBound, syn::token::Ad
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum VariantIdent<'a> {
     Ident {
-        ident: &'a Ident,
+        ident: IdentOrIndexRef<'a>,
         alias_ident: &'a Ident,
     },
     StructVariantTrait {
@@ -174,7 +174,7 @@ impl ReplaceBounds {
         Ok(())
     }
 
-    fn write_docs(&self, buffer: &mut String, variant_name: &Ident) {
+    fn write_docs(&self, buffer: &mut String, variant_name: IdentOrIndexRef<'_>) {
         use std::fmt::Write;
 
         let doc_bounds = self

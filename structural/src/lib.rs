@@ -572,6 +572,7 @@ struct Cents(u64);
 #![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
 #![cfg_attr(feature = "use_const_str", feature(const_if_match))]
 #![cfg_attr(feature = "use_const_str", feature(const_generics))]
+#![cfg_attr(feature = "use_const_str", allow(incomplete_features))]
 #![deny(rust_2018_idioms)]
 #![no_std]
 
@@ -702,3 +703,13 @@ use std_::mem::ManuallyDrop;
 include! {"field_path/declare_field_path_types.rs"}
 
 //////////////////////////////
+
+#[derive(Structural)]
+enum Hello {
+    #[struc(rename = "Foo")]
+    Bar(u32),
+}
+
+fn hi(mut this: Hello) {
+    this.field_(fp!(::Foo.0));
+}

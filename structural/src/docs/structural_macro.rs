@@ -72,6 +72,14 @@ and you will be required to use the `#[struc(optional)]` attribute.
 
 # Variant Attributes
 
+### `#[struc(rename="<new_name>")]`
+
+Changes the name for the variant in the accessor trait impls.
+
+The name can be anything,including non-ascii identifiers.
+
+[For an example of renaming variants to non-ascii identifiers look here](#non-ascii-idents)
+
 ### `#[struc(replace_bounds="bounds")]`
 
 Replaces (in the generated trait) the bounds for this particular variant with
@@ -99,6 +107,10 @@ Example:`#[struc(newtype(bounds = "Baz_VSI<'a,u8,@variant>"))]` <br>
 ### `#[struc(rename="<new_name>")]`
 
 Changes the name for the field in the accessor trait impls.
+
+The name can be anything,including non-ascii identifiers.
+
+[For an example of renaming fields to non-ascii identifiers look here](#non-ascii-idents)
 
 ### `#[struc(impl="<trait bounds>")]`
 
@@ -731,5 +743,68 @@ impl Add for AddableString{
 
 ```
 
+### Non-ascii idents
+
+This is an example of using non-ascii identifiers.
+
+Unfortunately,without enabling the "use_const_str" feature to use const generics internally,
+compile-time errors are significantly less readable than with ascii identifiers.
+
+```rust
+use structural::{fp,make_struct,GetFieldExt,Structural};
+
+////////////////////////////////////////////////////
+//                    structs
+
+#[derive(Structural)]
+#[struc(public)]
+struct Family{
+    #[struc(rename="儿子数")]
+    sons: u32,
+    #[struc(rename="女儿们")]
+    daughters: u32,
+}
+
+let mut this=Family{
+    sons: 34,
+    daughters: 55,
+};
+
+assert_eq!( this.fields(fp!("儿子数","女儿们")), (&34,&55) );
+assert_eq!( this.fields_mut(fp!("儿子数","女儿们")), (&mut 34,&mut 55) );
+
+////////////////////////////////////////////////////
+//                    Enums
+
+#[derive(Structural)]
+enum Vegetable{
+    #[struc(rename="Ziemniak")]
+    Potato{
+        #[struc(rename="centymetry objętości")]
+        volume_cm: u32,
+    },
+    #[struc(rename="生菜")]
+    Letuce{
+        #[struc(rename="树叶")]
+        leaves: u32,
+    }
+}
+
+let mut potato=Vegetable::Potato{ volume_cm: 13 };
+let mut letuce=Vegetable::Letuce{ leaves: 21 };
+
+assert_eq!( potato.field_(fp!(::"Ziemniak"."centymetry objętości")), Some(&13) );
+assert_eq!( potato.field_(fp!(::"生菜"."树叶")), None );
+
+assert_eq!( letuce.field_(fp!(::"Ziemniak"."centymetry objętości")), None );
+assert_eq!( letuce.field_(fp!(::"生菜"."树叶")), Some(&21) );
+
+assert_eq!( potato.field_mut(fp!(::"Ziemniak"."centymetry objętości")), Some(&mut 13) );
+assert_eq!( potato.field_mut(fp!(::"生菜"."树叶")), None );
+
+assert_eq!( letuce.field_mut(fp!(::"Ziemniak"."centymetry objętości")), None );
+assert_eq!( letuce.field_mut(fp!(::"生菜"."树叶")), Some(&mut 21) );
+
+```
 
 */
