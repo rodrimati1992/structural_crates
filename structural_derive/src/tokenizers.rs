@@ -116,9 +116,21 @@ impl NamedModuleAndTokens {
 
     pub fn push_str(&mut self, str: IdentOrIndexRef<'_>) -> NamesModuleIndex {
         self.push_inner(|index, ts| {
+            use std::fmt::Write;
+
             let string = str.to_string();
 
-            let alias_name = Ident::new(&format!("STR_{}___{}", string, index), str.span());
+            let mut alias_name_b = String::with_capacity(string.len() + 16);
+            alias_name_b.push_str("STR_");
+            if string
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_')
+            {
+                alias_name_b.push_str(&string);
+            }
+            alias_name_b.push_str("___");
+            let _ = write!(alias_name_b, "{}", index);
+            let alias_name = Ident::new(&alias_name_b, str.span());
 
             let string = tident_tokens(&string, FullPathForChars::Yes);
 

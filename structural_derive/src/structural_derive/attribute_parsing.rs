@@ -78,6 +78,7 @@ pub(crate) struct NewtypeConfig {
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct VariantConfig {
+    pub(crate) renamed: Option<IdentOrIndex>,
     pub(crate) is_newtype: bool,
     pub(crate) replace_bounds: Option<ReplaceBounds>,
 }
@@ -296,6 +297,8 @@ fn parse_sabi_attr<'a>(
                     bounds: unparsed_lit.value(),
                     span: unparsed_lit.span(),
                 });
+            } else if path.is_ident("rename") {
+                this.variants[index].renamed = Some(IdentOrIndex::from(unparsed_lit));
             } else {
                 return Err(make_err(&path))?;
             }
