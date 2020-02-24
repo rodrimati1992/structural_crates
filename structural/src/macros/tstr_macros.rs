@@ -423,11 +423,11 @@ let tuple=( 3, 5, (8,80,800), (13,21,(34,55)), Some(('a','b','c')) );
 ////////////////////////////////////////////////////////////////////
 ////               Constructing `FieldPath`
 
-let path_0=ts!(0).to_path();
+let path_0=ts!(0);
 assert_eq!( tuple.field_(path_0), &3 );
 assert_eq!( tuple.field_(fp!(0)), &3 );
 
-let path_1=ts!(1).to_path();
+let path_1=ts!(1);
 assert_eq!( tuple.field_(path_1), &5 );
 assert_eq!( tuple.field_(fp!(1)), &5 );
 
@@ -472,34 +472,34 @@ field_path_aliases!{
 }
 
 let _:&VariantProxy<Binary, paths::Left>=
-    left.field_(VariantName::new(ts!(Left)).to_path()).unwrap();
+    left.field_(VariantName::new(ts!(Left))).unwrap();
 let _:&VariantProxy<Binary, paths::Left>=
     left.field_(fp!(::Left)).unwrap();
 
-assert_eq!( left.field_(VariantName::new(ts!(Right)).to_path()), None);
+assert_eq!( left.field_(VariantName::new(ts!(Right))), None);
 assert_eq!( left.field_(fp!(::Right)), None);
 
 
 let _:&VariantProxy<Binary, paths::Right>=
-    right.field_(VariantName::new(ts!(Right)).to_path()).unwrap();
+    right.field_(VariantName::new(ts!(Right))).unwrap();
 let _:&VariantProxy<Binary, paths::Right>=
     right.field_(fp!(::Right)).unwrap();
 
-assert_eq!( right.field_(VariantName::new(ts!(Left)).to_path()), None);
+assert_eq!( right.field_(VariantName::new(ts!(Left))), None);
 assert_eq!( right.field_(fp!(::Left)), None);
 
 
 ////////////////////////////////////////////////////////////////////
 ////            Constructing VariantField
 
-assert_eq!( left.field_(VariantField::new(ts!(Left),ts!(0)).to_path()), Some(&3) );
+assert_eq!( left.field_(VariantField::new(ts!(Left),ts!(0))), Some(&3) );
 assert_eq!( left.field_(fp!(::Left.0)), Some(&3) );
-assert_eq!( left.field_(VariantField::new(ts!(Right),ts!(c)).to_path()), None );
+assert_eq!( left.field_(VariantField::new(ts!(Right),ts!(c))), None );
 assert_eq!( left.field_(fp!(::Right.c)), None );
 
-assert_eq!( right.field_(VariantField::new(ts!(Right),ts!(c)).to_path()), Some(&'a') );
+assert_eq!( right.field_(VariantField::new(ts!(Right),ts!(c))), Some(&'a') );
 assert_eq!( right.field_(fp!(::Right.c)), Some(&'a') );
-assert_eq!( right.field_(VariantField::new(ts!(Left),ts!(0)).to_path()), None );
+assert_eq!( right.field_(VariantField::new(ts!(Left),ts!(0))), None );
 assert_eq!( right.field_(fp!(::Left.0)), None );
 
 
@@ -543,12 +543,12 @@ let left=Binary::Left(3,5);
 let right=Binary::Right{c: 'a', is_true: false};
 
 let nested_a=NestedFieldPathSet::new(
-    VariantName::new(ts!(Left)).to_path(),
-    FieldPathSet::many((ts!(0).to_path(), ts!(1).to_path())),
+    VariantName::new(ts!(Left)),
+    FieldPathSet::many(( ts!(0), ts!(1) )),
 );
 let nested_b=NestedFieldPathSet::new(
-    VariantName::new(ts!(Right)).to_path(),
-    FieldPathSet::many(( ts!(c).to_path(), ts!(is_true).to_path() )),
+    VariantName::new(ts!(Right)),
+    FieldPathSet::many(( ts!(c), ts!(is_true) )),
 );
 
 assert_eq!( left.cloned_fields(nested_a), Some((3,5)) );

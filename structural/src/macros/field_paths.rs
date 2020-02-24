@@ -1,29 +1,63 @@
-/// Constructs a FieldPath(Set) value,
+/// Constructs a field path value,
 /// which determines the fields accessed in [GetFieldExt] methods.
 ///
-/// When passed a single argument,this instantiates a `FieldPath`,
-/// which can be passed to the
-/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
-/// to access a field.
+/// ### Type
 ///
-/// When passed multiple arguments,this instantiates a `FieldPathSet`.
-/// It can then be passed to the `GetFieldExt::{fields,cloned_fields}` methods.<br>
+/// The type produced by `fp` can be one of:
 ///
-/// To be passed to `GetFieldExt::fields_mut`,
-/// the arguments to`fp!()` must be unique paths,
-/// since there is no *cheap* way to check for equality of type-level strings yet.
-/// All paths are checked against every other path to ensure that
-/// none of them is a prefix of any other.
+/// - [A path component](#path-components):<br>
+/// When it's the only thing passed to the macro.
+/// This allows accessing a non-nested field.<br>
+/// Eg: `fp!(a)`, `fp!(::Foo.bar)`, ``fp!(::Foo)``
+///
+/// - [FieldPath], [example](#examplenested-fields): <br>
+/// When multiple [path components](#path-components) are passed to the macro.
+/// This allows accessing a nested field.<br>
+/// Eg: `fp!(a.b.c)`, `fp!(::Foo.bar.baz)`
+///
+/// - [FieldPathSet], [example](#examplemultiple-fields): <br>
+/// When a comma separated list of paths are passed to the macro.
+/// This allows accessing multiple fields.<br>
+/// Eg: `fp!(a, b.c.d, c::Some.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
+///
+/// - [NestedFieldPathSet], [example](#examplemultiple-fields-insde-a-nested-field):<br>
+/// When a `=>` is passed to the macro.
+/// This allows accessing multiple fields from within a nested field.<br>
+/// Eg: `fp!(a => b, c)`, `fp!(::Foo => bar, baz, bam)`
+///
+/// If you want to type aliases and constants for a particular field path,
+/// you can use the [field_path_aliases] macro.
+///
+/// From Rust 1.40.0 onwards you can also use the [FP] macro to get the type of a field path.
 ///
 /// ### Identifier
 ///
 /// The macro takes in identifiers,integers,or strings for the names of variants and fields.
 ///
-/// Examples:
+/// ### Path Components
 ///
-/// - `FP!(hello)`
+/// These are the basic building blocks for field paths:
 ///
-/// - `FP!(100)`
+/// - `foo`: A [TStr] with the name of a field,which accesses the `foo` field,
+/// The `.` is required after other path components.<br>
+/// Examples: `fp!(foo)`, `fp!(0)`
+///
+/// - `::Foo.bar`: A [VariantField],which accesses the `bar` field in the `Foo` variant.<br>
+/// Examples: `fp!(::Foo.bar)`, `fp!(::Boom.0)`
+///
+/// - `::Foo`: A [VariantName],which wraps the type in a `VariantProxy<Self,FP!(Foo)>`.
+/// If this is directly followed by a field access,it'll be a [VariantField] instead.<br>
+/// Examples: `fp!(::Foo)`, `fp!(::Boom)`
+///
+/// These can be passed to the
+/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
+/// to access a single non-nested field.
+///
+/// More Examples:
+///
+/// - `FP!(hello)`: accesses the `hello` field.
+///
+/// - `FP!(100)`: accesses the `100` field.
 ///
 /// - `FP!(::"@hello")`,accesses the `@hello` variant.
 ///
@@ -34,14 +68,23 @@
 ///
 /// ### Nested fields
 ///
-/// You can construct field paths to access nested fields with `fp!(a.b.c)`,
-/// where doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
+/// You can construct field paths with a sequence of [path components](#path-components)
+/// to access nested fields,eg:`fp!(a.b.c)`.
+///
+/// Doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
+///
+/// This can be passed to the
+/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
+/// to access a nested field.
 ///
 /// ### Multiple fields
 ///
 /// You can access multiple fields simultaneously with `fp!(0,1,2)`
 /// where doing `this.fields_mut(fp!(a,b,c))`
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
+///
+/// This can be passed to the `GetFieldExt::*fields*` methods.<br>
+/// `GetFieldExt::field_mut` requires the field paths to be for disjoint fields.
 ///
 /// ### Nested Multiple fields
 ///
@@ -55,6 +98,8 @@
 /// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
 /// `this.field_(fp!(::Foo)).map(|v| v.fields(fp!(0,1,2)) )`.
 ///
+/// This can be passed to the `GetFieldExt::*fields*` methods.<br>
+/// `GetFieldExt::field_mut` requires the field paths to be for disjoint fields.
 ///
 /// # Example:Multiple fields
 ///
@@ -248,26 +293,15 @@ macro_rules! _delegate_fp_inner {
 //     )
 // }
 
-/// Constructs a FieldPath(Set) for use as a generic parameter.
+/// Constructs a field path type for use as a generic parameter.
 ///
 /// # Variants of the macro
 ///
-/// ### Identifier
+/// ### Improved macro
 ///
 /// <span id="improved-macro"></span>
 ///
-/// The variant of the macro takes in an identifier,an integer,
-/// or a string(for arbitrary identifiers).
-///
-/// Examples:
-///
-/// - `FP!(hello)`
-///
-/// - `FP!(100)`
-///
-/// - `FP!("@hello")`,for arbitrary field identifiers.
-///
-/// - `FP!("hello")` (equivalent to `FP!(hello)`)
+/// This takes the same input as [fp],getting the type of that field path.
 ///
 /// This variant of the macro requires one of these:
 ///

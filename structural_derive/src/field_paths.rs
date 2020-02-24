@@ -106,10 +106,10 @@ impl FieldPaths {
             let uniqueness = self.path_uniqueness;
 
             if let Some(prefix) = &self.prefix {
-                let prefix = prefix.tuple_tokens(char_path);
+                let prefix_tokens = prefix.to_token_stream(char_path);
                 quote!(
                     ::structural::NestedFieldPathSet<
-                        #prefix,
+                        #prefix_tokens,
                         (#(#path,)*),
                         #uniqueness
                     >

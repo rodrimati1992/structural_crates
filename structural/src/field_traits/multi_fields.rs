@@ -187,7 +187,7 @@ impl_get_multi_field! {
 impl<'a, F, S, U, This, Mid, OutTy, OutErr> RevGetMultiField<'a, This>
     for NestedFieldPathSet<F, S, U>
 where
-    FieldPath<F>: RevGetField<'a, This, Ty = Mid, Err = OutErr>,
+    F: RevGetField<'a, This, Ty = Mid, Err = OutErr>,
     FieldPathSet<S, U>: RevGetMultiField<'a, Mid, Fields = OutTy>,
     OutErr: IsFieldErr,
     This: 'a + ?Sized,
@@ -213,7 +213,7 @@ where
 unsafe impl<'a, F, S, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMut<'a, This>
     for NestedFieldPathSet<F, S, UniquePaths>
 where
-    FieldPath<F>: RevGetFieldMut<'a, This, Ty = Mid, Err = OutErr>,
+    F: RevGetFieldMut<'a, This, Ty = Mid, Err = OutErr>,
     FieldPathSet<S, UniquePaths>:
         RevGetMultiFieldMut<'a, Mid, FieldsMut = OutTy, FieldsRawMut = OutRawTy>,
     This: 'a + ?Sized,
