@@ -35,7 +35,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         quote_spanned! {span=>
             pub type #vari_name=__struct_pmr::FieldPathSet<
                 (
-                    #( __struct_pmr::FieldPath1<#field_name>, )*
+                    #( #field_name, )*
                 ),
                 __struct_pmr::UniquePaths
             >;
@@ -51,7 +51,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         let variant_name = tident_tokens(alias_name.to_string(), FullPathForChars::Yes);
 
         quote_spanned! {span=>
-            pub type #alias_name=__struct_pmr::FieldPath1<#variant_name>;
+            pub type #alias_name=#variant_name;
         }
     });
 

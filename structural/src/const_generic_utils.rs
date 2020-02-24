@@ -1,5 +1,5 @@
 // Helpers for operating on a `&str` const parameter,
-// when `TStr_` internally uses a `&'static str` const parameter instead of
+// when `TStr` internally uses a `&'static str` const parameter instead of
 // a tuple of char type-level characters(a bunch of structs).
 
 /// For converting a `ts!(99)` to a 99 constant,for example.

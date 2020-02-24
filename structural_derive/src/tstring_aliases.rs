@@ -34,10 +34,10 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
 
     if config.inner_module {
         tokens.append_all(quote!(
-            //! Type aliases for `TStr_` (type-level string)
+            //! Type aliases for `TStr` (type-level string)
             //! (from the structural crate).
             //!
-            //! `TStr_` values can be constructed with the NEW associated constant.
+            //! `TStr` values can be constructed with the NEW associated constant.
             //!
             //! The source code for this module can only be accessed from
             //! the type aliases.<br>
@@ -76,7 +76,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                 }
 
                 let _ = writeln!(doc_fp_inner, "The type-level equivalent of {:?}", string);
-                let _ = writeln!(doc_fpc_inner, "A value of the `{}` TStr_.", alias_name);
+                let _ = writeln!(doc_fpc_inner, "A value of the `{}` TStr.", alias_name);
 
                 let string = tident_tokens(string, FullPathForChars::Yes);
 

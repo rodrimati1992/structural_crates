@@ -149,7 +149,7 @@ impl FieldPaths {
     ) -> TokenStream2 {
         let type_ = tident_tokens(value.to_string(), char_path);
         quote!(
-            pub const #const_name: ::structural::FieldPath<(#type_,)>=
+            pub const #const_name: #type_=
                 structural::pmr::MarkerType::MTVAL;
         )
     }
@@ -263,8 +263,13 @@ impl FieldPath {
     }
 
     pub(crate) fn to_token_stream(&self, char_path: FullPathForChars) -> TokenStream2 {
-        let tuple = self.tuple_tokens(char_path);
-        quote!( structural::FieldPath<#tuple> )
+        if self.list.len() == 1 {
+            let path_component = self.list[0].single_tokenizer(char_path);
+            path_component.into_token_stream()
+        } else {
+            let tuple = self.tuple_tokens(char_path);
+            quote!( structural::FieldPath<#tuple> )
+        }
     }
 
     pub(crate) fn tuple_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {
@@ -332,6 +337,27 @@ impl FieldPathComponent {
             }
             syn::parse_str::<IdentOrIndex>(digits).map(Some)
         }
+        fn handle_float(input: ParseStream) -> parse::Result<(IdentOrIndex, Option<IdentOrIndex>)> {
+            if input.peek(syn::LitFloat) {
+                let f = input.parse::<syn::LitFloat>()?;
+                let digits = f.base10_digits();
+                let mut iter = digits.split('.');
+
+                let first = make_ioi(iter.next().unwrap())?
+                    .expect("float literals can't have a leading `.`");
+
+                // Handling non-integer fields ie:`0."hello"` and `0.world` here,
+                // so that I don't have to store whether a float was parsed.
+                let second = match make_ioi(iter.next().unwrap())? {
+                    Some(x) => Some(x),
+                    None => Some(IdentOrIndex::parse(input)?),
+                };
+                Ok((first, second))
+            } else {
+                Ok((IdentOrIndex::parse(input)?, None))
+            }
+        }
+
         let fork = input.fork();
 
         let first;
@@ -345,21 +371,10 @@ impl FieldPathComponent {
             PrefixToken::Nothing
         };
 
-        if input.peek(syn::LitFloat) {
-            let f = input.parse::<syn::LitFloat>()?;
-            let digits = f.base10_digits();
-            let mut iter = digits.split('.');
-            first =
-                make_ioi(iter.next().unwrap())?.expect("float literals can't have a leading `.`");
-
-            // Handling non-integer fields ie:`0."hello"` and `0.world` here,
-            // so that I don't have to store whether a float was parsed.
-            second = match make_ioi(iter.next().unwrap())? {
-                Some(x) => Some(x),
-                None => Some(IdentOrIndex::parse(input)?),
-            };
-        } else {
-            first = IdentOrIndex::parse(input)?;
+        {
+            let ret = handle_float(input)?;
+            first = ret.0;
+            second = ret.1;
         }
 
         if let PrefixToken::Colon2 = prefix_token {
@@ -368,8 +383,11 @@ impl FieldPathComponent {
             if let Some(field) = second {
                 Ok((FieldPathComponent::VariantField { variant, field }, None))
             } else if input.peek_parse(Token!(.))?.is_some() {
-                let field = input.parse::<IdentOrIndex>()?;
-                Ok((FieldPathComponent::VariantField { variant, field }, None))
+                let (field, extra) = handle_float(input)?;
+                Ok((
+                    FieldPathComponent::VariantField { variant, field },
+                    extra.map(FieldPathComponent::Ident),
+                ))
             } else if is_field_path_terminator(input) {
                 Ok((FieldPathComponent::VariantName { variant }, None))
             } else {

@@ -4,15 +4,12 @@ Traits for getting a field from an enum variant.
 
 use crate::{
     enums::IsVariant,
-    field_path::{FieldPath1, UncheckedVariantField, VariantFieldPath},
+    field_path::{UncheckedVariantField, VariantField},
     field_traits::{
         FieldType, NonOptField, OptGetField, OptGetFieldMut, OptIntoField, OptionalField,
     },
     GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
 };
-
-#[cfg(feature = "alloc")]
-pub use crate::alloc::boxed::Box;
 
 macro_rules! declare_trait_alias {
     (
@@ -40,11 +37,11 @@ macro_rules! declare_trait_alias {
 ///
 /// # Safety
 ///
-/// The `GetFieldImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>` impl
+/// The `GetFieldImpl<VariantField<V, F>, UncheckedVariantField<V, F>>` impl
 /// for this type must return the `F` field from the `V` variant,
 /// calling `std::hint::unrechable_unchecked` if this is not the `V` variant.
 pub unsafe trait GetVariantFieldImpl<V, F>:
-    IsVariant<FieldPath1<V>> + GetFieldImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>
+    IsVariant<V> + GetFieldImpl<VariantField<V, F>, UncheckedVariantField<V, F>>
 {
 }
 
@@ -54,7 +51,7 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 ///
 /// Example(before 1.40): `GetVariantFieldType<This, TS!(F o o), TS!(0)>`
 pub type GetVariantFieldType<This, Variant, Field> =
-    <This as FieldType<VariantFieldPath<Variant, Field>>>::Ty;
+    <This as FieldType<VariantField<Variant, Field>>>::Ty;
 
 /// Gets a mutable reference to the `F` field  from the `V` variant
 ///
@@ -66,11 +63,11 @@ pub type GetVariantFieldType<This, Variant, Field> =
 ///
 /// This has the safety requirements as `GetFieldMutImpl`.
 ///
-/// The `GetFieldMutImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>` impl
+/// The `GetFieldMutImpl<VariantField<V, F>, UncheckedVariantField<V, F>>` impl
 /// for this type must return the `F` field from the `V` variant,
 /// calling `std::hint::unrechable_unchecked` if this is not the `V` variant.
 pub unsafe trait GetVariantFieldMutImpl<V, F>:
-    GetVariantFieldImpl<V, F> + GetFieldMutImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>
+    GetVariantFieldImpl<V, F> + GetFieldMutImpl<VariantField<V, F>, UncheckedVariantField<V, F>>
 {
 }
 
@@ -84,11 +81,11 @@ pub unsafe trait GetVariantFieldMutImpl<V, F>:
 ///
 /// This has the safety requirements as `GetFieldMutImpl`.
 ///
-/// The `IntoFieldImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>` impl
+/// The `IntoFieldImpl<VariantField<V, F>, UncheckedVariantField<V, F>>` impl
 /// for this type must return the `F` field from the `V` variant,
 /// calling `std::hint::unrechable_unchecked` if this is not the `V` variant.
 pub unsafe trait IntoVariantFieldImpl<V, F>:
-    GetVariantFieldImpl<V, F> + IntoFieldImpl<VariantFieldPath<V, F>, UncheckedVariantField<V, F>>
+    GetVariantFieldImpl<V, F> + IntoFieldImpl<VariantField<V, F>, UncheckedVariantField<V, F>>
 {
 }
 
@@ -99,7 +96,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `GetVariantField<TS!(Foo),TS!(x)>`
     pub trait GetVariantField<V,F>=
-        OptGetField<VariantFieldPath<V, F>> +
+        OptGetField<VariantField<V, F>> +
         GetVariantFieldImpl<V, F, Err= NonOptField> +
 }
 
@@ -108,7 +105,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `GetVariantFieldMut<TS!(Bar),TS!(y)>`
     pub trait GetVariantFieldMut<V, F>=
-        OptGetFieldMut<VariantFieldPath<V, F>> +
+        OptGetFieldMut<VariantField<V, F>> +
         GetVariantFieldMutImpl<V, F, Err= NonOptField> +
 }
 
@@ -117,7 +114,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `IntoVariantField<TS!(Baz),TS!(z)>`
     pub trait IntoVariantField<V, F>=
-        OptIntoField<VariantFieldPath<V, F>> +
+        OptIntoField<VariantField<V, F>> +
         IntoVariantFieldImpl<V, F, Err= NonOptField> +
 }
 
@@ -137,7 +134,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `OptGetVariantField<TS!(Illegal),TS!(errors)>`
     pub trait OptGetVariantField<V, F>=
-        OptGetField<VariantFieldPath<V, F>> +
+        OptGetField<VariantField<V, F>> +
         GetVariantFieldImpl<V, F, Err= OptionalField> +
 }
 
@@ -146,7 +143,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `OptGetVariantFieldMut<TS!(Other),TS!(0)>`
     pub trait OptGetVariantFieldMut<V, F>=
-        OptGetFieldMut<VariantFieldPath<V, F>> +
+        OptGetFieldMut<VariantField<V, F>> +
         GetVariantFieldMutImpl<V, F, Err= OptionalField> +
 }
 
@@ -155,7 +152,7 @@ declare_trait_alias! {
     ///
     /// This takes TStr as parameters,eg: `OptIntoVariantField<TS!(Enum),TS!(variants)>`
     pub trait OptIntoVariantField<V, F>=
-        OptIntoField<VariantFieldPath<V, F>> +
+        OptIntoField<VariantField<V, F>> +
         IntoVariantFieldImpl<V, F, Err= OptionalField> +
 }
 

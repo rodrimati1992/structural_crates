@@ -5,15 +5,15 @@
 ///
 /// # TStr construction
 ///
-/// `TStr_<_>` can be constructed with:
+/// `TStr<_>` can be constructed with:
 ///
 /// - the `ts` macro,which takes a string literal/ident/integer as an input.
 ///
 /// - the `NEW` inherent associated constant,
 ///
-/// - The `<TStr_<_> as MarkerType>::MTVAL` associated constant.
+/// - The `<TStr<_> as MarkerType>::MTVAL` associated constant.
 ///
-/// Examples of constructing a `TStr_<_>`:
+/// Examples of constructing a `TStr<_>`:
 ///
 /// - `ts!(foo)` (in every Rust version)
 ///
@@ -40,13 +40,13 @@
 /// - `<TS!(1 0 0)>::NEW` (in every Rust version)
 ///
 /// - `<TS!(0)>::MTVAL`(requires importing the `MarkerType` trait)
-pub struct TStr_<T>(pub(crate) PhantomData<T>);
+pub struct TStr<T>(pub(crate) PhantomData<T>);
 
 /// A pair of identifiers for the `F` field inside the `V` variant.
 ///
 /// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo.bar)`.
 ///
-/// Both the V and F type parameters are [::structural::field_path::TStr_]s,
+/// Both the V and F type parameters are [::structural::field_path::TStr]s,
 #[derive(Copy, Clone)]
 pub struct VariantField<V, F> {
     pub variant: V,
@@ -58,7 +58,7 @@ pub struct VariantField<V, F> {
 /// This is the type parameter of the `FieldPath<_>` in `fp!(::Foo)`.
 /// Note that `fp!(::Foo.bar)` constructs a `FieldPath<(VariantField<_,_>,)>` instead.
 ///
-/// The V type parameters is a [::structural::field_path::TStr_]s.
+/// The V type parameters is a [::structural::field_path::TStr]s.
 #[derive(Default, Copy, Clone)]
 pub struct VariantName<V> {
     pub name: V,

@@ -359,13 +359,13 @@ macro_rules! unsafe_delegate_structural_with_inner {
         {}
 
         unsafe impl<$($impl_params)* _V>
-            $crate::pmr::IsVariant<_V>
+            $crate::pmr::IsVariant<$crate::pmr::TStr<_V>>
         for $self
         where
-            $delegating_to_type: $crate::pmr::IsVariant<_V>,
+            $delegating_to_type: $crate::pmr::IsVariant<$crate::pmr::TStr<_V>>,
             $($where_clause)*
         {
-            fn is_variant_(&self,name:_V)->bool{
+            fn is_variant_(&self,name:$crate::pmr::TStr<_V>)->bool{
                 let $this=self;
                 let field:&$delegating_to_type=$get_field_closure;
                 $crate::pmr::IsVariant::is_variant_(field,name)
@@ -384,10 +384,12 @@ macro_rules! unsafe_delegate_structural_with_inner {
         // because additional bounds might be added to GetFieldImpl.
         //
         unsafe impl<$($impl_params)* _V,_F>
-            $crate::pmr::GetVariantFieldImpl<_V,_F>
+            $crate::pmr::GetVariantFieldImpl<$crate::pmr::TStr<_V>,_F>
         for $self
         where
-            $delegating_to_type: $crate::IsStructural + $crate::pmr::GetVariantFieldImpl<_V,_F>,
+            $delegating_to_type:
+                $crate::IsStructural+
+                $crate::pmr::GetVariantFieldImpl<$crate::pmr::TStr<_V>,_F>,
             $($where_clause)*
         {}
 
@@ -663,12 +665,12 @@ macro_rules! unsafe_delegate_structural_with_inner {
         // This is defined separately from `unsafe_delegate_variant_field!`
         // because additional bounds might be added to GetFieldMutImpl.
         unsafe impl<$($impl_params)* _V,_F>
-            $crate::pmr::GetVariantFieldMutImpl<_V,_F>
+            $crate::pmr::GetVariantFieldMutImpl<$crate::pmr::TStr<_V>,_F>
         for $self
         where
             $delegating_to_type:
                 $crate::IsStructural +
-                $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
+                $crate::pmr::GetVariantFieldMutImpl<$crate::pmr::TStr<_V>,_F>,
             $($where_clause)*
             $($mut_where_clause)*
         {}
@@ -731,13 +733,13 @@ macro_rules! unsafe_delegate_structural_with_inner {
         // This is defined separately from `unsafe_delegate_variant_field!`
         // because additional bounds might be added to IntoFieldImpl.
         unsafe impl<$($impl_params)* _V,_F>
-            $crate::pmr::IntoVariantFieldImpl<_V,_F>
+            $crate::pmr::IntoVariantFieldImpl<$crate::pmr::TStr<_V>,_F>
         for $self
         where
             $delegating_to_type:
                 Sized+
                 $crate::IsStructural +
-                $crate::pmr::IntoVariantFieldImpl<_V,_F>,
+                $crate::pmr::IntoVariantFieldImpl<$crate::pmr::TStr<_V>,_F>,
             $($into_where_clause)*
             $($where_clause)*
         {}

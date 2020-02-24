@@ -83,10 +83,10 @@ fn identifier_macros_equality() {
     cond_tstr_alias!(S_21 = ((chars::_2, chars::_1), "21"));
     cond_tstr_alias!(S_ab0 = ((chars::_a, chars::_b, chars::_0), "ab0"));
 
-    path_assertion!(fp!(abcd), FieldPath<(S_abcd,)>);
-    path_assertion!(fp!(0), FieldPath<(S_0,)>);
-    path_assertion!(fp!(21), FieldPath<(S_21,)>);
-    path_assertion!(fp!(ab0), FieldPath<(S_ab0,)>);
+    path_assertion!(fp!(abcd), S_abcd);
+    path_assertion!(fp!(0), S_0);
+    path_assertion!(fp!(21), S_21);
+    path_assertion!(fp!(ab0), S_ab0);
     path_assertion!(fp!(0.1), FieldPath<(S_0, S_1)>);
     path_assertion!(fp!(0.1.2), FieldPath<(S_0, S_1, S_2)>);
     path_assertion!(fp!(0.1.2.3), FieldPath<(S_0, S_1, S_2, S_3)>);
@@ -106,12 +106,12 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(foo,bar),
-        FieldPathSet<(FieldPath<(S_foo,)>,FieldPath<(S_bar,)>,),UniquePaths>
+        FieldPathSet<(S_foo,S_bar,),UniquePaths>
     }
 
     path_assertion! {
         fp!(foo.bar,baz),
-        FieldPathSet<(FieldPath<(S_foo,S_bar)>,FieldPath<(S_baz,)>,),UniquePaths>,
+        FieldPathSet<(FieldPath<(S_foo,S_bar)>,S_baz,),UniquePaths>,
     }
 
     path_assertion! {
@@ -121,24 +121,24 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(0,foo),
-        FieldPathSet<(FieldPath<(S_0,)>,FieldPath<(S_foo,)>,),UniquePaths>,
+        FieldPathSet<(S_0,S_foo),UniquePaths>,
     }
 
     path_assertion! {
         fp!(0.1,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1)>,FieldPath<(S_foo,)>,),UniquePaths>,
+        FieldPathSet<(FieldPath<(S_0,S_1)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2)>,FieldPath<(S_foo,)>,),UniquePaths>,
+        FieldPathSet<(FieldPath<(S_0,S_1,S_2)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(foo,0.1.2.3),
-        FieldPathSet<(FieldPath<(S_foo,)>,FieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
+        FieldPathSet<(S_foo,FieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2.3.4,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2,S_3,S_4)>,FieldPath<(S_foo,)>,),UniquePaths>,
+        FieldPathSet<(FieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
     }
 
     /*
@@ -150,7 +150,7 @@ fn field_paths_equality() {
 }
 
 mod make_struct_tests {
-    use crate::{field_path::FieldPath, GetFieldExt};
+    use crate::{field_path::TStr, GetFieldExt};
 
     crate::structural_alias! {
         trait Hi<T>{
@@ -175,9 +175,9 @@ mod make_struct_tests {
 
             // I had to write it like this due to a rustc bug.
             // https://github.com/rust-lang/rust/issues/66057
-            assert_eq!(hi.field_::<FP!(a)>(FieldPath::NEW), &0);
-            assert_eq!(hi.field_::<FP!(b)>(FieldPath::NEW).unwrap(), "hello");
-            assert_eq!(hi.field_::<FP!(c)>(FieldPath::NEW), &"");
+            assert_eq!(hi.field_::<FP!(a)>(TStr::NEW), &0);
+            assert_eq!(hi.field_::<FP!(b)>(TStr::NEW).unwrap(), "hello");
+            assert_eq!(hi.field_::<FP!(c)>(TStr::NEW), &"");
         }
 
         {

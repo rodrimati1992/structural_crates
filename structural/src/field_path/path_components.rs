@@ -1,7 +1,7 @@
 use super::Sealed;
 use crate::field_path::{FieldPath, FieldPathSet, IsSingleFieldPath, UniquePaths};
 use crate::type_level::collection_traits::ToTString_;
-use crate::{TStr_, VariantField, VariantName};
+use crate::{TStr, VariantField, VariantName};
 
 use core_extensions::MarkerType;
 
@@ -42,45 +42,55 @@ macro_rules! impl_to_path_to_set {
 
 /// A marker trait for type-level string.
 ///
-/// This is only implemented on `TStr_<_>`,
-/// which is not in the documentation so that its type parameter
-/// can be turned into a `const NAME:&'static str` const parameter.
+/// This is only implemented on [`TStr`](::structural::TStr).
+///
 pub trait IsTStr: Sealed + Debug + Copy + MarkerType {}
 
-impl<T> IsTStr for TStr_<T> {}
+/// A marker trait to assert that `P` is a `TStr`.
+pub trait AssertTStrParam<P>: AssertTStrParamSealed<P> {}
 
-impl<T> Debug for TStr_<T> {
+mod is_tstr_param_sealed {
+    pub trait AssertTStrParamSealed<P> {}
+}
+use is_tstr_param_sealed::AssertTStrParamSealed;
+
+impl<This: ?Sized, P> AssertTStrParamSealed<TStr<P>> for This {}
+impl<This: ?Sized, P> AssertTStrParam<TStr<P>> for This {}
+
+impl<T> IsTStr for TStr<T> {}
+
+impl<T> Debug for TStr<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TStr_").finish()
+        f.debug_struct("TStr").finish()
     }
 }
 
-impl<T> TStr_<T> {
-    /// Constructs the TStr_.
-    pub const NEW: Self = TStr_(PhantomData);
+impl<T> TStr<T> {
+    /// Constructs the TStr.
+    pub const NEW: Self = TStr(PhantomData);
 }
 
 impl_to_path_to_set! {
-    impl[T] TStr_<T>
+    impl[T] TStr<T>
 }
 
-impl<T> IsSingleFieldPath for TStr_<T> {}
+impl<T> IsSingleFieldPath for TStr<T> {}
 
-impl<T> Copy for TStr_<T> {}
-impl<T> Clone for TStr_<T> {
+impl<T> Copy for TStr<T> {}
+impl<T> Clone for TStr<T> {
     #[inline(always)]
     fn clone(&self) -> Self {
         *self
     }
 }
-unsafe impl<T> MarkerType for TStr_<T> {}
+unsafe impl<T> MarkerType for TStr<T> {}
 
-impl<T> ToTString_ for TStr_<T> {
+impl<T> ToTString_ for TStr<T> {
     type Output = Self;
 }
 
 impl_cmp_traits! {
-    impl[T] TStr_<T>
+    impl[T] TStr<T>
     where[]
 }
 
@@ -101,7 +111,7 @@ impl_to_path_to_set! {
 impl<V, F> VariantField<V, F> {
     /// Constructs a VariantField from the name of the variant,and field.
     ///
-    /// Both `name` and `field` is expected to be a [::structural::field_path::TStr_].
+    /// Both `name` and `field` is expected to be a [::structural::field_path::TStr].
     pub const fn new(variant: V, field: F) -> Self {
         Self { variant, field }
     }
@@ -123,7 +133,7 @@ where
 }
 
 /// A FieldPath for the `F` field inside the `V` variant.
-pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
+pub type VariantFieldPath<V, F> = VariantField<V, F>;
 
 impl_cmp_traits! {
     impl[V,F] VariantField<V,F>
@@ -149,7 +159,7 @@ impl_to_path_to_set! {
 impl<V> VariantName<V> {
     /// Constructs a VariantName from `name`.
     ///
-    /// `name` is expected to be a [::structural::field_path::TStr_].
+    /// `name` is expected to be a [::structural::field_path::TStr].
     pub fn new(name: V) -> Self {
         Self { name }
     }

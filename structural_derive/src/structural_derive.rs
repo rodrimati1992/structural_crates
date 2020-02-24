@@ -364,7 +364,7 @@ fn deriving_structural<'a>(
                     #((
                         #getter_trait<
                             #field_names : #field_tys ,
-                            structural::pmr::FieldPath1<#names_module_path::#alias_names>,
+                            #names_module_path::#alias_names,
                             opt=#inner_optionality,
                             #renamed_field_names,
                         >
@@ -431,7 +431,7 @@ fn deriving_structural<'a>(
                         \n\
                         A value of this can be instantiated with {}::NEW.\n\
                         \n\
-                        [Docs for TStr_](::structural::field_path::TStr_).
+                        [Docs for TStr](::structural::field_path::TStr).
                     ",
                     ds.name, variant_count_ident_str,
                 );

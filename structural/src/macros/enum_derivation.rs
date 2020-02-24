@@ -23,7 +23,7 @@ macro_rules! _private_impl_getter_enum{
     )=>{
 
         impl<$($typarams)*>
-            $crate::FieldType< $crate::pmr::FieldPath1<$variant_name_str> >
+            $crate::FieldType< $variant_name_str >
         for $self_
         where
             $($where_)*
@@ -32,7 +32,7 @@ macro_rules! _private_impl_getter_enum{
         }
 
         impl<$($typarams)*>
-            $crate::GetFieldImpl< $crate::pmr::FieldPath1<$variant_name_str> >
+            $crate::GetFieldImpl< $variant_name_str >
         for $self_
         where
             $($where_)*
@@ -42,7 +42,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn get_field_(
                 &self,
-                _:$crate::pmr::FieldPath1<$variant_name_str>,
+                _:$variant_name_str,
                 _:(),
             )->Result<&$field_ty,$crate::pmr::OptionalField>{
                 match self {
@@ -59,28 +59,28 @@ macro_rules! _private_impl_getter_enum{
             $crate::pmr::GetVariantFieldImpl<$variant_name_str,_F>
         for $self_
         where
-            $field_ty: $crate::GetFieldImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::GetFieldImpl<_F>,
             $($where_)*
         {}
 
         impl<$($typarams)* _F>
-            $crate::FieldType< $crate::pmr::VariantFieldPath<$variant_name_str,_F> >
+            $crate::FieldType< $crate::pmr::VariantField<$variant_name_str,_F> >
         for $self_
         where
-            $field_ty: $crate::GetFieldImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::GetFieldImpl<_F>,
             $($where_)*
         {
-            type Ty=$crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>;
+            type Ty=$crate::GetFieldType<$field_ty,_F>;
         }
 
         impl<$($typarams)* _F,_Ty>
             $crate::GetFieldImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                $crate::pmr::VariantField<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             >
         for $self_
         where
-            $field_ty: $crate::GetFieldImpl<$crate::pmr::FieldPath1<_F>,Ty=_Ty>,
+            $field_ty: $crate::GetFieldImpl<_F,Ty=_Ty>,
             $($where_)*
         {
             type Err=$crate::vf_err!($optionality,$field_ty,_F);
@@ -88,7 +88,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn get_field_(
                 &self,
-                name:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                name:$crate::pmr::VariantField<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
                 &_Ty,
@@ -96,7 +96,7 @@ macro_rules! _private_impl_getter_enum{
             >{
                 match self {
                     $enum_::$variant{$field_name:field,..}=>{
-                        let name = $crate::pmr::FieldPath1::one(name.list.0.field);
+                        let name = name.field;
                         let field = $crate::try_optionality!($optionality,ref,field);
                         $crate::map_optionality!(
                             $optionality,
@@ -138,7 +138,7 @@ macro_rules! _private_impl_getter_enum{
 
         impl<$($typarams)*>
             $crate::FieldType<
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>
             >
         for $self_
         where
@@ -149,7 +149,7 @@ macro_rules! _private_impl_getter_enum{
 
         impl<$($typarams)*>
             $crate::GetFieldImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             >
         for $self_
@@ -161,7 +161,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn get_field_(
                 &self,
-                _:$crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                _:$crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             )->Result<&$field_ty,$crate::err_from_opt!($optionality)>{
                 match self {
@@ -199,7 +199,7 @@ macro_rules! _private_impl_getter_enum{
         )
     )=>{
         unsafe impl<$($typarams)*>
-            $crate::GetFieldMutImpl< $crate::pmr::FieldPath1<$variant_name_str> >
+            $crate::GetFieldMutImpl< $variant_name_str >
         for $self_
         where
             $($where_)*
@@ -207,7 +207,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn get_field_mut_(
                 &mut self,
-                _:$crate::pmr::FieldPath1<$variant_name_str>,
+                _:$variant_name_str,
                 _:(),
             )->Result<&mut $field_ty,$crate::pmr::OptionalField>{
                 match self {
@@ -222,7 +222,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             unsafe fn get_field_raw_mut(
                 this:*mut (),
-                _:$crate::pmr::FieldPath1<$variant_name_str>,
+                _:$variant_name_str,
                 _:(),
             )->Result<*mut $field_ty,$crate::pmr::OptionalField>{
                 let this=this as *mut Self;
@@ -243,14 +243,14 @@ macro_rules! _private_impl_getter_enum{
             fn get_field_raw_mut_func(
                 &self,
             )->$crate::field_traits::GetFieldRawMutFn<
-                $crate::pmr::FieldPath1<$variant_name_str>,
+                $variant_name_str,
                 (),
                 $field_ty,
                 $crate::pmr::OptionalField,
             >{
                 <Self as
                     $crate::field_traits::GetFieldMutImpl<
-                        $crate::pmr::FieldPath1<$variant_name_str>
+                        $variant_name_str
                     >
                 >::get_field_raw_mut
             }
@@ -261,24 +261,24 @@ macro_rules! _private_impl_getter_enum{
             $crate::pmr::GetVariantFieldMutImpl<$variant_name_str,_F>
         for $self_
         where
-            $field_ty: $crate::GetFieldMutImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::GetFieldMutImpl<_F>,
             $($where_)*
         {}
 
         unsafe impl<$($typarams)* _F,_Ty>
             $crate::pmr::GetFieldMutImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                $crate::pmr::VariantField<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             >
         for $self_
         where
-            $field_ty: $crate::GetFieldMutImpl<$crate::pmr::FieldPath1<_F>,Ty=_Ty>,
+            $field_ty: $crate::GetFieldMutImpl<_F,Ty=_Ty>,
             $($where_)*
         {
             #[inline(always)]
             fn get_field_mut_(
                 &mut self,
-                name:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                name:$crate::pmr::VariantField<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
                 &mut _Ty,
@@ -286,12 +286,12 @@ macro_rules! _private_impl_getter_enum{
             >{
                 match self {
                     $enum_::$variant{$field_name:field,..}=>{
-                        let name = $crate::pmr::FieldPath1::one(name.list.0.field);
+                        let name = name.field;
                         let field= $crate::try_optionality!($optionality,mut,field);
                         $crate::map_optionality!(
                             $optionality,
                             $crate::GetFieldMutImpl::<
-                                $crate::pmr::FieldPath1<_F>
+                                _F
                             >::get_field_mut_(field,name,())
                         )
                     }
@@ -307,16 +307,16 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             unsafe fn get_field_raw_mut(
                 this:*mut (),
-                name:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                name:$crate::pmr::VariantField<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
-                *mut $crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                *mut $crate::GetFieldType<$field_ty,_F>,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
                 let this=this as *mut Self;
                 match *this {
                     $enum_::$variant{$field_name:ref mut field,..}=>{
-                        let name = $crate::pmr::FieldPath1::one(name.list.0.field);
+                        let name = name.field;
                         let field= $crate::try_optionality!($optionality,raw,field);
                         $crate::map_optionality!(
                             $optionality,
@@ -340,14 +340,14 @@ macro_rules! _private_impl_getter_enum{
             fn get_field_raw_mut_func(
                 &self,
             )->$crate::field_traits::GetFieldRawMutFn<
-                $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                $crate::pmr::VariantField<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
-                $crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                $crate::GetFieldType<$field_ty,_F>,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
                 <Self as
                     $crate::field_traits::GetFieldMutImpl<
-                        $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                        $crate::pmr::VariantField<$variant_name_str,_F>,
                         $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
                     >
                 >::get_field_raw_mut
@@ -381,7 +381,7 @@ macro_rules! _private_impl_getter_enum{
 
         unsafe impl<$($typarams)*>
             $crate::pmr::GetFieldMutImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             >
         for $self_
@@ -391,7 +391,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn get_field_mut_(
                 &mut self,
-                _:$crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                _:$crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             )->Result<&mut $field_ty,$crate::err_from_opt!($optionality)>{
                 match self {
@@ -409,7 +409,7 @@ macro_rules! _private_impl_getter_enum{
 
             unsafe fn get_field_raw_mut(
                 this:*mut (),
-                _:$crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                _:$crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             )->Result<*mut $field_ty,$crate::err_from_opt!($optionality)>{
                 let this=this as *mut Self;
@@ -435,14 +435,14 @@ macro_rules! _private_impl_getter_enum{
             fn get_field_raw_mut_func(
                 &self
             )->$crate::field_traits::GetFieldRawMutFn<
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
                 $field_ty,
                 $crate::err_from_opt!($optionality)
             >{
                 <Self as
                     $crate::field_traits::GetFieldMutImpl<
-                        $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                        $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                         $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
                     >
                 >::get_field_raw_mut
@@ -469,14 +469,14 @@ macro_rules! _private_impl_getter_enum{
         )
     )=>{
         impl<$($typarams)*>
-            $crate::IntoFieldImpl< $crate::pmr::FieldPath1<$variant_name_str> >
+            $crate::IntoFieldImpl< $variant_name_str >
         for $self_
         where
             $($where_)*
         {
             fn into_field_(
                 self,
-                _:$crate::pmr::FieldPath1<$variant_name_str>,
+                _:$variant_name_str,
                 _:(),
             )->Result<$field_ty,$crate::pmr::OptionalField>{
                 match self {
@@ -489,7 +489,7 @@ macro_rules! _private_impl_getter_enum{
             }
 
             $crate::z_impl_box_into_field_method!{
-                $crate::pmr::FieldPath1<$variant_name_str>,
+                $variant_name_str,
                 (),
                 $field_ty,
                 $crate::pmr::OptionalField,
@@ -500,37 +500,37 @@ macro_rules! _private_impl_getter_enum{
             $crate::pmr::IntoVariantFieldImpl<$variant_name_str,_F>
         for $self_
         where
-            $field_ty: $crate::IntoFieldImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::IntoFieldImpl<_F>,
             $($where_)*
         {}
 
         impl<$($typarams)* _F>
             $crate::pmr::IntoFieldImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                $crate::pmr::VariantField<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             >
         for $self_
         where
-            $field_ty: $crate::IntoFieldImpl<$crate::pmr::FieldPath1<_F>>,
+            $field_ty: $crate::IntoFieldImpl<_F>,
             $($where_)*
         {
             #[inline(always)]
             fn into_field_(
                 self,
-                name:$crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                name:$crate::pmr::VariantField<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
-                $crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                $crate::GetFieldType<$field_ty,_F>,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
                 match self {
                     $enum_::$variant{$field_name:field,..}=>{
-                        let name = $crate::pmr::FieldPath1::one(name.list.0.field);
+                        let name = name.field;
                         let field= $crate::try_optionality!($optionality,move,field);
                         $crate::map_optionality!(
                             $optionality,
                             $crate::IntoFieldImpl::<
-                                $crate::pmr::FieldPath1<_F>
+                                _F
                             >::into_field_(field,name,())
                         )
                     }
@@ -544,9 +544,9 @@ macro_rules! _private_impl_getter_enum{
             }
 
             $crate::z_impl_box_into_field_method!{
-                $crate::pmr::VariantFieldPath<$variant_name_str,_F>,
+                $crate::pmr::VariantField<$variant_name_str,_F>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
-                $crate::GetFieldType<$field_ty,$crate::pmr::FieldPath1<_F>>,
+                $crate::GetFieldType<$field_ty,_F>,
                 $crate::vf_err!($optionality,$field_ty,_F),
             }
         }
@@ -576,7 +576,7 @@ macro_rules! _private_impl_getter_enum{
 
         impl<$($typarams)*>
             $crate::pmr::IntoFieldImpl<
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             >
         for $self_
@@ -586,7 +586,7 @@ macro_rules! _private_impl_getter_enum{
             #[inline(always)]
             fn into_field_(
                 self,
-                _:$crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                _:$crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             )->Result<$field_ty,$crate::err_from_opt!($optionality)>{
                 match self {
@@ -603,7 +603,7 @@ macro_rules! _private_impl_getter_enum{
             }
 
             $crate::z_impl_box_into_field_method!{
-                $crate::pmr::VariantFieldPath<$variant_name_str,$field_name_param>,
+                $crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 $crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
                 $field_ty,
                 $crate::err_from_opt!($optionality),
@@ -765,13 +765,13 @@ macro_rules! private_delegate_to_variant_proxy {
         )
     )=>{
         unsafe impl<$($typarams)*>
-            $crate::pmr::IsVariant<$crate::pmr::FieldPath1<$variant_name_str>>
+            $crate::pmr::IsVariant<$variant_name_str>
         for $self_
         where $($where_)*
         {
             #[inline]
             #[allow(unreachable_patterns)]
-            fn is_variant_(&self,_:$crate::pmr::FieldPath1<$variant_name_str>)->bool{
+            fn is_variant_(&self,_:$variant_name_str)->bool{
                 match self {
                     $enum_::$variant{..}=>true,
                     #[allow(unreachable_patterns)]
@@ -789,11 +789,11 @@ macro_rules! private_delegate_to_variant_proxy {
         )
     )=>{
         impl<$($typarams)* _V,_F,_O>
-            $crate::GetFieldImpl<$crate::pmr::VariantFieldPath<_V,_F>>
+            $crate::GetFieldImpl<$crate::pmr::VariantField<_V,_F>>
         for $self_
         where
             Self: $crate::pmr::GetVariantFieldImpl<_V, _F, Ty=_O>,
-            _V: Copy,
+            _V: $crate::pmr::IsTStr,
             $($where_)*
         {
             type Err=$crate::pmr::OptionalField;
@@ -801,10 +801,10 @@ macro_rules! private_delegate_to_variant_proxy {
             #[inline(always)]
             fn get_field_(
                 &self,
-                name:$crate::pmr::VariantFieldPath<_V,_F>,
+                name:$crate::pmr::VariantField<_V,_F>,
                 _:(),
             )->Result<&_O,$crate::pmr::OptionalField>{
-                let vari_name=$crate::pmr::FieldPath::one(name.list.0.variant);
+                let vari_name=name.variant;
                 if $crate::pmr::IsVariant::is_variant_(self,vari_name) {
                     unsafe{
                         $crate::map_of!(
@@ -822,19 +822,19 @@ macro_rules! private_delegate_to_variant_proxy {
         }
 
         unsafe impl<$($typarams)* _V,_F,_O>
-            $crate::GetFieldMutImpl<$crate::pmr::VariantFieldPath<_V,_F>>
+            $crate::GetFieldMutImpl<$crate::pmr::VariantField<_V,_F>>
         for $self_
         where
             Self: $crate::pmr::GetVariantFieldMutImpl<_V, _F, Ty=_O>,
-            _V: Copy,
+            _V: $crate::pmr::IsTStr,
             $($where_)*
         {
             fn get_field_mut_(
                 &mut self,
-                name:$crate::pmr::VariantFieldPath<_V,_F>,
+                name:$crate::pmr::VariantField<_V,_F>,
                 _:(),
             )->Result<&mut _O,$crate::pmr::OptionalField>{
-                let vari_name=$crate::pmr::FieldPath::one(name.list.0.variant);
+                let vari_name=name.variant;
                 if $crate::pmr::IsVariant::is_variant_(self,vari_name) {
                     unsafe{
                         $crate::map_of!(
@@ -852,13 +852,13 @@ macro_rules! private_delegate_to_variant_proxy {
 
             unsafe fn get_field_raw_mut(
                 this:*mut (),
-                name:$crate::pmr::VariantFieldPath<_V,_F>,
+                name:$crate::pmr::VariantField<_V,_F>,
                 _:(),
             )->Result<
                 *mut _O,
                 $crate::pmr::OptionalField
             >{
-                let vari_name=$crate::pmr::FieldPath::one(name.list.0.variant);
+                let vari_name=name.variant;
                 let this_s=this as *mut Self;
                 if $crate::pmr::IsVariant::is_variant_(&*this_s,vari_name) {
                     $crate::map_of!(
@@ -876,41 +876,44 @@ macro_rules! private_delegate_to_variant_proxy {
             fn get_field_raw_mut_func(
                 &self
             )->$crate::field_traits::GetFieldRawMutFn<
-                $crate::pmr::VariantFieldPath<_V,_F>,
+                $crate::pmr::VariantField<_V,_F>,
                 (),
                 _O,
                 $crate::pmr::OptionalField
             >{
                 <Self as
                     $crate::GetFieldMutImpl<
-                        $crate::pmr::VariantFieldPath<_V,_F>
+                        $crate::pmr::VariantField<_V,_F>
                     >
                 >::get_field_raw_mut
             }
         }
 
         impl<$($typarams)* _V,_F,_O>
-            $crate::IntoFieldImpl<$crate::pmr::VariantFieldPath<_V,_F>>
+            $crate::IntoFieldImpl<$crate::pmr::VariantField<_V,_F>>
         for $self_
         where
             Self: $crate::pmr::IntoVariantFieldImpl<_V, _F, Ty=_O>,
-            _V: Copy,
+            _V: $crate::pmr::IsTStr,
             $($where_)*
         {
             #[inline(always)]
             fn into_field_(
                 self,
-                name:$crate::pmr::VariantFieldPath<_V,_F>,
+                name:$crate::pmr::VariantField<_V,_F>,
                 _:(),
             )->Result<_O,$crate::pmr::OptionalField>{
-                let vari_name=$crate::pmr::FieldPath::one(name.list.0.variant);
+                let vari_name=name.variant;
                 if $crate::pmr::IsVariant::is_variant_(&self,vari_name) {
                     unsafe{
                         $crate::map_of!(
                             $crate::pmr::IntoFieldImpl::into_field_(
                                 self,
                                 name,
-                                $crate::pmr::UncheckedVariantField::<_V,_F>::new(),
+                                $crate::pmr::UncheckedVariantField::<
+                                    _V,
+                                    _F,
+                                >::new(),
                             )
                         )
                     }
@@ -920,7 +923,7 @@ macro_rules! private_delegate_to_variant_proxy {
             }
 
             $crate::z_impl_box_into_field_method!{
-                $crate::pmr::VariantFieldPath<_V,_F>,
+                $crate::pmr::VariantField<_V,_F>,
                 (),
                 _O,
                 $crate::pmr::OptionalField,

@@ -1,8 +1,5 @@
 use crate::{
-    field_traits::{
-        for_arrays::{names, strings},
-        IntoFieldMut, IntoVariantFieldMut,
-    },
+    field_traits::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
     structural_trait::{FieldInfo, FieldInfos, Structural},
 };
 
@@ -60,7 +57,7 @@ macro_rules! impl_tuple {
         /// - (before Rust 1.40):`TS!(F o o)`<br>
         pub trait $variant_trait<$($field_ty,)* V>:
             $(
-                IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
+                IntoVariantFieldMut<V,names::$field_param,Ty=$field_ty>+
             )*
         {}
 
@@ -68,7 +65,7 @@ macro_rules! impl_tuple {
         where
             This:
                 $(
-                    IntoVariantFieldMut<V,strings::$field_param,Ty=$field_ty>+
+                    IntoVariantFieldMut<V,names::$field_param,Ty=$field_ty>+
                 )*
         {}
 
@@ -344,12 +341,10 @@ mod tests {
     where
         This: Tuple4<u32, u32, u32, u32> + Clone,
     {
-        assert_eq!(this.fields(fp!(0)), (&6,));
         assert_eq!(this.fields(fp!(0, 1)), (&6, &5));
         assert_eq!(this.fields(fp!(0, 1, 2)), (&6, &5, &4));
         assert_eq!(this.fields(fp!(0, 1, 2, 3)), (&6, &5, &4, &3));
 
-        assert_eq!(this.fields_mut(fp!(0)), (&mut 6,));
         assert_eq!(this.fields_mut(fp!(0, 1)), (&mut 6, &mut 5));
         assert_eq!(this.fields_mut(fp!(0, 1, 2)), (&mut 6, &mut 5, &mut 4));
         assert_eq!(

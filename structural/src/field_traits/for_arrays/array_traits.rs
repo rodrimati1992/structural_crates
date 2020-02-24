@@ -3,12 +3,9 @@
 Structural aliases for even array size up to 32.
 */
 
-use super::{
-    names::{
-        I0, I1, I10, I11, I12, I13, I14, I15, I16, I17, I18, I19, I2, I20, I21, I22, I23, I24, I25,
-        I26, I27, I28, I29, I3, I30, I31, I4, I5, I6, I7, I8, I9,
-    },
-    strings,
+use super::names::{
+    I0, I1, I10, I11, I12, I13, I14, I15, I16, I17, I18, I19, I2, I20, I21, I22, I23, I24, I25,
+    I26, I27, I28, I29, I3, I30, I31, I4, I5, I6, I7, I8, I9,
 };
 use crate::field_traits::{IntoFieldMut, IntoVariantFieldMut};
 
@@ -147,7 +144,7 @@ macro_rules! declare_array_traits {
             /// - (before Rust 1.40):`TS!(F o o)`<br>
             pub trait $variant_trait_name<T,V>:
                 $($super_trait<T,V>+)*
-                $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
+                $(IntoVariantFieldMut<V,$field,Ty=T> +)*
             {}
 
             impl<This,V,T>  $variant_trait_name<T,V> for This
@@ -155,7 +152,7 @@ macro_rules! declare_array_traits {
                 This:
                     ?Sized+
                     $($super_trait<T,V>+)*
-                    $(IntoVariantFieldMut<V,strings::$field,Ty=T> +)*
+                    $(IntoVariantFieldMut<V,$field,Ty=T> +)*
             {}
         )*
     )

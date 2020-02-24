@@ -110,10 +110,10 @@ assert_equal_bounds! {
     trait AssertDP[T,U,],
     (DerivingPair_ESI<T,U>),
     (
-          IsVariant<FieldPath1<dp_strs::AllCorrect>>
+          IsVariant<dp_strs::AllCorrect>
         + IntoVariantFieldMut<dp_strs::Pair, dp_strs::left, Ty = T>
         + IntoVariantFieldMut<dp_strs::Pair, dp_strs::right, Ty = U>
-        + IsVariant<FieldPath1<dp_strs::Unit>>
+        + IsVariant<dp_strs::Unit>
         + VariantCount<Count = dp_strs::vc>
         + IsStructural
     ),
