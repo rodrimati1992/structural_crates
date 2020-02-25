@@ -6,7 +6,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
-    field_path::{FieldPath, FieldPath1, IsSingleFieldPath, TStr, VariantField, VariantName},
+    field_path::{FieldPath, IsSingleFieldPath, TStr, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         NonOptField, OptionalField,
@@ -447,7 +447,7 @@ where
     }
 }
 
-impl<'a, This, F0> RevIntoField<'a, This> for FieldPath1<F0>
+impl<'a, This, F0> RevIntoField<'a, This> for FieldPath<(F0,)>
 where
     This: ?Sized + 'a,
     F0: RevIntoField<'a, This>,

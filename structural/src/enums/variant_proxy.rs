@@ -1,5 +1,5 @@
 use crate::{
-    field_path::{FieldPath, FieldPath1, IsTStr, TStr, UncheckedVariantField, VariantField},
+    field_path::{FieldPath, IsTStr, TStr, UncheckedVariantField, VariantField},
     field_traits::{
         variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,

@@ -225,7 +225,6 @@ instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
 use structural::{GetField,GetFieldExt,Structural,FP,TS};
-use structural::field_path::FieldPath1;
 
 fn main(){
     let phone=CellPhone{

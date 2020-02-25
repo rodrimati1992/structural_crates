@@ -1,6 +1,6 @@
-use crate::field_path::FieldPath1;
 use crate::p::TStrPriv;
 use crate::type_level::to_value_traits::ToUsize;
+use crate::FieldPath;
 
 // macros can contain arbitrary syntax,
 // which allows this to be defined in this file even if Rust stops parsing `const IDENT:Foo`
@@ -81,7 +81,7 @@ mod tstr_type_param {
 
 /// Single index `FieldPath`s up to 19 digits can be converted to usize
 /// (assuming that usize can store that number)
-impl<S> ToUsize for FieldPath1<S>
+impl<S> ToUsize for FieldPath<(S,)>
 where
     S: ToUsize,
 {
