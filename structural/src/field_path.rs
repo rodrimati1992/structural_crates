@@ -102,9 +102,6 @@ pub trait IsMultiFieldPath: Sized {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A FieldPath for accesing a single non-nested field.
-pub type FieldPath1<Str> = FieldPath<(Str,)>;
-
 impl<T> IsSingleFieldPath for FieldPath<T> {}
 
 impl<T> IsMultiFieldPath for FieldPath<T> {
@@ -210,16 +207,29 @@ impl<T> FieldPath<T> {
     }
 
     /// Converts this `FieldPath` to a `FieldPathSet`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use structural::{GetFieldExt, fp};
+    ///
+    /// let tup=(3,(5,8),(13,21));
+    ///
+    /// assert_eq!( tup.fields(fp!(2.0).into_set()), (&13,) );
+    ///
+    /// ```
     #[inline(always)]
-    pub const fn to_set(self) -> FieldPathSet<(Self,), UniquePaths> {
+    pub const fn into_set(self) -> FieldPathSet<(Self,), UniquePaths> {
         FieldPathSet::one(self)
     }
 }
 
-impl<S> FieldPath<(TStr<S>,)> {
-    /// Converts this single field path to a `TStr`.
-    pub const fn to_tstr(self) -> TStr<S> {
-        MarkerType::MTVAL
+impl<C> FieldPath<(C,)> {
+    /// Unwraps this non-nested field path into `C`.
+    ///
+    /// This can also be done with `path.list.0`.
+    pub fn into_component(self) -> C {
+        self.list.0
     }
 }
 
@@ -363,11 +373,10 @@ impl<T, U> FieldPathSet<T, U> {
     }
 }
 
-impl<T, U> FieldPathSet<(FieldPath<T>,), U> {
-    /// Converts a `FieldPathSet` containing a single `FieldPath`
-    /// into that `FieldPath`.
+impl<T, U> FieldPathSet<(T,), U> {
+    /// Converts a `FieldPathSet` containing a single field path into that field path.
     #[inline(always)]
-    pub fn to_path(self) -> FieldPath<T> {
+    pub fn into_path(self) -> T {
         ManuallyDrop::into_inner(self.paths).0
     }
 }
@@ -492,6 +501,18 @@ impl<F, S, U> NestedFieldPathSet<F, S, U> {
     }
 }
 
+impl<F, S> NestedFieldPathSet<F, S, UniquePaths> {
+    /// Converts a `NestedFieldPathSet<F, S, UniquePaths>` to a
+    /// `NestedFieldPathSet<F, S, AliasedPaths>`
+    #[inline(always)]
+    pub const fn downgrade(self) -> NestedFieldPathSet<F, S, AliasedPaths> {
+        NestedFieldPathSet {
+            nested: self.nested,
+            set: self.set.downgrade(),
+        }
+    }
+}
+
 impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     /// Converts a `NestedFieldPathSet<F, S, AliasedPaths>` to a
     /// `NestedFieldPathSet<F, S, UniquePaths>`
@@ -531,35 +552,6 @@ where
     F: MarkerType,
     S: MarkerType,
 {
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-impl<S> From<FieldPath<(TStr<S>,)>> for TStr<S> {
-    #[inline(always)]
-    fn from(this: FieldPath<(TStr<S>,)>) -> Self {
-        this.list.0
-    }
-}
-
-impl<S> From<TStr<S>> for FieldPath<(TStr<S>,)> {
-    #[inline(always)]
-    fn from(this: TStr<S>) -> Self {
-        FieldPath::one(this)
-    }
-}
-impl<T, U> From<FieldPathSet<(FieldPath<T>,), U>> for FieldPath<T> {
-    #[inline(always)]
-    fn from(this: FieldPathSet<(FieldPath<T>,), U>) -> Self {
-        this.into_paths().0
-    }
-}
-
-impl<P> From<FieldPath<P>> for FieldPathSet<(FieldPath<P>,), UniquePaths> {
-    #[inline(always)]
-    fn from(this: FieldPath<P>) -> Self {
-        this.to_set()
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

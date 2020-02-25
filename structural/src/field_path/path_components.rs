@@ -23,16 +23,14 @@ macro_rules! impl_to_path_to_set {
         {
             /// Constructs a FieldPath from this.
             #[inline(always)]
-            pub const fn to_path(self) -> FieldPath<(Self,)> {
+            pub const fn into_path(self) -> FieldPath<(Self,)> {
                 FieldPath::one(self)
             }
 
             /// Constructs a FieldPathSet from this.
             #[inline(always)]
-            pub const fn to_set(self) -> FieldPathSet<(FieldPath<(Self,)>,), UniquePaths> {
-                FieldPathSet::one(
-                    FieldPath::one(self)
-                )
+            pub const fn into_set(self) -> FieldPathSet<(Self,), UniquePaths> {
+                FieldPathSet::one(self)
             }
         }
     )

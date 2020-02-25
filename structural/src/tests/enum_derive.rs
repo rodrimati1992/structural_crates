@@ -1,5 +1,4 @@
 use crate::enums::{IsVariant, VariantCount};
-use crate::field_path::FieldPath1;
 use crate::field_traits::variant_field::IntoVariantFieldMut;
 use crate::*;
 

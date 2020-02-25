@@ -1,4 +1,86 @@
-use super::*;
+use crate::field_path::{AliasedPaths, UniquePaths};
+use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, VariantField, VariantName};
+
+use core_extensions::MarkerType;
+
+tstr_aliases! {
+    N99=99,
+    Foo,
+    bar,
+    baz,
+}
+
+#[test]
+fn to_path_to_set() {
+    {
+        let this: N99 = fp!(99);
+        let _: FieldPath<(N99,)> = this.into_path();
+        let _: N99 = this.into_path().into_component();
+        let _: FieldPathSet<(N99,), UniquePaths> = this.into_set();
+        let _: N99 = this.into_set().into_path();
+        let _: (N99,) = this.into_set().into_paths();
+    }
+    {
+        let this: VariantName<N99> = fp!(::99);
+        let _: FieldPath<(VariantName<N99>,)> = this.into_path();
+        let _: VariantName<N99> = this.into_path().into_component();
+        let _: FieldPathSet<(VariantName<N99>,), UniquePaths> = this.into_set();
+        let _: VariantName<N99> = this.into_set().into_path();
+        let _: (VariantName<N99>,) = this.into_set().into_paths();
+    }
+    {
+        let this: VariantField<Foo, N99> = fp!(::Foo.99);
+        let _: FieldPath<(VariantField<Foo, N99>,)> = this.into_path();
+        let _: VariantField<Foo, N99> = this.into_path().into_component();
+        let _: FieldPathSet<(VariantField<Foo, N99>,), UniquePaths> = this.into_set();
+        let _: VariantField<Foo, N99> = this.into_set().into_path();
+        let _: (VariantField<Foo, N99>,) = this.into_set().into_paths();
+    }
+    {
+        let this: FieldPath<(bar, baz)> = fp!(bar.baz);
+        let _: FieldPathSet<(FieldPath<(bar, baz)>,), UniquePaths> = this.into_set();
+        let _: FieldPath<(bar, baz)> = this.into_set().into_path();
+        let _: (FieldPath<(bar, baz)>,) = this.into_set().into_paths();
+    }
+}
+
+fn uniqueness_methods() {
+    unsafe {
+        let this: FieldPathSet<(bar, baz), AliasedPaths> = FieldPathSet::many((bar, baz));
+        let unique: FieldPathSet<(bar, baz), UniquePaths> = this.upgrade_unchecked();
+        let _: FieldPathSet<(bar, baz), UniquePaths> = this.set_uniqueness();
+        let _: FieldPathSet<(bar, baz), AliasedPaths> = this.set_uniqueness();
+        let _: FieldPathSet<(bar, baz), AliasedPaths> = unique.downgrade();
+    }
+    unsafe {
+        let this: NestedFieldPathSet<bar, (baz,), AliasedPaths> =
+            NestedFieldPathSet::new(bar, FieldPathSet::many((baz,)));
+
+        let unique: NestedFieldPathSet<bar, (baz,), UniquePaths> = this.upgrade_unchecked();
+        let _: NestedFieldPathSet<bar, (baz,), UniquePaths> = this.set_uniqueness();
+        let _: NestedFieldPathSet<bar, (baz,), AliasedPaths> = this.set_uniqueness();
+        let _: NestedFieldPathSet<bar, (baz,), AliasedPaths> = unique.downgrade();
+    }
+}
+
+#[test]
+fn assoc_constants() {
+    let _: N99 = N99::NEW;
+    let _: VariantField<N99, bar> = <VariantField<N99, bar>>::NEW;
+    let _: VariantName<N99> = <VariantName<N99>>::NEW;
+    let _: FieldPath<(N99,)> = FieldPath::<(N99,)>::NEW;
+
+    let _: FieldPathSet<(N99,), AliasedPaths> = FieldPathSet::<(N99,), AliasedPaths>::NEW;
+    let _: FieldPathSet<(N99,), AliasedPaths> = FieldPathSet::<(N99,), AliasedPaths>::NEW_ALIASED;
+    let _: FieldPathSet<(N99,), AliasedPaths> = FieldPathSet::<(N99,), UniquePaths>::NEW_ALIASED;
+
+    let _: NestedFieldPathSet<bar, (N99,), AliasedPaths> =
+        NestedFieldPathSet::<bar, (N99,), AliasedPaths>::NEW;
+    let _: NestedFieldPathSet<bar, (N99,), AliasedPaths> =
+        NestedFieldPathSet::<bar, (N99,), AliasedPaths>::NEW_ALIASED;
+    let _: NestedFieldPathSet<bar, (N99,), AliasedPaths> =
+        NestedFieldPathSet::<bar, (N99,), UniquePaths>::NEW_ALIASED;
+}
 
 #[test]
 fn fieldpath_push_append() {
