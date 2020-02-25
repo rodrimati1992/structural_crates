@@ -615,6 +615,7 @@ pub mod docs;
 pub mod enums;
 pub mod field_path;
 pub mod field_traits;
+pub mod for_examples;
 pub mod mut_ref;
 pub mod structural_trait;
 pub mod utils;

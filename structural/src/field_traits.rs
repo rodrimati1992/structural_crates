@@ -1,5 +1,37 @@
 /*!
 Accessor and extension traits for fields.
+
+# GetFieldExt
+
+The [GetFieldExt] trait,which is the way you're expected to call accessor methods.
+
+# Implementable Traits
+
+These traits are intended to only be implemented.
+
+The [FieldType],[GetFieldImpl],[GetFieldMutImpl],[IntoFieldImpl] accessor traits,
+that defines how a field is accessed.
+
+# Traits for bounds
+
+These traits can be used as bound aliases(they can't be directly implemented).
+
+### For structs
+
+The [GetField],[GetFieldMut],[IntoField],[IntoFieldMut] traits,
+for accessing non-optional fields.
+
+The [OptGetField],[OptGetFieldMut],[OptIntoField],[OptIntoFieldMut] traits,
+for accessing optional fields.
+
+### For enums
+
+The [GetVariantField],[GetVariantFieldMut],[IntoVariantField],
+[IntoVariantFieldMut] traits,for accessing non-optional fields.
+
+The [OptGetVariantField],[OptGetVariantFieldMut],[OptIntoVariantField],
+[OptIntoVariantFieldMut] traits,for accessing optional fields.
+
 */
 
 use crate::{
@@ -158,11 +190,60 @@ pub trait GetFieldImpl<FieldName, P = ()>: FieldType<FieldName> {
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for shared access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` receivers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,GetField,FP,fp};
+    ///
+    /// fn example(this:impl GetField<FP!(0), Ty=u32>){
+    ///     assert_eq!( this.field_(fp!(0)), &99_u32 );
+    /// }
+    ///
+    /// example((99,));
+    /// example((99,100,101,102,));
+    ///
+    /// ```
     pub trait GetField<FieldName>=
         GetFieldImpl<FieldName, Err = NonOptField> + IsStructural
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for optional and shared access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` receivers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,OptGetField,FP,fp};
+    /// use structural::for_examples::{Tuple1,Tuple2,Tuple3};
+    ///
+    /// fn example(
+    ///     with_some:&dyn OptGetField<FP!(0), Ty=u32>,
+    ///     with_none:&dyn OptGetField<FP!(0), Ty=u32>,
+    /// ){
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be a `&Some(99_u32)` instead.
+    ///     assert_eq!( with_some.field_(fp!(0)), Some(&99_u32) );
+    ///
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be a `&None` instead.
+    ///     assert_eq!( with_none.field_(fp!(0)), None );
+    /// }
+    ///
+    /// example(&Tuple1(Some(99)), &Tuple1(None));
+    /// example(&Tuple2(Some(99),100), &Tuple2(None,100));
+    /// example(&Tuple3(Some(99),100,101), &Tuple3(None,100,101));
+    ///
+    /// ```
     pub trait OptGetField<FieldName>=
         GetFieldImpl<FieldName, Err = OptionalField> + IsStructural
 }
@@ -388,11 +469,67 @@ pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> 
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for shared and mutable access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` or `&mut self` receivers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,GetFieldMut,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
+    /// fn example(this:&mut dyn GetFieldMut<FP!(b a r), Ty=&'static str>){
+    ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+    ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+    /// }
+    ///
+    /// example(&mut Struct2{ foo:Some(21), bar: "oh boy" });
+    /// example(&mut Struct3{ foo:Some(21), bar: "oh boy", baz:5 });
+    ///
+    /// ```
     pub trait GetFieldMut<FieldName>=
         GetFieldMutImpl<FieldName, Err = NonOptField> + IsStructural
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for optional, shared and mutable access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` or `&mut self` receivers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,OptGetFieldMut,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// fn example(
+    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
+    ///     with_some:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
+    ///     with_none:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
+    /// ){
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be `&Some(5)` and `&mut Some(5)` instead.
+    ///     assert_eq!( with_some.field_(fp!(foo)), Some(&5) );
+    ///     assert_eq!( with_some.field_mut(fp!(foo)), Some(&mut 5) );
+    ///
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be `&None` and `&mut None` instead.
+    ///     assert_eq!( with_none.field_(fp!(foo)), None );
+    ///     assert_eq!( with_none.field_mut(fp!(foo)), None );
+    /// }
+    ///
+    /// example(
+    ///     &mut Struct2{ foo:Some(5), bar: () },
+    ///     &mut Struct3{ foo:None, bar: (), baz:() },
+    /// );
+    ///
+    /// ```
     pub trait OptGetFieldMut<FieldName>=
         GetFieldMutImpl<FieldName, Err = OptionalField> + IsStructural
 }
@@ -512,18 +649,106 @@ pub trait IntoFieldImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for shared and by-value access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` or `self` receivers.
+    ///
+    /// The `FieldName` type parameter is usually a [TStr](crate::TStr)
+    /// for the name of a field.<br>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,IntoField,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// fn example<T>(this: T)
+    /// where
+    ///     // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
+    ///     T: IntoField<FP!(b a r), Ty=&'static str>
+    /// {
+    ///     assert_eq!( this.field_(fp!(bar)), &"what" );
+    ///
+    ///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
+    ///     // assert_eq!( this.field_mut(fp!(bar)), &mut "what" );
+    ///
+    ///     assert_eq!( this.into_field(fp!(bar)), "what" );
+    /// }
+    ///
+    /// example(Struct2{ foo:Some(0), bar: "what" });
+    /// example(Struct3{ foo:Some(0), bar: "what", baz:5 });
+    ///
+    /// ```
     pub trait IntoField<FieldName>=
         IntoFieldImpl<FieldName, Err = NonOptField> +
         IsStructural+
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for optional, shared and by-value access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use the [GetFieldExt] methods
+    /// with `&self` or `self` receivers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,OptIntoField,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// fn example<T>(this: T)
+    /// where
+    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
+    ///     T: OptIntoField<FP!(f o o), Ty=i8>
+    /// {
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be a `&Some(51)` instead.
+    ///     assert_eq!( this.field_(fp!(foo)), Some(&51) );
+    ///
+    ///     // This can't be called with `OptIntoField` you need `OptIntoFieldMut` for that.
+    ///     // assert_eq!( this.field_mut(fp!(foo)), Some(&mut 51) );
+    ///
+    ///     assert_eq!( this.into_field(fp!(foo)), Some(51) );
+    /// }
+    ///
+    /// example(Struct2{ foo:Some(51), bar: "huh?" });
+    /// example(Struct3{ foo:Some(51), bar: "huh?", baz:5 });
+    ///
+    /// ```
     pub trait OptIntoField<FieldName>=
         IntoFieldImpl<FieldName, Err = OptionalField>+
         IsStructural+
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for shared, mutable,and by-value access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use any [GetFieldExt] method.
+    ///
+    /// # Example
+    ///
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
+    /// fn example(mut this:Box<dyn IntoFieldMut<FP!(b a r), Ty=&'static str>>){
+    ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+    ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+    ///
+    ///     // You need to use `box_into_field` to unwrap a `Box<dyn Trait>`.
+    ///     assert_eq!( this.box_into_field(fp!(bar)), "oh boy" );
+    /// }
+    ///
+    /// example(Box::new(Struct2{ foo:Some(21), bar: "oh boy" }));
+    /// example(Box::new(Struct3{ foo:Some(21), bar: "oh boy", baz:5 }));
+    ///
+    /// ```
     pub trait IntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = NonOptField> +
         GetFieldMutImpl<FieldName, Err = NonOptField> +
@@ -531,6 +756,44 @@ declare_accessor_trait_alias! {
 }
 
 declare_accessor_trait_alias! {
+    /// A bound for optional, shared, mutable,and by-value access to the `FieldName` field.
+    ///
+    /// This is only usable as a bound,
+    /// to access the field you can use any [GetFieldExt] method.
+    ///
+    /// # Example
+    ///
+    ///
+    /// ```
+    /// use structural::{GetFieldExt,OptIntoFieldMut,FP,fp};
+    /// use structural::for_examples::{Struct2,Struct3};
+    ///
+    /// // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
+    /// fn example(
+    ///     mut some: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
+    ///     mut none: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
+    /// ){
+    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
+    ///     // it would be `&Some('g')` and `&mut Some('g')` instead.
+    ///     assert_eq!( some.field_(fp!(foo)), Some(&'g') );
+    ///     assert_eq!( some.field_mut(fp!(foo)), Some(&mut 'g') );
+    ///     assert_eq!( some.into_field(fp!(foo)), Some('g') );
+    ///
+    ///     assert_eq!( none.field_(fp!(foo)), None );
+    ///     assert_eq!( none.field_mut(fp!(foo)), None );
+    ///     assert_eq!( none.into_field(fp!(foo)), None );
+    /// }
+    ///
+    /// example(
+    ///     Box::new(Struct2{ foo:Some('g'), bar: "oh boy" }),
+    ///     Box::new(Struct2{ foo:None, bar: "oh boy" }),
+    /// );
+    /// example(
+    ///     Box::new(Struct3{ foo:Some('g'), bar: "oh boy", baz:5 }),
+    ///     Box::new(Struct3{ foo:None, bar: "oh boy", baz:5 }),
+    /// );
+    ///
+    /// ```
     pub trait OptIntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = OptionalField> +
         GetFieldMutImpl<FieldName, Err = OptionalField> +
