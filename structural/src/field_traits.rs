@@ -9,8 +9,14 @@ The [GetFieldExt] trait,which is the way you're expected to call accessor method
 
 These traits are intended to only be implemented.
 
+### For structs and enums
+
 The [FieldType],[GetFieldImpl],[GetFieldMutImpl],[IntoFieldImpl] accessor traits,
 that defines how a field is accessed.
+
+### For enums
+
+The [GetVariantFieldImpl], [GetVariantFieldMutImpl], [IntoVariantFieldImpl] marker traits.
 
 # Traits for bounds
 

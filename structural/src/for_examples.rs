@@ -68,3 +68,24 @@ pub enum Bomb {
     Boom { a: &'static str, b: &'static [u16] },
     Exploded,
 }
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+#[struc(no_trait)]
+pub enum EnumOptA {
+    Limbs {
+        #[struc(optional)]
+        legs: Option<usize>,
+        hands: Option<usize>,
+    },
+}
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+#[struc(no_trait)]
+pub enum EnumOptFlying {
+    Limbs {
+        #[struc(optional)]
+        legs: Option<usize>,
+        hands: Option<usize>,
+        noodles: usize,
+    },
+}
