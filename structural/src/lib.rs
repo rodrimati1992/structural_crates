@@ -704,13 +704,3 @@ use std_::mem::ManuallyDrop;
 include! {"field_path/declare_field_path_types.rs"}
 
 //////////////////////////////
-
-#[derive(Structural)]
-enum Hello {
-    #[struc(rename = "Foo")]
-    Bar(u32),
-}
-
-fn hi(mut this: Hello) {
-    this.field_(fp!(::Foo.0));
-}

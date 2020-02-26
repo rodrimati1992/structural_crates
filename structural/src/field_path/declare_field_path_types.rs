@@ -12,6 +12,44 @@
 /// and is allowed to break whenever a crate uses the "use_const_str" cargo feature,
 /// which changes the private type to use const generics to improve error messages.
 ///
+/// # TStr type
+/// 
+/// You can get a TStr type (to use as a type argument) with the `TS` macro,
+/// which takes a string literal/ident/integer as an input.
+///
+/// Examples:
+///
+/// - `TS!(0)` (in every Rust version)
+///
+/// - `TS!(f o o)` (in every Rust version)
+///
+/// - `TS!(1)` (in every Rust version)
+///
+/// - `TS!(1 0 0)` (in every Rust version)
+///
+/// - `TS!(w o r l d)` (in every Rust version)
+///
+/// - `TS!(1 0 0)` (in every Rust version)
+///
+/// - `TS!(foo)` (from Rust 1.40 onwards)
+///
+/// - `TS!("bar")` (from Rust 1.40 onwards)
+///
+/// - `TS!(100)` (from Rust 1.40 onwards)
+///
+/// - `TS!(foo)` (from Rust 1.40 onwards)
+///
+/// - `TS!("bar")` (from Rust 1.40 onwards)
+///
+/// - `TS!(100)` (from Rust 1.40 onwards)
+///
+/// - `TS!("hello")` (from Rust 1.40 onwards)
+///
+/// - `TS!(world)` (from Rust 1.40 onwards)
+///
+/// - `TS!(100)` (from Rust 1.40 onwards)
+///
+///
 /// # TStr construction
 ///
 /// `TStr<_>` can be constructed with:
@@ -91,7 +129,7 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 /// ```rust
 /// use structural::{GetFieldExt, fp, ts};
-/// use structural::enums::example_enums::Variants;
+/// use structural::for_examples::Variants;
 /// use structural::field_path::VariantField;
 ///
 /// let mut foo=Variants::Foo(3,5);
@@ -150,7 +188,7 @@ pub struct VariantField<V, F> {
 ///
 /// ```rust
 /// use structural::{GetFieldExt, fp, ts};
-/// use structural::enums::example_enums::Variants;
+/// use structural::for_examples::Variants;
 /// use structural::field_path::VariantName;
 ///
 /// let mut foo=Variants::Foo(3,5);

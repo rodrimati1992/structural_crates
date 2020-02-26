@@ -186,7 +186,7 @@ unsafe_delegate_structural_with! {
 
 }
 
-unsafe impl<T, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'_ mut T
+unsafe impl<'a, T: 'a, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'a mut T
 where
     T: ?Sized + IsStructural + GetFieldMutImpl<__FieldName, P>,
 {
@@ -194,10 +194,28 @@ where
         <T as GetFieldMutImpl<__FieldName, P>>::get_field_mut_(self, name, param)
     }
 
-    default_if! {
-        cfg(feature="specialization")
+    #[inline(always)]
+    unsafe fn get_field_raw_mut(
+        this: *mut (),
+        name: __FieldName,
+        param: P,
+    ) -> Result<*mut Self::Ty, Self::Err> {
+        <Self as SpecGetFieldMut<__FieldName, P>>::get_field_raw_mut_inner(this, name, param)
+    }
 
-        unsafe fn get_field_raw_mut(
+    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<__FieldName, P, Self::Ty, Self::Err> {
+        <Self as GetFieldMutImpl<__FieldName, P>>::get_field_raw_mut
+    }
+}
+
+unsafe impl<'a, T: 'a, __FieldName, P> SpecGetFieldMut<__FieldName, P> for &'a mut T
+where
+    T: ?Sized + IsStructural + GetFieldMutImpl<__FieldName, P>,
+{
+    default_if! {
+        #[inline(always)]
+        cfg(feature="specialization")
+        unsafe fn get_field_raw_mut_inner(
             this:*mut (),
             name:__FieldName,
             param:P,
@@ -208,18 +226,14 @@ where
             func( this as *mut (), name, param )
         }
     }
-
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<__FieldName, P, Self::Ty, Self::Err> {
-        <Self as GetFieldMutImpl<__FieldName, P>>::get_field_raw_mut
-    }
 }
 
 #[cfg(feature = "specialization")]
-unsafe impl<T, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'_ mut T
+unsafe impl<'a, T: 'a, __FieldName, P> SpecGetFieldMut<__FieldName, P> for &'a mut T
 where
     T: Sized + IsStructural + GetFieldMutImpl<__FieldName, P>,
 {
-    unsafe fn get_field_raw_mut(
+    unsafe fn get_field_raw_mut_inner(
         this: *mut (),
         name: __FieldName,
         param: P,

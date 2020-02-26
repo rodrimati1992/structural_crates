@@ -85,21 +85,3 @@ pub unsafe trait IsVariant<V>: AssertTStrParam<V> {
     /// Checks whether this enum is the variant that `V` stands for.
     fn is_variant_(&self, variant: V) -> bool;
 }
-
-/// Enums used for examples in documentation
-pub mod example_enums {
-    use crate::Structural;
-    use std_::cmp::Ordering;
-
-    #[derive(Structural, Copy, Clone, Debug, PartialEq)]
-    #[struc(no_trait)]
-    pub enum Variants {
-        Foo(u32, u64),
-        Bar(&'static str),
-        Baz(#[struc(optional)] Option<Ordering>),
-        Boom {
-            a: Option<&'static [u8]>,
-            b: &'static [u16],
-        },
-    }
-}
