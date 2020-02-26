@@ -22,7 +22,7 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enums::example_enums::Variants;
+    /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let this=Variants::Foo(11,22);
@@ -57,7 +57,7 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enums::example_enums::Variants;
+    /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let mut this=Variants::Bar("hello");
@@ -99,7 +99,7 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enums::example_enums::Variants;
+    /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let mut this=Variants::Baz(None);
@@ -149,7 +149,7 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enums::example_enums::Variants;
+    /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// use std::cmp::Ordering;
@@ -190,7 +190,7 @@ pub trait EnumExt {
     ///
     /// ```
     /// use structural::{fp,FP,GetFieldExt};
-    /// use structural::enums::example_enums::Variants;
+    /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// use std::cmp::Ordering;

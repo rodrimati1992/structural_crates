@@ -581,37 +581,69 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
 
             fn(
-                $crate::default_if!{
-                    #[inline(always)]
-                    cfg(all($($specialize_cfg)*))
-                    unsafe fn get_field_raw_mut(
-                        $this:*mut (),
-                        $fname_var: $fname_ty,
-                        __param:__P,
-                    )->Result<
-                        *mut $crate::GetFieldType<Self,$fname_ty>,
-                        $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
-                    >
-                    where
-                        Self:Sized
-                    {
-                        let $this=$this as *mut Self;
-                        let $this:*mut $delegating_to_type=
-                            $as_field_mutref_closure;
-
-                        let func=<
-                            $delegating_to_type as
-                            $crate::GetFieldMutImpl<$fname_ty,__P>
-                        >::get_field_raw_mut_func(&*$this);
-                        func( $this as *mut (),$fname_var,__param )
-                    }
+                #[inline(always)]
+                unsafe fn get_field_raw_mut(
+                    $this:*mut (),
+                    $fname_var: $fname_ty,
+                    __param:__P,
+                )->Result<
+                    *mut $crate::GetFieldType<Self,$fname_ty>,
+                    $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                >
+                where
+                    Self:Sized
+                {
+                    <Self as
+                        $crate::pmr::SpecGetFieldMut<$fname_ty,__P>
+                    >::get_field_raw_mut_inner(
+                        $this,
+                        $fname_var,
+                        __param,
+                    )
                 }
             )
 
             impl(
+                unsafe impl<$($impl_params)* $fname_ty,__P>
+                    $crate::pmr::SpecGetFieldMut< $fname_ty,__P>
+                    for $self
+                where
+                    $delegating_to_type:
+                        $crate::IsStructural+
+                        $crate::GetFieldMutImpl<$fname_ty,__P>,
+                    $($mut_where_clause)*
+                    $($where_clause)*
+                {
+                    $crate::default_if!{
+                        #[inline(always)]
+                        cfg(all($($specialize_cfg)*))
+                        unsafe fn get_field_raw_mut_inner(
+                            $this:*mut (),
+                            $fname_var: $fname_ty,
+                            __param:__P,
+                        )->Result<
+                            *mut $crate::GetFieldType<Self,$fname_ty>,
+                            $crate::pmr::GetFieldErr<Self,$fname_ty,__P>,
+                        >
+                        where
+                            Self:Sized
+                        {
+                            let $this=$this as *mut Self;
+                            let $this:*mut $delegating_to_type=
+                                $as_field_mutref_closure;
+
+                            let func=<
+                                $delegating_to_type as
+                                $crate::GetFieldMutImpl<$fname_ty,__P>
+                            >::get_field_raw_mut_func(&*$this);
+                            func( $this as *mut (),$fname_var,__param )
+                        }
+                    }
+                }
+
                 #[cfg(all($($specialize_cfg)*))]
                 unsafe impl<$($impl_params)* $fname_ty,__P>
-                    $crate::GetFieldMutImpl< $fname_ty,__P>
+                    $crate::pmr::SpecGetFieldMut< $fname_ty,__P>
                     for $self
                 where
                     $delegating_to_type:
@@ -621,7 +653,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                     $($mut_where_clause)*
                     $($where_clause)*
                 {
-                    unsafe fn get_field_raw_mut(
+                    unsafe fn get_field_raw_mut_inner(
                         $this:*mut (),
                         $fname_var: $fname_ty,
                         __param:__P,

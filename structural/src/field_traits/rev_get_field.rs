@@ -472,6 +472,20 @@ where
 /////           Implementations for field path components
 ////////////////////////////////////////////////////////////////////////////////
 
+// Used as an implementation detail of the specialized RevGetFieldMut impls.
+//
+// This was created because the error messages with specialization enabled were worse,
+// it said `VariantField<_,_> does not implement RevGetFieldMut<'_,Foo>`,
+// when it should have said `Foo does not implement GetFieldMutImpl<VariantField<_,_>>`,
+// which it does with this.
+#[doc(hidden)]
+unsafe trait SpecRevGetFieldMut<'a, This: ?Sized>: RevGetField<'a, This> {
+    unsafe fn rev_get_field_raw_mut_inner(
+        self,
+        this: *mut This,
+    ) -> Result<*mut Self::Ty, Self::Err>;
+}
+
 macro_rules! impl_rev_traits {
     (
         impl[ $($typarams:tt)*] $self_:ty
@@ -485,40 +499,56 @@ macro_rules! impl_rev_traits {
             type Ty =GetFieldType<This,Self>;
         }
 
-        impl<'a,This,_Ty,_Err,$($typarams)*> RevGetField<'a,This> for $self_
+        impl<'a,This,$($typarams)*> RevGetField<'a,This> for $self_
         where
-            This: ?Sized + 'a + GetFieldImpl<Self, Ty=_Ty, Err=_Err>,
-            _Ty: 'a,
-            _Err: IsFieldErr,
+            This: ?Sized + 'a + GetFieldImpl<Self>,
+            This::Ty: 'a,
             $($where_)*
         {
-            type Err=_Err;
+            type Err=This::Err;
 
             #[inline(always)]
-            fn rev_get_field(self, this: &'a This) -> Result<&'a _Ty,_Err>{
+            fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty,This::Err>{
                 GetFieldImpl::get_field_( this, self, () )
             }
         }
 
 
-        impl<'a,This,_Ty,_Err,$($typarams)*> RevGetFieldMut<'a,This> for $self_
+        impl<'a,This,$($typarams)*> RevGetFieldMut<'a,This> for $self_
         where
-            This: ?Sized + 'a + GetFieldMutImpl<Self, Ty=_Ty, Err=_Err>,
-            _Ty: 'a,
-            _Err: IsFieldErr,
+            This: ?Sized + 'a + GetFieldMutImpl<Self>,
+            This::Ty: 'a,
             $($where_)*
         {
             #[inline(always)]
-            fn rev_get_field_mut(self,this:&'a mut This)->Result<&'a mut _Ty,_Err >{
+            fn rev_get_field_mut(self,this:&'a mut This)->Result<&'a mut This::Ty,This::Err >{
                 map_fe!(
                     GetFieldMutImpl::get_field_mut_( this, self, () )
                 )
             }
 
+            #[inline(always)]
+            unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Result<*mut This::Ty,This::Err>{
+                SpecRevGetFieldMut::<'a,This>::rev_get_field_raw_mut_inner(
+                    self,
+                    this
+                )
+            }
+        }
+
+        unsafe impl<'a,This,$($typarams)*> SpecRevGetFieldMut<'a,This> for $self_
+        where
+            This: ?Sized + 'a + GetFieldMutImpl<Self>,
+            This::Ty: 'a,
+            $($where_)*
+        {
             default_if!{
                 #[inline(always)]
                 cfg(feature="specialization")
-                unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Result<*mut _Ty,_Err>{
+                unsafe fn rev_get_field_raw_mut_inner(
+                    self,
+                    this:*mut This
+                )-> Result<*mut This::Ty,This::Err>{
                     let func=(*this).get_field_raw_mut_func();
                     func(
                         this as *mut (),
@@ -529,16 +559,16 @@ macro_rules! impl_rev_traits {
             }
         }
 
+
         #[cfg(feature="specialization")]
-        impl<'a,This,_Ty,_Err,$($typarams)*> RevGetFieldMut<'a,This> for $self_
+        unsafe impl<'a,This,$($typarams)*> SpecRevGetFieldMut<'a,This> for $self_
         where
-            This: 'a + GetFieldMutImpl<Self, Ty=_Ty, Err=_Err>,
-            _Ty: 'a,
-            _Err: IsFieldErr,
+            This: 'a + GetFieldMutImpl<Self>,
+            This::Ty: 'a,
             $($where_)*
         {
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Result<*mut _Ty,_Err>{
+            unsafe fn rev_get_field_raw_mut_inner(self,this:*mut This)->Result<*mut This::Ty,This::Err>{
                 let name=self;
                 <This as
                     GetFieldMutImpl<Self>
@@ -546,17 +576,17 @@ macro_rules! impl_rev_traits {
             }
         }
 
-        impl<'a,This,_Ty,_Err,$($typarams)*> RevIntoField<'a,This> for $self_
+
+        impl<'a,This,$($typarams)*> RevIntoField<'a,This> for $self_
         where
-            This: ?Sized + 'a + IntoFieldImpl<Self, Ty=_Ty, Err=_Err>,
-            _Ty: 'a,
-            _Err: IsFieldErr,
+            This: ?Sized + 'a + IntoFieldImpl<Self>,
+            This::Ty: 'a,
             $($where_)*
         {
-            type BoxedTy=_Ty;
+            type BoxedTy=This::Ty;
 
             #[inline(always)]
-            fn rev_into_field(self,this:This)->Result<_Ty,_Err>
+            fn rev_into_field(self,this:This)->Result<This::Ty,This::Err>
             where
                 This:Sized
             {
@@ -565,7 +595,7 @@ macro_rules! impl_rev_traits {
 
             #[cfg(feature="alloc")]
             #[inline(always)]
-            fn rev_box_into_field(self,this:crate::pmr::Box<This>)->Result<_Ty,_Err>{
+            fn rev_box_into_field(self,this:crate::pmr::Box<This>)->Result<This::Ty,This::Err>{
                 this.box_into_field_(self,())
             }
         }

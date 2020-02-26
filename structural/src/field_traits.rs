@@ -468,6 +468,25 @@ pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> 
     fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, P, Self::Ty, Self::Err>;
 }
 
+/// A `GetFieldMutImpl` specifically used for specialization internally.
+///
+/// Moving the specialization to a separate impl somehow improves the error messages
+/// when calling `GetFieldExt::{field_mut,fields_mut}` methods.
+///
+/// # Safety
+///
+/// This trait has the same safety requirements as `GetFieldMutImpl`.
+#[doc(hidden)]
+pub unsafe trait SpecGetFieldMut<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
+    unsafe fn get_field_raw_mut_inner(
+        ptr: *mut (),
+        field_name: FieldName,
+        param: P,
+    ) -> Result<*mut Self::Ty, Self::Err>
+    where
+        Self: Sized;
+}
+
 declare_accessor_trait_alias! {
     /// A bound for shared and mutable access to the `FieldName` field.
     ///

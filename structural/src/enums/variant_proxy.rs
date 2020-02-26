@@ -2,7 +2,7 @@ use crate::{
     field_path::{FieldPath, IsTStr, TStr, UncheckedVariantField, VariantField},
     field_traits::{
         variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
-        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl,
+        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, SpecGetFieldMut,
     },
 };
 
@@ -559,26 +559,12 @@ where
         }
     }
 
-    default_if! {
-        #[inline(always)]
-        cfg(feature="specialization")
-        unsafe fn get_field_raw_mut(
-            this: *mut (),
-            path: F,
-            _: (),
-        ) -> Result<*mut T::Ty, T::Err>
-        where
-            Self: Sized
-        {
-            let func=(&**(this as *mut Self)).get_field_raw_mut_func();
-            // safety: VariantProxy<T,V> guarantees that it wraps an enum
-            // with the variant that `V` names.
-            func(
-                this,
-                VariantField::new(V::MTVAL, path),
-                UncheckedVariantField::<V, F>::new(),
-            )
-        }
+    #[inline(always)]
+    unsafe fn get_field_raw_mut(this: *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err>
+    where
+        Self: Sized,
+    {
+        <Self as SpecGetFieldMut<F>>::get_field_raw_mut_inner(this, path, ())
     }
 
     #[inline(always)]
@@ -597,13 +583,40 @@ where
     }
 }
 
+unsafe impl<T, V, F> SpecGetFieldMut<F> for VariantProxy<T, V>
+where
+    T: ?Sized + GetVariantFieldMutImpl<V, F>,
+    V: IsTStr,
+{
+    default_if! {
+        #[inline(always)]
+        cfg(feature="specialization")
+        unsafe fn get_field_raw_mut_inner(
+            this: *mut (),
+            path: F,
+            _: (),
+        ) -> Result<*mut T::Ty, T::Err>
+        where
+            Self: Sized
+        {
+            let func=(&**(this as *mut Self)).get_field_raw_mut_func();
+            // safety: VariantProxy<T,V> guarantees that it wraps an enum
+            // with the variant that `V` names.
+            func(
+                this,
+                VariantField::new(V::MTVAL, path),
+                UncheckedVariantField::<V, F>::new(),
+            )
+        }
+    }
+}
 #[cfg(feature = "specialization")]
-unsafe impl<T, V, F> GetFieldMutImpl<F> for VariantProxy<T, V>
+unsafe impl<T, V, F> SpecGetFieldMut<F> for VariantProxy<T, V>
 where
     T: GetVariantFieldMutImpl<V, F>,
     V: IsTStr,
 {
-    unsafe fn get_field_raw_mut(this: *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err> {
+    unsafe fn get_field_raw_mut_inner(this: *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         T::get_field_raw_mut(
