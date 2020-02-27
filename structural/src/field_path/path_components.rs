@@ -3,7 +3,7 @@ use crate::field_path::{FieldPath, FieldPathSet, IsSingleFieldPath, UniquePaths}
 use crate::type_level::collection_traits::ToTString_;
 use crate::{TStr, VariantField, VariantName};
 
-use core_extensions::MarkerType;
+use core_extensions::ConstDefault;
 
 use std_::{
     fmt::{self, Debug},
@@ -42,7 +42,7 @@ macro_rules! impl_to_path_to_set {
 ///
 /// This is only implemented on [`TStr`](::structural::TStr).
 ///
-pub trait IsTStr: Sealed + Debug + Copy + MarkerType {}
+pub trait IsTStr: Sealed + Debug + Copy + ConstDefault {}
 
 /// A marker trait to assert that `P` is a `TStr`.
 pub trait AssertTStrParam<P>: AssertTStrParamSealed<P> {}
@@ -81,7 +81,9 @@ impl<T> Clone for TStr<T> {
         *self
     }
 }
-unsafe impl<T> MarkerType for TStr<T> {}
+impl<T> ConstDefault for TStr<T> {
+    const DEFAULT: Self = TStr(PhantomData);
+}
 
 impl<T> ToTString_ for TStr<T> {
     type Output = Self;
@@ -96,10 +98,11 @@ impl_cmp_traits! {
 
 impl<V, F> VariantField<V, F>
 where
-    V: MarkerType,
-    F: MarkerType,
+    V: ConstDefault,
+    F: ConstDefault,
 {
-    pub const NEW: Self = MarkerType::MTVAL;
+    /// Constructs a `VariantField<V,F>`
+    pub const NEW: Self = ConstDefault::DEFAULT;
 }
 
 impl_to_path_to_set! {
@@ -123,11 +126,15 @@ impl<T, U> Debug for VariantField<T, U> {
     }
 }
 
-unsafe impl<V, F> MarkerType for VariantField<V, F>
+impl<V, F> ConstDefault for VariantField<V, F>
 where
-    V: MarkerType,
-    F: MarkerType,
+    V: ConstDefault,
+    F: ConstDefault,
 {
+    const DEFAULT: Self = Self {
+        variant: ConstDefault::DEFAULT,
+        field: ConstDefault::DEFAULT,
+    };
 }
 
 /// A FieldPath for the `F` field inside the `V` variant.
@@ -142,12 +149,10 @@ impl_cmp_traits! {
 
 impl<V> VariantName<V>
 where
-    V: MarkerType,
+    V: ConstDefault,
 {
     /// Constructs a VariantName.
-    pub const NEW: Self = Self {
-        name: MarkerType::MTVAL,
-    };
+    pub const NEW: Self = Self::DEFAULT;
 }
 
 impl_to_path_to_set! {
@@ -171,7 +176,14 @@ impl<T> Debug for VariantName<T> {
     }
 }
 
-unsafe impl<V> MarkerType for VariantName<V> where V: MarkerType {}
+impl<V> ConstDefault for VariantName<V>
+where
+    V: ConstDefault,
+{
+    const DEFAULT: Self = VariantName {
+        name: ConstDefault::DEFAULT,
+    };
+}
 
 impl_cmp_traits! {
     impl[T] VariantName<T>
@@ -183,9 +195,6 @@ impl_cmp_traits! {
 /// A marker type passed to accessor trait methods called on an enum,
 /// which guarantees that the enum is the variant that `V` represents.
 pub struct UncheckedVariantField<V, F>(PhantomData<(V, F)>);
-
-// MarkerType is intentionally not implemented
-// // // unsafe impl<V, F> !MarkerType for VariantField<V, F>{}
 
 impl<V, F> UncheckedVariantField<V, F> {
     /// Constructs an UncheckedVariantField.
@@ -208,10 +217,6 @@ impl<V, F> UncheckedVariantField<V, F> {
         UncheckedVariantField(PhantomData)
     }
 }
-
-// No UncheckedVariantFieldPath because UncheckedVariantField is not
-// going to be part of any `FieldPath`.
-// pub type VariantFieldPath<V, F> = FieldPath<(VariantField<V, F>,)>;
 
 impl_cmp_traits! {
     impl[V,F] UncheckedVariantField<V,F>

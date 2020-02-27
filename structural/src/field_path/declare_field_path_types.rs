@@ -63,7 +63,7 @@
 ///
 /// - the `NEW` inherent associated constant,
 ///
-/// - The `<TStr<_> as MarkerType>::MTVAL` associated constant.
+/// - The `<TStr<_> as ConstDefault>::DEFAULT` associated constant.
 ///
 /// Examples of constructing a `TStr<_>`:
 ///
@@ -97,7 +97,7 @@
 ///
 /// - `<TS!(1 0 0)>::NEW` (in every Rust version)
 ///
-/// - `<TS!(0)>::MTVAL`(requires importing the `MarkerType` trait)
+/// - `<TS!(0)>::DEFAULT`(requires importing the `ConstDefault` trait)
 /// 
 /// # Example
 /// 
@@ -124,7 +124,7 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 /// - The `new` constructor.
 ///
-/// - The `NEW` associated constant,if both `V` and `F` implement [core_extensions::MarkerType].
+/// - The `NEW` associated constant,if both `V` and `F` implement [core_extensions::ConstDefault].
 ///
 /// # Example
 ///
@@ -183,7 +183,7 @@ pub struct VariantField<V, F> {
 ///
 /// - The `new` constructor.
 ///
-/// - The `NEW` associated constant,if `V` implements [core_extensions::MarkerType].
+/// - The `NEW` associated constant,if `V` implements [core_extensions::ConstDefault].
 ///
 /// # Example
 ///
@@ -247,7 +247,7 @@ pub struct VariantName<V> {
 ///
 /// - The `one` or `many` constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements [core_extensions::MarkerType].
+/// - The `NEW` associated constant,if `T` implements [core_extensions::ConstDefault].
 ///
 /// # Examples
 /// 
@@ -269,7 +269,7 @@ pub struct FieldPath<T> {
 ///
 /// - The `one` or `many` constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements [core_extensions::MarkerType].
+/// - The `NEW` associated constant,if `T` implements [core_extensions::ConstDefault].
 ///
 /// # Uniqueness
 ///
@@ -335,7 +335,7 @@ pub struct FieldPathSet<T, U> {
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.
 ///
 /// - Using the `NEW` associated constant,
-/// if `F` and `S` implements [core_extensions::MarkerType].
+/// if `F` and `S` implements [core_extensions::ConstDefault].
 /// Example: `<FP!(::Foo=>a,b,c)>::NEW`
 ///
 /// # Drop Types

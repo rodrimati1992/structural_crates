@@ -659,7 +659,7 @@ pub mod reexports {
     pub use core_extensions::{
         collection_traits::{Cloned, IntoArray},
         type_asserts::AssertEq,
-        MarkerType, SelfOps, TIdentity, TypeIdentity,
+        ConstDefault, SelfOps, TIdentity, TypeIdentity,
     };
 }
 
@@ -680,7 +680,7 @@ pub mod pmr {
     pub use crate::type_level::*;
     pub use crate::utils::{as_phantomdata, OptionParam, _Structural_BorrowSelf};
     pub use core_extensions::type_level_bool::{Boolean, False, True};
-    pub use core_extensions::{MarkerType, TIdentity, TypeIdentity};
+    pub use core_extensions::{ConstDefault, MarkerType, TIdentity, TypeIdentity};
 
     pub use crate::std_::{
         hint::unreachable_unchecked,

@@ -535,7 +535,7 @@ where
         // with the variant that `V` names.
         unsafe {
             self.value.get_field_(
-                VariantField::new(V::MTVAL, path),
+                VariantField::new(V::DEFAULT, path),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -553,7 +553,7 @@ where
         // with the variant that `V` names.
         unsafe {
             self.value.get_field_mut_(
-                VariantField::new(V::MTVAL, path),
+                VariantField::new(V::DEFAULT, path),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -604,7 +604,7 @@ where
             // with the variant that `V` names.
             func(
                 this,
-                VariantField::new(V::MTVAL, path),
+                VariantField::new(V::DEFAULT, path),
                 UncheckedVariantField::<V, F>::new(),
             )
         }
@@ -621,7 +621,7 @@ where
         // with the variant that `V` names.
         T::get_field_raw_mut(
             this,
-            VariantField::new(V::MTVAL, path),
+            VariantField::new(V::DEFAULT, path),
             UncheckedVariantField::<V, F>::new(),
         )
     }
@@ -641,7 +641,7 @@ where
         // with the variant that `V` names.
         unsafe {
             self.value.into_field_(
-                VariantField::new(V::MTVAL, path),
+                VariantField::new(V::DEFAULT, path),
                 UncheckedVariantField::<V, F>::new(),
             )
         }

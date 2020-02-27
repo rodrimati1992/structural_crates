@@ -133,7 +133,7 @@ impl FieldPaths {
         let type_ = self.type_tokens(char_path);
         let mut ret = quote!(pub const #name:#type_=);
         ret.append_all(match (&self.prefix, self.is_set()) {
-            (None, false) => quote!(structural::pmr::MarkerType::MTVAL),
+            (None, false) => quote!(structural::pmr::ConstDefault::DEFAULT),
             (None, true) => quote!(unsafe { structural::FieldPathSet::NEW.set_uniqueness() }),
             (Some(_), _) => quote!(unsafe { structural::NestedFieldPathSet::NEW.set_uniqueness() }),
         });
@@ -150,7 +150,7 @@ impl FieldPaths {
         let type_ = tident_tokens(value.to_string(), char_path);
         quote!(
             pub const #const_name: #type_=
-                structural::pmr::MarkerType::MTVAL;
+                structural::pmr::ConstDefault::DEFAULT;
         )
     }
 
@@ -163,7 +163,7 @@ impl FieldPaths {
                 quote!(unsafe { structural::FieldPathSet::NEW.set_uniqueness() })
             }
         } else {
-            quote!(structural::pmr::MarkerType::MTVAL)
+            quote!(structural::pmr::ConstDefault::DEFAULT)
         }
     }
 }

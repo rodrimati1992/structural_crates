@@ -8,7 +8,7 @@ use crate::type_level::collection_traits::{
     Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
 };
 
-use core_extensions::MarkerType;
+use core_extensions::ConstDefault;
 
 use std_::{
     fmt::{self, Debug},
@@ -116,10 +116,10 @@ impl<T> Debug for FieldPath<T> {
 
 impl<T> FieldPath<T>
 where
-    T: MarkerType,
+    T: ConstDefault,
 {
     /// Constructs a `FieldPath<T>`
-    pub const NEW: Self = FieldPath { list: T::MTVAL };
+    pub const NEW: Self = Self::DEFAULT;
 }
 
 impl<T> FieldPath<(T,)> {
@@ -156,7 +156,14 @@ impl<T> FieldPath<T> {
     }
 }
 
-unsafe impl<T> MarkerType for FieldPath<T> where T: MarkerType {}
+impl<T> ConstDefault for FieldPath<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = FieldPath {
+        list: ConstDefault::DEFAULT,
+    };
+}
 
 impl<S> ToTString_ for FieldPath<(TStr<S>,)> {
     type Output = TStr<S>;
@@ -191,9 +198,9 @@ impl<T> FieldPath<T> {
     pub fn push<U, V>(self, _other: U) -> FieldPath<V>
     where
         Self: PushBack_<U, Output = FieldPath<V>>,
-        FieldPath<V>: MarkerType,
+        FieldPath<V>: ConstDefault,
     {
-        MarkerType::MTVAL
+        ConstDefault::DEFAULT
     }
 
     /// Constructs a new FieldPath with `_other` appended at the end.
@@ -201,9 +208,9 @@ impl<T> FieldPath<T> {
     pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<Append<T, U>>
     where
         T: Append_<U>,
-        FieldPath<Append<T, U>>: MarkerType,
+        FieldPath<Append<T, U>>: ConstDefault,
     {
-        MarkerType::MTVAL
+        ConstDefault::DEFAULT
     }
 
     /// Converts this `FieldPath` to a `FieldPathSet`.
@@ -256,14 +263,22 @@ impl<T, U> IsMultiFieldPath for FieldPathSet<T, U> {
     type PathUniqueness = U;
 }
 
-// `MarkerType` is not implemented for `FieldPathSet<T.UniquePaths>`
+// `ConstDefault` is not implemented for `FieldPathSet<T.UniquePaths>`
 // because `FieldPathSet<T.UniquePaths>` ought only be constructible
 // by satisfying the safety requirements of `FieldPathSet::<T.UniquePaths>::new`,
 // which aren't cheaply enforceable on the type level.
 //
-// impl<T> !MarkerType for FieldPathSet<T.UniquePaths>{}
+// impl<T> !ConstDefault for FieldPathSet<T.UniquePaths>{}
 
-unsafe impl<T> MarkerType for FieldPathSet<T, AliasedPaths> where T: MarkerType {}
+impl<T> ConstDefault for FieldPathSet<T, AliasedPaths>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = FieldPathSet {
+        paths: ManuallyDrop::new(ConstDefault::DEFAULT),
+        uniqueness: PhantomData,
+    };
+}
 
 impl<T> Default for FieldPathSet<T, AliasedPaths>
 where
@@ -303,7 +318,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
 
 impl<T> FieldPathSet<T, AliasedPaths>
 where
-    T: MarkerType,
+    T: ConstDefault,
 {
     /// Constructs a `FieldPathSet`.
     ///
@@ -311,15 +326,12 @@ where
     /// in a const context where `T` can be inferred,
     /// by doing `unsafe{ FieldPathSet::NEW.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
-    pub const NEW: Self = FieldPathSet {
-        paths: ManuallyDrop::new(T::MTVAL),
-        uniqueness: PhantomData,
-    };
+    pub const NEW: Self = Self::DEFAULT;
 }
 
 impl<T, U> FieldPathSet<T, U>
 where
-    T: MarkerType,
+    T: ConstDefault,
 {
     /// This can be used to construct a `FieldPathSet<T, UniquePaths>`
     /// from a type alias in a const context,
@@ -389,9 +401,9 @@ impl<T, U> FieldPathSet<T, U> {
     pub fn push<O, Out>(self, _other: O) -> FieldPathSet<Out, AliasedPaths>
     where
         Self: PushBack_<O, Output = FieldPathSet<Out, AliasedPaths>>,
-        FieldPathSet<Out, AliasedPaths>: MarkerType,
+        FieldPathSet<Out, AliasedPaths>: ConstDefault,
     {
-        MarkerType::MTVAL
+        ConstDefault::DEFAULT
     }
 
     /// Constructs a new FieldPathSet with the `_other` FieldPathSet
@@ -403,9 +415,9 @@ impl<T, U> FieldPathSet<T, U> {
     ) -> FieldPathSet<Append<T, T2>, AliasedPaths>
     where
         T: Append_<T2>,
-        FieldPathSet<Append<T, T2>, AliasedPaths>: MarkerType,
+        FieldPathSet<Append<T, T2>, AliasedPaths>: ConstDefault,
     {
-        MarkerType::MTVAL
+        ConstDefault::DEFAULT
     }
 }
 
@@ -446,17 +458,17 @@ impl_cmp_traits! {
 
 impl<F, S> NestedFieldPathSet<F, S, AliasedPaths>
 where
-    F: MarkerType,
-    S: MarkerType,
+    F: ConstDefault,
+    S: ConstDefault,
 {
     /// Constructs a `NestedFieldPathSet`.
-    pub const NEW: Self = Self::MTVAL;
+    pub const NEW: Self = Self::DEFAULT;
 }
 
 impl<F, S, U> NestedFieldPathSet<F, S, U>
 where
-    F: MarkerType,
-    S: MarkerType,
+    F: ConstDefault,
+    S: ConstDefault,
 {
     /// This can be used to construct a `NestedFieldPathSet<T, UniquePaths>`
     /// from a type alias in a const context,
@@ -547,11 +559,15 @@ impl<F, S, U> IsMultiFieldPath for NestedFieldPathSet<F, S, U> {
     type PathUniqueness = U;
 }
 
-unsafe impl<F, S> MarkerType for NestedFieldPathSet<F, S, AliasedPaths>
+impl<F, S> ConstDefault for NestedFieldPathSet<F, S, AliasedPaths>
 where
-    F: MarkerType,
-    S: MarkerType,
+    F: ConstDefault,
+    S: ConstDefault,
 {
+    const DEFAULT: Self = NestedFieldPathSet {
+        nested: ConstDefault::DEFAULT,
+        set: ConstDefault::DEFAULT,
+    };
 }
 
 ////////////////////////////////////////////////////////////////////////////////

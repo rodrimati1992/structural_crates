@@ -48,7 +48,7 @@ nightly_impl_fields=["impl_fields"]
 structural_derive={version="0.2.1",path="../structural_derive"}
 
 [dependencies.core_extensions]
-version="0.1.14"
+version="0.1.15"
 default_features=false
 features=["colltraits"]
 
