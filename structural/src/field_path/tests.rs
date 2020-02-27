@@ -1,7 +1,7 @@
 use crate::field_path::{AliasedPaths, UniquePaths};
 use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, VariantField, VariantName};
 
-use core_extensions::MarkerType;
+use core_extensions::ConstDefault;
 
 tstr_aliases! {
     N99=99,
@@ -87,10 +87,10 @@ fn fieldpath_push_append() {
     #[allow(dead_code)]
     fn with_generics<A, B, C, D>()
     where
-        A: MarkerType,
-        B: MarkerType,
-        C: MarkerType,
-        D: MarkerType,
+        A: ConstDefault + Copy,
+        B: ConstDefault + Copy,
+        C: ConstDefault + Copy,
+        D: ConstDefault + Copy,
     {
         let fp0 = FieldPath::<(A,)>::NEW;
         let fp1 = FieldPath::<(B,)>::NEW;
@@ -113,10 +113,10 @@ fn fieldpaths_push_append() {
     #[allow(dead_code)]
     fn with_generics<A, B, C, D>()
     where
-        A: MarkerType,
-        B: MarkerType,
-        C: MarkerType,
-        D: MarkerType,
+        A: ConstDefault + Copy,
+        B: ConstDefault + Copy,
+        C: ConstDefault + Copy,
+        D: ConstDefault + Copy,
     {
         type Fp<T> = FieldPath<(T,)>;
         let fp1 = Fp::<B>::NEW;

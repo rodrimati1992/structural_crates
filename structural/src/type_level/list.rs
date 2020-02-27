@@ -25,7 +25,9 @@ pub struct TNil;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-unsafe impl<Curr, Rem> core_extensions::MarkerType for TList<Curr, Rem> {}
+impl<Curr, Rem> core_extensions::ConstDefault for TList<Curr, Rem> {
+    const DEFAULT: Self = TList(PhantomData);
+}
 
 impl<Curr, Rem> Debug for TList<Curr, Rem> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -58,7 +60,9 @@ impl ToTList_ for TNil {
 
 /////////////////////////////////////////////////////////////////////////////////
 
-unsafe impl core_extensions::MarkerType for TNil {}
+impl core_extensions::ConstDefault for TNil {
+    const DEFAULT: Self = TNil;
+}
 
 impl TNil {
     /// Constructs this empty list.
