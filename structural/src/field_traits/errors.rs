@@ -1,3 +1,7 @@
+/*!
+Field-accessor-related error types and traits
+*/
+
 use std_::fmt::{self, Display};
 
 use core_extensions::collection_traits::Cloned;
@@ -11,20 +15,36 @@ use self::sealed::Sealed;
 ///
 /// The errors can be:
 ///
-/// - `std::convert::infallible` / `core::convert::infallible`:
+/// - NonOptField]:
 ///     An error type that cannot be constructed,used when a field always exists.
 ///
-/// - `structural::field_traits::OptionalField`:
+/// - [OptionalField]:
 ///     Used when a field is optional.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
 pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct OptionalField;
-
+/// The error type for non-optional fields.
+///
+/// This cannot be constructed,and therefore the field always exists.
+///
+/// When you manually define an non-optional field accessor,
+/// you'd use this as the `Err` associated type,
+/// then [GetFieldExt](crate::GetFieldExt) methods use
+/// [NormalizeFields](crate::field_traits::NormalizeFields) to turn
+/// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NonOptField {}
+
+/// The error type for optional fields.
+///
+/// When you manually define an optional field accessor,
+/// you'd use this as the `Err` associated type,
+/// then [GetFieldExt](crate::GetFieldExt) methods use
+/// sNormalizeFields](crate::field_traits::NormalizeFields) to turn
+/// `Ok(foo)` into `Some(foo)`,and `Err(NonOptField)` into `None`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct OptionalField;
 
 impl Cloned for OptionalField {
     type Cloned = Self;
@@ -97,6 +117,8 @@ impl Display for NonOptField {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A specialized conversion trait,to convert field accessor error types to other
+/// field accessor error types.
 pub trait IntoFieldErr<T>: IsFieldErr {
     fn into_field_err(self) -> T
     where
@@ -122,10 +144,21 @@ impl IntoFieldErr<OptionalField> for NonOptField {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Combines multiple error types into one.
+///
+/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
+/// otherwise they're combined into an `OptionalField` .
+///
+/// This is used by the `Rev*Field*` impls for [FieldPath](crate::FieldPath) to
+/// determine whether a nested field access is optional or not.
 pub trait CombinedErrs {
     type Combined: IsFieldErr;
 }
 
+/// The combination of all the error types in `This`.
+///
+/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
+/// otherwise they're combined into an `OptionalField` .
 pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {

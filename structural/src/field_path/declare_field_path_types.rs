@@ -10,7 +10,8 @@
 ///
 /// Manually expanding the macros used to get a `TStr` type is not supported,
 /// and is allowed to break whenever a crate uses the "use_const_str" cargo feature,
-/// which changes the private type to use const generics to improve error messages.
+/// which changes the private `TS` type that's used as the parameter to TStr
+/// to use const generics to improve error messages.
 ///
 /// # TStr type
 /// 

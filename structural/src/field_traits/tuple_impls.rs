@@ -51,10 +51,7 @@ macro_rules! impl_tuple {
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
         ///
-        /// The last generic parameter is the name of the variant.
-        /// Example of the `V` parameter for a variant named `Foo`:
-        /// - (since Rust 1.40): `TS!(Foo)`  <br>
-        /// - (before Rust 1.40):`TS!(F o o)`<br>
+        /// The last type parameter takes the name of the variant as a [TStr](crate::TStr)
         pub trait $variant_trait<$($field_ty,)* V>:
             $(
                 IntoVariantFieldMut<V,names::$field_param,Ty=$field_ty>+

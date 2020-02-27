@@ -62,6 +62,64 @@ print_first_3( ["baz";32] );
 
 ```
 
+# `Array*Variant` Example
+
+Demonstrates that you can use the `Array*Variant` trait with enums.
+
+```
+use structural::field_traits::Array2Variant;
+use structural::{GetFieldExt,Structural,TS,fp};
+
+use std::fmt::Debug;
+
+fn first_2<T>(mut foo:T, mut not_foo:T)
+where
+    // `TS!(F o o)` can also be written as `TS!(Foo)` from Rust 1.40 onwards
+    T: Array2Variant<u8,TS!(F o o)> + Copy
+{
+    {
+        assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some(( &101, &202 )) );
+
+        assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some(( &mut 101, &mut 202 )) );
+
+        assert_eq!( foo.into_field(fp!(::Foo.0)), Some(101) );
+        assert_eq!( foo.into_field(fp!(::Foo.1)), Some(202) );
+
+        assert_eq!( foo.is_variant(fp!(Foo)), true );
+    }
+    {
+        assert_eq!( not_foo.fields(fp!(::Foo=>0,1)), None );
+
+        assert_eq!( not_foo.fields_mut(fp!(::Foo=>0,1)), None );
+
+        assert_eq!( not_foo.into_field(fp!(::Foo.0)), None );
+        assert_eq!( not_foo.into_field(fp!(::Foo.1)), None );
+
+        assert_eq!( not_foo.is_variant(fp!(Foo)), false );
+    }
+}
+
+first_2( Enum::Foo(101,202), Enum::Bar );
+first_2( OtherEnum::Foo(101,202,"303"), OtherEnum::Bar );
+
+#[derive(Structural,Copy,Clone)]
+# #[struc(no_trait)]
+enum Enum{
+    Foo(u8,u8),
+    Bar,
+}
+
+#[derive(Structural,Copy,Clone)]
+# #[struc(no_trait)]
+enum OtherEnum{
+    Foo(u8,u8,&'static str),
+    Bar,
+}
+
+```
+
+
+
 
 
 */

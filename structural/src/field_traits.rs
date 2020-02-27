@@ -38,6 +38,69 @@ The [GetVariantField],[GetVariantFieldMut],[IntoVariantField],
 The [OptGetVariantField],[OptGetVariantFieldMut],[OptIntoVariantField],
 [OptIntoVariantFieldMut] traits,for accessing optional fields.
 
+# Rev* traits
+
+The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-in type.
+
+There are two kinds of `Rev*` traits:
+
+- Single field traits:
+Which are [RevGetField], [RevGetFieldMut], and [RevIntoField],
+mirroring the regular field accessor traits.
+
+- Multiple field traits:
+Which are [RevGetMultiField], and [RevGetMultiFieldMut] (no RevIntoMultiField for now),
+allowing access to multiple fields at once.
+
+The [GetFieldExt] trait uses the `Rev*` impls of the passed-in path to access the
+fields in `Self`.
+
+# Additional items
+
+### Array Traits
+
+This module re-exports these traits from [for_arrays],with:
+
+- The `Array*` structural aliases to use any type with accessors from 0
+until the size of the array,in which all the field types are the same,
+
+- The `Array*Variant` structural aliases to use any enum variant with accessors from 0
+until the size of the array,in which all the field types are the same.
+
+### Tuple Traits
+
+This module re-exports these traits from [for_tuples],with:
+
+- The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
+until the size of the tuple,in which all field types can be different,
+
+- The `Tuple*Variant` structural aliases to use any enum variant with accessors from `TS!(0)`
+until the size of the tuple,in which all field types can be different.
+
+### type aliases
+
+The [GetFieldErr] type alias allows querying the `GetFieldImpl::Err` associated type,
+useful when delegating the `*Impl` accessor traits.
+
+The [GetFieldType], [GetFieldType2], [GetFieldType3], [GetFieldType4]
+type aliases allow querying the type of a field up to 4 levels of nesting.
+
+The [RevGetFieldType] type alias gets the type of a nested field
+(which one is determined by the field path).
+
+### Errors
+
+The [errors](self::errors) module contains the error-related items used in accessor trait impls.
+
+### Normalize Fields
+
+[NormalizeFields] transforms the `Result<T,_>`s in a type into either an
+`Option<T>` or a `T` depending on its error type.
+
+[NormalizeFieldsOut] The type that `Foo` is converted into when calling
+`Foo::normalize_fields( foo )`.
+
+
 */
 
 use crate::{
