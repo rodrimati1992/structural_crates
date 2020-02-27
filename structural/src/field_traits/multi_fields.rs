@@ -259,10 +259,8 @@ where
 /// The return type of NestedFieldPathSet `Rev*MultiField*` methods,
 ///
 /// This implements NormalizeFields so that a `Result<TupleType,Err>`
-/// also normalizes the tuple type itself
-/// (instead of just turning it into either `TupleType` or `Option<TupleType>`),
-/// this is so that the tuple is composed of `Option<T>` and `T` instead
-/// of `Result<E,impl IsFieldErr>`.
+/// also normalizes the tuple type itself,
+/// turning each individual `Result<T,E>` in the tuple into `T` or `Option<T>`.
 pub struct NestedFieldPathSetOutput<T, E>(pub Result<T, E>);
 
 impl<T, E> NormalizeFields for NestedFieldPathSetOutput<T, E>
