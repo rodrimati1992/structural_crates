@@ -4,18 +4,22 @@ use crate::Structural;
 
 /// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub struct Tuple1<A>(#[struc(optional)] pub Option<A>);
 
 /// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub struct Tuple2<A, B>(#[struc(optional)] pub Option<A>, pub B);
 
 /// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub struct Tuple3<A, B, C>(#[struc(optional)] pub Option<A>, pub B, pub C);
 
 /// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub struct Struct2<A, B> {
     #[struc(optional)]
     pub foo: Option<A>,
@@ -24,11 +28,24 @@ pub struct Struct2<A, B> {
 
 /// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub struct Struct3<A, B, C> {
     #[struc(optional)]
     pub foo: Option<A>,
     pub bar: B,
     pub baz: C,
+}
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub struct StructFoo<T> {
+    pub foo: T,
+}
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub struct StructBar<T> {
+    pub bar: T,
 }
 
 ///////////////////////////////////////////////////////////////////////////////

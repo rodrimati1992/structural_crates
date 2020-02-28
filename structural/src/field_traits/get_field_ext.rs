@@ -5,7 +5,7 @@ use crate::{
     field_path::IsTStr,
     field_traits::{
         multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
-        RevGetField, RevGetFieldMut, RevIntoField,
+        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
     },
     IsStructural,
 };
@@ -102,7 +102,7 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn field_<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<Result<&'a P::Ty, P::Err>>
     where
-        P: RevGetField<'a, Self>,
+        P: RevGetFieldImpl<'a, Self>,
         Result<&'a P::Ty, P::Err>: NormalizeFields,
     {
         path.rev_get_field(self).normalize_fields()
@@ -398,7 +398,7 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn field_mut<'a, P>(&'a mut self, path: P) -> NormalizeFieldsOut<Result<&'a mut P::Ty, P::Err>>
     where
-        P: RevGetFieldMut<'a, Self>,
+        P: RevGetFieldMutImpl<'a, Self>,
         Result<&'a mut P::Ty, P::Err>: NormalizeFields,
     {
         path.rev_get_field_mut(self).normalize_fields()
@@ -618,7 +618,7 @@ pub trait GetFieldExt: IsStructural {
     #[inline(always)]
     fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: RevIntoField<'a, Self>,
+        P: RevIntoFieldImpl<'a, Self>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
         Self: Sized,
@@ -706,7 +706,7 @@ pub trait GetFieldExt: IsStructural {
         path: P,
     ) -> NormalizeFieldsOut<Result<P::BoxedTy, P::Err>>
     where
-        P: RevIntoField<'a, Self>,
+        P: RevIntoFieldImpl<'a, Self>,
         P::BoxedTy: Sized,
         Result<P::BoxedTy, P::Err>: NormalizeFields,
     {
