@@ -129,9 +129,9 @@ pub use self::{
     multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
-        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, RevFieldType, RevGetField,
-        RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
-        RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl,
+        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
+        RevGetField, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
+        RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
     variant_field::{
         GetVariantField, GetVariantFieldImpl, GetVariantFieldMut, GetVariantFieldMutImpl,

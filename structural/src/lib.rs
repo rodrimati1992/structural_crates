@@ -658,6 +658,7 @@ pub use crate::{
 pub mod reexports {
     pub use core_extensions::{
         collection_traits::{Cloned, IntoArray},
+        const_default,
         type_asserts::AssertEq,
         ConstDefault, SelfOps, TIdentity, TypeIdentity,
     };
