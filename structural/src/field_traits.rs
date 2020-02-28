@@ -45,7 +45,7 @@ The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-
 There are two kinds of `Rev*` traits:
 
 - Single field traits:
-Which are [RevGetField], [RevGetFieldMut], and [RevIntoField],
+Which are [RevGetFieldImpl], [RevGetFieldMutImpl], and [RevIntoFieldImpl],
 mirroring the regular field accessor traits.
 
 - Multiple field traits:
@@ -129,7 +129,9 @@ pub use self::{
     multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
-        RevGetField, RevGetFieldMut, RevGetFieldType, RevIntoBoxedFieldType, RevIntoField,
+        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, RevFieldType, RevGetField,
+        RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
+        RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl,
     },
     variant_field::{
         GetVariantField, GetVariantFieldImpl, GetVariantFieldMut, GetVariantFieldMutImpl,

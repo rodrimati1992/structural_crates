@@ -65,7 +65,7 @@ macro_rules! impl_get_multi_field {
         where
             This:'a,
             $(
-                $fpath:RevGetField<'a, This, Ty=$fty, Err=$err >,
+                $fpath:RevGetFieldImpl<'a, This, Ty=$fty, Err=$err >,
                 $fty:'a,
                 $err:IsFieldErr,
                 Result<&'a $fty,$err>: NormalizeFields,
@@ -94,7 +94,7 @@ macro_rules! impl_get_multi_field {
         where
             This:'a,
             $(
-                $fpath: RevGetFieldMut<'a,This, Ty=$fty, Err=$err >,
+                $fpath: RevGetFieldMutImpl<'a,This, Ty=$fty, Err=$err >,
                 Result<&'a mut $fty,$err>: NormalizeFields,
                 Result<*mut $fty,$err>: NormalizeFields,
                 $fty:'a,
@@ -187,7 +187,7 @@ impl_get_multi_field! {
 impl<'a, F, S, U, This, Mid, OutTy, OutErr> RevGetMultiField<'a, This>
     for NestedFieldPathSet<F, S, U>
 where
-    F: RevGetField<'a, This, Ty = Mid, Err = OutErr>,
+    F: RevGetFieldImpl<'a, This, Ty = Mid, Err = OutErr>,
     FieldPathSet<S, U>: RevGetMultiField<'a, Mid, Fields = OutTy>,
     OutErr: IsFieldErr,
     This: 'a + ?Sized,
@@ -213,7 +213,7 @@ where
 unsafe impl<'a, F, S, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMut<'a, This>
     for NestedFieldPathSet<F, S, UniquePaths>
 where
-    F: RevGetFieldMut<'a, This, Ty = Mid, Err = OutErr>,
+    F: RevGetFieldMutImpl<'a, This, Ty = Mid, Err = OutErr>,
     FieldPathSet<S, UniquePaths>:
         RevGetMultiFieldMut<'a, Mid, FieldsMut = OutTy, FieldsRawMut = OutRawTy>,
     This: 'a + ?Sized,

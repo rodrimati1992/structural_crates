@@ -77,7 +77,7 @@ impl<T> Sealed for TStr<T> {}
 ///
 /// # Expectations
 ///
-/// This type is expected to implement `RevGetField`,`RevGetFieldMut`,and `RevIntoField`.
+/// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`,and `RevIntoFieldImpl`.
 pub trait IsSingleFieldPath: Sized {}
 
 /// A marker trait for field paths that refer to multiple fields
