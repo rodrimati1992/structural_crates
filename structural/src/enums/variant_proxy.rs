@@ -512,8 +512,6 @@ where
     }
 }
 
-impl<T: ?Sized, V> crate::IsStructural for VariantProxy<T, V> where V: IsTStr {}
-
 impl<T, V, F> FieldType<F> for VariantProxy<T, V>
 where
     T: ?Sized + FieldType<VariantField<V, F>>,
@@ -560,7 +558,7 @@ where
     }
 
     #[inline(always)]
-    unsafe fn get_field_raw_mut(this: *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err>
+    unsafe fn get_field_raw_mut(this: *mut *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err>
     where
         Self: Sized,
     {
@@ -572,7 +570,7 @@ where
         // safety:
         // This transmute should be sound,
         // since every parameter of `GetFieldMutImpl::get_field_mut_`
-        // except for `this: *mut ()` is an zero sized type,
+        // except for `this: *mut *mut ()` is a zero sized type,
         // and this converts those parameters to other zero sized types.
         unsafe {
             std::mem::transmute::<
@@ -592,14 +590,14 @@ where
         #[inline(always)]
         cfg(feature="specialization")
         unsafe fn get_field_raw_mut_inner(
-            this: *mut (),
+            this: *mut *mut (),
             path: F,
             _: (),
         ) -> Result<*mut T::Ty, T::Err>
         where
             Self: Sized
         {
-            let func=(&**(this as *mut Self)).get_field_raw_mut_func();
+            let func=(**(this as *mut *mut T)).get_field_raw_mut_func();
             // safety: VariantProxy<T,V> guarantees that it wraps an enum
             // with the variant that `V` names.
             func(
@@ -616,7 +614,11 @@ where
     T: GetVariantFieldMutImpl<V, F>,
     V: IsTStr,
 {
-    unsafe fn get_field_raw_mut_inner(this: *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err> {
+    unsafe fn get_field_raw_mut_inner(
+        this: *mut *mut (),
+        path: F,
+        _: (),
+    ) -> Result<*mut T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         T::get_field_raw_mut(

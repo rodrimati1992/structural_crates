@@ -41,6 +41,7 @@ macro_rules! slice_test {
 fn basic_core_tests() {
     slice_test! {ref &[3,5,8,13,21,34,55,89,144][..] }
     slice_test! {mut &mut [3,5,8,13,21,34,55,89,144][..] }
+    slice_test! {mut &mut &mut [3,5,8,13,21,34,55,89,144][..] }
 }
 
 #[cfg(feature = "alloc")]
@@ -58,18 +59,29 @@ fn large_indices() {
     for i in 0..array.len() {
         array[i] = (i * 4) as u16;
     }
-    let array = &array[..];
+    assert_eq!(array[..].field_(fp!(0)), Some(&0));
+    assert_eq!(array[..].field_(fp!(1)), Some(&4));
+    assert_eq!(array[..].field_(fp!(9)), Some(&36));
+    assert_eq!(array[..].field_(fp!(10)), Some(&40));
+    assert_eq!(array[..].field_(fp!(19)), Some(&76));
+    assert_eq!(array[..].field_(fp!(99)), Some(&396));
+    assert_eq!(array[..].field_(fp!(100)), Some(&400));
+    assert_eq!(array[..].field_(fp!(199)), Some(&796));
+    assert_eq!(array[..].field_(fp!(999)), Some(&3996));
+    assert_eq!(array[..].field_(fp!(1000)), Some(&4000));
+    assert_eq!(array[..].field_(fp!(1023)), Some(&4092));
+    assert_eq!(array[..].field_(fp!(1024)), None);
 
-    assert_eq!(array.field_(fp!(0)), Some(&0));
-    assert_eq!(array.field_(fp!(1)), Some(&4));
-    assert_eq!(array.field_(fp!(9)), Some(&36));
-    assert_eq!(array.field_(fp!(10)), Some(&40));
-    assert_eq!(array.field_(fp!(19)), Some(&76));
-    assert_eq!(array.field_(fp!(99)), Some(&396));
-    assert_eq!(array.field_(fp!(100)), Some(&400));
-    assert_eq!(array.field_(fp!(199)), Some(&796));
-    assert_eq!(array.field_(fp!(999)), Some(&3996));
-    assert_eq!(array.field_(fp!(1000)), Some(&4000));
-    assert_eq!(array.field_(fp!(1023)), Some(&4092));
-    assert_eq!(array.field_(fp!(1024)), None);
+    assert_eq!(array[..].field_mut(fp!(0)), Some(&mut 0));
+    assert_eq!(array[..].field_mut(fp!(1)), Some(&mut 4));
+    assert_eq!(array[..].field_mut(fp!(9)), Some(&mut 36));
+    assert_eq!(array[..].field_mut(fp!(10)), Some(&mut 40));
+    assert_eq!(array[..].field_mut(fp!(19)), Some(&mut 76));
+    assert_eq!(array[..].field_mut(fp!(99)), Some(&mut 396));
+    assert_eq!(array[..].field_mut(fp!(100)), Some(&mut 400));
+    assert_eq!(array[..].field_mut(fp!(199)), Some(&mut 796));
+    assert_eq!(array[..].field_mut(fp!(999)), Some(&mut 3996));
+    assert_eq!(array[..].field_mut(fp!(1000)), Some(&mut 4000));
+    assert_eq!(array[..].field_mut(fp!(1023)), Some(&mut 4092));
+    assert_eq!(array[..].field_mut(fp!(1024)), None);
 }

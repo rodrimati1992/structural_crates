@@ -206,8 +206,6 @@ macro_rules! declare_array_paths {
             #[allow(dead_code)]
             const $fi_ind:FieldInfo=FieldInfo::not_renamed(stringify!($index));
 
-            impl<T> crate::IsStructural for [T;$index] {}
-
             impl<T> Structural for [T;$index]{
                 const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
                     $( $fi_in_array, )*
@@ -261,11 +259,12 @@ macro_rules! declare_array_paths {
 
                 #[inline(always)]
                 unsafe fn get_field_raw_mut(
-                    ptr:*mut (),
+                    ptr:*mut *mut (),
                     _:P,
                     _:(),
                 )->Result<*mut Self::Ty,NonOptField>{
-                    Ok((ptr as *mut T).add(P::INDEX))
+                    let dptr=ptr as *mut *mut T;
+                    Ok((*dptr).add(P::INDEX))
                 }
 
                 #[inline(always)]

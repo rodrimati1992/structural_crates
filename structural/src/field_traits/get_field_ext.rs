@@ -7,7 +7,6 @@ use crate::{
         multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
         RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
     },
-    IsStructural,
 };
 
 use core_extensions::collection_traits::Cloned;
@@ -21,7 +20,7 @@ use core_extensions::collection_traits::Cloned;
 ///
 /// Accessing a variant field (eg:`.field(fp!(::Foo.bar))`) always returns an `Option` .
 ///
-pub trait GetFieldExt: IsStructural {
+pub trait GetFieldExt {
     /// Gets a reference to a field,determined by `path`.
     ///
     /// This is named `field_` instead of `field`
@@ -772,4 +771,4 @@ pub trait GetFieldExt: IsStructural {
     }
 }
 
-impl<T: ?Sized + IsStructural> GetFieldExt for T {}
+impl<T: ?Sized> GetFieldExt for T {}

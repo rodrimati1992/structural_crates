@@ -221,11 +221,11 @@ macro_rules! _private_impl_getter_enum{
 
             #[inline(always)]
             unsafe fn get_field_raw_mut(
-                this:*mut (),
+                this:*mut *mut (),
                 _:$variant_name_str,
                 _:(),
             )->Result<*mut $field_ty,$crate::pmr::OptionalField>{
-                let this=this as *mut Self;
+                let this=*(this as *mut *mut Self);
                 match *this {
                     $enum_::$variant{$field_name:ref mut field}=>{
                         $crate::handle_optionality!(
@@ -306,22 +306,22 @@ macro_rules! _private_impl_getter_enum{
 
             #[inline(always)]
             unsafe fn get_field_raw_mut(
-                this:*mut (),
+                this:*mut *mut (),
                 name:$crate::pmr::VariantField<$variant_name_str,_F>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,_F>,
             )->Result<
                 *mut $crate::GetFieldType<$field_ty,_F>,
                 $crate::vf_err!($optionality,$field_ty,_F),
             >{
-                let this=this as *mut Self;
-                match *this {
+                match **(this as *mut *mut Self) {
                     $enum_::$variant{$field_name:ref mut field,..}=>{
                         let name = name.field;
-                        let field= $crate::try_optionality!($optionality,raw,field);
+                        let mut field:*mut _= $crate::try_optionality!($optionality,raw,field);
+                        let field=(&mut field) as *mut *mut $field_ty as *mut *mut ();
                         $crate::map_optionality!(
                             $optionality,
                             <$field_ty as $crate::GetFieldMutImpl<_>>::get_field_raw_mut(
-                                field as *mut $field_ty as *mut (),
+                                field,
                                 name,
                                 (),
                             )
@@ -408,11 +408,11 @@ macro_rules! _private_impl_getter_enum{
             }
 
             unsafe fn get_field_raw_mut(
-                this:*mut (),
+                this:*mut *mut (),
                 _:$crate::pmr::VariantField<$variant_name_str,$field_name_param>,
                 _:$crate::pmr::UncheckedVariantField<$variant_name_str,$field_name_param>,
             )->Result<*mut $field_ty,$crate::err_from_opt!($optionality)>{
-                let this=this as *mut Self;
+                let this=*(this as *mut *mut Self);
                 match *this {
                     $enum_::$variant{$field_name:ref mut this,..    }=>{
                         $crate::handle_optionality!(
@@ -851,7 +851,7 @@ macro_rules! private_delegate_to_variant_proxy {
             }
 
             unsafe fn get_field_raw_mut(
-                this:*mut (),
+                this:*mut *mut (),
                 name:$crate::pmr::VariantField<_V,_F>,
                 _:(),
             )->Result<
@@ -859,7 +859,7 @@ macro_rules! private_delegate_to_variant_proxy {
                 $crate::pmr::OptionalField
             >{
                 let vari_name=name.variant;
-                let this_s=this as *mut Self;
+                let this_s=*(this as *mut *mut Self);
                 if $crate::pmr::IsVariant::is_variant_(&*this_s,vari_name) {
                     $crate::map_of!(
                         <$self_ as $crate::pmr::GetFieldMutImpl<_,_>>::get_field_raw_mut(

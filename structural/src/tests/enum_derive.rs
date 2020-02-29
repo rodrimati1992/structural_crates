@@ -114,7 +114,6 @@ assert_equal_bounds! {
         + IntoVariantFieldMut<dp_strs::Pair, dp_strs::right, Ty = U>
         + IsVariant<dp_strs::Unit>
         + VariantCount<Count = dp_strs::vc>
-        + IsStructural
     ),
 }
 
@@ -240,7 +239,6 @@ assert_equal_bounds! {
         + IntoVariantFieldMut<rb_strs::U, rb_strs::d, Ty = u8>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::a, Ty = &'static str>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::b, Ty = u32>
-        + IsStructural
     ),
 }
 
@@ -329,7 +327,6 @@ assert_equal_bounds! {
         + IntoVariantFieldMut<rb_strs::U, rb_strs::n1, Ty = u16>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::a, Ty = &'static str>
         + IntoVariantFieldMut<rb_strs::V, rb_strs::b, Ty = u32>
-        + IsStructural
     ),
 }
 

@@ -114,11 +114,11 @@ macro_rules! impl_get_multi_field {
             );
 
             #[allow(unused_unsafe)]
-            fn rev_get_multi_field_mut(self,this:&'a mut This)->Self::FieldsMut{
+            fn rev_get_multi_field_mut(self,mut this:&'a mut This)->Self::FieldsMut{
                 unsafe{
                     let ($($fpath,)*)={
                         #[allow(unused_variables)]
-                        let this=this as *mut This;
+                        let this=&mut this as *mut &mut This as *mut *mut This;
                         let ($($fpath,)*)=self.into_paths();
                         (
                             $(
@@ -139,7 +139,8 @@ macro_rules! impl_get_multi_field {
             }
 
             #[allow(unused_variables)]
-            unsafe fn rev_get_multi_field_raw_mut(self,this:*mut This)->Self::FieldsRawMut{
+            unsafe fn rev_get_multi_field_raw_mut(self,mut this:*mut This)->Self::FieldsRawMut{
+                let this=&mut this as *mut *mut This;
                 let ($($fpath,)*)=self.into_paths();
                 (
                     $(
@@ -243,8 +244,9 @@ where
 
     unsafe fn rev_get_multi_field_raw_mut(
         self,
-        this: *mut This,
+        mut this: *mut This,
     ) -> NestedFieldPathSetOutput<OutRawTy, OutErr> {
+        let this = &mut this as *mut *mut This;
         let (nested, set) = self.into_inner();
         nested
             .rev_get_field_raw_mut(this)

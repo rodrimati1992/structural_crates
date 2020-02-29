@@ -22,8 +22,6 @@ macro_rules! impl_tuple {
         ]
         $tuple_ty:tt
     ) => {
-        impl<$($field_ty),*> crate::IsStructural for $tuple_ty { }
-
         impl<$($field_ty),*> Structural for $tuple_ty {
             const FIELDS: &'static $crate::structural_trait::FieldInfos={
                 &FieldInfos::Struct(&[
