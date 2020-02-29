@@ -101,7 +101,7 @@ struct Point5D<T>{
 
 This demonstrates how you can use structural enums.
 
-For details on [enums look here](./docs/structural_macro/enums/index.html).
+For details on [enums look here](./docs/enums/index.html).
 
 ```rust
 use structural::{GetFieldExt,Structural,fp,switch};
@@ -154,7 +154,7 @@ where
 
 // Runs the passed in command.
 //
-// The `Command_ESI` trait allows enums with a superset of the variants in `Command`
+// The `Command_SI` trait allows enums with a superset of the variants in `Command`
 // to be passed in,
 // requiring the a `_=>` branch when it's matched on with the `switch` macro.
 fn run_command_nonexhaustive<S>(cmd:S)->Result<(),UnsupportedCommand<S>>
@@ -170,7 +170,7 @@ where
             Ok(())
         }
         // `cmd` is moved into the branch here,
-        // wrapped into a `VariantProxy<S,FP!(RemoveAddress)>`,
+        // wrapped into a `VariantProxy<S,TS!(RemoveAddress)>`,
         // which allows non-optional access to the fields in the variant.
         //
         // This does not destructure the variant because
@@ -616,7 +616,6 @@ pub mod enums;
 pub mod field_path;
 pub mod field_traits;
 pub mod for_examples;
-pub mod mut_ref;
 pub mod structural_trait;
 pub mod utils;
 

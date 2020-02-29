@@ -25,10 +25,11 @@
 /// This allows accessing multiple fields from within a nested field.<br>
 /// Eg: `fp!(a => b, c)`, `fp!(::Foo => bar, baz, bam)`
 ///
-/// If you want to type aliases and constants for a particular field path,
+/// If you want type aliases and constants for a particular field path,
 /// you can use the [field_path_aliases] macro.
 ///
-/// From Rust 1.40.0 onwards you can also use the [FP] macro to get the type of a field path.
+/// From Rust 1.40.0 onwards you can also use [the FP macro](FP)
+/// to get the type of any field path.
 ///
 /// ### Identifier
 ///
@@ -45,7 +46,7 @@
 /// - `::Foo.bar`: A [VariantField],which accesses the `bar` field in the `Foo` variant.<br>
 /// Examples: `fp!(::Foo.bar)`, `fp!(::Boom.0)`
 ///
-/// - `::Foo`: A [VariantName],which wraps the type in a `VariantProxy<Self,FP!(Foo)>`.
+/// - `::Foo`: A [VariantName],which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
 /// If this is directly followed by a field access,it'll be a [VariantField] instead.<br>
 /// Examples: `fp!(::Foo)`, `fp!(::Boom)`
 ///
@@ -55,16 +56,16 @@
 ///
 /// More Examples:
 ///
-/// - `FP!(hello)`: accesses the `hello` field.
+/// - `fp!(hello)`: accesses the `hello` field.
 ///
-/// - `FP!(100)`: accesses the `100` field.
+/// - `fp!(100)`: accesses the `100` field.
 ///
-/// - `FP!(::"@hello")`,accesses the `@hello` variant.
+/// - `fp!(::"@hello")`,accesses the `@hello` variant.
 ///
-/// - `FP!(::1337."wh.at")`,accesses the `wh.at` field in the `1337` variant.
+/// - `fp!(::1337."wh.at")`,accesses the `wh.at` field in the `1337` variant.
 /// (the `.` in `"wh.at"` is part of the field name)
 ///
-/// - `FP!("hello")` (equivalent to `FP!(hello)`)
+/// - `fp!("hello")` (equivalent to `fp!(hello)`)
 ///
 /// ### Nested fields
 ///
@@ -301,7 +302,7 @@ macro_rules! _delegate_fp_inner {
 ///
 /// <span id="improved-macro"></span>
 ///
-/// This takes the same input as [fp],getting the type of that field path.
+/// This takes the same input as [the `fp` macro],getting the type of that field path.
 ///
 /// This variant of the macro requires one of these:
 ///
@@ -548,8 +549,9 @@ structural_alias!{
 
 fn assert_variant<T>(this:&T)
 where
-    // Field paths cannot be used to bound enum fields,
-    // for that you need to use type-level-strings.
+    // You need to use [TStr](crate::TStr) to manually bound `T` by the
+    // enum field accessor traits.
+    //
     // The `tstr_aliases` macro
     // (which is the equivalent of this macro for type-level-strings)
     // has an example for how to manually write bounds for enum fields.

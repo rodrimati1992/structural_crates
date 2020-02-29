@@ -3,7 +3,12 @@
 `structural` supports enums.
 Structural enum traits can be both statically and dynamically dispatched.
 
+Every instance of `<DerivingType>` in the documentation is the name of the enum.
+If have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
+
 # Generated code
+
+<span id="default_behavior"></span>
 
 The Structural derive macro generates these items+impls for enums:
 
@@ -66,14 +71,14 @@ Example:
 Regarding what bounds are generated for the variant in the
 `<DerivingType>_SI` and `<DerivingType>_ESI` traits:
 
-- A regular variant will alias the traits bounds for the variant fields.
+- A regular variant will alias the accessor trait bounds for the variant fields.
 
-- #[struc(newtype)]` variants only get the `IsVariant<_>` bound(like every variant).
+- `#[struc(newtype)]` variants only get the `IsVariant<_>` bound(like every variant).
 
 - `#[struc(newtype(bounds="Foo_VSI<'a,T,@variant>"))]` variants
 will get `Foo_VSI<'a,T,TS!(NameOfTheVariant)>` as the bound for the variant.<br>
 
-Every variant also gets a `IsVariant<_>` bound.
+Every variant also gets a [`IsVariant<_>`](crate::enums::IsVariant) bound.
 
 # Examples
 
@@ -84,7 +89,7 @@ This example shows many of the ways that fields can be accessed.
 ```
 use structural::{
     enums::VariantProxy,
-    FP,GetFieldExt,Structural,
+    TS,GetFieldExt,Structural,
     fp,switch,
 };
 
@@ -119,11 +124,11 @@ where
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
 
-    // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
-    let _: &VariantProxy<This,FP!(F o o)>= foo.field_(fp!(::Foo)).unwrap();
-    let _: &mut VariantProxy<This,FP!(F o o)>= foo.field_mut(fp!(::Foo)).unwrap();
+    // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
+    let _: &VariantProxy<This,TS!(F o o)>= foo.field_(fp!(::Foo)).unwrap();
+    let _: &mut VariantProxy<This,TS!(F o o)>= foo.field_mut(fp!(::Foo)).unwrap();
     {
-        let mut proxy: VariantProxy<This,FP!(F o o)>=
+        let mut proxy: VariantProxy<This,TS!(F o o)>=
             foo.clone().into_field(fp!(::Foo)).unwrap();
 
         assert_eq!( proxy.field_(fp!(0)), &3 );
@@ -150,8 +155,8 @@ where
             assert_eq!( f1, &false );
 
             // `foo` is a `&VariantProxy<_,_>` inside here
-            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
-            let _: &VariantProxy<This,FP!(F o o)>= foo;
+            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
+            let _: &VariantProxy<This,TS!(F o o)>= foo;
 
             assert_eq!( foo.fields(fp!(0,1)), (&3,&false) );
         }
@@ -163,8 +168,8 @@ where
             assert_eq!( f1, &mut false );
 
             // `foo` is a `&mut VariantProxy<_,_>` inside here
-            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
-            let _: &mut VariantProxy<This,FP!(F o o)>= foo;
+            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
+            let _: &mut VariantProxy<This,TS!(F o o)>= foo;
 
             assert_eq!( foo.fields_mut(fp!(0,1)), (&mut 3,&mut false) );
         }
@@ -173,8 +178,8 @@ where
     switch!{variant = foo.clone();
         // Can't destructure an enum into multiple fields by value yet.
         Foo=>{
-            // `FP!(F o o)` could also be written as `FP!(Foo)` from Rust 1.40 onwards
-            let _: VariantProxy<This,FP!(F o o)>= variant;
+            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
+            let _: VariantProxy<This,TS!(F o o)>= variant;
 
             assert_eq!( variant.clone().into_field(fp!(0)), 3 );
             assert_eq!( variant.clone().into_field(fp!(1)), false );
@@ -247,6 +252,7 @@ fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
     Some(switch!{ref this;
         Bar=>0,
         Baz{a,b}=>*a as u64 + *b as u64,
+        // This dereferences t0 and t1 in the pattern.
         Bam(&t0,&t1)=>t0 + t1,
         // The default branch is required because `Foo_SI` allows the enum to
         // have more variants than `Bar`,`Baz`,and `Bam`.

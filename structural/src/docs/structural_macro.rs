@@ -1,24 +1,43 @@
 /*!
 
 The Structural derive macro implements the Structural trait,
-as well as accessor traits(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl) for fields.
+as well as accessor traits
+([GetFieldImpl](crate::GetFieldImpl)/
+ [GetFieldMutImpl](crate::GetFieldMutImpl)/
+ [IntoFieldImpl](crate::IntoFieldImpl)
+)
+for fields.
 
-# Default Behavior
+Every instance of `<DerivingType>` in the documentation is the name of the type.
+If have a `Money` type,`<DerivingType>_Foo` means `Money_Foo`.
+
+# Enums
+
+For complementary documentation on using the `Structural` derive macro with enums
+[look here](super::enums)
+
+# Default Behavior for Structs
 
 By default,this derive generates:
 
 - Implementation of the structural trait for the deriving type.
 
-- Implementations of the accessor traits (GetFieldImpl/GetFieldMutImpl/IntoFieldImpl) for pub fields.
+- Implementations of the accessor traits
+([GetFieldImpl](crate::GetFieldImpl)/
+ [GetFieldMutImpl](crate::GetFieldMutImpl)/
+ [IntoFieldImpl](crate::IntoFieldImpl)
+)
+for pub fields.
 
-- A trait named `<deriving_type>_SI`,aliasing the accessor traits for the type,
+- A trait named `<DerivingType>_SI`,aliasing the accessor traits for the type,
 with a blanket implementation for all types with the same fields.
 
-- A trait named `<deriving_type>_VSI`,
+- A trait named `<DerivingType>_VSI`,
 for use of the struct as a newtype variant,by annotating the variant with
-`#[struc(newtype(bounds="<deriving_type>_VSI<@variant>"))]`.
+`#[struc(newtype(bounds="<DerivingType>_VSI<@variant>"))]`.
 
 All of these can be overriden.
+
 
 # Container Attributes
 
@@ -70,6 +89,8 @@ Only fields written like this are treated as optional:
 If the field is written any differently,then it will not be treated as an optional field,
 and you will be required to use the `#[struc(optional)]` attribute.
 
+For more documentation on optional accessors [look here](super::optional_accessors)
+
 # Variant Attributes
 
 ### `#[struc(rename="<new_name>")]`
@@ -117,11 +138,11 @@ The name can be anything,including non-ascii identifiers.
 This requires the `nightly_impl_fields` cargo feature
 (or `impl_fields` if associated type bounds stabilized after the latest release).
 
-Changes the `<deriving_type>_SI` trait (which aliases the accessor traits for this type)
+Changes the `<DerivingType>_SI` trait (which aliases the accessor traits for this type)
 not to refer to the type of this field,
 instead it will be required to implement the bounds passed to this attribute.
 
-Note that these bounds are only added to the `<deriving_type>_SI` trait.
+Note that these bounds are only added to the `<DerivingType>_SI` trait.
 
 [Here is the example for this attribute.](#impl-trait-fields)
 
@@ -134,7 +155,7 @@ Delegates the implementation of the Structural and accessor traits to this field
 You can only delegate the implementation and Structural and accessor traits
 to a single field.
 
-Using this attribute will disable the generation of the `<deriving_type>_SI` trait.
+Using this attribute will disable the generation of the `<DerivingType>_SI` trait.
 
 Optional arguments for `delegate_to`:
 
@@ -149,7 +170,7 @@ Forces a field to have an optional accessor.
 As opposed to `#[struc(implicit_optionality)]`,
 this also allows type aliases of Option to be used,
 
-[Here are more details on how optional fields work](../optional_accessors/index.html)
+For more documentation on optional accessors [look here](super::optional_accessors)
 
 Example:
 ```rust
@@ -263,14 +284,14 @@ This example shows many of the ways that fields can be accessed.
 use structural::{GetFieldExt,Structural,fp};
 
 fn main(){
-    with_enum(Foo{
+    with_struct(Foo{
         name: "foo",
         year: 2020,
         tuple: Some((3,5,8)),
         opt_tuple: Some((13,21,34)),
     });
 
-    with_enum(Bar{
+    with_struct(Bar{
         name: "foo",
         surname:"metavariable",
         year: 2020,
@@ -279,7 +300,7 @@ fn main(){
     });
 }
 
-fn with_enum<This>(mut foo:This)
+fn with_struct<This>(mut foo:This)
 where
     This: Foo_SI + Clone,
 {
@@ -492,7 +513,7 @@ fn main(){
 ### Disabling the trait alias
 
 This example demonstrates how one disables the generation of the
-`<deriving_type>_SI` trait to declare it manually.
+`<DerivingType>_SI` trait to declare it manually.
 
 ```rust
 use structural::{Structural,IntoFieldMut,GetFieldExt,FP};
@@ -567,8 +588,8 @@ fn takes_person(this:&impl Person_SI){
 }
 
 
-// Notice how `name` is a `&'static str`,and `height_nm` is a `u32`?
-//
+// Notice how `name` is a `&'static str` instead of a `String`,
+// and `height_nm` is a `u32` instead of a `u64`?
 // This is possible because the concrete types of the fields weren't used in
 // the `Person_SI` trait.
 takes_person(&make_struct!{

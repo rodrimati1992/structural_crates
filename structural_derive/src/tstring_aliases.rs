@@ -75,8 +75,16 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     }
                 }
 
-                let _ = writeln!(doc_fp_inner, "The type-level equivalent of {:?}", string);
-                let _ = writeln!(doc_fpc_inner, "A value of the `{}` TStr.", alias_name);
+                let _ = writeln!(
+                    doc_fp_inner,
+                    "The [TStr](::structural::TStr) equivalent of {:?}",
+                    string
+                );
+                let _ = writeln!(
+                    doc_fpc_inner,
+                    "An instance of the [TStr](::structural::TStr) equivalent of {:?}.",
+                    string,
+                );
 
                 let string = tident_tokens(string, FullPathForChars::Yes);
 

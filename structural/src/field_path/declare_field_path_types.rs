@@ -1,5 +1,6 @@
 /// Type-level string,used for identifiers in field paths.
 ///
+/// This type is zero sized.
 ///
 /// This cannot be converted to a `&'static str` constant
 /// (if you can figure out a cheap way to do that please create an issue/pull request).
@@ -9,7 +10,7 @@
 /// `TStr` is parameterized by a private type.
 ///
 /// Manually expanding the macros used to get a `TStr` type is not supported,
-/// and is allowed to break whenever a crate uses the "use_const_str" cargo feature,
+/// since it could break whenever any other crate uses the "use_const_str" cargo feature,
 /// which changes the private `TS` type that's used as the parameter to TStr
 /// to use const generics to improve error messages.
 ///

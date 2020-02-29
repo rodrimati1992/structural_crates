@@ -22,11 +22,11 @@ use crate::field_path::AssertTStrParam;
 
 /// Queries whether an enum is some variant (the `V` type parameter)
 ///
-/// Example bounds: `IsVariant<FP!(Foo)>`,`IsVariant<FP!(Bar)>`.
+/// Example bounds: `IsVariant<TS!(Foo)>`,`IsVariant<TS!(Bar)>`.
 ///
 /// # Safety
 ///
-/// An implementation of `IsVariant<FP!(Foo)>`
+/// An implementation of `IsVariant<TS!(Foo)>`
 /// must only return true if the enum is the `Foo` variant
 /// (`Foo` is just an example,it applies to all variants).
 ///
@@ -38,7 +38,7 @@ use crate::field_path::AssertTStrParam;
 ///
 /// ```rust
 /// use structural::enums::IsVariant;
-/// use structural::{FP,Structural,fp};
+/// use structural::{TS,Structural,fp};
 ///
 /// assertions(Enum::Foo, Enum::Bar(0), Enum::Boom{x:0,y:false});
 ///
@@ -47,8 +47,8 @@ use crate::field_path::AssertTStrParam;
 /// fn assertions<T>(foo:T, bar:T, boom:T)
 /// where
 ///     // From Rust 1.40 this is equivalent to:
-///     // T: IsVariant<FP!(Foo)> + IsVariant<FP!(Bar)> + IsVariant<FP!(Boom)>
-///     T: IsVariant<FP!(F o o)> + IsVariant<FP!(B a r)> + IsVariant<FP!(B o o m)>
+///     // T: IsVariant<TS!(Foo)> + IsVariant<TS!(Bar)> + IsVariant<TS!(Boom)>
+///     T: IsVariant<TS!(F o o)> + IsVariant<TS!(B a r)> + IsVariant<TS!(B o o m)>
 /// {
 ///     assert_eq!( foo.is_variant_(fp!(Foo)), true );
 ///     assert_eq!( foo.is_variant_(fp!(Bar)), false );

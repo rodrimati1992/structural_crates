@@ -1,5 +1,5 @@
 /**
-Declares type aliases for [`TStr<_>`(type-level string)](::structural::field_path::TStr).
+Declares type aliases for [`TStr<_>`(type-level string)](crate::TStr).
 
 # Variants
 
@@ -90,7 +90,7 @@ macro_rules! tstr_aliases {
             $($mod_contents:tt)*
         }
     ) => (
-        /// Type aliases for `TStr` (type-level string)
+        /// Type aliases for [`TStr`](::structural::TStr)
         /// (from the structural crate).
         ///
         /// `TStr` values can be constructed with the NEW associated constant.

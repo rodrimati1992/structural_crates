@@ -15,7 +15,7 @@ use self::sealed::Sealed;
 ///
 /// The errors can be:
 ///
-/// - NonOptField]:
+/// - [NonOptField]:
 ///     An error type that cannot be constructed,used when a field always exists.
 ///
 /// - [OptionalField]:

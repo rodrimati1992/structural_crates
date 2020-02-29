@@ -12,7 +12,7 @@ These traits are intended to only be implemented.
 ### For structs and enums
 
 The [FieldType],[GetFieldImpl],[GetFieldMutImpl],[IntoFieldImpl] accessor traits,
-that defines how a field is accessed.
+that define how a field is accessed.
 
 ### For enums
 
@@ -422,7 +422,6 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
-///     mut_ref::MutRef,
 /// };
 ///
 /// struct Huh<T>{
@@ -607,7 +606,6 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
-///     mut_ref::MutRef,
 /// };
 ///
 /// struct Huh<T>{

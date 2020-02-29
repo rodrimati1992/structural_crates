@@ -11,7 +11,7 @@ use crate::{
 /// This trait has these methods:
 ///
 /// - `*_variant`: For fallibly converting an enum to a VariantProxy of a passed variant.
-/// As opposed to calling GetFieldExt methods with a `fp!(::Foo)` argument,
+/// As opposed to calling GetFieldExt methods with a `ts!(::Foo)` argument,
 /// this allows recovering the enum when it's not the passed variant.
 ///
 pub trait EnumExt {
@@ -21,21 +21,21 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{fp,FP,GetFieldExt};
+    /// use structural::{ts,TS,GetFieldExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let this=Variants::Foo(11,22);
     /// {
-    ///     // `FP!(F o o)` can also be written as `FP!(Foo)` since Rust 1.40.0
-    ///     let proxy: &VariantProxy<Variants,FP!(F o o)>=
-    ///         this.as_variant(fp!(Foo)).unwrap();
+    ///     // `TS!(F o o)` can also be written as `TS!(Foo)` since Rust 1.40.0
+    ///     let proxy: &VariantProxy<Variants,TS!(F o o)>=
+    ///         this.as_variant(ts!(Foo)).unwrap();
     ///
-    ///     assert_eq!( proxy.field_(fp!(0)), &11);
-    ///     assert_eq!( proxy.field_(fp!(1)), &22);
+    ///     assert_eq!( proxy.field_(ts!(0)), &11);
+    ///     assert_eq!( proxy.field_(ts!(1)), &22);
     /// }
     /// {
-    ///     assert_eq!( this.as_variant(fp!(Bar)), Err(&this) );
+    ///     assert_eq!( this.as_variant(ts!(Bar)), Err(&this) );
     /// }
     /// ```
     #[inline(always)]
@@ -56,7 +56,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{fp,FP,GetFieldExt};
+    /// use structural::{ts,TS,GetFieldExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -64,17 +64,17 @@ pub trait EnumExt {
     /// let mut other=this.clone();
     ///
     /// {
-    ///     // `FP!(B a r)` can also be written as `FP!(Bar)` since Rust 1.40.0
-    ///     let proxy: &mut VariantProxy<Variants,FP!(B a r)>=
-    ///         this.as_mut_variant(fp!(Bar)).unwrap();
+    ///     // `TS!(B a r)` can also be written as `TS!(Bar)` since Rust 1.40.0
+    ///     let proxy: &mut VariantProxy<Variants,TS!(B a r)>=
+    ///         this.as_mut_variant(ts!(Bar)).unwrap();
     ///    
-    ///     assert_eq!( proxy.field_(fp!(0)), &"hello");
-    ///     assert_eq!( proxy.field_mut(fp!(0)), &mut"hello");
+    ///     assert_eq!( proxy.field_(ts!(0)), &"hello");
+    ///     assert_eq!( proxy.field_mut(ts!(0)), &mut"hello");
     /// }
     /// {
-    ///     assert_eq!( this.as_mut_variant(fp!(Foo)), Err(&mut other) );
-    ///     assert_eq!( this.as_mut_variant(fp!(Baz)), Err(&mut other) );
-    ///     assert_eq!( this.as_mut_variant(fp!(Boom)), Err(&mut other) );
+    ///     assert_eq!( this.as_mut_variant(ts!(Foo)), Err(&mut other) );
+    ///     assert_eq!( this.as_mut_variant(ts!(Baz)), Err(&mut other) );
+    ///     assert_eq!( this.as_mut_variant(ts!(Boom)), Err(&mut other) );
     /// }
     /// ```
     #[inline(always)]
@@ -98,31 +98,31 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{fp,FP,GetFieldExt};
+    /// use structural::{ts,TS,GetFieldExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
     /// let mut this=Variants::Baz(None);
     ///
     /// unsafe{
-    ///     // `FP!(B a z)` can also be written as `FP!(Baz)` since Rust 1.40.0
-    ///     let proxy: *mut VariantProxy<Variants,FP!(B a z)>=
-    ///         Variants::as_raw_mut_variant(&mut this,fp!(Baz)).unwrap();
+    ///     // `TS!(B a z)` can also be written as `TS!(Baz)` since Rust 1.40.0
+    ///     let proxy: *mut VariantProxy<Variants,TS!(B a z)>=
+    ///         Variants::as_raw_mut_variant(&mut this,ts!(Baz)).unwrap();
     ///    
-    ///     assert_eq!( (*proxy).field_(fp!(0)), None);;
-    ///     assert_eq!( (*proxy).field_mut(fp!(0)), None);;
+    ///     assert_eq!( (*proxy).field_(ts!(0)), None);;
+    ///     assert_eq!( (*proxy).field_mut(ts!(0)), None);;
     /// }
     /// unsafe{
     ///     assert_eq!(
-    ///         Variants::as_raw_mut_variant(&mut this,fp!(Foo)),
+    ///         Variants::as_raw_mut_variant(&mut this,ts!(Foo)),
     ///         Err(&mut this as *mut Variants)
     ///     );
     ///     assert_eq!(
-    ///         Variants::as_raw_mut_variant(&mut this,fp!(Bar)),
+    ///         Variants::as_raw_mut_variant(&mut this,ts!(Bar)),
     ///         Err(&mut this as *mut Variants)
     ///     );
     ///     assert_eq!(
-    ///         Variants::as_raw_mut_variant(&mut this,fp!(Boom)),
+    ///         Variants::as_raw_mut_variant(&mut this,ts!(Boom)),
     ///         Err(&mut this as *mut Variants)
     ///     );
     /// }
@@ -148,7 +148,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{fp,FP,GetFieldExt};
+    /// use structural::{ts,TS,GetFieldExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -157,18 +157,18 @@ pub trait EnumExt {
     /// let this=Variants::Baz(Some(Ordering::Less));
     ///
     /// {
-    ///     // `FP!(B a z)` can also be written as `FP!(Baz)` since Rust 1.40.0
-    ///     let mut proxy: VariantProxy<Variants,FP!(B a z)>=
-    ///         this.into_variant(fp!(Baz)).unwrap();
+    ///     // `TS!(B a z)` can also be written as `TS!(Baz)` since Rust 1.40.0
+    ///     let mut proxy: VariantProxy<Variants,TS!(B a z)>=
+    ///         this.into_variant(ts!(Baz)).unwrap();
     ///    
-    ///     assert_eq!( proxy.field_(fp!(0)), Some(&Ordering::Less));
-    ///     assert_eq!( proxy.field_mut(fp!(0)), Some(&mut Ordering::Less));
-    ///     assert_eq!( proxy.into_field(fp!(0)), Some(Ordering::Less));
+    ///     assert_eq!( proxy.field_(ts!(0)), Some(&Ordering::Less));
+    ///     assert_eq!( proxy.field_mut(ts!(0)), Some(&mut Ordering::Less));
+    ///     assert_eq!( proxy.into_field(ts!(0)), Some(Ordering::Less));
     /// }
     /// {
-    ///     assert_eq!(this.into_variant(fp!(Foo)), Err(this));
-    ///     assert_eq!(this.into_variant(fp!(Bar)), Err(this));
-    ///     assert_eq!(this.into_variant(fp!(Boom)), Err(this));
+    ///     assert_eq!(this.into_variant(ts!(Foo)), Err(this));
+    ///     assert_eq!(this.into_variant(ts!(Bar)), Err(this));
+    ///     assert_eq!(this.into_variant(ts!(Boom)), Err(this));
     /// }
     ///
     /// ```
@@ -189,7 +189,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{fp,FP,GetFieldExt};
+    /// use structural::{ts,TS,GetFieldExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -201,22 +201,22 @@ pub trait EnumExt {
     /// });
     ///
     /// {
-    ///     // `FP!(B o o m)` can also be written as `FP!(Boom)` since Rust 1.40.0
-    ///     let mut proxy: VariantProxy<Box<Variants>,FP!(B o o m)>=
-    ///         this.clone().box_into_variant(fp!(Boom)).unwrap();
+    ///     // `TS!(B o o m)` can also be written as `TS!(Boom)` since Rust 1.40.0
+    ///     let mut proxy: VariantProxy<Box<Variants>,TS!(B o o m)>=
+    ///         this.clone().box_into_variant(ts!(Boom)).unwrap();
     ///    
-    ///     assert_eq!( proxy.field_(fp!(a)), &None);
-    ///     assert_eq!( proxy.field_mut(fp!(a)), &mut None);
-    ///     assert_eq!( proxy.clone().into_field(fp!(a)), None);
+    ///     assert_eq!( proxy.field_(ts!(a)), &None);
+    ///     assert_eq!( proxy.field_mut(ts!(a)), &mut None);
+    ///     assert_eq!( proxy.clone().into_field(ts!(a)), None);
     ///    
-    ///     assert_eq!( proxy.field_(fp!(b)), &&[3,5,8,13]);
-    ///     assert_eq!( proxy.field_mut(fp!(b)), &mut [3,5,8,13]);
-    ///     assert_eq!( proxy.clone().into_field(fp!(b)), [3,5,8,13]);
+    ///     assert_eq!( proxy.field_(ts!(b)), &&[3,5,8,13]);
+    ///     assert_eq!( proxy.field_mut(ts!(b)), &mut [3,5,8,13]);
+    ///     assert_eq!( proxy.clone().into_field(ts!(b)), [3,5,8,13]);
     /// }
     /// {
-    ///     assert_eq!(this.clone().box_into_variant(fp!(Foo)), Err(this.clone()));
-    ///     assert_eq!(this.clone().box_into_variant(fp!(Bar)), Err(this.clone()));
-    ///     assert_eq!(this.clone().box_into_variant(fp!(Baz)), Err(this.clone()));
+    ///     assert_eq!(this.clone().box_into_variant(ts!(Foo)), Err(this.clone()));
+    ///     assert_eq!(this.clone().box_into_variant(ts!(Bar)), Err(this.clone()));
+    ///     assert_eq!(this.clone().box_into_variant(ts!(Baz)), Err(this.clone()));
     /// }
     ///
     /// ```
