@@ -641,7 +641,6 @@ where
         #[doc=#docs]
         #vis trait #ident <#decl_generics> :
             #( #supertraits_a+ )*
-            structural::pmr::IsStructural+
             #exhaustive_bound
             #field_bounds
         where
@@ -658,7 +657,6 @@ where
             __This:
                 ?Sized+
                 #( #supertraits_b+ )*
-                structural::pmr::IsStructural+
                 #exhaustive_bound
                 #field_bounds,
             #(#where_preds_b,)*

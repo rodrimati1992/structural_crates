@@ -291,7 +291,7 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
         optionality=$optionality:ident,
     ) => (
         unsafe fn get_field_raw_mut(
-            this:*mut (),
+            this:*mut *mut (),
             _:$name_param,
             _:(),
         )->Result<
@@ -301,7 +301,7 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
             $crate::handle_optionality!(
                 $optionality,
                 raw,
-                &mut (*(this as *mut $Self)).$field_name
+                &mut (**(this as *mut *mut $Self)).$field_name
                     as *mut $crate::option_or_value_ty!(
                         $optionality,
                         $crate::GetFieldType<$Self,$name_param>
@@ -403,10 +403,6 @@ macro_rules! _private_impl_structural{
             )*]
         }
     )=>{
-        impl<$($typarams)*> $crate::IsStructural for $self_
-        where $($where_)*
-        {}
-
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {
@@ -434,10 +430,6 @@ macro_rules! _private_impl_structural{
             variants=[ $( $variant:ident ),* $(,)*]
         }
     )=>{
-        impl<$($typarams)*> $crate::IsStructural for $self_
-        where $($where_)*
-        {}
-
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {

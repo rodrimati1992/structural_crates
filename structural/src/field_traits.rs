@@ -105,7 +105,7 @@ The [errors](self::errors) module contains the error-related items used in acces
 
 use crate::{
     field_path::{FieldPath, FieldPathSet},
-    IsStructural, Structural,
+    Structural,
 };
 
 mod enum_impls;
@@ -181,34 +181,7 @@ macro_rules! declare_accessor_trait_alias {
 ///
 /// # Usage as Bound Example
 ///
-/// This example demonstrates how you can use this trait as a bound.
-///
-/// If you have a lot of field accessor bounds you could use `structural_alias` macro
-/// to alias those bounds and use that alias instead.
-///
-/// ```rust
-/// use structural::{GetField,GetFieldExt,FP,fp};
-///
-/// fn formatted_value<T,S>(this:&T)->String
-/// where
-///     T:GetField<FP!(v a l u e), Ty=S>,
-///     S:std::fmt::Debug,
-/// {
-///     format!("{:#?}",this.field_(fp!(value)) )
-/// }
-///
-/// #[derive(structural::Structural)]
-/// struct Huh<T>{
-///     #[struc(access="mut")]
-///     value:T,
-/// }
-///
-/// fn main(){
-///     let this=Huh{value:"Hello, World!"};
-///     assert!( formatted_value(&this).contains("Hello, World!") );
-/// }
-///
-/// ```
+/// If you want a bound for this trait you can use [OptGetField] or [GetField]
 ///
 /// # Manual Implementation Example
 ///
@@ -217,7 +190,7 @@ macro_rules! declare_accessor_trait_alias {
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,IsStructural,Structural,FP,TList,
+///     FieldType,GetFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 /// };
@@ -232,8 +205,6 @@ macro_rules! declare_accessor_trait_alias {
 ///     ]);
 /// }
 ///
-///
-/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -281,7 +252,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait GetField<FieldName>=
-        GetFieldImpl<FieldName, Err = NonOptField> + IsStructural
+        GetFieldImpl<FieldName, Err = NonOptField>
 }
 
 declare_accessor_trait_alias! {
@@ -302,11 +273,11 @@ declare_accessor_trait_alias! {
     ///     with_none:&dyn OptGetField<FP!(0), Ty=u32>,
     /// ){
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be a `&Some(99_u32)` instead.
+    ///     // it would be a `&Some(99_u32)` instead of `Some(&99_u32)`.
     ///     assert_eq!( with_some.field_(fp!(0)), Some(&99_u32) );
     ///
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be a `&None` instead.
+    ///     // it would be a `&None` instead of `None`.
     ///     assert_eq!( with_none.field_(fp!(0)), None );
     /// }
     ///
@@ -316,7 +287,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptGetField<FieldName>=
-        GetFieldImpl<FieldName, Err = OptionalField> + IsStructural
+        GetFieldImpl<FieldName, Err = OptionalField>
 }
 
 /// Queries the type of a field.
@@ -412,61 +383,43 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// It is recommended that you use the `z_unsafe_impl_get_field_raw_mut_method` macro
 /// if you only borrow a field of the type.
 ///
+/// ### Implementing `get_field_raw_mut`
+///
 /// Your implementation of `GetFieldMutImpl::get_field_raw_mut` must ensure these properties:
+/// <span id="raw_mut_properties"></span>
 ///
 /// - It must be side-effect free,
 ///
 /// - The field you borrow must always be the same one.
 ///
-/// - That no implementation of `GetFieldMutImpl::get_field_raw_mut`
-/// returns a pointer to a field that other ones also return,
+/// - That no implementation returns a pointer to a field that other ones also return,
+///
+/// The `this` parameter is a double pointer to support dynamically sized types.
+///
+/// You can unerase the pointer by casting it to `*mut *mut Self`
+/// (you can also use any type that's compatible with `Self`).
+///
+/// If `Self: !Sized` then you must panic/abort inside `get_field_raw_mut`,
+/// and return a function pointer from `get_field_raw_mut_func`
+/// to a function that does what `get_field_raw_mut` is required to do for `Sized` types.
 ///
 /// Your implementation of the `get_field_raw_mut_func` method must only return a
-/// function pointer for the `GetFieldMutImpl::get_field_raw_mut` method from the same
-/// implementation of the `GetFieldMutImpl` trait.
+/// function pointer to a function that ensures the properties listed
+/// [here](#raw_mut_properties).
 ///
 ///
 /// # Usage as Bound Example
 ///
-/// This example demonstrates how you can use this trait as a bound.
+/// If you want a bound for this trait you can use [OptGetFieldMut] or [GetFieldMut]
 ///
-/// If you have a lot of field accessor bounds you could use `structural_alias` macro
-/// to alias those bounds and use that alias instead.
-///
-/// ```rust
-/// use structural::{GetFieldMut,GetFieldExt,FP,fp};
-///
-/// fn take_value<T,V>(this:&mut T)->V
-/// where
-///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-///     T:GetFieldMut<FP!(v a l u e), Ty=V>,
-///     V:Default,
-/// {
-///     std::mem::replace( this.field_mut(fp!(value)), Default::default() )
-/// }
-///
-/// #[derive(structural::Structural)]
-/// struct Huh<T>{
-///     #[struc(access="mut")]
-///     value:T,
-/// }
-///
-/// fn main(){
-///     let mut this=Huh{value:"Hello, World!"};
-///     assert_eq!(take_value(&mut this),"Hello, World!");
-///     assert_eq!(this.value,"");
-/// }
-///
-/// ```
-///
-/// # Manual Implementation Example
+/// # Implementation Example
 ///
 /// While this trait is intended to be implemented using the `Structural` derive macro,
-/// you can manually implement it like this:
+/// you can also implement it like this:
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,GetFieldMutImpl,IsStructural,Structural,FP,TList,
+///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -482,8 +435,6 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     ]);
 ///
 /// }
-///
-/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -526,9 +477,9 @@ pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> 
     ///
     /// # Safety
     ///
-    /// You must pass a pointer casted from `*mut Self` to `*mut ()`.
+    /// You must pass a pointer casted from `*mut *mut Self` to `*mut *mut ()`.
     unsafe fn get_field_raw_mut(
-        ptr: *mut (),
+        ptr: *mut *mut (),
         field_name: FieldName,
         param: P,
     ) -> Result<*mut Self::Ty, Self::Err>
@@ -550,7 +501,7 @@ pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> 
 #[doc(hidden)]
 pub unsafe trait SpecGetFieldMut<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
     unsafe fn get_field_raw_mut_inner(
-        ptr: *mut (),
+        ptr: *mut *mut (),
         field_name: FieldName,
         param: P,
     ) -> Result<*mut Self::Ty, Self::Err>
@@ -582,7 +533,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait GetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = NonOptField> + IsStructural
+        GetFieldMutImpl<FieldName, Err = NonOptField>
 }
 
 declare_accessor_trait_alias! {
@@ -604,12 +555,13 @@ declare_accessor_trait_alias! {
     ///     with_none:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
     /// ){
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&Some(5)` and `&mut Some(5)` instead.
+    ///     // it would be `&Some(5)` and `&mut Some(5)` instead of
+    ///     // `Some(&5)` and `Some(&mut 5)`.
     ///     assert_eq!( with_some.field_(fp!(foo)), Some(&5) );
     ///     assert_eq!( with_some.field_mut(fp!(foo)), Some(&mut 5) );
     ///
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&None` and `&mut None` instead.
+    ///     // it would be `&None` and `&mut None` instead of None for both.
     ///     assert_eq!( with_none.field_(fp!(foo)), None );
     ///     assert_eq!( with_none.field_mut(fp!(foo)), None );
     /// }
@@ -621,14 +573,14 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptGetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = OptionalField> + IsStructural
+        GetFieldMutImpl<FieldName, Err = OptionalField>
 }
 
 /////////////////////////////////////////////////
 
 /// The type of `GetFieldMutImpl::get_field_raw_mut`
 pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
-    unsafe fn(*mut (), FieldName, P) -> Result<*mut FieldTy, E>;
+    unsafe fn(*mut *mut (), FieldName, P) -> Result<*mut FieldTy, E>;
 
 /////////////////////////////////////////////////
 
@@ -643,34 +595,7 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// # Usage as Bound Example
 ///
-/// This example demonstrates how you can use this trait as a bound.
-///
-/// If you have a lot of field accessor bounds you could use `structural_alias` macro
-/// to alias those bounds and use that alias instead.
-///
-/// ```rust
-/// use structural::{IntoField,GetFieldExt,GetFieldType,FP,fp};
-///
-/// fn into_value<T,V>(this:T)->V
-/// where
-///     // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-///     T:IntoField<FP!(v a l u e), Ty=V>,
-/// {
-///     this.into_field(fp!(value))
-/// }
-///
-/// #[derive(structural::Structural)]
-/// struct Huh<T>{
-///     #[struc(access="move")]
-///     value:T,
-/// }
-///
-/// fn main(){
-///     let this=Huh{value:"Hello, World!"};
-///     assert_eq!(into_value(this),"Hello, World!");
-/// }
-///
-/// ```
+/// If you want a bound for this trait you can use [OptIntoField] or [IntoField]
 ///
 /// # Manual Implementation Example
 ///
@@ -679,7 +604,7 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// ```rust
 /// use structural::{
-///     FieldType,GetFieldImpl,IntoFieldImpl,IsStructural,Structural,FP,TList,
+///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
 ///     structural_trait::{FieldInfo,FieldInfos},
 ///     mut_ref::MutRef,
@@ -695,8 +620,6 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///         FieldInfo::not_renamed("value")
 ///     ]);
 /// }
-///
-/// impl<T> IsStructural for Huh<T>{}
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -772,8 +695,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait IntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = NonOptField> +
-        IsStructural+
+        IntoFieldImpl<FieldName, Err = NonOptField>
 }
 
 declare_accessor_trait_alias! {
@@ -809,8 +731,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptIntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = OptionalField>+
-        IsStructural+
+        IntoFieldImpl<FieldName, Err = OptionalField>
 }
 
 declare_accessor_trait_alias! {
@@ -841,8 +762,7 @@ declare_accessor_trait_alias! {
     /// ```
     pub trait IntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = NonOptField> +
-        GetFieldMutImpl<FieldName, Err = NonOptField> +
-        IsStructural+
+        GetFieldMutImpl<FieldName, Err = NonOptField>
 }
 
 declare_accessor_trait_alias! {
@@ -864,7 +784,8 @@ declare_accessor_trait_alias! {
     ///     mut none: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
     /// ){
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&Some('g')` and `&mut Some('g')` instead.
+    ///     // it would be `&Some('g')` and `&mut Some('g')` instead of
+    ///     // `Some(&'g')` and `Some(&mut 'g')`.
     ///     assert_eq!( some.field_(fp!(foo)), Some(&'g') );
     ///     assert_eq!( some.field_mut(fp!(foo)), Some(&mut 'g') );
     ///     assert_eq!( some.into_field(fp!(foo)), Some('g') );
@@ -886,8 +807,7 @@ declare_accessor_trait_alias! {
     /// ```
     pub trait OptIntoFieldMut<FieldName>=
         IntoFieldImpl<FieldName, Err = OptionalField> +
-        GetFieldMutImpl<FieldName, Err = OptionalField> +
-        IsStructural+
+        GetFieldMutImpl<FieldName, Err = OptionalField>
 }
 
 ////////////////////////////////////////////////////////////////////////////////

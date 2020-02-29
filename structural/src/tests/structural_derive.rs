@@ -2,7 +2,7 @@ use crate::{
     field_traits::NonOptField,
     structural_trait::{accessor_names, FieldInfo, FieldInfos},
     GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl, IntoFieldMut,
-    IsStructural, Structural,
+    Structural,
 };
 
 #[cfg(feature = "alloc")]
@@ -132,7 +132,6 @@ assert_equal_bounds! {
         + GetFieldMutImpl<FP!(g), Ty = u32, Err = NonOptField>
         + IntoFieldMut<FP!(h e l l o), Ty = u32, Err = NonOptField>
         + IntoFieldImpl<FP!(w o r l d), Ty = u32, Err = NonOptField>
-        + IsStructural
     ),
 }
 

@@ -105,13 +105,13 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 /// impl IsSingleFieldPath for FromEnd{}
 ///
-/// impl<'a,T> RevFieldType<&'a [T]> for FromEnd {
+/// impl<'a,T> RevFieldType<[T]> for FromEnd {
 ///     type Ty = T;
 /// }
-/// impl<'a,T> RevGetFieldImpl<'a,&'a [T]> for FromEnd {
+/// impl<'a,T> RevGetFieldImpl<'a,[T]> for FromEnd {
 ///     type Err = OptionalField;
 ///
-///     fn rev_get_field(self, this: &'a &'a [T]) -> Result<&'a T, OptionalField>{
+///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, OptionalField>{
 ///         let len=this.len();
 ///         this.get(len.wrapping_sub(self.0 + 1))
 ///             .ok_or(OptionalField)
@@ -215,7 +215,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///         }
 ///     }
 ///
-///     unsafe fn rev_get_field_raw_mut(self, this: *mut T) -> Result<*mut P0::Ty, P0::Err>{
+///     unsafe fn rev_get_field_raw_mut(self, this: *mut *mut T) -> Result<*mut P0::Ty, P0::Err>{
 ///         match self.0 {
 ///             Which::First=>self.1.rev_get_field_raw_mut(this),
 ///             Which::Second=>self.2.rev_get_field_raw_mut(this),
@@ -229,7 +229,8 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err>;
 
     /// Accesses the field(s) that `self` represents inside of `this`,by raw pointer.
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err>;
+    unsafe fn rev_get_field_raw_mut(self, this: *mut *mut This)
+        -> Result<*mut Self::Ty, Self::Err>;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -359,7 +360,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field_traits::RevGetField;
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let tup=(3,5,(8,(13,21)));
     ///
@@ -371,7 +372,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&T)->&i32
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(2.1.0)` instead of `paths::nested` from Rust 1.40 onwards.
     ///     paths::nested: for<'a> RevGetField<'a,T,Ty=i32>
     /// {
@@ -395,7 +395,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field_traits::OptRevGetField;
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let tup1=(3,5,(8,(Some(13),21)));
     /// let tup2=(3,5,(8,(None,21)));
@@ -409,7 +409,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&T)->Option<&i32>
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(2.1.0.Some)` instead of
     ///     // `paths::nested` from Rust 1.40 onwards.
     ///     paths::nested: for<'a> OptRevGetField<'a,T,Ty=i32>
@@ -436,7 +435,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::RevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -456,7 +455,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&mut T)->&mut i32
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(baz.bar.foo)` instead of `paths::nested` from
     ///     // Rust 1.40 onwards.
     ///     paths::nested: for<'a> RevGetFieldMut<'a,T,Ty=i32>
@@ -483,7 +481,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::OptRevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -503,7 +501,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&mut T)->Option<&mut &'static str>
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(baz.bar.foo.Some)` instead of `paths::nested` from
     ///     // Rust 1.40 onwards.
     ///     paths::nested: for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
@@ -529,7 +526,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::RevIntoField;
     /// use structural::for_examples::StructBar;
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// use std::cmp::Ordering;
     ///
@@ -549,7 +546,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:T)->Ordering
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(bar.bar.bar)` instead of `paths::nested` from
     ///     // Rust 1.40 onwards.
     ///     paths::nested: for<'a> RevIntoField<'a,T,Ty=Ordering>
@@ -575,7 +571,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::OptRevIntoField;
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let nope=StructFoo{ foo: WithBoom::Nope };
     /// let boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
@@ -589,7 +585,6 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:T)->Option<&'static [u16]>
     /// where
-    ///     T: IsStructural,
     ///     // You can use `FP!(foo::Boom.b)` instead of `paths::nested` from
     ///     // Rust 1.40 onwards.
     ///     paths::nested: for<'a> OptRevIntoField<'a,T,Ty=&'static [u16]>
@@ -619,7 +614,7 @@ declare_accessor_trait_alias! {
     /// use structural::field_traits::{RevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::StructBar;
     /// use structural::reexports::{ConstDefault,const_default};
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let mut foo=StructBar{
     ///     bar: ([(0,3),(5,8)], [(40,50,60)]),
@@ -639,7 +634,7 @@ declare_accessor_trait_alias! {
     ///     mod paths{ nested=bar.0.1 }
     /// }
     ///
-    /// trait GetNested: IsStructural + Sized {
+    /// trait GetNested: Sized {
     ///     fn get_nested_mut<'a,Ty>(&'a mut self)->&'a mut Ty
     ///     where
     ///         // You can use `FP!(bar.0.1)` instead of `paths::nested` from
@@ -659,7 +654,7 @@ declare_accessor_trait_alias! {
     ///     }
     /// }
     ///
-    /// impl<T: IsStructural> GetNested for T {}
+    /// impl<T> GetNested for T {}
     ///
     /// ```
     pub trait RevIntoFieldMut<'a,This>=
@@ -681,7 +676,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::{OptRevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt, IsStructural, field_path_aliases};
+    /// use structural::{GetFieldExt, field_path_aliases};
     ///
     /// let mut nope=StructFoo{ foo: WithBoom::Nope };
     /// let mut boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
@@ -696,7 +691,7 @@ declare_accessor_trait_alias! {
     ///     mod paths{ nested=foo::Boom.b }
     /// }
     ///
-    /// trait GetNested: IsStructural + Sized {
+    /// trait GetNested: Sized {
     ///     fn get_nested_mut<'a,Ty>(&'a mut self)->Option<&'a mut Ty>
     ///     where
     ///         // You can use `FP!(foo::Boom.b)` instead of `paths::nested` from
@@ -716,7 +711,7 @@ declare_accessor_trait_alias! {
     ///     }
     /// }
     ///
-    /// impl<T: IsStructural> GetNested for T {}
+    /// impl<T> GetNested for T {}
     ///
     /// ```
     pub trait OptRevIntoFieldMut<'a,This>=
@@ -805,11 +800,14 @@ macro_rules! impl_get_nested_field_inner {
 
             unsafe fn rev_get_field_raw_mut(
                 self,
-                field:*mut This
+                field:*mut *mut This
             )->Result<*mut $fty_l,CombErr>{
                 let ($($fname_a,)*)=self.list;
+                let mut field=*field;
                 $(
-                    let field={
+                    #[allow(unused_mut)]
+                    let mut field={
+                        let field=&mut field as *mut _;
                         try_fe!($fname_a.rev_get_field_raw_mut(field))
                     };
                 )*
@@ -987,8 +985,11 @@ where
         Ok(this)
     }
 
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err> {
-        Ok(this)
+    unsafe fn rev_get_field_raw_mut(
+        self,
+        this: *mut *mut This,
+    ) -> Result<*mut Self::Ty, Self::Err> {
+        Ok(*this)
     }
 }
 
@@ -1041,7 +1042,7 @@ where
         self.list.0.rev_get_field_mut(this)
     }
 
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut F0::Ty, F0::Err> {
+    unsafe fn rev_get_field_raw_mut(self, this: *mut *mut This) -> Result<*mut F0::Ty, F0::Err> {
         self.list.0.rev_get_field_raw_mut(this)
     }
 }
@@ -1081,7 +1082,7 @@ where
 unsafe trait SpecRevGetFieldMut<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
     unsafe fn rev_get_field_raw_mut_inner(
         self,
-        this: *mut This,
+        this: *mut *mut This,
     ) -> Result<*mut Self::Ty, Self::Err>;
 }
 
@@ -1127,7 +1128,7 @@ macro_rules! impl_rev_traits {
             }
 
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut(self,this:*mut This)->Result<*mut This::Ty,This::Err>{
+            unsafe fn rev_get_field_raw_mut(self,this:*mut *mut This)->Result<*mut This::Ty,This::Err>{
                 SpecRevGetFieldMut::<'a,This>::rev_get_field_raw_mut_inner(
                     self,
                     this
@@ -1146,11 +1147,11 @@ macro_rules! impl_rev_traits {
                 cfg(feature="specialization")
                 unsafe fn rev_get_field_raw_mut_inner(
                     self,
-                    this:*mut This
+                    this:*mut *mut This
                 )-> Result<*mut This::Ty,This::Err>{
-                    let func=(*this).get_field_raw_mut_func();
+                    let func=(**this).get_field_raw_mut_func();
                     func(
-                        this as *mut (),
+                        this as *mut *mut (),
                         self,
                         (),
                     )
@@ -1167,11 +1168,10 @@ macro_rules! impl_rev_traits {
             $($where_)*
         {
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut_inner(self,this:*mut This)->Result<*mut This::Ty,This::Err>{
-                let name=self;
+            unsafe fn rev_get_field_raw_mut_inner(self,this:*mut *mut This)->Result<*mut This::Ty,This::Err>{
                 <This as
                     GetFieldMutImpl<Self>
-                >::get_field_raw_mut(this as *mut (), name, ())
+                >::get_field_raw_mut(this as *mut *mut (), self, ())
             }
         }
 
@@ -1253,9 +1253,9 @@ where
     #[inline(always)]
     unsafe fn rev_get_field_raw_mut(
         self,
-        this: *mut This,
+        this: *mut *mut This,
     ) -> Result<*mut VariantProxy<This, TStr<S>>, OptionalField> {
-        map_of!(EnumExt::as_raw_mut_variant(this, self.name))
+        map_of!(EnumExt::as_raw_mut_variant(*this, self.name))
     }
 }
 

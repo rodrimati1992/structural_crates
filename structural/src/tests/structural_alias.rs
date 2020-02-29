@@ -15,10 +15,8 @@ mod with_super_traits {
     }
     trait AssertImplies: Trait {}
 
-    impl<This> AssertImplies for This where
-        This: Copy + IntoFieldMut<FP!(a), Ty = u8, Err = NonOptField> + IsStructural
-    {
-    }
+    impl<This> AssertImplies for This where This: Copy + IntoFieldMut<FP!(a), Ty = u8, Err = NonOptField>
+    {}
 
     /// This function ensures that the supertraits and field accessors in Trait
     /// are implied by `T:Trait`.
@@ -52,7 +50,7 @@ mod with_where_clause {
     impl<This, T> AssertImplies<T> for This
     where
         T: Clone + Debug,
-        This: Copy + IntoFieldMut<FP!(a), Ty = T, Err = NonOptField> + IsStructural,
+        This: Copy + IntoFieldMut<FP!(a), Ty = T, Err = NonOptField>,
     {
     }
 }
@@ -112,8 +110,7 @@ mod with_variants {
         (Foo),
         (
             IsVariant<names::A>+
-            IsVariant<names::B>+
-            IsStructural
+            IsVariant<names::B>
         )
     }
 }
@@ -168,7 +165,6 @@ mod variants_with_accesses {
         trait Dummy,
         (Foo),
         (
-            IsStructural+
             IsVariant<paths::A>+
             IsVariant<paths::B>+
             IsVariant<paths::C>+
@@ -231,8 +227,7 @@ mod exhaustive_enums {
                     trait Dummy0,
                     (Foo),
                     (
-                        IsStructural+
-                        $( IsVariant<paths::$variant>+ )*
+                                    $( IsVariant<paths::$variant>+ )*
                         VariantCount<Count=strings::$variant_count_str>
                     )
                 }
@@ -284,8 +279,7 @@ mod exhaustive_enums {
                     trait Dummy0,
                     ($trait_),
                     (
-                        IsStructural+
-                        $( IsVariant<paths::$variant>+ )*
+                                    $( IsVariant<paths::$variant>+ )*
                     )
                 }
 
@@ -393,7 +387,6 @@ mod tuple_and_unit_variants {
         trait Dummy0,
         (Tuple0),
         (
-            IsStructural+
             IsVariant<paths::A>+
         )
     }
@@ -402,7 +395,6 @@ mod tuple_and_unit_variants {
         trait Dummy1,
         (Tuple1),
         (
-            IsStructural+
             IsVariant<paths::A>+
             GetVariantField<strings::A,strings::n0, Ty=u8>
         )
@@ -412,7 +404,6 @@ mod tuple_and_unit_variants {
         trait Dummy2,
         (Tuple2),
         (
-            IsStructural+
             IsVariant<paths::A>+
             GetVariantFieldMut<strings::A,strings::n0, Ty=u8>+
             OptGetVariantField<strings::A,strings::n1, Ty=u16>+
@@ -422,7 +413,6 @@ mod tuple_and_unit_variants {
         trait Dummy5,
         (Tuple5),
         (
-            IsStructural+
             IsVariant<paths::A>+
             IntoVariantFieldMut<strings::A,strings::n0, Ty=u8>+
             GetVariantField<strings::A,strings::n1, Ty=u16>+
@@ -436,7 +426,6 @@ mod tuple_and_unit_variants {
         trait UnitDummy5,
         (Unit1),
         (
-            IsStructural+
             IsVariant<paths::A>
         )
     }
