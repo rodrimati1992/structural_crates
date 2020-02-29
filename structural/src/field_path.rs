@@ -357,7 +357,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     /// # Safety
     ///
     /// You must ensure that all the `FieldPath`s are unique,
-    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    /// there must be no field path that is a prefix of any other `FieldPath`.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> FieldPathSet<T, UniquePaths> {
         self.set_uniqueness()
@@ -368,7 +368,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     /// # Safety
     ///
     /// You must ensure that if `U==UniquePaths`,then all the `FieldPath`s are unique,
-    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    /// there must be no field path that is a prefix of any other `FieldPath`.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> FieldPathSet<T, U> {
         FieldPathSet {
@@ -532,7 +532,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     /// # Safety
     ///
     /// You must ensure that all the `FieldPath`s in `S` are unique,
-    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    /// there must be no field path that is a prefix of any other `FieldPath`.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> NestedFieldPathSet<F, S, UniquePaths> {
         self.set_uniqueness()
@@ -545,7 +545,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     ///
     /// If `U == UniquePaths`,
     /// you must ensure that all the `FieldPath`s in `S` are unique,
-    /// there must be no `FieldPath` that is a prefix of any other `FieldPath`.
+    /// there must be no field path that is a prefix of any other `FieldPath`.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> NestedFieldPathSet<F, S, U> {
         NestedFieldPathSet {

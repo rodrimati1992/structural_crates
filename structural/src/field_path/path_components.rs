@@ -38,13 +38,13 @@ macro_rules! impl_to_path_to_set {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A marker trait for type-level string.
+/// A marker trait for type-level strings.
 ///
 /// This is only implemented on [`TStr`](::structural::TStr).
 ///
 pub trait IsTStr: Sealed + Debug + Copy + ConstDefault {}
 
-/// A marker trait to assert that `P` is a `TStr`.
+/// A marker trait to assert that `P` is a [`TStr`](crate::TStr).
 pub trait AssertTStrParam<P>: AssertTStrParamSealed<P> {}
 
 mod is_tstr_param_sealed {

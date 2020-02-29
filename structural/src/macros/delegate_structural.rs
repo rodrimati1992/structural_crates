@@ -26,7 +26,6 @@ borrowing from the same variable mutably.
 
 ```rust
 use structural::unsafe_delegate_structural_with;
-use structural::mut_ref::MutRef;
 
 # trait Trait{}
 # impl<T> Trait for T{}
@@ -126,7 +125,6 @@ use std::{
 };
 
 use structural::{GetFieldExt,GetFieldMutImpl,unsafe_delegate_structural_with,make_struct,fp};
-use structural::mut_ref::MutRef;
 
 struct Bar<T>{
     value:ManuallyDrop<T>

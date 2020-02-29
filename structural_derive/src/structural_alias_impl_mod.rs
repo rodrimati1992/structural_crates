@@ -467,7 +467,7 @@ where
     if !datatype.variants.is_empty() {
         docs.push_str("### Variants\n\n");
         docs.push_str(
-            "This trait aliases the `IsVariant<FP!( Variant )>` trait for \
+            "This trait aliases the `IsVariant<TS!( Variant )>` trait for \
              each of the variants below.\n\n\
              The accessor for every enum variant field is optional,\
              because the enum might not be that variant.\n\n",

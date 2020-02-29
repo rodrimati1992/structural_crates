@@ -87,13 +87,13 @@ where
         }
 
         // `move` here means that the enum is taken by value,
-        // wrapped in a `VariantProxy<T,FP!(Baz)>`,
+        // wrapped in a `VariantProxy<T,TS!(Baz)>`,
         move Baz=>{
             assert_eq!(this.into_field(fp!(c)) ,"hello");
             2
         }
 
-        // The enum is taken by value into the branch(wrapped in a `VariantProxy<T,FP!(Bam)>`),
+        // The enum is taken by value into the branch(wrapped in a `VariantProxy<T,TS!(Bam)>`),
         // because the default access mode in this switch is `move`,
         // since none was specified in the switch header.
         Bam=>{
@@ -133,7 +133,7 @@ let mut this=Enum::Foo{a:100};
 // which is overridable per-variant,destructuring fields into references by default.
 switch!{ ref this ;
     Foo=>{
-        // The `this` here is a `&VariantProxy<Enum,FP!(Foo)>`,
+        // The `this` here is a `&VariantProxy<Enum,TS!(Foo)>`,
         // which allows accessing fields in variants non-optionally.
         assert_eq!( this.field_(fp!(a)), &100 )
     }
@@ -174,7 +174,7 @@ let this=Enum::Baz{ c:"55" };
 let text="99";
 
 // `other = <expression>` is used here to be able to use
-// the `VariantProxy<Enum,FP!(VariantName)>` inside the switch branch,
+// the `VariantProxy<Enum,TS!(VariantName)>` inside the switch branch,
 // to access any field of the matched variant(especially those that weren't destructured).
 //
 // If it was just the expression,then the `VariantProxy` would be inaccessible.
@@ -201,7 +201,7 @@ let number = switch!{ other = this;
     ref mut Bam{d} =>{
         assert_eq!( d, Some(&mut 9999) );
 
-        // The `other` here is a `&mut VariantProxy<Enum,FP!(Bam)>`,
+        // The `other` here is a `&mut VariantProxy<Enum,TS!(Bam)>`,
         // you can access all the fields using it,
         // but only after the last use of destructured fields.
         assert_eq!( other.field_mut(fp!(d)), Some(&mut 9999) );
@@ -326,7 +326,7 @@ If `$matched_value` *is* passed,and `$proxy` is specified,
 it is stored in the `$proxy` variable by value before any pattern matching happens.
 
 In switch arms that match on the variant of the enum,
-`$proxy` is a `VariantProxy<TypeOfMatchedEnum, FP!(NameOfVariant)>`,
+`$proxy` is a `VariantProxy<TypeOfMatchedEnum, TS!(NameOfVariant)>`,
 which allows directly accessing variant fields.
 
 In switch arms that don't match on the variant of the enum,
@@ -355,7 +355,7 @@ A `switch_branch` is any of:
 - `$($access:access_mode)? $variant:ident $fields:fields => $branch_expr:branch_expr`:
 Checks whether the enum is the `$variant` variant,and if it is that variant,
 destructures the fields,and runs the `$branch_expr` code
-with the enum variant bound (a `VariantProxy<_,FP!($variant)>`) to the `$proxy` variable
+with the enum variant bound (a `VariantProxy<_,TS!($variant)>`) to the `$proxy` variable
 (if it was declared).
 
 - `$(_)? if $condition:expression => $branch_expr:branch_expr`:
