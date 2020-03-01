@@ -259,14 +259,17 @@ macro_rules! default_if {
     )
 }
 
-/// For manual implementors of the GetFieldMutImpl trait,
-/// implementing the methods used for accession multiple mutable fields.
+/// For semi-manual implementors of the [GetFieldMutImpl] trait for structs.
+///
+/// This implements the [GetFieldMutImpl::get_field_raw_mut]
+/// by returning a mutable pointer to a field,
+/// and [GetFieldMutImpl::get_field_raw_mut_func] by returning
+/// `get_field_raw_mut` as a function pointer.
 ///
 /// # Safety
 ///
 /// This is an unsafe macro,
-/// because it requires each invocation of it to borrow a different field for the type
-/// (the `field_name=` argument),
+/// because [GetFieldMutImpl] requires no impl to borrow the same field mutably as any other,
 /// otherwise this would cause undefined behavior because it would
 /// create multiple mutable borrows to the same field.
 ///
@@ -324,7 +327,8 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
 
 /// For use in manual implementations of the IntoFieldImpl trait.
 ///
-/// Implements the `IntoFieldImpl::box_into_field_` method,
+/// Implements the `IntoFieldImpl::box_into_field_` method
+/// by delegatign to the [IntoFieldImpl::into_field_] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at
@@ -336,9 +340,10 @@ macro_rules! z_impl_box_into_field_method {
     ($($anything:tt)*) => {};
 }
 
-/// For use in manual implementations of the IntoFieldImpl trait.
+/// For use in semi-manual implementations of the IntoFieldImpl trait.
 ///
-/// Implements the `IntoFieldImpl::box_into_field_` method,
+/// Implements the [IntoFieldImpl::box_into_field_] method
+/// by delegatign to the [IntoFieldImpl::into_field_] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at

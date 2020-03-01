@@ -271,8 +271,8 @@ Using `impl Trait` fields makes a `Foo` structural alias unusable as a `dyn Foo`
 This demonstrates using impl trait fields.
 
 */
-#[cfg_attr(not(feature = "nightly_impl_fields"), doc = "```ignore")]
-#[cfg_attr(feature = "nightly_impl_fields", doc = "```rust")]
+#[cfg_attr(not(feature = "impl_fields"), doc = "```ignore")]
+#[cfg_attr(feature = "impl_fields", doc = "```rust")]
 /**
 // Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`)
 // work without it.

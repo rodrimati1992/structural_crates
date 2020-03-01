@@ -36,6 +36,7 @@ nightly_specialization=["specialization"]
 
 # Re-enable this feature every time you want to test whether const generics work.
 use_const_str=["structural_derive/use_const_str"]
+nightly_use_const_str=["use_const_str"]
 
 better_macros=[]
 nightly_better_macros=["better_macros"]

@@ -570,9 +570,9 @@ struct Cents(u64);
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
 #![cfg_attr(feature = "nightly_specialization", feature(specialization))]
 #![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
-#![cfg_attr(feature = "use_const_str", feature(const_if_match))]
-#![cfg_attr(feature = "use_const_str", feature(const_generics))]
-#![cfg_attr(feature = "use_const_str", allow(incomplete_features))]
+#![cfg_attr(feature = "nightly_use_const_str", feature(const_if_match))]
+#![cfg_attr(feature = "nightly_use_const_str", feature(const_generics))]
+#![cfg_attr(feature = "nightly_use_const_str", allow(incomplete_features))]
 #![deny(rust_2018_idioms)]
 #![no_std]
 
