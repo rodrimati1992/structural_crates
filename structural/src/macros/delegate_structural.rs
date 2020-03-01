@@ -48,18 +48,25 @@ unsafe_delegate_structural_with!{
     //
     // `specialization_params(Sized);` is the default when this the parameter is not passed,
     // it means that no specialization is used,always requiring `Self:Sized`.
+    //
     specialization_params(Sized);
 
     // This means that the type is `?Sized` and not specialization is used,
     // this may be slower in debug builds because this always uses a
     // function pointer call in raw-pointer-taking methods.
+    //
     // specialization_params(?Sized);
 
     // This means that the type is `?Sized` by default.
     // The `cfg(anything)` argument enables specialization conditionally,
-    // with a default impl for `Self:?Sized` which may be slower in debug builds,
-    // because this always uses a function pointer call in raw-pointer methods.
-    // It specializes on `Self:Sized` to remove the overhead of raw-pointer methods.
+    //
+    // When specialization is disables theres only a default impl for `Self:?Sized`
+    // which may be slower in debug builds,
+    // because this uses a function pointer call in raw-pointer methods.
+    //
+    // When specialization is enabled,the impl is specializes on `Self:Sized`
+    // to remove the overhead of raw-pointer methods.
+    //
     // specialization_params(cfg(anything));
 
 
@@ -67,13 +74,8 @@ unsafe_delegate_structural_with!{
     // this is required because Rust doesn't have a `typeof`/`decltype` construct.
     delegating_to_type=T;
 
-    // `field_name` is the name for a `PhantomData` parameter in
-    // `GetFieldMutImpl::get_field_raw_mut`
-    // (usable from `as_delegating_raw{}` in this macro),
-    // with the name of the field being accessed
-    //
-    // `FieldName` is the name of the type parameter that represents the
-    // name of the field being accessed.
+    // `field_name` is the name for the field path parameter,
+    // with the name of the field being accessed.
     field_name_param=( field_name : FieldName );
 
     // This block of code is used to get the reference to the delegating variable
@@ -87,7 +89,8 @@ unsafe_delegate_structural_with!{
     //
     // This is `unsafe` because this block must always evaluate to a mutable reference
     // for the same variable,
-    // and it must not be the same variable as other implementations of the GetFieldMutImpl trait
+    // and it must not be the same variable as other implementations of the GetFieldMutImpl trait.
+    //
     unsafe GetFieldMutImpl
     where [
         // This is an optional where clause
