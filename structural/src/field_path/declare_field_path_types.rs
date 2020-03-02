@@ -102,9 +102,9 @@
 /// 
 /// # Example
 /// 
-/// For an example of constructing `TStr` using the [ts] macro,
+/// For an example of constructing `TStr` using the [ts](./macro.ts.html) macro,
 /// and constructing other field paths with it,
-/// you can look in the docs for the [ts] macro.
+/// you can look in the docs for the [ts](./macro.ts.html) macro.
 /// 
 pub struct TStr<T>(pub(crate) PhantomData<T>);
 
@@ -113,19 +113,21 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 /// This is the type that `fp!(::Foo.bar)` constructs.
 ///
-/// Both the `V` and `F` type parameters are [TStr]s,
+/// Both the `V` and `F` type parameters are [TStr](./struct.TStr.html),
 ///
 /// # Construction
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp] macro,with `fp!(::Foo.bar)`
+/// - [fp](./macro.fp.html) macro,with `fp!(::Foo.bar)`
 ///
 /// - The `VariantField{variant,field}` struct literal
 ///
 /// - The `new` constructor.
 ///
-/// - The `NEW` associated constant,if both `V` and `F` implement [core_extensions::ConstDefault].
+/// - The `NEW` associated constant,if both `V` and `F` implement 
+/// `core_extensions::ConstDefault`
+/// (reexported in `structural::reexports::ConstDefault`).
 ///
 /// # Example
 ///
@@ -167,24 +169,26 @@ pub struct VariantField<V, F> {
 }
 
 /// This allows accessing the `V` enum variant
-/// (by constructing a [VariantProxy](enums::VariantProxy) representing that variant).
+/// (by constructing a [VariantProxy](./enums/struct.VariantProxy.html) representing that variant).
 ///
 /// This is the type that `fp!(::Foo)` constructs.<br>
-/// Note that `fp!(::Foo.bar)` constructs a [VariantField] instead.
+/// Note that `fp!(::Foo.bar)` constructs a [VariantField](./struct.VariantField.html) instead.
 ///
-/// The `V` type parameters is a [TStr].
+/// The `V` type parameters is a [TStr](./struct.TStr.html).
 ///
 /// # Construction
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp] macro,with `fp!(::Foo)`
+/// - [fp](./macro.fp.html) macro,with `fp!(::Foo)`
 ///
 /// - The `VariantName{name}` struct literal
 ///
 /// - The `new` constructor.
 ///
-/// - The `NEW` associated constant,if `V` implements [core_extensions::ConstDefault].
+/// - The `NEW` associated constant,if `V` implements 
+/// `core_extensions::ConstDefault`
+/// (reexported in `structural::reexports::ConstDefault`)
 ///
 /// # Example
 ///
@@ -242,17 +246,20 @@ pub struct VariantName<V> {
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp] macro,when you access a nested field
+/// - [fp](./macro.fp.html) macro,when you access a nested field
 ///
 /// - The `FieldPath{list}` struct literal
 ///
 /// - The `one` or `many` constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements [core_extensions::ConstDefault].
+/// - The `NEW` associated constant,if `T` implements 
+/// `core_extensions::ConstDefault`
+/// (reexported in `structural::reexports::ConstDefault`)
 ///
 /// # Examples
 /// 
-/// You can look for examples of using this in the single-field [GetFieldExt] methods.
+/// You can look for examples of using this in the single-field 
+/// [GetFieldExt](./trait.GetFieldExt.html) methods.
 #[repr(transparent)]
 #[derive(Default, Copy, Clone)]
 pub struct FieldPath<T> {
@@ -266,11 +273,13 @@ pub struct FieldPath<T> {
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp] macro,when you access multiple field (without using `=>`).
+/// - [fp](./macro.fp.html) macro,when you access multiple field (without using `=>`).
 ///
 /// - The `one` or `many` constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements [core_extensions::ConstDefault].
+/// - The `NEW` associated constant,if `T` implements 
+/// `core_extensions::ConstDefault`
+/// (reexported in `structural::reexports::ConstDefault`)
 ///
 /// # Uniqueness
 ///
@@ -290,7 +299,8 @@ pub struct FieldPath<T> {
 ///
 /// # Examples
 /// 
-/// You can look for examples of using this in the multi-field [GetFieldExt] 
+/// You can look for examples of using this in the multi-field 
+/// [GetFieldExt](./trait.GetFieldExt.html)
 /// methods.
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
@@ -336,7 +346,9 @@ pub struct FieldPathSet<T, U> {
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.
 ///
 /// - Using the `NEW` associated constant,
-/// if `F` and `S` implements [core_extensions::ConstDefault].
+/// if `F` and `S` implements 
+/// `core_extensions::ConstDefault`
+/// (reexported in `structural::reexports::ConstDefault`)
 /// Example: `<FP!(::Foo=>a,b,c)>::NEW`
 ///
 /// # Drop Types
@@ -349,7 +361,8 @@ pub struct FieldPathSet<T, U> {
 ///
 /// # Examples
 /// 
-/// You can look for examples of using this in the multi-field [GetFieldExt] 
+/// You can look for examples of using this in the multi-field 
+/// [GetFieldExt](./trait.GetFieldExt.html) 
 /// methods (look for the enum examples).
 /// 
 #[derive(Debug, Clone, Copy)]

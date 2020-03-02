@@ -77,12 +77,12 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
 
                 let _ = writeln!(
                     doc_fp_inner,
-                    "The [TStr](::structural::TStr) equivalent of {:?}",
+                    "The `structural::TStr` equivalent of {:?}",
                     string
                 );
                 let _ = writeln!(
                     doc_fpc_inner,
-                    "An instance of the [TStr](::structural::TStr) equivalent of {:?}.",
+                    "An instance of the `structural::TStr` equivalent of {:?}.",
                     string,
                 );
 

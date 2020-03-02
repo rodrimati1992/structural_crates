@@ -1,5 +1,7 @@
 /*!
 Type-level representatins of access to one or multiple fields.
+
+The re-exported items are all field-path related.
 */
 
 #![allow(non_snake_case, non_camel_case_types)]
@@ -7,6 +9,8 @@ Type-level representatins of access to one or multiple fields.
 use crate::type_level::collection_traits::{
     Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
 };
+
+pub use crate::{field_path_aliases, fp, FP};
 
 use core_extensions::ConstDefault;
 
@@ -27,8 +31,7 @@ mod path_components;
 
 pub use self::path_components::*;
 
-#[doc(inline)]
-pub use crate::*;
+pub use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, TStr, VariantField, VariantName};
 
 ////////////////////////////////////////////////////////////////////////////////
 

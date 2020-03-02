@@ -19,7 +19,7 @@ use std_::{
 /// Enum wrapper,for accessing the fields of a particular variant
 /// (determined by the `V` type parameter).
 ///
-/// The `V` type parameter is a [TStr](crate::TStr).
+/// The `V` type parameter is a [TStr](../struct.TStr.html).
 ///
 /// Example type: `VariantProxy<Enum,TS!(Foo)>`,`Foo` being the name of the variant.
 ///

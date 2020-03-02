@@ -3,7 +3,8 @@ Accessor and extension traits for fields.
 
 # GetFieldExt
 
-The [GetFieldExt] trait,which is the way you're expected to call accessor methods.
+The [GetFieldExt](./trait.GetFieldExt.html)trait,
+which is the way you're expected to call accessor methods.
 
 # Implementable Traits
 
@@ -11,12 +12,19 @@ These traits are intended to only be implemented.
 
 ### For structs and enums
 
-The [FieldType],[GetFieldImpl],[GetFieldMutImpl],[IntoFieldImpl] accessor traits,
+The [FieldType](./trait.FieldType.html),
+[GetFieldImpl](./trait.GetFieldImpl.html),
+[GetFieldMutImpl](./trait.GetFieldMutImpl.html),
+[IntoFieldImpl](./trait.IntoFieldImpl.html)
+accessor traits,
 that define how a field is accessed.
 
 ### For enums
 
-The [GetVariantFieldImpl], [GetVariantFieldMutImpl], [IntoVariantFieldImpl] marker traits.
+The [GetVariantFieldImpl](./variant_field/trait.GetVariantFieldImpl.html),
+[GetVariantFieldMutImpl](./variant_field/trait.GetVariantFieldMutImpl.html),
+[IntoVariantFieldImpl](./variant_field/trait.IntoVariantFieldImpl.html)
+marker traits.
 
 # Traits for bounds
 
@@ -24,19 +32,33 @@ These traits can be used as bound aliases(they can't be directly implemented).
 
 ### For structs
 
-The [GetField],[GetFieldMut],[IntoField],[IntoFieldMut] traits,
+The [GetField](./trait.GetField.html),
+[GetFieldMut](./trait.GetFieldMut.html),
+[IntoField](./trait.IntoField.html),
+[IntoFieldMut](./trait.IntoFieldMut.html)
+traits,
 for accessing non-optional fields.
 
-The [OptGetField],[OptGetFieldMut],[OptIntoField],[OptIntoFieldMut] traits,
+The [OptGetField](./trait.OptGetField.html),
+[OptGetFieldMut](./trait.OptGetFieldMut.html),
+[OptIntoField](./trait.OptIntoField.html),
+[OptIntoFieldMut](./trait.OptIntoFieldMut.html)
+traits,
 for accessing optional fields.
 
 ### For enums
 
-The [GetVariantField],[GetVariantFieldMut],[IntoVariantField],
-[IntoVariantFieldMut] traits,for accessing non-optional fields.
+The [GetVariantField](./variant_field/trait.GetVariantField.html),
+[GetVariantFieldMut](./variant_field/trait.GetVariantFieldMut.html),
+[IntoVariantField](./variant_field/trait.IntoVariantField.html),
+[IntoVariantFieldMut](./variant_field/trait.IntoVariantFieldMut.html)
+traits,for accessing non-optional fields.
 
-The [OptGetVariantField],[OptGetVariantFieldMut],[OptIntoVariantField],
-[OptIntoVariantFieldMut] traits,for accessing optional fields.
+The [OptGetVariantField](./variant_field/trait.OptGetVariantField.html),
+[OptGetVariantFieldMut](./variant_field/trait.OptGetVariantFieldMut.html),
+[OptIntoVariantField](./variant_field/trait.OptIntoVariantField.html),
+[OptIntoVariantFieldMut](./variant_field/trait.OptIntoVariantFieldMut.html)
+traits,for accessing optional fields.
 
 # Rev* traits
 
@@ -45,21 +67,26 @@ The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-
 There are two kinds of `Rev*` traits:
 
 - Single field traits:
-Which are [RevGetFieldImpl], [RevGetFieldMutImpl], and [RevIntoFieldImpl],
+Which are [RevGetFieldImpl](./rev_get_field/trait.RevGetFieldImpl.html),
+[RevGetFieldMutImpl](./rev_get_field/trait.RevGetFieldMutImpl.html),
+and [RevIntoFieldImpl](./rev_get_field/trait.RevIntoFieldImpl.html),
 mirroring the regular field accessor traits.
 
 - Multiple field traits:
-Which are [RevGetMultiField], and [RevGetMultiFieldMut] (no RevIntoMultiField for now),
+Which are [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
+and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMut.html)
+(no RevIntoMultiField for now),
 allowing access to multiple fields at once.
 
-The [GetFieldExt] trait uses the `Rev*` impls of the passed-in path to access the
+The [GetFieldExt](./trait.GetFieldExt.html) trait
+uses the `Rev*` impls of the passed-in path to access the
 fields in `Self`.
 
 # Additional items
 
 ### Array Traits
 
-This module re-exports these traits from [for_arrays],with:
+This module re-exports these traits from [for_arrays](./for_arrays/index.html),with:
 
 - The `Array*` structural aliases to use any type with accessors from 0
 until the size of the array,in which all the field types are the same,
@@ -69,7 +96,7 @@ until the size of the array,in which all the field types are the same.
 
 ### Tuple Traits
 
-This module re-exports these traits from [for_tuples],with:
+This module re-exports these traits from [for_tuples](./for_tuples/index.html),with:
 
 - The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
 until the size of the tuple,in which all field types can be different,
@@ -79,25 +106,33 @@ until the size of the tuple,in which all field types can be different.
 
 ### type aliases
 
-The [GetFieldErr] type alias allows querying the `GetFieldImpl::Err` associated type,
+The [GetFieldErr](./type.GetFieldErr.html)
+type alias allows querying the `GetFieldImpl::Err` associated type,
 useful when delegating the `*Impl` accessor traits.
 
-The [GetFieldType], [GetFieldType2], [GetFieldType3], [GetFieldType4]
+The [GetFieldType](./type.GetFieldType.html),
+[GetFieldType2](./type.GetFieldType2.html),
+[GetFieldType3](./type.GetFieldType3.html),
+[GetFieldType4](./type.GetFieldType4.html)
 type aliases allow querying the type of a field up to 4 levels of nesting.
 
-The [RevGetFieldType] type alias gets the type of a nested field
+The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
+type alias gets the type of a nested field
 (which one is determined by the field path).
 
 ### Errors
 
-The [errors](self::errors) module contains the error-related items used in accessor trait impls.
+The [errors](./errors/index.html)
+module contains the error-related items used in accessor trait impls.
 
 ### Normalize Fields
 
-[NormalizeFields] transforms the `Result<T,_>`s in a type into either an
+[NormalizeFields](./trait.NormalizeFields.html)
+transforms the `Result<T,_>`s in a type into either an
 `Option<T>` or a `T` depending on its error type.
 
-[NormalizeFieldsOut] The type that `Foo` is converted into when calling
+[NormalizeFieldsOut](./type.NormalizeFieldsOut.html)
+The type that `Foo` is converted into when calling
 `Foo::normalize_fields( foo )`.
 
 
@@ -166,7 +201,7 @@ macro_rules! declare_accessor_trait_alias {
     )
 }
 
-/// Allows accessing the `FieldName` field.
+/// Provides shared access to the `FieldName` field.
 ///
 /// `FieldName` represents the name of the field on the type level,
 /// It is a type because a `FIELD_NAME:&'static str` const parameter
@@ -181,7 +216,8 @@ macro_rules! declare_accessor_trait_alias {
 ///
 /// # Usage as Bound Example
 ///
-/// If you want a bound for this trait you can use [OptGetField] or [GetField]
+/// If you want a bound for this trait you can use [GetField](./trait.GetField.html),
+/// or [OptGetField](./trait.OptGetField.html).
 ///
 /// # Manual Implementation Example
 ///
@@ -235,7 +271,7 @@ declare_accessor_trait_alias! {
     /// A bound for shared access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` receivers.
     ///
     /// # Example
@@ -259,7 +295,7 @@ declare_accessor_trait_alias! {
     /// A bound for optional and shared access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` receivers.
     ///
     /// # Example
@@ -410,7 +446,9 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// # Usage as Bound Example
 ///
-/// If you want a bound for this trait you can use [OptGetFieldMut] or [GetFieldMut]
+/// If you want a bound for this trait you can use
+/// [GetFieldMut](./trait.GetFieldMut.html), or
+/// [OptGetFieldMut](./trait.OptGetFieldMut.html),
 ///
 /// # Implementation Example
 ///
@@ -512,7 +550,7 @@ declare_accessor_trait_alias! {
     /// A bound for shared and mutable access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` or `&mut self` receivers.
     ///
     /// # Example
@@ -539,7 +577,7 @@ declare_accessor_trait_alias! {
     /// A bound for optional, shared and mutable access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` or `&mut self` receivers.
     ///
     /// # Example
@@ -594,7 +632,13 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// # Usage as Bound Example
 ///
-/// If you want a bound for this trait you can use [OptIntoField] or [IntoField]
+/// If you want a bound for this trait you can use
+/// [IntoField](./trait.IntoField.html),
+/// [OptIntoField](./trait.OptIntoField.html),
+/// [IntoFieldMut](./trait.IntoFieldMut.html),or
+/// [OptIntoFieldMut](./trait.OptIntoFieldMut.html).
+///
+/// The `Mut` suffixed ones also allow mutable access to the field.
 ///
 /// # Manual Implementation Example
 ///
@@ -663,10 +707,10 @@ declare_accessor_trait_alias! {
     /// A bound for shared and by-value access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` or `self` receivers.
     ///
-    /// The `FieldName` type parameter is usually a [TStr](crate::TStr)
+    /// The `FieldName` type parameter is usually a [TStr](../struct.TStr.html)
     /// for the name of a field.<br>
     ///
     /// # Example
@@ -700,7 +744,7 @@ declare_accessor_trait_alias! {
     /// A bound for optional, shared and by-value access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
+    /// to access the field you can use the [GetFieldExt](./trait.GetFieldExt.html) methods
     /// with `&self` or `self` receivers.
     ///
     /// # Example
@@ -736,7 +780,7 @@ declare_accessor_trait_alias! {
     /// A bound for shared, mutable,and by-value access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use any [GetFieldExt] method.
+    /// to access the field you can use any [GetFieldExt](./trait.GetFieldExt.html) method.
     ///
     /// # Example
     ///
@@ -767,7 +811,7 @@ declare_accessor_trait_alias! {
     /// A bound for optional, shared, mutable,and by-value access to the `FieldName` field.
     ///
     /// This is only usable as a bound,
-    /// to access the field you can use any [GetFieldExt] method.
+    /// to access the field you can use any [GetFieldExt](./trait.GetFieldExt.html) method.
     ///
     /// # Example
     ///

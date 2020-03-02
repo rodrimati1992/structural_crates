@@ -274,7 +274,7 @@ enum GenericDirection4<T>{
 # More Examples
 
 For more examples you can look at the ones
-[in the docs for enums](./docs/structural_macro/enums/index.html)
+[in the docs for enums](./docs/enums/index.html)
 
 
 # Syntax

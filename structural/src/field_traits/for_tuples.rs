@@ -50,7 +50,7 @@ Demonstrates that you can use the `Tuple*Variant` trait with enums.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
 by-value non-optional accessor traits,
-satisfying the ([IntoVariantFieldMut trait](crate::field_traits::IntoVariantFieldMut))
+satisfying the ([IntoVariantFieldMut trait](../variant_field/trait.IntoVariantFieldMut.html))
 
 ```
 use structural::field_traits::Tuple2Variant;
