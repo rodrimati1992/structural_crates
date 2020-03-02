@@ -31,10 +31,12 @@ macro_rules! declare_trait_alias {
 
 /// Marker trait for requiring the unchecked enum shared accessor impls to be correct.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
 /// This trait is designed for generic implementations,
-/// the [(Opt)](OptGetVariantField)[GetVariantField] traits are preferrable for bounds.
+/// the [(Opt)](./trait.OptGetVariantField.html)
+/// [GetVariantField](./trait.GetVariantField.html)
+/// traits are preferrable for bounds.
 ///
 /// # Safety
 ///
@@ -48,7 +50,7 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 
 /// Gets the type of a variant field,
 ///
-/// The `Variant` and `Field` type parameters are expected to be [TStr](crate::TStr).
+/// The `Variant` and `Field` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
 /// Example(since 1.40): `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
 ///
@@ -58,10 +60,11 @@ pub type GetVariantFieldType<This, Variant, Field> =
 
 /// Marker trait for requiring the unchecked enum shared+mutable accessor impls to be correct.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
 /// This trait is designed for generic implementations,
-/// the [(Opt)](OptGetVariantFieldMut)[GetVariantFieldMut]
+/// the [(Opt)](./trait.OptGetVariantFieldMut.html)
+/// [GetVariantFieldMut](./trait.GetVariantFieldMut.html)
 /// traits are preferrable for bounds.
 ///
 /// # Safety
@@ -78,11 +81,14 @@ pub unsafe trait GetVariantFieldMutImpl<V, F>:
 
 /// Marker trait for requiring the unchecked enum shared+by-value accessor impls to be correct.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
 /// This trait is designed for generic implementations,
-/// the [(Opt)](OptIntoVariantField)[IntoVariantField]/
-/// [(Opt)](OptIntoVariantFieldMut)[IntoVariantFieldMut] traits are preferrable for bounds.
+/// the [(Opt)](./trait.OptIntoVariantField.html)
+/// [IntoVariantField](./trait.IntoVariantField.html)/
+/// [(Opt)](./trait.OptIntoVariantFieldMut.html)
+/// [IntoVariantFieldMut](./trait.IntoVariantFieldMut.html)
+/// traits are preferrable for bounds.
 ///
 /// # Safety
 ///
@@ -101,7 +107,7 @@ pub unsafe trait IntoVariantFieldImpl<V, F>:
 declare_trait_alias! {
     /// A bound for shared access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -133,7 +139,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for mutable access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -173,7 +179,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for by-value access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -206,7 +212,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for mutable and by-value access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -246,7 +252,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional shared access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -295,7 +301,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional mutable access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -354,7 +360,7 @@ declare_trait_alias! {
 declare_trait_alias! {
     /// A bound for optional by-value access to the field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///
@@ -411,7 +417,7 @@ declare_trait_alias! {
     /// A bound for optional mutable and by-value access to the
     /// field `F` inside of the `V` variant.
     ///
-    /// The `V` and `F` type parameters are expected to be [TStr](crate::TStr).
+    /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
     ///
     /// # Example
     ///

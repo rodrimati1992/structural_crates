@@ -90,7 +90,7 @@ macro_rules! tstr_aliases {
             $($mod_contents:tt)*
         }
     ) => (
-        /// Type aliases for [`TStr`](::structural::TStr)
+        /// Type aliases for [`TStr`](./struct.TStr.html)
         /// (from the structural crate).
         ///
         /// `TStr` values can be constructed with the NEW associated constant.
@@ -402,7 +402,7 @@ macro_rules! _TStr_error{
 
 /**
 Constructs a
-[`TStr`](::structural::field_path::TStr)
+[`TStr`](./struct.TStr.html)
 value,a type-level string used for identifiers in field paths..
 
 # Example

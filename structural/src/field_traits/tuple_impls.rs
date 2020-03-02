@@ -49,7 +49,8 @@ macro_rules! impl_tuple {
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
         ///
-        /// The last type parameter takes the name of the variant as a [TStr](crate::TStr)
+        /// The last type parameter takes the name of the variant as a
+        /// [TStr](../../struct.TStr.html)
         pub trait $variant_trait<$($field_ty,)* V>:
             $(
                 IntoVariantFieldMut<V,names::$field_param,Ty=$field_ty>+

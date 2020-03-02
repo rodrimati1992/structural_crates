@@ -2,11 +2,7 @@
 
 The Structural derive macro implements the Structural trait,
 as well as accessor traits
-([GetFieldImpl](crate::GetFieldImpl)/
- [GetFieldMutImpl](crate::GetFieldMutImpl)/
- [IntoFieldImpl](crate::IntoFieldImpl)
-)
-for fields.
+(GetFieldImpl / GetFieldMutImpl / IntoFieldImpl ) for fields.
 
 Every instance of `<DerivingType>` in the documentation is the name of the type.
 If have a `Money` type,`<DerivingType>_Foo` means `Money_Foo`.
@@ -14,7 +10,7 @@ If have a `Money` type,`<DerivingType>_Foo` means `Money_Foo`.
 # Enums
 
 For complementary documentation on using the `Structural` derive macro with enums
-[look here](super::enums)
+[look here](../enums/index.html)
 
 # Default Behavior for Structs
 
@@ -23,9 +19,9 @@ By default,this derive generates:
 - Implementation of the structural trait for the deriving type.
 
 - Implementations of the accessor traits
-([GetFieldImpl](crate::GetFieldImpl)/
- [GetFieldMutImpl](crate::GetFieldMutImpl)/
- [IntoFieldImpl](crate::IntoFieldImpl)
+([GetFieldImpl](../../field_traits/trait.GetFieldImpl.html)/
+ [GetFieldMutImpl](../../field_traits/trait.GetFieldMutImpl.html)/
+ [IntoFieldImpl](../../field_traits/trait.IntoFieldImpl.html)
 )
 for pub fields.
 
@@ -89,7 +85,7 @@ Only fields written like this are treated as optional:
 If the field is written any differently,then it will not be treated as an optional field,
 and you will be required to use the `#[struc(optional)]` attribute.
 
-For more documentation on optional accessors [look here](super::optional_accessors)
+For more documentation on optional accessors [look here](../optional_accessors/index.html)
 
 # Variant Attributes
 
@@ -170,7 +166,7 @@ Forces a field to have an optional accessor.
 As opposed to `#[struc(implicit_optionality)]`,
 this also allows type aliases of Option to be used,
 
-For more documentation on optional accessors [look here](super::optional_accessors)
+For more documentation on optional accessors [look here](../optional_accessors/index.html)
 
 Example:
 ```rust

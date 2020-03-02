@@ -259,7 +259,9 @@ macro_rules! default_if {
     )
 }
 
-/// For semi-manual implementors of the [GetFieldMutImpl] trait for structs.
+/// For semi-manual implementors of the
+/// [GetFieldMutImpl](./field_traits/trait.GetFieldMutImpl.html)
+/// trait for structs.
 ///
 /// This implements the [GetFieldMutImpl::get_field_raw_mut]
 /// by returning a mutable pointer to a field,
@@ -269,7 +271,7 @@ macro_rules! default_if {
 /// # Safety
 ///
 /// This is an unsafe macro,
-/// because [GetFieldMutImpl] requires no impl to borrow the same field mutably as any other,
+/// because GetFieldMutImpl requires no impl to borrow the same field mutably as any other,
 /// otherwise this would cause undefined behavior because it would
 /// create multiple mutable borrows to the same field.
 ///

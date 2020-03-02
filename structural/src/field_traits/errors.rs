@@ -15,10 +15,10 @@ use self::sealed::Sealed;
 ///
 /// The errors can be:
 ///
-/// - [NonOptField]:
+/// - [NonOptField](./enum.NonOptField.html):
 ///     An error type that cannot be constructed,used when a field always exists.
 ///
-/// - [OptionalField]:
+/// - [OptionalField](./struct.OptionalField.html):
 ///     Used when a field is optional.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
@@ -30,8 +30,8 @@ pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 ///
 /// When you manually define an non-optional field accessor,
 /// you'd use this as the `Err` associated type,
-/// then [GetFieldExt](crate::GetFieldExt) methods use
-/// [NormalizeFields](crate::field_traits::NormalizeFields) to turn
+/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NonOptField {}
@@ -40,8 +40,8 @@ pub enum NonOptField {}
 ///
 /// When you manually define an optional field accessor,
 /// you'd use this as the `Err` associated type,
-/// then [GetFieldExt](crate::GetFieldExt) methods use
-/// sNormalizeFields](crate::field_traits::NormalizeFields) to turn
+/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `Some(foo)`,and `Err(NonOptField)` into `None`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OptionalField;
@@ -149,7 +149,7 @@ impl IntoFieldErr<OptionalField> for NonOptField {
 /// A tuple of errors is combined into a `NonOptField` so long as all of them are,
 /// otherwise they're combined into an `OptionalField` .
 ///
-/// This is used by the `Rev*Field*` impls for [FieldPath](crate::FieldPath) to
+/// This is used by the `Rev*Field*` impls for [FieldPath](../../struct.FieldPath.html) to
 /// determine whether a nested field access is optional or not.
 pub trait CombinedErrs {
     type Combined: IsFieldErr;

@@ -6,7 +6,8 @@ use std_::marker::PhantomData;
 ///
 /// # Safety
 ///
-/// Count must be a [TStr](crate::TStr) with the amount of enum variants written in decimal.
+/// Count must be a [TStr](../struct.TStr.html)
+/// with the amount of enum variants written in decimal.
 /// For example:`TS!(9)` would be used for an enum with 9 variants.
 ///
 /// Specifying fewer variants than the enum actually has may result in undefined behavior
@@ -142,7 +143,7 @@ use std_::marker::PhantomData;
 ///
 /// ```
 pub unsafe trait VariantCount {
-    /// This is a [TStr](crate::TStr) (eg:`TS!(3)`)
+    /// This is a [TStr](../struct.TStr.html) (eg:`TS!(3)`)
     /// representing the amount of variants of the enum.
     ///
     /// This is a type instead of a `&'static str` constant so that
@@ -152,7 +153,7 @@ pub unsafe trait VariantCount {
 
 /// Queries the amount of variants of `This`.
 ///
-/// This evaluates to a [TStr](crate::TStr),like `TS!(9)`
+/// This evaluates to a [TStr](../struct.TStr.html),like `TS!(9)`
 ///
 /// # Example
 ///

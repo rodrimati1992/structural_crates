@@ -90,7 +90,8 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldImpl` as a bound look at example for
-/// [RevGetField] or [OptRevGetField].
+/// [RevGetField](./trait.RevGetField.html) or
+/// [OptRevGetField](./trait.OptRevGetField.html).
 ///
 /// # Example
 ///
@@ -144,7 +145,8 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldMutImpl` as a bound look at example for
-/// [RevGetFieldMut] or [OptRevGetFieldMut].
+/// [RevGetFieldMut](./trait.RevGetFieldMut.html) or
+/// [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html).
 ///
 /// # Safety
 ///
@@ -241,7 +243,8 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// # Use as bound
 ///
 /// For examples of using `RevIntoFieldImpl` as a bound look at example for
-/// [RevIntoField] or [OptRevIntoField].
+/// [RevIntoField](./trait.RevIntoField.html) or
+/// [OptRevIntoField](./trait.OptRevIntoField.html).
 ///
 /// # Example
 ///

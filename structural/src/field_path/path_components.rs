@@ -40,7 +40,7 @@ macro_rules! impl_to_path_to_set {
 
 /// A marker trait for type-level strings.
 ///
-/// This is only implemented on [`TStr`](::structural::TStr).
+/// This is only implemented on [`TStr`](../struct.TStr.html).
 ///
 pub trait IsTStr: Sealed + Debug + Copy + ConstDefault {}
 

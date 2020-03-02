@@ -1,5 +1,5 @@
 /// Constructs a field path value,
-/// which determines the fields accessed in [GetFieldExt] methods.
+/// which determines the fields accessed in [GetFieldExt](./trait.GetFieldExt.html) methods.
 ///
 /// ### Type
 ///
@@ -10,25 +10,26 @@
 /// This allows accessing a non-nested field.<br>
 /// Eg: `fp!(a)`, `fp!(::Foo.bar)`, ``fp!(::Foo)``
 ///
-/// - [FieldPath], [example](#examplenested-fields): <br>
+/// - [FieldPath](./struct.FieldPath.html), [example](#examplenested-fields): <br>
 /// When multiple [path components](#path-components) are passed to the macro.
 /// This allows accessing a nested field.<br>
 /// Eg: `fp!(a.b.c)`, `fp!(::Foo.bar.baz)`
 ///
-/// - [FieldPathSet], [example](#examplemultiple-fields): <br>
+/// - [FieldPathSet](./struct.FieldPathSet.html), [example](#examplemultiple-fields): <br>
 /// When a comma separated list of paths are passed to the macro.
 /// This allows accessing multiple fields.<br>
 /// Eg: `fp!(a, b.c.d, c::Some.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
 ///
-/// - [NestedFieldPathSet], [example](#examplemultiple-fields-insde-a-nested-field):<br>
+/// - [NestedFieldPathSet](./struct.NestedFieldPathSet.html),
+/// [example](#examplemultiple-fields-insde-a-nested-field):<br>
 /// When a `=>` is passed to the macro.
 /// This allows accessing multiple fields from within a nested field.<br>
 /// Eg: `fp!(a => b, c)`, `fp!(::Foo => bar, baz, bam)`
 ///
 /// If you want type aliases and constants for a particular field path,
-/// you can use the [field_path_aliases] macro.
+/// you can use the [field_path_aliases](./macro.field_path_aliases.html) macro.
 ///
-/// From Rust 1.40.0 onwards you can also use [the FP macro](FP)
+/// From Rust 1.40.0 onwards you can also use [the FP macro](./macro.FP.html)
 /// to get the type of any field path.
 ///
 /// ### Identifier
@@ -39,15 +40,19 @@
 ///
 /// These are the basic building blocks for field paths:
 ///
-/// - `foo`: A [TStr] with the name of a field,which accesses the `foo` field,
+/// - `foo`: A [TStr](./struct.TStr.html)
+/// with the name of a field,which accesses the `foo` field,
 /// The `.` is required after other path components.<br>
 /// Examples: `fp!(foo)`, `fp!(0)`
 ///
-/// - `::Foo.bar`: A [VariantField],which accesses the `bar` field in the `Foo` variant.<br>
+/// - `::Foo.bar`: A [VariantField](./struct.VariantField.html),
+/// which accesses the `bar` field in the `Foo` variant.<br>
 /// Examples: `fp!(::Foo.bar)`, `fp!(::Boom.0)`
 ///
-/// - `::Foo`: A [VariantName],which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
-/// If this is directly followed by a field access,it'll be a [VariantField] instead.<br>
+/// - `::Foo`: A [VariantName](./struct.VariantName.html),
+/// which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
+/// If this is directly followed by a field access,
+/// it'll be a [VariantField](./struct.VariantField.html) instead.<br>
 /// Examples: `fp!(::Foo)`, `fp!(::Boom)`
 ///
 /// These can be passed to the
@@ -549,7 +554,7 @@ structural_alias!{
 
 fn assert_variant<T>(this:&T)
 where
-    // You need to use [TStr](crate::TStr) to manually bound `T` by the
+    // You need to use `structural::TStr` to manually bound `T` by the
     // enum field accessor traits.
     //
     // The `tstr_aliases` macro

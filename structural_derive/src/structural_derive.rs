@@ -437,9 +437,8 @@ fn deriving_structural<'a>(
                     "\
                         The amount of variants in the {} enum\n\
                         \n\
-                        A value of this can be instantiated with {}::NEW.\n\
-                        \n\
-                        [Docs for TStr](::structural::field_path::TStr).
+                        This is a structural::TStr,\
+                        which can be instantiated with {}::NEW.\n\
                     ",
                     ds.name, variant_count_ident_str,
                 );
