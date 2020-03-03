@@ -50,6 +50,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     if config.include_count {
         let alias_count_str = tident_tokens(alias_count.to_string(), FullPathForChars::Yes);
         tokens.append_all(quote!(
+            #[allow(non_camel_case_types,dead_code)]
             /// The amount of strings aliased in this module.
             pub type __TString_Aliases_Count=#alias_count_str;
         ));
@@ -94,7 +95,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     pub type #alias_name=#string;
 
                     #[doc=#doc_fpc_inner]
-                    #[allow(non_camel_case_types,dead_code)]
+                    #[allow(non_upper_case_globals,dead_code)]
                     pub const #alias_name:#alias_name=#alias_name::NEW;
                 ))
             })

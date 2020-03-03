@@ -33,12 +33,14 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
             .map(|fname| tident_tokens(fname, FullPathForChars::Yes));
 
         quote_spanned! {span=>
+            #[allow(non_camel_case_types,dead_code)]
             pub type #vari_name=__struct_pmr::FieldPathSet<
                 (
                     #( #field_name, )*
                 ),
                 __struct_pmr::UniquePaths
             >;
+            #[allow(non_upper_case_globals,dead_code)]
             pub const #vari_name:#vari_name=unsafe{
                 __struct_pmr::FieldPathSet::NEW.upgrade_unchecked()
             };
@@ -51,6 +53,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         let variant_name = tident_tokens(alias_name.to_string(), FullPathForChars::Yes);
 
         quote_spanned! {span=>
+            #[allow(non_camel_case_types,dead_code)]
             pub type #alias_name=#variant_name;
         }
     });
@@ -58,6 +61,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
     let variant_count_str = tident_tokens(parsed.variants.len().to_string(), FullPathForChars::Yes);
 
     Ok(quote! {
+        #[allow(non_camel_case_types,dead_code)]
         pub type VariantCount=#variant_count_str;
 
         pub mod f{

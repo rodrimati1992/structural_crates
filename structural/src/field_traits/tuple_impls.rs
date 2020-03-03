@@ -1,6 +1,6 @@
 use crate::{
     field_traits::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
-    structural_trait::{FieldInfo, FieldInfos, Structural},
+    structural_trait::Structural,
 };
 
 macro_rules! impl_tuple {
@@ -22,13 +22,7 @@ macro_rules! impl_tuple {
         ]
         $tuple_ty:tt
     ) => {
-        impl<$($field_ty),*> Structural for $tuple_ty {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos={
-                &FieldInfos::Struct(&[
-                    $( FieldInfo::not_renamed(stringify!( $field )) ,)*
-                ])
-            };
-        }
+        impl<$($field_ty),*> Structural for $tuple_ty {}
 
         /// A structural alias for a tuple of the size.
         pub trait $the_trait<$($field_ty),*>:

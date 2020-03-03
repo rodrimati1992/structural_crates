@@ -19,37 +19,39 @@
 /// You can get a TStr type (to use as a type argument) with the `TS` macro,
 /// which takes a string literal/ident/integer as an input.
 ///
-/// Examples:
+/// Examples(usable in every Rust version):
 ///
-/// - `TS!(0)` (in every Rust version)
+/// - `TS!(0)`: TStr equivalent of "0"
 ///
-/// - `TS!(f o o)` (in every Rust version)
+/// - `TS!(f o o)`: TStr equivalent of "foo"
 ///
-/// - `TS!(1)` (in every Rust version)
+/// - `TS!(1)`: TStr equivalent of "1"
 ///
-/// - `TS!(1 0 0)` (in every Rust version)
+/// - `TS!(1 0 0)`: TStr equivalent of "100"
 ///
-/// - `TS!(w o r l d)` (in every Rust version)
+/// - `TS!(w o r l d)`: TStr equivalent of "world"
 ///
-/// - `TS!(1 0 0)` (in every Rust version)
+/// - `TS!(1 0 0)`: TStr equivalent of "100"
 ///
-/// - `TS!(foo)` (from Rust 1.40 onwards)
+/// Examples(usable from Rust 1.40 onwards):
 ///
-/// - `TS!("bar")` (from Rust 1.40 onwards)
+/// - `TS!(foo)`: TStr equivalent of "foo"
 ///
-/// - `TS!(100)` (from Rust 1.40 onwards)
+/// - `TS!("bar")`: TStr equivalent of "bar"
 ///
-/// - `TS!(foo)` (from Rust 1.40 onwards)
+/// - `TS!(100)`: TStr equivalent of "100"
 ///
-/// - `TS!("bar")` (from Rust 1.40 onwards)
+/// - `TS!(foo)`: TStr equivalent of "foo"
 ///
-/// - `TS!(100)` (from Rust 1.40 onwards)
+/// - `TS!("bar")`: TStr equivalent of "bar"
 ///
-/// - `TS!("hello")` (from Rust 1.40 onwards)
+/// - `TS!(100)`: TStr equivalent of "100"
 ///
-/// - `TS!(world)` (from Rust 1.40 onwards)
+/// - `TS!("hello")`: TStr equivalent of "hello"
 ///
-/// - `TS!(100)` (from Rust 1.40 onwards)
+/// - `TS!(world)`: TStr equivalent of "world"
+///
+/// - `TS!(100)`: TStr equivalent of "100"
 ///
 ///
 /// # TStr construction
@@ -66,39 +68,46 @@
 ///
 /// - The `<TStr<_> as ConstDefault>::DEFAULT` associated constant.
 ///
-/// Examples of constructing a `TStr<_>`:
+/// Examples(usable in every Rust version):
 ///
-/// - `ts!(foo)` (in every Rust version)
+/// - `ts!(foo)`: TStr equivalent of "foo"
 ///
-/// - `ts!(f o o)` (in every Rust version)
+/// - `ts!(f o o)`: TStr equivalent of "foo"
 ///
-/// - `ts!("bar")` (in every Rust version)
+/// - `ts!("bar")`: TStr equivalent of "bar"
 ///
-/// - `ts!(1)` (in every Rust version)
+/// - `ts!(1)`: TStr equivalent of "1"
 ///
-/// - `ts!(100)` (in every Rust version)
+/// - `ts!(100)`: TStr equivalent of "100"
 ///
-/// - `ts!(1 0 0)` (in every Rust version)
+/// - `ts!(1 0 0)`: TStr equivalent of "100"
 ///
-/// - `fp!(foo)` (in every Rust version)
+/// - `fp!(foo)`: TStr equivalent of "foo"
 ///
-/// - `fp!("bar")` (in every Rust version)
+/// - `fp!("bar")`: TStr equivalent of "bar"
 ///
-/// - `fp!(100)` (in every Rust version)
+/// - `fp!(100)`: TStr equivalent of "100"
 ///
-/// - `<TS!("hello")>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!(w o r l d)>::NEW`: TStr equivalent of "world"
 ///
-/// - `<TS!(world)>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!(0)>::NEW`: TStr equivalent of "0"
 ///
-/// - `<TS!(100)>::NEW` (from Rust 1.40 onwards)
+/// - `<TS!(1 0 0)>::NEW`: TStr equivalent of "100"
 ///
-/// - `<TS!(w o r l d)>::NEW` (in every Rust version)
+/// - `<TS!(0)>::DEFAULT`: TStr equivalent of "0"
+/// (requires importing the `ConstDefault` trait)
 ///
-/// - `<TS!(0)>::NEW` (in every Rust version)
+/// Examples(usable from Rust 1.40 onwards):
 ///
-/// - `<TS!(1 0 0)>::NEW` (in every Rust version)
+/// - `<TS!("hello")>::NEW`: TStr equivalent of "hello"
 ///
-/// - `<TS!(0)>::DEFAULT`(requires importing the `ConstDefault` trait)
+/// - `<TS!(world)>::NEW`: TStr equivalent of "world"
+///
+/// - `<TS!(100)>::NEW`: TStr equivalent of "100"
+///
+///
+///
+///
 /// 
 /// # Example
 /// 

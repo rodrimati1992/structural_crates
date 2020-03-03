@@ -338,11 +338,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
         where
             $delegating_to_type: $crate::Structural,
             $($where_clause)*
-        {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos={
-                <$delegating_to_type as $crate::Structural>::FIELDS
-            };
-        }
+        {}
     };
     (inner;
         impl [$($impl_params:tt)*] $self:ty
