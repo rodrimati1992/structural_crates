@@ -228,18 +228,13 @@ macro_rules! declare_accessor_trait_alias {
 /// use structural::{
 ///     FieldType,GetFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
 /// };
 ///
 /// struct Huh<T>{
 ///     value:T,
 /// }
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
-/// }
+/// impl<T> Structural for Huh<T>{}
 ///
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
@@ -459,19 +454,13 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// use structural::{
 ///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
 /// };
 ///
 /// struct Huh<T>{
 ///     value:T,
 /// }
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
-///
-/// }
+/// impl<T> Structural for Huh<T>{}
 ///
 /// // This could also be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
@@ -649,7 +638,6 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 /// use structural::{
 ///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
 ///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
 /// };
 ///
 /// struct Huh<T>{
@@ -657,11 +645,7 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 /// }
 ///
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
-/// }
+/// impl<T> Structural for Huh<T>{}
 ///
 /// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
 /// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{

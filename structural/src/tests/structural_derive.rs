@@ -1,12 +1,23 @@
 use crate::{
-    field_traits::NonOptField,
-    structural_trait::{accessor_names, FieldInfo, FieldInfos},
-    GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl, IntoFieldMut,
-    Structural,
+    field_traits::NonOptField, GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType,
+    IntoFieldImpl, IntoFieldMut, Structural,
 };
 
 #[cfg(feature = "alloc")]
 use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
+
+////////////////////////////////////////////////////////////////////////////////
+
+field_path_aliases! {
+    mod paths{
+        a,b
+    }
+}
+tstr_aliases! {
+    mod strings{
+        A,B,C,a,b,n0=0,
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -145,11 +156,6 @@ fn privacies() {
         let _ = this.clone().into_field(fp!(b));
     };
     let _ = generic_1::<Privacies1>;
-
-    assert!(accessor_names::<Privacies0>().eq(["a", "b"].iter().cloned()),);
-
-    assert!(accessor_names::<Privacies1>()
-        .eq(["a", "b", "e", "f", "g", "hello", "world"].iter().cloned()),);
 }
 
 // This tests that boxed trait objects can still call GetFieldExt methods.
@@ -218,31 +224,75 @@ struct Renamed {
     pub c: u32,
 }
 
+#[derive(Structural)]
+#[struc(no_trait)]
+enum Vegetable {
+    #[struc(rename = "foo")]
+    Potato {
+        #[struc(rename = "bar")]
+        volume_cm: u32,
+    },
+    #[struc(rename = "baz")]
+    Letuce {
+        #[struc(rename = "qux")]
+        leaves: u32,
+    },
+}
+
 #[test]
 fn renamed() {
-    assert!(accessor_names::<Renamed>().eq(["a", "b", "e"].iter().cloned()));
+    // struct
+    {
+        let mut this = Renamed { a: 3, b: 5, c: 8 };
 
-    let _: GetFieldType<Renamed, FP!(a)>;
-    let _: GetFieldType<Renamed, FP!(b)>;
-    let _: GetFieldType<Renamed, FP!(e)>;
+        assert_eq!(this.field_(fp!(a)), &3);
+        assert_eq!(this.field_mut(fp!(a)), &mut 3);
+        assert_eq!(this.clone().into_field(fp!(a)), 3);
+
+        assert_eq!(this.field_(fp!(b)), &5);
+        assert_eq!(this.field_mut(fp!(b)), &mut 5);
+        assert_eq!(this.clone().into_field(fp!(b)), 5);
+
+        assert_eq!(this.field_(fp!(e)), &8);
+        assert_eq!(this.field_mut(fp!(e)), &mut 8);
+        assert_eq!(this.clone().into_field(fp!(e)), 8);
+    }
+
+    // enum
+    //
+    // Copied this from a documentation example so that it doesn't get deleted if
+    // the example gets deleted.
+    {
+        let mut potato = Vegetable::Potato { volume_cm: 13 };
+        let mut letuce = Vegetable::Letuce { leaves: 21 };
+
+        assert_eq!(potato.field_(fp!(::foo.bar)), Some(&13));
+        assert_eq!(potato.field_(fp!(::baz.qux)), None);
+
+        assert_eq!(letuce.field_(fp!(::foo.bar)), None);
+        assert_eq!(letuce.field_(fp!(::baz.qux)), Some(&21));
+
+        assert_eq!(potato.field_mut(fp!(::foo.bar)), Some(&mut 13));
+        assert_eq!(potato.field_mut(fp!(::baz.qux)), None);
+
+        assert_eq!(letuce.field_mut(fp!(::foo.bar)), None);
+        assert_eq!(letuce.field_mut(fp!(::baz.qux)), Some(&mut 21));
+
+        assert_eq!(potato.is_variant(ts!(foo)), true);
+        assert_eq!(potato.is_variant(ts!(baz)), false);
+
+        assert_eq!(letuce.is_variant(ts!(foo)), false);
+        assert_eq!(letuce.is_variant(ts!(baz)), true);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Structural, Clone)]
+#[struc(no_trait)]
 struct Foo<T> {
     #[struc(delegate_to)]
     value: T,
-}
-
-fn get_fields_assoc_const<T>(_: &T) -> &'static [FieldInfo]
-where
-    T: Structural,
-{
-    match T::FIELDS {
-        FieldInfos::Struct(x) => x,
-        x => panic!("{:?} wasn't expected here", x),
-    }
 }
 
 #[test]
@@ -250,16 +300,6 @@ fn delegate_to_test() {
     let mut this = Foo {
         value: (3, 5, 8, 13, 21),
     };
-
-    let fields = &[
-        FieldInfo::not_renamed("0"),
-        FieldInfo::not_renamed("1"),
-        FieldInfo::not_renamed("2"),
-        FieldInfo::not_renamed("3"),
-        FieldInfo::not_renamed("4"),
-    ];
-
-    assert_eq!(get_fields_assoc_const(&this), &fields[..]);
 
     assert_eq!(this.fields(fp!(1, 3, 0, 2, 4)), (&5, &13, &3, &8, &21),);
     assert_eq!(
@@ -275,17 +315,6 @@ fn delegate_to_test() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-field_path_aliases! {
-    mod paths{
-        a,b
-    }
-}
-tstr_aliases! {
-    mod strings{
-        A,B,C,a,b,n0=0,
-    }
-}
 
 mod struct_with_constraints {
     use super::*;

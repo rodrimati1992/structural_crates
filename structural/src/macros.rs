@@ -412,23 +412,7 @@ macro_rules! _private_impl_structural{
     )=>{
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
-        {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos= {
-                use $crate::structural_trait::{FieldInfo,FieldInfos};
-
-                &FieldInfos::Struct(&[
-                    $(
-                        FieldInfo{
-                            name: $crate::structural_trait::Name{
-                                original:stringify!($field_name),
-                                accessor:$name_param_str,
-                            },
-                            optionality:$crate::optionality_from!($optionality),
-                        },
-                    )*
-                ])
-            };
-        }
+        {}
     };
     (
         impl[$($typarams:tt)*] Structural for $self_:ty
@@ -439,17 +423,7 @@ macro_rules! _private_impl_structural{
     )=>{
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
-        {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos= {
-                use $crate::structural_trait::{FieldInfos,VariantInfo};
-
-                &FieldInfos::Enum(&[
-                    $(
-                        VariantInfo::not_renamed(stringify!($variant)),
-                    )*
-                ])
-            };
-        }
+        {}
     };
 }
 

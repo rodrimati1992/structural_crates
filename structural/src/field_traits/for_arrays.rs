@@ -129,7 +129,7 @@ use crate::{
     field_traits::{
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField,
     },
-    structural_trait::{FieldInfo, FieldInfos, Structural},
+    structural_trait::Structural,
     type_level::{
         cmp::{Compare_, TGreater},
         integer::*,
@@ -203,14 +203,7 @@ macro_rules! declare_array_paths {
         use self::names::*;
 
         $(
-            #[allow(dead_code)]
-            const $fi_ind:FieldInfo=FieldInfo::not_renamed(stringify!($index));
-
-            impl<T> Structural for [T;$index]{
-                const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-                    $( $fi_in_array, )*
-                ]);
-            }
+            impl<T> Structural for [T;$index]{}
 
 
             impl Sealed for $index_name{}

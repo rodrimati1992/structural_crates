@@ -623,6 +623,8 @@ where
     ) -> Result<*mut T::Ty, T::Err> {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
+        // Because it's a `#[repr(transparent)]` wrapper around `T`,
+        // it can pass this to `<T as GetFieldMutImpl<_,_>>::get_field_raw_mut`.
         T::get_field_raw_mut(
             this,
             VariantField::new(V::DEFAULT, path),

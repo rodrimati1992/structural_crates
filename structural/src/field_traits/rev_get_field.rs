@@ -1131,7 +1131,10 @@ macro_rules! impl_rev_traits {
             }
 
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut(self,this:*mut *mut This)->Result<*mut This::Ty,This::Err>{
+            unsafe fn rev_get_field_raw_mut(
+                self,
+                this:*mut *mut This,
+            )->Result<*mut This::Ty,This::Err>{
                 SpecRevGetFieldMut::<'a,This>::rev_get_field_raw_mut_inner(
                     self,
                     this
@@ -1171,7 +1174,10 @@ macro_rules! impl_rev_traits {
             $($where_)*
         {
             #[inline(always)]
-            unsafe fn rev_get_field_raw_mut_inner(self,this:*mut *mut This)->Result<*mut This::Ty,This::Err>{
+            unsafe fn rev_get_field_raw_mut_inner(
+                self,
+                this:*mut *mut This,
+            )->Result<*mut This::Ty,This::Err>{
                 <This as
                     GetFieldMutImpl<Self>
                 >::get_field_raw_mut(this as *mut *mut (), self, ())

@@ -3,7 +3,6 @@
 use super::*;
 
 use crate::field_traits::NonOptField;
-use crate::structural_trait::{FieldInfo, FieldInfos};
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -55,14 +54,7 @@ _private_impl_getters_for_derive_struct! {
 
 ///////////////////////////////////////////////////////
 
-impl<T> Structural for RangeInclusive<T> {
-    const FIELDS: &'static FieldInfos = {
-        &FieldInfos::Struct(&[
-            FieldInfo::not_renamed("start"),
-            FieldInfo::not_renamed("end"),
-        ])
-    };
-}
+impl<T> Structural for RangeInclusive<T> {}
 
 impl<T> FieldType<Start_STR> for RangeInclusive<T> {
     type Ty = T;
@@ -224,6 +216,7 @@ where
                 T::get_field_raw_mut_func(&*this)
             };
 
+            let this: *mut *mut () = *(this as *mut *mut *mut ());
             func( this, name, param )
         }
     }
