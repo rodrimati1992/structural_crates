@@ -3,12 +3,12 @@ Traits and types for comparison.
 */
 
 /// Compares the ordering of Self and Right
-pub trait Compare_<Right> {
+pub trait Compare<Right> {
     type Output;
 }
 
 /// Compares the ordering of Left and Right
-pub type Compare<Left, Right> = <Left as Compare_<Right>>::Output;
+pub type CompareOut<Left, Right> = <Left as Compare<Right>>::Output;
 
 /// A type-level equivalent of `Ordering::Less`
 pub struct TLess;

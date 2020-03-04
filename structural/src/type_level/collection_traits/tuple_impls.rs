@@ -1,4 +1,4 @@
-use super::{Append_, Flatten, Flatten_, ToTList, ToTList_, ToTuple, ToTuple_};
+use super::{Append, Flatten, FlattenOut, ToTList, ToTListOut, ToTuple, ToTupleOut};
 
 macro_rules! tuple_impls {
     (with-idents;
@@ -6,35 +6,35 @@ macro_rules! tuple_impls {
     ) => {
         $(
 
-            impl<$($tparams),*> ToTuple_ for TList![$($tparams),*] {
+            impl<$($tparams),*> ToTuple for TList![$($tparams),*] {
                 type Output=($($tparams,)*);
             }
 
-            impl<$($tparams),*> ToTuple_ for ($($tparams,)*) {
+            impl<$($tparams),*> ToTuple for ($($tparams,)*) {
                 type Output=($($tparams,)*);
             }
 
-            impl<$($tparams),*> ToTList_ for ($($tparams,)*) {
+            impl<$($tparams),*> ToTList for ($($tparams,)*) {
                 type Output=TList![$($tparams),*];
             }
 
-            impl<$($tparams,)*> Flatten_ for ($($tparams,)*)
+            impl<$($tparams,)*> Flatten for ($($tparams,)*)
             where
-                Self:ToTList_,
-                ToTList<Self>:Flatten_,
-                Flatten<ToTList<Self>>:ToTuple_
+                Self:ToTList,
+                ToTListOut<Self>:Flatten,
+                FlattenOut<ToTListOut<Self>>:ToTuple
             {
-                type Output=ToTuple<Flatten<ToTList<Self>>>;
+                type Output=ToTupleOut<FlattenOut<ToTListOut<Self>>>;
             }
 
-            impl<$($tparams,)* Other,Appended> Append_<Other> for ($($tparams,)*)
+            impl<$($tparams,)* Other,AppendOuted> Append<Other> for ($($tparams,)*)
             where
-                Self:ToTList_,
-                Other:ToTList_,
-                ToTList<Self>:Append_<ToTList<Other>,Output=Appended>,
-                Appended:ToTuple_,
+                Self:ToTList,
+                Other:ToTList,
+                ToTListOut<Self>:Append<ToTListOut<Other>,Output=AppendOuted>,
+                AppendOuted:ToTuple,
             {
-                type Output=ToTuple<Appended>;
+                type Output=ToTupleOut<AppendOuted>;
             }
 
         )*

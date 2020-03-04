@@ -55,6 +55,24 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 /// Example(since 1.40): `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
 ///
 /// Example(before 1.40): `GetVariantFieldType<This, TS!(F o o), TS!(0)>`
+///
+/// # Example
+///
+/// ```
+/// use structural::{GetFieldExt,TS,fp};
+/// use structural::field_traits::GetVariantFieldType;
+/// use structural::for_examples::Variants;
+///
+/// let this = Variants::Foo(8,13);
+///
+/// let value: u32= this.into_field(fp!(::Foo.0)).unwrap();
+///
+/// // TS!(F o o) can also be written as TS!(Foo) from Rust 1.40 onwards.
+/// let value: GetVariantFieldType<Variants, TS!(F o o), TS!(0)>= value;
+///
+/// assert_eq!( value, 8_u32 );
+///
+/// ```
 pub type GetVariantFieldType<This, Variant, Field> =
     <This as FieldType<VariantField<Variant, Field>>>::Ty;
 

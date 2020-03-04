@@ -13,8 +13,8 @@ Eg:`(A,B,C)`,`(A,B,C,D)`,`(A,B,C,D,E)`,etcetera.
 Demonstrates that you can use the `Tuple*` trait with structs.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
-by-value non-optional accessor traits,
-satisfying the ([IntoFieldMut trait](crate::field_traits::IntoFieldMut))
+by-value non-optional accessor trait impls,
+satisfying the [IntoFieldMut trait](crate::field_traits::IntoFieldMut)
 
 ```
 use structural::field_traits::for_tuples::Tuple4;

@@ -1,16 +1,3 @@
-use super::Sealed;
-use crate::field_path::{FieldPath, FieldPathSet, IsSingleFieldPath, UniquePaths};
-use crate::type_level::collection_traits::ToTString_;
-use crate::{TStr, VariantField, VariantName};
-
-use core_extensions::ConstDefault;
-
-use std_::{
-    fmt::{self, Debug},
-    marker::PhantomData,
-};
-
-////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! impl_to_path_to_set {
     (
@@ -85,7 +72,7 @@ impl<T> ConstDefault for TStr<T> {
     const DEFAULT: Self = TStr(PhantomData);
 }
 
-impl<T> ToTString_ for TStr<T> {
+impl<T> ToTString for TStr<T> {
     type Output = Self;
 }
 
