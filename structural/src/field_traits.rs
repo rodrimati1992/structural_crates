@@ -116,6 +116,9 @@ The [GetFieldType](./type.GetFieldType.html),
 [GetFieldType4](./type.GetFieldType4.html)
 type aliases allow querying the type of a field up to 4 levels of nesting.
 
+The [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
+allows querying the type of an enum variant field.
+
 The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
 type alias gets the type of a nested field
 (which one is determined by the field path).
@@ -323,6 +326,9 @@ declare_accessor_trait_alias! {
 
 /// Queries the type of a field.
 ///
+/// For a type alias to get the type of an enum field,
+/// there's [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
+///
 /// # Example
 ///
 /// Here is one way you can get the type of a field.
@@ -373,6 +379,9 @@ declare_accessor_trait_alias! {
 ///
 pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
 
+/// Gets the `GetFieldImpl::Err` associated type,
+/// which is either [OptionalField](./errors/struct.OptionalField.html) or
+/// [NonOptField](./errors/enum.NonOptField.html)
 pub type GetFieldErr<This, FieldName, P = ()> = <This as GetFieldImpl<FieldName, P>>::Err;
 
 /// Queries the type of a double nested field (eg:`.a.b`).

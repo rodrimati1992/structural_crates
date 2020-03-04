@@ -153,7 +153,7 @@ fn get_optionality<'a>(
         (_, Some(extracted)) => Some(extracted),
         (false, None) => None,
         (true, None) => {
-            let opt_ty: syn::Type = syn::parse_quote!( structural::pmr::OptionParam<#ty> );
+            let opt_ty: syn::Type = syn::parse_quote!( structural::pmr::OptionParamOut<#ty> );
 
             Some(arenas.alloc(opt_ty))
         }

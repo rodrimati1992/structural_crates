@@ -307,7 +307,8 @@ macro_rules! _delegate_fp_inner {
 ///
 /// <span id="improved-macro"></span>
 ///
-/// This takes the same input as [the `fp` macro],getting the type of that field path.
+/// This takes the same input as [the fp macro](./macro.fp.html),
+/// getting the type of that field path.
 ///
 /// This variant of the macro requires one of these:
 ///

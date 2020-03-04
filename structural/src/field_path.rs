@@ -7,7 +7,7 @@ The re-exported items are all field-path related.
 #![allow(non_snake_case, non_camel_case_types)]
 
 use crate::type_level::collection_traits::{
-    Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
+    Append, AppendOut, PushBack, PushBackOut, ToTList, ToTListOut, ToTString,
 };
 
 pub use crate::{field_path_aliases, fp, FP};
@@ -27,9 +27,7 @@ mod tests;
 
 mod to_usize;
 
-mod path_components;
-
-pub use self::path_components::*;
+include! { "./field_path/path_components.rs" }
 
 pub use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, TStr, VariantField, VariantName};
 
@@ -168,29 +166,29 @@ where
     };
 }
 
-impl<S> ToTString_ for FieldPath<(TStr<S>,)> {
+impl<S> ToTString for FieldPath<(TStr<S>,)> {
     type Output = TStr<S>;
 }
 
-impl<T> ToTList_ for FieldPath<T>
+impl<T> ToTList for FieldPath<T>
 where
-    T: ToTList_,
+    T: ToTList,
 {
-    type Output = ToTList<T>;
+    type Output = ToTListOut<T>;
 }
 
-impl<T, S> PushBack_<S> for FieldPath<T>
+impl<T, S> PushBack<S> for FieldPath<T>
 where
-    T: PushBack_<S>,
+    T: PushBack<S>,
 {
-    type Output = FieldPath<PushBack<T, S>>;
+    type Output = FieldPath<PushBackOut<T, S>>;
 }
 
-impl<T, U> Append_<FieldPath<U>> for FieldPath<T>
+impl<T, U> Append<FieldPath<U>> for FieldPath<T>
 where
-    T: Append_<U>,
+    T: Append<U>,
 {
-    type Output = FieldPath<Append<T, U>>;
+    type Output = FieldPath<AppendOut<T, U>>;
 }
 
 impl<T> FieldPath<T> {
@@ -200,7 +198,7 @@ impl<T> FieldPath<T> {
     #[inline(always)]
     pub fn push<U, V>(self, _other: U) -> FieldPath<V>
     where
-        Self: PushBack_<U, Output = FieldPath<V>>,
+        Self: PushBack<U, Output = FieldPath<V>>,
         FieldPath<V>: ConstDefault,
     {
         ConstDefault::DEFAULT
@@ -208,10 +206,10 @@ impl<T> FieldPath<T> {
 
     /// Constructs a new FieldPath with `_other` appended at the end.
     #[inline(always)]
-    pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<Append<T, U>>
+    pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<AppendOut<T, U>>
     where
-        T: Append_<U>,
-        FieldPath<Append<T, U>>: ConstDefault,
+        T: Append<U>,
+        FieldPath<AppendOut<T, U>>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
@@ -403,7 +401,7 @@ impl<T, U> FieldPathSet<T, U> {
     #[inline(always)]
     pub fn push<O, Out>(self, _other: O) -> FieldPathSet<Out, AliasedPaths>
     where
-        Self: PushBack_<O, Output = FieldPathSet<Out, AliasedPaths>>,
+        Self: PushBack<O, Output = FieldPathSet<Out, AliasedPaths>>,
         FieldPathSet<Out, AliasedPaths>: ConstDefault,
     {
         ConstDefault::DEFAULT
@@ -415,41 +413,41 @@ impl<T, U> FieldPathSet<T, U> {
     pub fn append<T2, U2>(
         self,
         _other: FieldPathSet<T2, U2>,
-    ) -> FieldPathSet<Append<T, T2>, AliasedPaths>
+    ) -> FieldPathSet<AppendOut<T, T2>, AliasedPaths>
     where
-        T: Append_<T2>,
-        FieldPathSet<Append<T, T2>, AliasedPaths>: ConstDefault,
+        T: Append<T2>,
+        FieldPathSet<AppendOut<T, T2>, AliasedPaths>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 }
 
-impl<T, U> ToTList_ for FieldPathSet<T, U>
+impl<T, U> ToTList for FieldPathSet<T, U>
 where
-    T: ToTList_,
+    T: ToTList,
 {
-    type Output = ToTList<T>;
+    type Output = ToTListOut<T>;
 }
 
-impl<T, U, P> PushBack_<FieldPath<P>> for FieldPathSet<T, U>
+impl<T, U, P> PushBack<FieldPath<P>> for FieldPathSet<T, U>
 where
-    T: PushBack_<FieldPath<P>>,
+    T: PushBack<FieldPath<P>>,
 {
-    type Output = FieldPathSet<PushBack<T, FieldPath<P>>, AliasedPaths>;
+    type Output = FieldPathSet<PushBackOut<T, FieldPath<P>>, AliasedPaths>;
 }
 
-impl<T, U, P, U2> PushBack_<FieldPathSet<(P,), U2>> for FieldPathSet<T, U>
+impl<T, U, P, U2> PushBack<FieldPathSet<(P,), U2>> for FieldPathSet<T, U>
 where
-    T: PushBack_<P>,
+    T: PushBack<P>,
 {
-    type Output = FieldPathSet<PushBack<T, P>, AliasedPaths>;
+    type Output = FieldPathSet<PushBackOut<T, P>, AliasedPaths>;
 }
 
-impl<T, T2, U, U2> Append_<FieldPathSet<T2, U2>> for FieldPathSet<T, U>
+impl<T, T2, U, U2> Append<FieldPathSet<T2, U2>> for FieldPathSet<T, U>
 where
-    T: Append_<T2>,
+    T: Append<T2>,
 {
-    type Output = FieldPathSet<Append<T, T2>, AliasedPaths>;
+    type Output = FieldPathSet<AppendOut<T, T2>, AliasedPaths>;
 }
 
 impl_cmp_traits! {

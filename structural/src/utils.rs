@@ -27,15 +27,15 @@ mod opsealed {
 impl<T> self::opsealed::Sealed for Option<T> {}
 
 /// Gets the type parameter `T` out of an `Option<T>`
-pub trait OptionParam_: self::opsealed::Sealed {
+pub trait OptionParam: self::opsealed::Sealed {
     /// The `T` of an `Option<T>`
     type Param;
 }
 
 /// Gets the `T` out of an `Option<T>`
-pub type OptionParam<This> = <This as OptionParam_>::Param;
+pub type OptionParamOut<This> = <This as OptionParam>::Param;
 
-impl<T> OptionParam_ for Option<T> {
+impl<T> OptionParam for Option<T> {
     type Param = T;
 }
 

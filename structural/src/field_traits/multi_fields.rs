@@ -9,16 +9,16 @@ use crate::field_path::{IsMultiFieldPath, NestedFieldPathSet, UniquePaths};
 
 use core_extensions::SelfOps;
 
-/// Gets the type returned by the `RevGetMultiField::rev_get_multi_field` method.
+/// Queries the type returned by the `RevGetMultiField::rev_get_multi_field` method.
 /// This is some collection of references.
 pub type RevGetMultiFieldOut<'a, Field, This> = <Field as RevGetMultiField<'a, This>>::Fields;
 
-/// Gets the type returned by the `RevGetMultiFieldMut::rev_get_multi_field_mut` method.
+/// Queries the type returned by the `RevGetMultiFieldMut::rev_get_multi_field_mut` method.
 /// This is some collection of mutable references.
 pub type RevGetMultiFieldMutOut<'a, Field, This> =
     <Field as RevGetMultiFieldMut<'a, This>>::FieldsMut;
 
-/// Gets the type returned by the `RevGetMultiFieldMut::rev_get_multi_field_raw_mut` method.
+/// Queries the type returned by the `RevGetMultiFieldMut::rev_get_multi_field_raw_mut` method.
 /// This is some collection of mutable pointers.
 pub type RevGetMultiFieldMutRaw<'a, Field, This> =
     <Field as RevGetMultiFieldMut<'a, This>>::FieldsRawMut;

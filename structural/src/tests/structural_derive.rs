@@ -316,6 +316,18 @@ fn delegate_to_test() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Tests that `#[struc(no_trait)]` has an effect on structs.
+trait Foo_SI {}
+trait Foo_VSI {}
+trait Foo_ESI {}
+
+/// Tests that `#[struc(no_trait)]` has an effect on enums.
+trait Vegetable_SI {}
+trait Vegetable_VSI {}
+trait Vegetable_ESI {}
+
+////////////////////////////////////////////////////////////////////////////////
+
 mod struct_with_constraints {
     use super::*;
 

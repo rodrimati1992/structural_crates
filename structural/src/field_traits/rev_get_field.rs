@@ -19,7 +19,7 @@ use crate::pmr::Box;
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Allows querying the type of a nested field in This,
+/// Queries the type of a nested field in This,
 /// what field is queried is determined by `FieldName`,
 ///
 /// # Example
@@ -66,7 +66,7 @@ use crate::pmr::Box;
 /// ```
 pub type RevGetFieldType<FieldName, This> = <FieldName as RevFieldType<This>>::Ty;
 
-/// The type returned by `RevIntoFieldImpl::rev_box_into_field`.
+/// Queries the type returned by `RevIntoFieldImpl::rev_box_into_field`.
 pub type RevIntoBoxedFieldType<'a, FieldName, This> =
     <FieldName as RevIntoFieldImpl<'a, This>>::BoxedTy;
 

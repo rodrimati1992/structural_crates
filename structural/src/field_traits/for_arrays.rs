@@ -131,7 +131,7 @@ use crate::{
     },
     structural_trait::Structural,
     type_level::{
-        cmp::{Compare_, TGreater},
+        cmp::{Compare, TGreater},
         integer::*,
     },
 };
@@ -216,7 +216,7 @@ macro_rules! declare_array_paths {
             impl<T,P> IsPathForArray<[T;$index]> for P
             where
                 P:ArrayPath,
-                $tnum:Compare_<P::Index,Output=TGreater>,
+                $tnum:Compare<P::Index,Output=TGreater>,
             {
                 #[doc(hidden)]
                 const _SEALED_IPFA:SealedIPFA<P,[T;$index]>=SealedIPFA{_marker:PhantomData};
