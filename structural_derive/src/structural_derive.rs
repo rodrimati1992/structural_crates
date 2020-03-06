@@ -9,6 +9,7 @@ use crate::{
         StructuralVariant,
     },
     tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens},
+    write_docs::{self, DocsFor},
 };
 
 use as_derive_utils::{
@@ -222,6 +223,11 @@ fn deriving_structural<'a>(
                         None => IsOptional::No,
                     },
                     ident,
+                    pub_field_rename: if field.is_public() && config_f.renamed.is_some() {
+                        Some((&field.ident).into())
+                    } else {
+                        None
+                    },
                     alias_index,
                     ty: match &config_f.is_impl {
                         Some(yes) => FieldType::Impl(yes),
@@ -234,10 +240,12 @@ fn deriving_structural<'a>(
 
     let sdt = match struct_or_enum {
         StructOrEnum::Struct => StructuralDataType {
+            type_name: Some(ds.name),
             fields: make_fields(&mut names_module, struct_),
             variants: Vec::new(),
         },
         StructOrEnum::Enum => StructuralDataType {
+            type_name: Some(ds.name),
             fields: Vec::new(),
             variants: ds
                 .variants
@@ -248,13 +256,18 @@ fn deriving_structural<'a>(
 
                     let name: IdentOrIndexRef<'a> = match &config_v.renamed {
                         Some(x) => x.borrowed(),
-                        None => (variant.name).into(),
+                        None => variant.name.into(),
                     };
 
                     let alias_index = names_module.push_str(name);
 
                     StructuralVariant {
                         name,
+                        pub_vari_rename: if options.generate_docs && config_v.renamed.is_some() {
+                            Some(variant.name.into())
+                        } else {
+                            None
+                        },
                         alias_index,
                         fields: make_fields(&mut names_module, variant),
                         is_newtype: config_v.is_newtype,
@@ -285,18 +298,22 @@ fn deriving_structural<'a>(
 
         Ident::new(&format!("{}_SI", tyname), Span::call_site());
 
-        let docs = format!(
-            "A trait aliasing the accessor impls for \
-             [{tyname}](./{soe_str}.{tyname}.html) fields\n\
-             \n\
-             This trait also has all the constraints(where clause and generic parametr bounds)
-             of [the same type](./{soe_str}.{tyname}.html).\n\n\
-             ### Accessor traits\n\
-             These are the accessor traits this aliases:\n\
-            ",
-            tyname = tyname,
-            soe_str = soe_str,
-        );
+        let docs = if options.generate_docs {
+            Some(format!(
+                "A trait aliasing the accessor impls for \
+                 [{tyname}](./{soe_str}.{tyname}.html) fields\n\
+                 \n\
+                 This trait also has all the constraints(where clause and generic parametr bounds)
+                 of [the same type](./{soe_str}.{tyname}.html).\n\n\
+                 ### Accessor traits\n\
+                 These are the accessor traits this aliases:\n\
+                ",
+                tyname = tyname,
+                soe_str = soe_str,
+            ))
+        } else {
+            None
+        };
 
         let struct_variant_trait = match struct_or_enum {
             StructOrEnum::Struct => Some(Ident::new(&format!("{}_VSI", tyname), Span::call_site())),
@@ -306,8 +323,8 @@ fn deriving_structural<'a>(
         let sop = StructuralAliasParams {
             span: tyname.span(),
             attrs: None::<&Ident>,
-            docs: docs,
-            vis: vis,
+            docs,
+            vis,
             ident: &trait_ident,
             generics: ds.generics,
             extra_where_preds: &options.bounds,
@@ -465,6 +482,11 @@ fn deriving_structural<'a>(
         }
     };
 
+    let mut impl_docs = String::new();
+    if options.generate_docs {
+        write_docs::write_datatype_docs(&mut impl_docs, DocsFor::Type, &sdt, &names_module, None);
+    }
+
     let (which_macro, soe_specific_out, soe_specific_in) = tuple;
     let extra_where_preds = options.bounds.iter();
 
@@ -476,6 +498,7 @@ fn deriving_structural<'a>(
         #soe_specific_out
 
         ::structural::#which_macro!{
+            #[doc=#impl_docs]
             impl[#impl_generics] #tyname #ty_generics
             where[
                 #(#where_preds,)*

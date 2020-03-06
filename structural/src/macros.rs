@@ -398,6 +398,7 @@ macro_rules! optionality_from {
 #[macro_export]
 macro_rules! _private_impl_structural{
     (
+        $(#[doc=$docs:literal])*
         impl[$($typarams:tt)*] Structural for $self_:ty
         where[$($where_:tt)*]
         {
@@ -410,17 +411,20 @@ macro_rules! _private_impl_structural{
             )*]
         }
     )=>{
+        $(#[doc=$docs])*
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {}
     };
     (
+        $(#[doc=$docs:literal])*
         impl[$($typarams:tt)*] Structural for $self_:ty
         where[$($where_:tt)*]
         {
             variants=[ $( $variant:ident ),* $(,)*]
         }
     )=>{
+        $(#[doc=$docs])*
         impl<$($typarams)*> $crate::Structural for $self_
         where $($where_)*
         {}
@@ -432,6 +436,7 @@ macro_rules! _private_impl_structural{
 #[macro_export]
 macro_rules! _private_impl_getters_for_derive_struct{
     (
+        $(#[doc=$docs:literal])*
         impl $typarams:tt $self_:ty
         where $where_preds:tt
         {
@@ -447,6 +452,7 @@ macro_rules! _private_impl_getters_for_derive_struct{
     )=>{
 
         $crate::_private_impl_structural!{
+            $(#[doc=$docs])*
             impl $typarams Structural for $self_
             where $where_preds
             {

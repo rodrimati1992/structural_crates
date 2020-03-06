@@ -158,7 +158,11 @@ impl<'a> StructuralDataType<'a> {
                 )?);
             }
         }
-        Ok(Self { variants, fields })
+        Ok(Self {
+            type_name: None,
+            variants,
+            fields,
+        })
     }
 }
 
@@ -203,6 +207,7 @@ impl<'a> StructuralVariant<'a> {
         }
         Ok(Self {
             name: name.into(),
+            pub_vari_rename: None,
             alias_index,
             fields,
             is_newtype: false,
@@ -252,6 +257,7 @@ impl<'a> StructuralField<'a> {
         Ok(Self {
             access,
             ident,
+            pub_field_rename: None,
             alias_index: names_mod.push_str(ident),
             inner_optionality,
             ty,
@@ -277,6 +283,7 @@ impl<'a> StructuralField<'a> {
         Ok(Self {
             access,
             ident,
+            pub_field_rename: None,
             alias_index: names_mod.push_str(ident),
             inner_optionality,
             ty,

@@ -14,6 +14,8 @@ use as_derive_utils::{
     utils::{LinearResult, SynResultExt},
 };
 
+use core_extensions::matches;
+
 use proc_macro2::Span;
 
 use quote::ToTokens;
@@ -35,6 +37,7 @@ pub(crate) struct StructuralOptions<'a> {
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
     pub(crate) implicit_optionality: bool,
+    pub(crate) generate_docs: bool,
     pub(crate) delegate_to: Option<DelegateTo<'a>>,
 
     _marker: PhantomData<&'a ()>,
@@ -50,6 +53,7 @@ impl<'a> StructuralOptions<'a> {
             debug_print,
             with_trait_alias,
             implicit_optionality,
+            generate_docs,
             delegate_to,
             errors: _,
             _marker,
@@ -63,6 +67,7 @@ impl<'a> StructuralOptions<'a> {
             debug_print,
             with_trait_alias,
             implicit_optionality,
+            generate_docs,
             delegate_to,
             _marker,
         })
@@ -113,6 +118,7 @@ struct StructuralAttrs<'a> {
     debug_print: bool,
     with_trait_alias: bool,
     implicit_optionality: bool,
+    generate_docs: bool,
     delegate_to: Option<DelegateTo<'a>>,
 
     errors: LinearResult<()>,
@@ -142,6 +148,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
     let mut this = StructuralAttrs::default();
     this.variants = vec![VariantConfig::default(); ds.variants.len()];
     this.with_trait_alias = true;
+    this.generate_docs = matches!(syn::Visibility::Public{..} = ds.vis);
 
     this.fields = FieldMap::with(ds, |field| FieldConfig {
         access: Default::default(),
@@ -334,6 +341,8 @@ fn parse_sabi_attr<'a>(
                 this.implicit_optionality = true;
             } else if path.is_ident("no_trait") {
                 this.with_trait_alias = false;
+            } else if path.is_ident("no_docs") {
+                this.generate_docs = false;
             } else if path.is_ident("public") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;

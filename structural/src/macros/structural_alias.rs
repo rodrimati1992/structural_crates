@@ -136,6 +136,12 @@ These are attributes for each individual trait declared using this macro.
 
 Causes a compiletime error,printing the generated code for a trait.
 
+### `#[struc(no_docs)]`
+
+Removes the docs for the generated trait(s).
+
+The documentation describes variants and fields accessor traits that this trait aliases.
+
 ### `#[struc(exhaustive_enum)]`
 
 Makes the structural alias require an enum that has the same variants

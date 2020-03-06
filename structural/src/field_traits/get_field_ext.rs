@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-use core_extensions::collection_traits::Cloned;
+use core_extensions::collection_traits::{Cloned, ClonedOut};
 
 /// A trait defining the primary way to call methods from structural traits.
 ///
@@ -299,7 +299,7 @@ pub trait GetFieldExt {
     fn cloned_fields<'a, P>(
         &'a self,
         path: P,
-    ) -> <NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>> as Cloned>::Cloned
+    ) -> ClonedOut<NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>>
     where
         P: RevGetMultiField<'a, Self>,
         NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>: Cloned,

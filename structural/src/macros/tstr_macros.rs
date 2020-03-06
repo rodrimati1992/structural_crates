@@ -1,5 +1,5 @@
 /**
-Declares type aliases for [`TStr<_>`(type-level string)](crate::TStr).
+Declares type aliases for [`TStr<_>`(type-level string)](./struct.TStr.html).
 
 # Variants
 

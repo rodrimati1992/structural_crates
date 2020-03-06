@@ -1,23 +1,22 @@
-//! Structural-deriving types used in examples
+//! Structural-deriving types used in examples,
+//!
+//! These are in the docs purely so that documentation examples only use
+//! types that are documented.
 
 use crate::Structural;
 
-/// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct Tuple1<A>(#[struc(optional)] pub Option<A>);
 
-/// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct Tuple2<A, B>(#[struc(optional)] pub Option<A>, pub B);
 
-/// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct Tuple3<A, B, C>(#[struc(optional)] pub Option<A>, pub B, pub C);
 
-/// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct Struct2<A, B> {
@@ -26,7 +25,6 @@ pub struct Struct2<A, B> {
     pub bar: B,
 }
 
-/// Struct used to demonstrate optional accessors.
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct Struct3<A, B, C> {
@@ -106,3 +104,30 @@ pub enum EnumOptFlying {
         noodles: usize,
     },
 }
+
+#[derive(Structural)]
+pub enum Vegetable {
+    #[struc(rename = "Ziemniak")]
+    Potato {
+        #[struc(rename = "centymetry objętości")]
+        volume_cm: u32,
+    },
+    #[struc(rename = "生菜")]
+    Letuce {
+        #[struc(rename = "树叶")]
+        leaves: u32,
+    },
+}
+
+#[derive(Structural)]
+pub enum EnumWithNewtype<'a> {
+    #[struc(newtype(bounds = "RefWrapper_VSI<'a,u32,@variant>"))]
+    U32(RefWrapper<'a, u32>),
+    #[struc(newtype(bounds = "RefWrapper_VSI<'a,u64,@variant>"))]
+    U64(RefWrapper<'a, u64>),
+}
+
+#[derive(Structural)]
+#[struc(public)]
+#[struc(bound = "T:'a")]
+pub struct RefWrapper<'a, T>(T, &'a T);
