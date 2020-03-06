@@ -17,6 +17,9 @@ and aliases for the optional and non-optional variants of those traits.
 ](./macro.impl_struct.html)(available from Rust 1.40 onwards),
 as well as [`make_struct` to construct anonymous structs ](./macro.make_struct.html)
 
+- [The GetFieldExt extension trait,which defines the main methods to access fields,
+so long as the type implements the accessor traits to access those fields.
+](./trait.GetFieldExt.html)
 
 # Examples
 
@@ -700,5 +703,3 @@ use std_::marker::PhantomData;
 use std_::mem::ManuallyDrop;
 
 include! {"field_path/declare_field_path_types.rs"}
-
-//////////////////////////////

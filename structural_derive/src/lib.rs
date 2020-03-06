@@ -30,6 +30,7 @@ mod switch_tstring_aliases;
 mod tokenizers;
 mod tstring_aliases;
 mod utils;
+mod write_docs;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::TokenStream as TokenStream2;

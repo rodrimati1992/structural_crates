@@ -936,6 +936,7 @@ macro_rules! private_delegate_to_variant_proxy {
 #[macro_export]
 macro_rules! _private_impl_getters_for_derive_enum{
     (
+        $(#[doc=$docs:literal])*
         impl $typarams:tt $self_:ty
         where $where_preds:tt
         {
@@ -952,6 +953,7 @@ macro_rules! _private_impl_getters_for_derive_enum{
     )=>{
 
         $crate::_private_impl_structural!{
+            $(#[doc=$docs])*
             impl $typarams Structural for $self_
             where $where_preds
             {

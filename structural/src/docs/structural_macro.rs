@@ -51,6 +51,12 @@ Disables the generation of the `*SI` traits.
 
 [Here is an example using this attribute](#disabling-the-trait-alias)
 
+### `#[struc(no_docs)]`
+
+Removes the docs for the generated traits,and impl of `Structural`.
+
+The documentation describes variants and fields that the accessor trait impls represent.
+
 ### `#[struc(variant_count_alias)]`
 
 This is only usable on enums.

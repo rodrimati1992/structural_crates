@@ -100,5 +100,46 @@
         ),
       ],
     ),
+    (
+      name:"no_docs",
+      code:r##"
+        #[struc(#0)]
+        #v trait Trait{
+            a:u32,
+            b:u32,
+            c:u32,
+        }
+      "##,
+      subcase: [
+        (
+          replacements: { "#0":"no_docs", "#v":"pub" },
+          find_all:[
+            not(regex(r#"FP *! *\( *a *\) *, *Ty *= *u32"#)),
+            not(regex(r#"FP *! *\( *b *\) *, *Ty *= *u32"#)),
+            not(regex(r#"FP *! *\( *c *\) *, *Ty *= *u32"#)),
+          ],
+          error_count: 0,
+        ),
+        (
+          replacements: { "#0":"", "#v":"pub(crate)" },
+          find_all:[
+            not(regex(r#"FP *! *\( *a *\) *, *Ty *= *u32"#)),
+            not(regex(r#"FP *! *\( *b *\) *, *Ty *= *u32"#)),
+            not(regex(r#"FP *! *\( *c *\) *, *Ty *= *u32"#)),
+          ],
+          error_count: 0,
+        ),
+        (
+          replacements: { "#0":"", "#v":"pub" },
+          find_all:[
+            regex(r#"FP *! *\( *a *\) *, *Ty *= *u32"#),
+            regex(r#"FP *! *\( *b *\) *, *Ty *= *u32"#),
+            regex(r#"FP *! *\( *c *\) *, *Ty *= *u32"#),
+          ],
+          error_count: 0,
+        ),
+      ],
+    ),
+
   ]
 )

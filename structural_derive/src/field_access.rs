@@ -1,4 +1,4 @@
-use crate::parse_utils::ParseBufferExt;
+use crate::{datastructure::StructOrEnum, parse_utils::ParseBufferExt};
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
@@ -45,10 +45,15 @@ impl Access {
         value: true,
     };
 
-    pub(crate) fn and_optionality(self, optionality: IsOptional) -> AccessAndIsOptional {
-        AccessAndIsOptional {
+    pub(crate) fn compute_trait(
+        self,
+        optionality: IsOptional,
+        struct_or_enum: StructOrEnum,
+    ) -> ComputeTrait {
+        ComputeTrait {
             access: self,
             optionality,
+            struct_or_enum,
         }
     }
 
@@ -152,23 +157,87 @@ impl ToTokens for IsOptionalDeriveArg {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) struct AccessAndIsOptional {
+pub(crate) struct ComputeTrait {
     pub(crate) access: Access,
     pub(crate) optionality: IsOptional,
+    pub(crate) struct_or_enum: StructOrEnum,
 }
 
-macro_rules! AAIO_match_a {
+/*
+
+Using this to generate the match branches below.
+
+Using code generation for this seems like the best approach,
+since manually writing the 16 branches is error prone.
+
+fn main(){
+    let kind_list=[("Struct","Field"),("Enum","VariantField")];
+
+    let access_list=[
+        ("Shared","Get",""),
+        ("Value","Into",""),
+        ("Mutable","Get","Mut"),
+        ("MutValue","Into","Mut"),
+    ];
+
+    let optionality_list=[("Yes","Opt"), ("No","")];
+
+    for (kind,field_pc) in &kind_list {
+        for (access,pre_pc,post_pc) in &access_list {
+            for (opt,opt_pc) in &optionality_list {
+                println!(
+                    "(SOE::{0}, {1}, IO::{2})=> \
+                        AAIO_match!(inner; $kind {opt}{pre}{field}{post} ),\
+                    ",
+                    kind,
+                    access,
+                    opt,
+                    opt=opt_pc,
+                    pre=pre_pc,
+                    field=field_pc,
+                    post=post_pc,
+                );
+            }
+        }
+    }
+}
+*/
+
+#[allow(non_upper_case_globals)]
+mod access_consts {
+    use super::Access;
+    pub(super) const Shared: Access = Access::Shared;
+    pub(super) const Mutable: Access = Access::Mutable;
+    pub(super) const Value: Access = Access::Value;
+    pub(super) const MutValue: Access = Access::MutValue;
+}
+
+macro_rules! AAIO_match {
     ( self=$this:ident kind=$kind:ident ) => ({
-        let AccessAndIsOptional{access,optionality}=$this;
-        match (access,optionality) {
-            (Access::Shared  ,IsOptional::No )=>AAIO_match_a!(inner; $kind GetField ),
-            (Access::Shared  ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptGetField ),
-            (Access::Value   ,IsOptional::No )=>AAIO_match_a!(inner; $kind IntoField ),
-            (Access::Value   ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptIntoField ),
-            (Access::Mutable ,IsOptional::No )=>AAIO_match_a!(inner; $kind GetFieldMut ),
-            (Access::Mutable ,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptGetFieldMut ),
-            (Access::MutValue,IsOptional::No )=>AAIO_match_a!(inner; $kind IntoFieldMut ),
-            (Access::MutValue,IsOptional::Yes)=>AAIO_match_a!(inner; $kind OptIntoFieldMut ),
+        use access_consts::{Shared,Mutable,Value,MutValue};
+        use self::IsOptional as IO;
+        use self::StructOrEnum as SOE;
+
+
+        let ComputeTrait{access,optionality,struct_or_enum}=$this;
+        #[allow(non_upper_case_globals)]
+        match (struct_or_enum,access,optionality) {
+            (SOE::Struct, Shared, IO::Yes)=> AAIO_match!(inner; $kind OptGetField ),
+            (SOE::Struct, Shared, IO::No)=> AAIO_match!(inner; $kind GetField ),
+            (SOE::Struct, Value, IO::Yes)=> AAIO_match!(inner; $kind OptIntoField ),
+            (SOE::Struct, Value, IO::No)=> AAIO_match!(inner; $kind IntoField ),
+            (SOE::Struct, Mutable, IO::Yes)=> AAIO_match!(inner; $kind OptGetFieldMut ),
+            (SOE::Struct, Mutable, IO::No)=> AAIO_match!(inner; $kind GetFieldMut ),
+            (SOE::Struct, MutValue, IO::Yes)=> AAIO_match!(inner; $kind OptIntoFieldMut ),
+            (SOE::Struct, MutValue, IO::No)=> AAIO_match!(inner; $kind IntoFieldMut ),
+            (SOE::Enum, Shared, IO::Yes)=> AAIO_match!(inner; $kind OptGetVariantField ),
+            (SOE::Enum, Shared, IO::No)=> AAIO_match!(inner; $kind GetVariantField ),
+            (SOE::Enum, Value, IO::Yes)=> AAIO_match!(inner; $kind OptIntoVariantField ),
+            (SOE::Enum, Value, IO::No)=> AAIO_match!(inner; $kind IntoVariantField ),
+            (SOE::Enum, Mutable, IO::Yes)=> AAIO_match!(inner; $kind OptGetVariantFieldMut ),
+            (SOE::Enum, Mutable, IO::No)=> AAIO_match!(inner; $kind GetVariantFieldMut ),
+            (SOE::Enum, MutValue, IO::Yes)=> AAIO_match!(inner; $kind OptIntoVariantFieldMut ),
+            (SOE::Enum, MutValue, IO::No)=> AAIO_match!(inner; $kind IntoVariantFieldMut ),
         }
     });
     (inner; quote $trait_:ident )=>{
@@ -179,47 +248,22 @@ macro_rules! AAIO_match_a {
     };
 }
 
-impl AccessAndIsOptional {
+impl ComputeTrait {
     pub(crate) fn trait_name(self) -> &'static str {
         let this = self;
 
-        AAIO_match_a!( self=this kind=stringify )
+        AAIO_match!( self=this kind=stringify )
     }
 
     pub(crate) fn trait_tokens(self) -> TokenStream2 {
         let this = self;
 
-        AAIO_match_a!( self=this kind=quote )
+        AAIO_match!( self=this kind=quote )
     }
 }
 
-macro_rules! AAIO_match_b {
-    ( self=$this:ident kind=$kind:ident ) => ({
-        use self::{Access as A,IsOptional as IO};
-        let AccessAndIsOptional{access,optionality}=$this;
-        match (access,optionality) {
-            (A::Shared  ,IO::No )=>AAIO_match_b!(inner; $kind GetVariantField ),
-            (A::Shared  ,IO::Yes)=>AAIO_match_b!(inner; $kind OptGetVariantField ),
-            (A::Value   ,IO::No )=>AAIO_match_b!(inner; $kind IntoVariantField ),
-            (A::Value   ,IO::Yes)=>AAIO_match_b!(inner; $kind OptIntoVariantField ),
-            (A::Mutable ,IO::No )=>AAIO_match_b!(inner; $kind GetVariantFieldMut ),
-            (A::Mutable ,IO::Yes)=>AAIO_match_b!(inner; $kind OptGetVariantFieldMut ),
-            (A::MutValue,IO::No )=>AAIO_match_b!(inner; $kind IntoVariantFieldMut ),
-            (A::MutValue,IO::Yes)=>AAIO_match_b!(inner; $kind OptIntoVariantFieldMut ),
-        }
-    });
-    (inner; quote $trait_:ident )=>{
-        quote!($trait_)
-    };
-    (inner; stringify $trait_:ident )=>{
-        stringify!($trait_)
-    };
-}
-
-impl AccessAndIsOptional {
-    pub(crate) fn variant_field_trait_tokens(self) -> TokenStream2 {
-        let this = self;
-
-        AAIO_match_b!( self=this kind=quote )
+impl ToTokens for ComputeTrait {
+    fn to_tokens(&self, ts: &mut TokenStream2) {
+        ts.append_all(self.trait_tokens());
     }
 }
