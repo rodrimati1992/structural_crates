@@ -282,6 +282,16 @@ mod tstr_aliases_tests {
     }
 
     #[test]
+    fn escaped() {
+        tstr_asserts! {
+            (
+                (chars::B0,chars::B92,chars::B240, chars::B159, chars::B153, chars::B130),
+                "\0\\🙂"
+            ) = (ts!("\0\\🙂"));
+        }
+    }
+
+    #[test]
     fn with_submodules() {
         tstr_aliases! {
             mod strs{

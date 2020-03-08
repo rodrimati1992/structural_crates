@@ -6,9 +6,9 @@ use crate::{
     parse_utils::extract_option_parameter,
     structural_alias_impl_mod::{
         Exhaustiveness, FieldType, StructuralAliasParams, StructuralDataType, StructuralField,
-        StructuralVariant,
+        StructuralVariant, VariantIdent,
     },
-    tokenizers::{tident_tokens, FullPathForChars, NamedModuleAndTokens},
+    tokenizers::{tident_tokens, FullPathForChars},
     write_docs::{self, DocsFor},
 };
 
@@ -176,8 +176,6 @@ fn deriving_structural<'a>(
 
     let struct_ = &ds.variants[0];
 
-    let mut names_module = NamedModuleAndTokens::new(ds.name);
-
     let vis = ds.vis;
 
     let tyname = ds.name;
@@ -190,7 +188,7 @@ fn deriving_structural<'a>(
 
     let mut field_types = FieldMap::with(ds, |f| f.ty);
 
-    let mut make_fields = |names_module: &mut NamedModuleAndTokens, variant: &'a Struct<'a>| {
+    let mut make_fields = |variant: &'a Struct<'a>| {
         variant
             .fields
             .iter()
@@ -205,8 +203,6 @@ fn deriving_structural<'a>(
                     Some(x) => x.borrowed(),
                     None => (&field.ident).into(),
                 };
-
-                let alias_index = names_module.push_str(ident);
 
                 let optionality_ty = get_optionality(implicit_optionality, field, config_f, arenas);
 
@@ -228,7 +224,6 @@ fn deriving_structural<'a>(
                     } else {
                         None
                     },
-                    alias_index,
                     ty: match &config_f.is_impl {
                         Some(yes) => FieldType::Impl(yes),
                         None => FieldType::Ty(*fty),
@@ -241,7 +236,7 @@ fn deriving_structural<'a>(
     let sdt = match struct_or_enum {
         StructOrEnum::Struct => StructuralDataType {
             type_name: Some(ds.name),
-            fields: make_fields(&mut names_module, struct_),
+            fields: make_fields(struct_),
             variants: Vec::new(),
         },
         StructOrEnum::Enum => StructuralDataType {
@@ -259,17 +254,14 @@ fn deriving_structural<'a>(
                         None => variant.name.into(),
                     };
 
-                    let alias_index = names_module.push_str(name);
-
                     StructuralVariant {
-                        name,
+                        name: VariantIdent::Ident(name),
                         pub_vari_rename: if options.generate_docs && config_v.renamed.is_some() {
                             Some(variant.name.into())
                         } else {
                             None
                         },
-                        alias_index,
-                        fields: make_fields(&mut names_module, variant),
+                        fields: make_fields(variant),
                         is_newtype: config_v.is_newtype,
                         replace_bounds: config_v.replace_bounds.as_ref(),
                     }
@@ -303,7 +295,7 @@ fn deriving_structural<'a>(
                 "A trait aliasing the accessor impls for \
                  [{tyname}](./{soe_str}.{tyname}.html) fields\n\
                  \n\
-                 This trait also has all the constraints(where clause and generic parametr bounds)
+                 This trait also has all the constraints(where clause and generic parameter bounds)
                  of [the same type](./{soe_str}.{tyname}.html).\n\n\
                  ### Accessor traits\n\
                  These are the accessor traits this aliases:\n\
@@ -329,7 +321,6 @@ fn deriving_structural<'a>(
             generics: ds.generics,
             extra_where_preds: &options.bounds,
             supertraits: &Punctuated::new(),
-            names_mod: &names_module,
             trait_items: &[],
             variant_trait: struct_variant_trait.as_ref(),
             enum_exhaustiveness,
@@ -349,8 +340,6 @@ fn deriving_structural<'a>(
         .map_or(&empty_preds, |x| &x.predicates)
         .into_iter();
 
-    let names_module_path = &names_module.names_module;
-
     let mut config_variants = options.variants.iter();
 
     let tuple = match struct_or_enum {
@@ -365,6 +354,8 @@ fn deriving_structural<'a>(
 
             let field_names = fields.iter().map(|f| &f.ident);
 
+            let field_name_tstrs = sdt.fields.iter().map(|f| f.ident.tstr_tokens());
+
             let field_tys = fields.iter().map(|f| field_types[*f]);
 
             let inner_optionality = sdt.fields.iter().map(|f| f.inner_optionality.derive_arg());
@@ -377,11 +368,6 @@ fn deriving_structural<'a>(
                         None => field.ident.to_string(),
                     });
 
-            let alias_names = sdt
-                .fields
-                .iter()
-                .map(|f| names_module.alias_name(f.alias_index));
-
             (
                 quote!(_private_impl_getters_for_derive_struct),
                 quote!(),
@@ -389,7 +375,7 @@ fn deriving_structural<'a>(
                     #((
                         #getter_trait<
                             #field_names : #field_tys ,
-                            #names_module_path::#alias_names,
+                            #field_name_tstrs,
                             opt=#inner_optionality,
                             #renamed_field_names,
                         >
@@ -426,20 +412,20 @@ fn deriving_structural<'a>(
                                 let fname = &field.ident;
                                 let fty = field_types[field];
                                 let inner_optionality = sdt_field.inner_optionality.derive_arg();
-                                let f_tstr = names_module.alias_name(sdt_field.alias_index);
+                                let f_tstr = sdt_field.ident.tstr_tokens();
                                 quote!(
                                     #access,
                                     #fname:#fty,
                                     #inner_optionality,
-                                    #names_module_path::#f_tstr,
+                                    #f_tstr,
                                 )
                             });
 
                     let variant_name = variant.name;
-                    let variant_str = names_module.alias_name(sdt_variant.alias_index);
+                    let variant_str = sdt_variant.name.tokens();
                     quote!(
                         #variant_name,
-                        #names_module_path::#variant_str,
+                        #variant_str,
                         kind=#variant_kind,
                         fields( #( (#field_tokens) )* )
                     )
@@ -484,7 +470,7 @@ fn deriving_structural<'a>(
 
     let mut impl_docs = String::new();
     if options.generate_docs {
-        write_docs::write_datatype_docs(&mut impl_docs, DocsFor::Type, &sdt, &names_module, None);
+        write_docs::write_datatype_docs(&mut impl_docs, DocsFor::Type, &sdt)?;
     }
 
     let (which_macro, soe_specific_out, soe_specific_in) = tuple;
@@ -492,8 +478,6 @@ fn deriving_structural<'a>(
 
     quote!(
         #structural_alias_trait
-
-        #names_module
 
         #soe_specific_out
 
