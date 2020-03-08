@@ -156,12 +156,18 @@ impl<'a> IdentOrIndexRef<'a> {
         })
     }
 
+    #[allow(dead_code)]
     pub(crate) fn span(&self) -> Span {
         match self {
             IdentOrIndexRef::Ident(x) => x.span(),
             IdentOrIndexRef::Index { span, .. } => *span,
             IdentOrIndexRef::Str { span, .. } => *span,
         }
+    }
+
+    pub(crate) fn tstr_tokens(self) -> TokenStream2 {
+        use crate::tokenizers::{tident_tokens, FullPathForChars};
+        tident_tokens(&self.to_string(), FullPathForChars::Yes)
     }
 }
 

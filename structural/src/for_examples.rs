@@ -120,6 +120,7 @@ pub enum Vegetable {
 }
 
 #[derive(Structural)]
+// #[struc(debug_print)]
 pub enum EnumWithNewtype<'a> {
     #[struc(newtype(bounds = "RefWrapper_VSI<'a,u32,@variant>"))]
     U32(RefWrapper<'a, u32>),
@@ -131,3 +132,17 @@ pub enum EnumWithNewtype<'a> {
 #[struc(public)]
 #[struc(bound = "T:'a")]
 pub struct RefWrapper<'a, T>(T, &'a T);
+
+///////////////////////////////////////////////////////////////////////////////
+
+structural_alias! {
+    pub trait AStructuralAlias{
+        a:u32,
+        b:i32,
+        Foo{
+            c:(),
+            d:i8,
+        },
+        Bar(i16,u16),
+    }
+}

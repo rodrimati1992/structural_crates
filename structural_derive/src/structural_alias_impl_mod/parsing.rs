@@ -2,12 +2,11 @@ use crate::{
     arenas::Arenas,
     field_access::{Access, IsOptional},
     ident_or_index::IdentOrIndexRef,
-    tokenizers::{NamedModuleAndTokens, NamesModuleIndex},
 };
 
 use super::{
     attribute_parsing, FieldType, StructuralAlias, StructuralAliases, StructuralDataType,
-    StructuralField, StructuralVariant, TinyStructuralField,
+    StructuralField, StructuralVariant, TinyStructuralField, VariantIdent,
 };
 
 use as_derive_utils::datastructure::StructKind;
@@ -47,7 +46,6 @@ impl<'a> StructuralAlias<'a> {
 
         attrs.retain(|attr| !attr.path.is_ident("struc"));
 
-        let mut names_mod = NamedModuleAndTokens::new(ident);
         let mut generics: Generics = input.parse()?;
         let colon_token: Option<Token![:]> = input.parse()?;
 
@@ -72,8 +70,7 @@ impl<'a> StructuralAlias<'a> {
         let content;
         let braces = syn::braced!(content in input);
 
-        let datatype =
-            StructuralDataType::parse(&mut names_mod, &mut extra_items, arenas, &content)?;
+        let datatype = StructuralDataType::parse(&mut extra_items, arenas, &content)?;
 
         let span = trait_token
             .span
@@ -81,7 +78,6 @@ impl<'a> StructuralAlias<'a> {
             .unwrap_or(trait_token.span);
 
         Ok(Self {
-            names_mod,
             span,
             attrs,
             vis,
@@ -97,7 +93,6 @@ impl<'a> StructuralAlias<'a> {
 
 impl<'a> StructuralDataType<'a> {
     pub(super) fn parse(
-        names_mod: &mut NamedModuleAndTokens,
         extra_items: &mut Vec<TraitItem>,
         arenas: &'a Arenas,
         input: ParseStream,
@@ -119,16 +114,13 @@ impl<'a> StructuralDataType<'a> {
             let access = input.parse::<Access>()?;
             if let Some(enum_token) = VariantToken::peek_from(input) {
                 let ident = arenas.alloc(input.parse::<Ident>()?);
-                let ident_index = names_mod.push_str(ident.into());
 
                 let variant_kind: StructKind = enum_token.into();
                 let mut push_variant = |content: ParseStream| -> Result<(), syn::Error> {
                     variants.push(StructuralVariant::parse(
-                        names_mod,
                         access,
                         ident,
                         variant_kind,
-                        ident_index,
                         arenas,
                         content,
                     )?);
@@ -153,9 +145,7 @@ impl<'a> StructuralDataType<'a> {
                     input.parse::<Token![,]>()?;
                 }
             } else {
-                fields.push(StructuralField::parse_braced_field(
-                    names_mod, access, arenas, input,
-                )?);
+                fields.push(StructuralField::parse_braced_field(access, arenas, input)?);
             }
         }
         Ok(Self {
@@ -168,11 +158,9 @@ impl<'a> StructuralDataType<'a> {
 
 impl<'a> StructuralVariant<'a> {
     pub(super) fn parse(
-        names_mod: &mut NamedModuleAndTokens,
         access: Access,
         name: &'a Ident,
         variant_kind: StructKind,
-        alias_index: NamesModuleIndex,
         arenas: &'a Arenas,
         input: ParseStream,
     ) -> Result<Self, syn::Error> {
@@ -183,7 +171,6 @@ impl<'a> StructuralVariant<'a> {
                 while !input.is_empty() {
                     let nested_access = Access::parse_optional(input)?;
                     fields.push(StructuralField::parse_braced_field(
-                        names_mod,
                         nested_access.unwrap_or(access),
                         arenas,
                         input,
@@ -195,7 +182,6 @@ impl<'a> StructuralVariant<'a> {
                 while !input.is_empty() {
                     let nested_access = Access::parse_optional(input)?;
                     fields.push(StructuralField::parse_tuple_field(
-                        names_mod,
                         nested_access.unwrap_or(access),
                         index,
                         arenas,
@@ -206,9 +192,8 @@ impl<'a> StructuralVariant<'a> {
             }
         }
         Ok(Self {
-            name: name.into(),
+            name: VariantIdent::Ident(name.into()),
             pub_vari_rename: None,
-            alias_index,
             fields,
             is_newtype: false,
             replace_bounds: None,
@@ -238,7 +223,6 @@ impl<'a> TinyStructuralField<'a> {
 
 impl<'a> StructuralField<'a> {
     pub(super) fn parse_braced_field(
-        names_mod: &mut NamedModuleAndTokens,
         access: Access,
         arenas: &'a Arenas,
         input: ParseStream,
@@ -258,14 +242,12 @@ impl<'a> StructuralField<'a> {
             access,
             ident,
             pub_field_rename: None,
-            alias_index: names_mod.push_str(ident),
             inner_optionality,
             ty,
         })
     }
 
     pub(super) fn parse_tuple_field(
-        names_mod: &mut NamedModuleAndTokens,
         access: Access,
         index: u32,
         arenas: &'a Arenas,
@@ -284,7 +266,6 @@ impl<'a> StructuralField<'a> {
             access,
             ident,
             pub_field_rename: None,
-            alias_index: names_mod.push_str(ident),
             inner_optionality,
             ty,
         })

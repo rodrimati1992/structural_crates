@@ -2,7 +2,6 @@ use crate::{
     datastructure::StructOrEnum,
     field_access::{Access, IsOptional},
     structural_alias_impl_mod::{FieldType, StructuralDataType, StructuralField, VariantIdent},
-    tokenizers::NamedModuleAndTokens,
 };
 
 use quote::ToTokens;
@@ -13,6 +12,7 @@ use std::fmt::Write;
 pub enum DocsFor {
     Type,
     Trait,
+    VsiTrait,
 }
 
 fn try_opt2<A, B>(a: Option<A>, b: Option<B>) -> Option<(A, B)> {
@@ -26,14 +26,12 @@ pub(crate) fn write_datatype_docs(
     buff: &mut String,
     docs_for: DocsFor,
     datatype: &StructuralDataType<'_>,
-    names_mod: &NamedModuleAndTokens,
-    top_variant_ident: Option<VariantIdent<'_>>,
-) {
+) -> Result<(), syn::Error> {
     if !datatype.variants.is_empty() {
         buff.push_str("### Variants\n\n");
         buff.push_str(match docs_for {
             DocsFor::Type => "This type implements",
-            DocsFor::Trait => "This trait aliases",
+            DocsFor::Trait | DocsFor::VsiTrait => "This trait aliases",
         });
         buff.push_str(
             " the `IsVariant<TS!( NameOfVariant )>` trait for each of the variants below.\n\n",
@@ -42,21 +40,46 @@ pub(crate) fn write_datatype_docs(
 
     let type_name = datatype.type_name.filter(|_| docs_for == DocsFor::Type);
 
+    let datatype_fields = match docs_for {
+        DocsFor::Type | DocsFor::Trait => &datatype.fields[..],
+        DocsFor::VsiTrait => &[],
+    };
+
+    let mut has_generic_variant_name = false;
+
     for variant in &datatype.variants {
-        let alias_ident = names_mod.alias_name(variant.alias_index);
-        let variant_ident = Some(VariantIdent::Ident {
-            ident: variant.name,
-            alias_ident,
-        });
+        let variant_name_clarification_string;
+        let printed_variant_name;
+        let variant_name_clarification: &str;
+        match variant.name {
+            VariantIdent::Generic(generic) => {
+                has_generic_variant_name = true;
+                printed_variant_name = format!("<{}>", generic);
+
+                variant_name_clarification_string = format!(
+                    "{SP}\
+                     The name of this variant is determined by the `{}` type parameter\
+                     (a `structural::TStr`),<br>",
+                    generic,
+                    SP = SPACES_X8,
+                );
+                variant_name_clarification = &variant_name_clarification_string;
+            }
+            VariantIdent::Ident(generic) => {
+                printed_variant_name = generic.to_string();
+                variant_name_clarification = "";
+            }
+        };
 
         let _ = write!(
             buff,
-            "Variant `{}`{} {{",
-            variant.name,
+            "Variant `{}`{} {{<br>{}",
+            printed_variant_name,
             try_opt2(type_name, variant.pub_vari_rename).map_or(String::new(), |(t, v)| format!(
                 "(named `{}` in `{}`)",
                 v, t
             )),
+            variant_name_clarification,
         );
         buff.push_str(
             if variant.fields.is_empty() || variant.replace_bounds.is_some() {
@@ -67,10 +90,25 @@ pub(crate) fn write_datatype_docs(
         );
 
         match (&variant.replace_bounds, docs_for) {
-            (Some(replace_bounds), DocsFor::Trait) => {
-                replace_bounds.write_docs(buff, variant.name);
+            (Some(replace_bounds), _) => {
+                let _ = writeln!(
+                    buff,
+                    "{SP}This {}variant is represented using these traits:<br>{SP}`{}`<br>",
+                    if variant.is_newtype { "newtype " } else { "" },
+                    replace_bounds.get_docs(variant.name),
+                    SP = SPACES_X8,
+                );
             }
-            _ => {
+            (None, DocsFor::Type) if variant.is_newtype => {
+                let _ = writeln!(
+                    buff,
+                    "{SP}Delegates the field accessor traits of the variant to the `{}` field.",
+                    variant.fields[0].ty.to_token_stream(),
+                    SP = SPACES_X8,
+                );
+            }
+            (None, _) => {
+                let variant_ident = Some(variant.name);
                 for field in &variant.fields {
                     let _ = write_field_docs(buff, SPACES_X8, type_name, variant_ident, field);
                 }
@@ -80,12 +118,16 @@ pub(crate) fn write_datatype_docs(
         let _ = writeln!(buff, "}}\n");
     }
 
-    if !datatype.fields.is_empty() {
+    if !datatype_fields.is_empty() {
         buff.push_str("### Fields\n\n");
     }
-    for field in datatype.fields.iter() {
-        let _ = write_field_docs(buff, "", type_name, top_variant_ident, field);
+    for field in datatype_fields.iter() {
+        let _ = write_field_docs(buff, "", type_name, None, field);
     }
+    if has_generic_variant_name {
+        buff.push_str(GENERIC_VARIANT_NAME_DOCS)
+    }
+    Ok(())
 }
 
 fn write_field_docs(
@@ -102,13 +144,13 @@ fn write_field_docs(
     let the_trait = field.compute_trait(soe).trait_name();
 
     let ident = match variant {
-        Some(VariantIdent::Ident { ident, .. }) => format!(
+        Some(VariantIdent::Ident(ident)) => format!(
             "TS!({}), TS!({})",
             ident.to_token_stream(),
             field.ident.to_token_stream()
         ),
-        Some(VariantIdent::StructVariantTrait { .. }) => {
-            format!("<__VariantName>, TS!({})", field.ident.to_token_stream())
+        Some(VariantIdent::Generic(generic)) => {
+            format!("{}, TS!({})", generic, field.ident.to_token_stream())
         }
         None => format!("FP!({})", field.ident.to_token_stream()),
     };
@@ -151,13 +193,11 @@ fn write_field_docs(
         LP = left_padding,
     )?;
     match variant {
-        Some(VariantIdent::Ident {
-            ident: vari_name, ..
-        }) => {
+        Some(VariantIdent::Ident(vari_name)) => {
             write!(buff, " in the `{}` variant", vari_name)?;
         }
-        Some(VariantIdent::StructVariantTrait { .. }) => {
-            write!(buff, " in the `[__VariantName]` variant")?;
+        Some(VariantIdent::Generic(generic)) => {
+            write!(buff, " in the `{}` variant", generic)?;
         }
         None => {}
     }
@@ -169,3 +209,15 @@ fn write_field_docs(
 }
 
 const SPACES_X8: &'static str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+
+const GENERIC_VARIANT_NAME_DOCS: &'static str = "
+# Generic Variant Names
+
+For a `Bar<T,Foo>` trait,
+`<Foo>` as the name of a variant in the generated documentation means that the 
+name of the variant is determined by the `Foo` type parameter.
+
+Example: `Bar<T,TS!(Woop)>` requires a variant called `Woop`.<br>
+Example: `Bar<T,TS!(Frog)>` requires a variant called `Frog`.<br>
+
+";
