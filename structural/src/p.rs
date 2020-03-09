@@ -4,6 +4,7 @@
 
 use crate::field_path::TStr;
 
+#[allow(unused_imports)]
 use crate::std_::marker::PhantomData;
 
 // `TStr` takes this as a type parameter so that
@@ -46,8 +47,6 @@ declare_const_items! {}
 
 /*
 Type-level ascii characters and bytes.
-
-This module is declared at the root so that error messages will print a shorter type.
 
 */
 

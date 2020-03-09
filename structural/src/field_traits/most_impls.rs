@@ -14,8 +14,8 @@ use core::{
     pin::Pin,
 };
 
-type Start_STR = FP!(s t a r t);
-type End_STR = FP!(e n d);
+type Start_STR = FP!(start);
+type End_STR = FP!(end);
 
 ///////////////////////////////////////////////////////
 

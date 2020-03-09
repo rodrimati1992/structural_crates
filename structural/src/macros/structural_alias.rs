@@ -104,7 +104,10 @@ The methods and constants turn into defaulted methods and defaulted constants in
 
 Variants follow the same pattern as fields regarding access
 (`<none>`/`ref`/`mut`/`move`/`mut move`).
-```ignore
+```rust
+# use structural::structural_alias;
+# structural_alias!{
+# trait Bar {
 // The `mut` here defines the default access for fields of the variant,
 // if none had been specified it would be equivalent to `mut move`.
 mut Foo{
@@ -116,6 +119,9 @@ mut Foo{
     // Corresponds to `IntoVariantFieldMut<TS!(Foo),TS!(baz),Ty= Vec<u32>>`
     mut move baz:Vec<u32>,
 },
+# }
+# }
+# fn main(){}
 
 ```
 

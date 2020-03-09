@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::p as chars;
 
 #[cfg(feature = "use_const_str")]
@@ -34,11 +35,11 @@ macro_rules! tstr_asserts{
     };
 }
 
-#[cfg(feature = "better_macros")]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 #[macro_use]
-mod for_better_macros {
+mod for_string_tests {
+    #[allow(unused_imports)]
     use crate::{p as chars, p::TStrPriv};
 
     cond_tstr_alias!(S_foo = ((chars::_f, chars::_o, chars::_o), "foo"));
@@ -72,11 +73,11 @@ mod for_better_macros {
 
 /// Tests that the fp and FP macros are correct
 #[allow(non_camel_case_types)]
-#[cfg(feature = "better_macros")]
 #[test]
 fn identifier_macros_equality() {
-    use self::for_better_macros::*;
+    use self::for_string_tests::*;
     use crate::field_path::FieldPath;
+    #[allow(unused_imports)]
     use crate::p::TStrPriv;
 
     cond_tstr_alias!(S_abcd = ((chars::_a, chars::_b, chars::_c, chars::_d), "abcd"));
@@ -97,12 +98,11 @@ fn identifier_macros_equality() {
 }
 
 #[allow(non_camel_case_types)]
-#[cfg(feature = "better_macros")]
 #[test]
 fn field_paths_equality() {
     use crate::field_path::{FieldPath, FieldPathSet, UniquePaths};
 
-    use self::for_better_macros::*;
+    use self::for_string_tests::*;
 
     path_assertion! {
         fp!(foo,bar),
@@ -251,6 +251,7 @@ mod names_module_tests {
 }
 
 mod tstr_aliases_tests {
+    #[allow(unused_imports)]
     use crate::{p as chars, p::TStrPriv};
 
     #[test]

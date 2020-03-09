@@ -141,19 +141,6 @@ impl FieldPaths {
         ret
     }
 
-    /// Gets a const item with the type-level identifier.
-    pub(crate) fn constant_from_single(
-        const_name: &syn::Ident,
-        value: &IdentOrIndex,
-        char_path: FullPathForChars,
-    ) -> TokenStream2 {
-        let type_ = tident_tokens(value.to_string(), char_path);
-        quote!(
-            pub const #const_name: #type_=
-                structural::pmr::ConstDefault::DEFAULT;
-        )
-    }
-
     /// Gets a tokenizer that outputs a type-level FieldPath(Set) value.
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
@@ -170,47 +157,31 @@ impl FieldPaths {
 
 impl Parse for FieldPaths {
     fn parse(input: ParseStream) -> parse::Result<Self> {
-        let forked = input.fork();
-        // If this is space separated characters(which start with two idents)
-        // then this only parses a sequence of IdentOrIndex.
-        if let (Ok { .. }, Ok { .. }) = (
-            forked.parse::<IdentOrIndex>(),
-            forked.parse::<IdentOrIndex>(),
-        ) {
-            let mut chars = Vec::<IdentOrIndex>::new();
-            while !input.is_empty() {
-                chars.push(input.parse::<IdentOrIndex>()?);
-            }
-            FieldPath::from_chars(chars)
-                .piped(FieldPaths::from_path)
-                .piped(Ok)
-        } else {
-            let mut prefix = None::<FieldPath>;
-            let mut paths = Vec::<FieldPath>::new();
-            while !input.is_empty() {
-                let path = input.parse::<FieldPath>()?;
-                if input.peek(Token!(=>)) {
-                    if prefix.is_some() {
-                        return Err(input.error("Cannot use `=>` multiple times."));
-                    } else if !paths.is_empty() {
-                        return Err(input.error("Cannot use `=>` after multiple field accesses."));
-                    }
-                    input.parse::<Token!(=>)>()?;
-                    prefix = Some(path);
-                } else if input.peek(Token!(,)) {
-                    paths.push(path);
-                    input.parse::<Token!(,)>()?;
-                } else if input.is_empty() {
-                    paths.push(path);
-                } else {
-                    return Err(input.error("Expected a `=>`,a `,`, or the end of the input"));
+        let mut prefix = None::<FieldPath>;
+        let mut paths = Vec::<FieldPath>::new();
+        while !input.is_empty() {
+            let path = input.parse::<FieldPath>()?;
+            if input.peek(Token!(=>)) {
+                if prefix.is_some() {
+                    return Err(input.error("Cannot use `=>` multiple times."));
+                } else if !paths.is_empty() {
+                    return Err(input.error("Cannot use `=>` after multiple field accesses."));
                 }
+                input.parse::<Token!(=>)>()?;
+                prefix = Some(path);
+            } else if input.peek(Token!(,)) {
+                paths.push(path);
+                input.parse::<Token!(,)>()?;
+            } else if input.is_empty() {
+                paths.push(path);
+            } else {
+                return Err(input.error("Expected a `=>`,a `,`, or the end of the input"));
             }
-
-            let mut this = FieldPaths::from_iter(paths.into_iter());
-            this.prefix = prefix;
-            Ok(this)
         }
+
+        let mut this = FieldPaths::from_iter(paths.into_iter());
+        this.prefix = prefix;
+        Ok(this)
     }
 }
 
@@ -244,12 +215,6 @@ impl FieldPath {
             list: vec![FieldPathComponent::from_ident(ident)],
         }
     }
-    pub(crate) fn from_chars(chars: Vec<IdentOrIndex>) -> Self {
-        Self {
-            list: vec![FieldPathComponent::Chars(chars)],
-        }
-    }
-
     pub(crate) fn write_str(&self, buff: &mut String) {
         for fpc in &self.list {
             fpc.write_str(buff);
@@ -283,8 +248,6 @@ impl FieldPath {
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) enum FieldPathComponent {
     /// A field
-    Chars(Vec<IdentOrIndex>),
-    /// A field
     Ident(IdentOrIndex),
     VariantField {
         variant: IdentOrIndex,
@@ -305,11 +268,6 @@ impl FieldPathComponent {
         use std::fmt::Write;
 
         match self {
-            FPC::Chars(list) => {
-                for c in list {
-                    let _ = write!(buff, "{} ", c);
-                }
-            }
             FPC::Ident(ident) => {
                 let _ = write!(buff, ".{}", ident.to_token_stream());
             }
@@ -410,14 +368,6 @@ impl FieldPathComponent {
         use self::FieldPathComponent as FPC;
 
         match self {
-            FPC::Chars(chars) => {
-                let mut buffer = String::with_capacity(chars.len());
-                for char_ in chars {
-                    use std::fmt::Write;
-                    let _ = write!(buffer, "{}", char_);
-                }
-                tident_tokens(buffer, char_path)
-            }
             FPC::Ident(ident) => tident_tokens(ident.to_string(), char_path),
             FPC::VariantField { variant, field } => {
                 variant_field_tokens(variant.to_string(), field.to_string(), char_path)

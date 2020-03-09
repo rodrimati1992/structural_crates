@@ -29,8 +29,7 @@
 /// If you want type aliases and constants for a particular field path,
 /// you can use the [field_path_aliases](./macro.field_path_aliases.html) macro.
 ///
-/// From Rust 1.40.0 onwards you can also use [the FP macro](./macro.FP.html)
-/// to get the type of any field path.
+/// You can use [the FP macro](./macro.FP.html) to get the type of any field path.
 ///
 /// ### Identifier
 ///
@@ -250,17 +249,8 @@
 
 #[macro_export]
 macro_rules! fp {
-    ( $($strings:tt)* ) => {{
-        $crate::_delegate_fp!{$($strings)*}
-    }};
-}
-
-#[macro_export]
-#[doc(hidden)]
-//#[cfg(not(feature="better_macros"))]
-macro_rules! _delegate_fp {
     ($ident:ident) => (
-        $crate::_construct_tstr_from_token!{$ident}
+        <$crate::_TStr_from_ident!{$ident}>::NEW
     );
     (0)=>{ $crate::field_path::aliases::index_0 };
     (1)=>{ $crate::field_path::aliases::index_1 };
@@ -271,9 +261,11 @@ macro_rules! _delegate_fp {
     (6)=>{ $crate::field_path::aliases::index_6 };
     (7)=>{ $crate::field_path::aliases::index_7 };
     (8)=>{ $crate::field_path::aliases::index_8 };
-    ($($everything:tt)*) => ({
-        $crate::_delegate_fp_inner!( [normal] $($everything)* )
-    })
+    // No `($lit:literal)=>` branch because float literals would generate a different type
+    // `FieldPath<(TStr<_>,TStr<_>)>` instead of `TStr<_>`.
+    ($($everything:tt)*) => (
+        $crate::_delegate_fp_inner!{$($everything)*}
+    );
 }
 
 #[macro_export]
@@ -281,8 +273,6 @@ macro_rules! _delegate_fp {
 macro_rules! _delegate_fp_inner {
     ($($everything:tt)*) => ({
         mod dummy{
-            #[allow(unused_imports)]
-            use structural::pmr as __struct_pmr;
             $crate::low_fp_impl_!{$($everything)*}
         }
 
@@ -290,41 +280,14 @@ macro_rules! _delegate_fp_inner {
     })
 }
 
-// #[macro_export]
-// #[doc(hidden)]
-// #[cfg(feature="better_macros")]
-// macro_rules! _delegate_fp {
-//     ($($everything:tt)*) => (
-//         let $crate::new_fp_impl_!($($everything)*)
-//     )
-// }
-
 /// Constructs a field path type for use as a generic parameter.
 ///
-/// # Variants of the macro
-///
-/// ### Improved macro
+/// # Input
 ///
 /// <span id="improved-macro"></span>
 ///
 /// This takes the same input as [the fp macro](./macro.fp.html),
 /// getting the type of that field path.
-///
-/// This variant of the macro requires one of these:
-///
-/// - Use Rust 1.40 or greater.
-///
-/// - Use the `nightly_better_macros` cargo feature.
-///
-/// - Use the `better_macros` cargo feature.
-///
-/// ### Space separated characters
-///
-/// This variant of the macro takes in space separated characters.
-///
-/// This exists to support Rust versions older than 1.40.
-///
-/// Example: `FP!(f o o)` `FP!(4 1 3)` `FP!(c o u n t d o w n)`
 ///
 /// # Examples
 ///
@@ -337,11 +300,7 @@ macro_rules! _delegate_fp_inner {
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
-///     // From 1.40 onwards you can also write `FP!(name)`.
-///     //
-///     // Before 1.40, you can also use `field_path_aliases!{ name }` before this function,
-///     // then write this as `This:GetField<name,Ty=S>`
-///     This:GetField<FP!(n a m e),Ty=S>,
+///     This:GetField<FP!(name),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
@@ -352,9 +311,6 @@ macro_rules! _delegate_fp_inner {
 ///     // Quotes allow for arbitrary identifiers,
 ///     // useful for non-ascii identifiers before they are supported by Rust.
 ///     //
-///     // Before Rust 1.40,the only way to write bounds for accessors parameterized by
-///     // non-ascii identifiers is to use `field_path_alaises` or `tstr_aliases`
-///     //
 ///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
 ///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
 /// }
@@ -363,10 +319,8 @@ macro_rules! _delegate_fp_inner {
 ///
 /// # Example
 ///
-/// This demonstrates [the improved version of this macro](#improved-macro).
+/// ```rust
 ///
-#[cfg_attr(feature = "better_macros", doc = " ```rust")]
-#[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
 /// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
 ///
 /// let struc=make_struct!{
@@ -402,24 +356,22 @@ macro_rules! _delegate_fp_inner {
 ///
 #[macro_export]
 macro_rules! FP {
-    ($($char:tt)*) => {
-        $crate::_delegate_FP!($($char)*)
+    ($ident:ident) => {
+        $crate::_TStr_from_ident!($ident)
     };
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(not(feature = "better_macros"))]
-macro_rules! _delegate_FP {
-    ($($char:tt)*) => (
-        $crate::pmr::TStr<$crate::p::TS<($($crate::TChar!($char),)*)>>
-    )
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(feature = "better_macros")]
-macro_rules! _delegate_FP {
+    (0)=>{ $crate::field_path::string_aliases::str_0 };
+    (1)=>{ $crate::field_path::string_aliases::str_1 };
+    (2)=>{ $crate::field_path::string_aliases::str_2 };
+    (3)=>{ $crate::field_path::string_aliases::str_3 };
+    (4)=>{ $crate::field_path::string_aliases::str_4 };
+    (5)=>{ $crate::field_path::string_aliases::str_5 };
+    (6)=>{ $crate::field_path::string_aliases::str_6 };
+    (7)=>{ $crate::field_path::string_aliases::str_7 };
+    (8)=>{ $crate::field_path::string_aliases::str_8 };
+    (9)=>{ $crate::field_path::string_aliases::str_9 };
+    (_)=>{ $crate::field_path::string_aliases::str_underscore };
+    // No `($lit:literal)=>` branch because float literals would generate a different type
+    // `FieldPath<(TStr<_>,TStr<_>)>` instead of `TStr<_>`.
     ($($everything:tt)*) => (
         $crate::_FP_impl_!($($everything)*)
     );

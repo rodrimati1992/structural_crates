@@ -30,12 +30,13 @@ where
         self.get_mut(P::USIZE).ok_or(OptionalField)
     }
 
-    unsafe fn get_field_raw_mut(this: *mut *mut (), _: P, _: ()) -> Result<*mut T, OptionalField> {
+    unsafe fn get_field_raw_mut(_: *mut *mut (), _: P, _: ()) -> Result<*mut T, OptionalField> {
+        // This function can't be called,since `[T]` isn't a Sized type
         loop {}
     }
 
     fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<P, (), T, OptionalField> {
-        |mut this: *mut *mut (), name: P, _: ()| unsafe {
+        |this: *mut *mut (), _name: P, _: ()| unsafe {
             let this = this as *mut *mut [T];
             get_raw_mut(*this, P::USIZE)
         }
@@ -49,7 +50,7 @@ where
 {
     unsafe fn get_field_raw_mut_inner(
         this: *mut *mut (),
-        name: P,
+        _name: P,
         _: (),
     ) -> Result<*mut T, OptionalField> {
         let ptr = **(this as *mut *mut *mut [T]);

@@ -357,7 +357,7 @@ mod tests {
 
     fn takes_tuple4_variant<This>(this: This)
     where
-        This: Tuple4Variant<u32, u32, u32, u32, TS!(F o o)> + Clone,
+        This: Tuple4Variant<u32, u32, u32, u32, TS!(Foo)> + Clone,
     {
         takes_tuple4(this.into_field(fp!(::Foo)).unwrap())
     }

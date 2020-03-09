@@ -44,6 +44,7 @@ fn to_path_to_set() {
     }
 }
 
+#[test]
 fn uniqueness_methods() {
     unsafe {
         let this: FieldPathSet<(bar, baz), AliasedPaths> = FieldPathSet::many((bar, baz));

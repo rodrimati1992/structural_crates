@@ -530,22 +530,15 @@ struct Hello{
 
 
 pub trait Hello_SI:
-    // From `1.40` onwards you can write those bounds like this:
-    // ```
-    // IntoFieldMut<FP!(hello), Ty=u32>+
-    // IntoFieldMut<FP!(world), Ty=String>
-    // ```
-    // Alternatively,you could use the `field_path_aliases` macro,
-    // and use those aliases here instead of using `FP!`.
-    IntoFieldMut<FP!(h e l l o), Ty=u32>+
-    IntoFieldMut<FP!(w o r l d), Ty=String>
+    IntoFieldMut<FP!(hello), Ty=u32>+
+    IntoFieldMut<FP!(world), Ty=String>
 {}
 
 impl<T> Hello_SI for T
 where
     T:?Sized+
-        IntoFieldMut<FP!(h e l l o), Ty=u32>+
-        IntoFieldMut<FP!(w o r l d), Ty=String>
+        IntoFieldMut<FP!(hello), Ty=u32>+
+        IntoFieldMut<FP!(world), Ty=String>
 {}
 
 ```
