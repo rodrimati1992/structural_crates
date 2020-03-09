@@ -1,7 +1,7 @@
 use crate::{
     ident_or_index::IdentOrIndex,
     parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens, FullPathForChars},
+    tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens},
 };
 
 // use as_derive_utils::spanned_err;
@@ -100,13 +100,13 @@ impl FieldPaths {
     }
 
     /// Gets a the type-level identifier.
-    pub(crate) fn type_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {
+    pub(crate) fn type_tokens(&self) -> TokenStream2 {
         if self.is_set() {
-            let path = self.paths.iter().map(|x| x.to_token_stream(char_path));
+            let path = self.paths.iter().map(|x| x.to_token_stream());
             let uniqueness = self.path_uniqueness;
 
             if let Some(prefix) = &self.prefix {
-                let prefix_tokens = prefix.to_token_stream(char_path);
+                let prefix_tokens = prefix.to_token_stream();
                 quote!(
                     ::structural::NestedFieldPathSet<
                         #prefix_tokens,
@@ -120,17 +120,13 @@ impl FieldPaths {
                 )
             }
         } else {
-            self.paths[0].to_token_stream(char_path)
+            self.paths[0].to_token_stream()
         }
     }
 
     /// Gets a const item with the type-level identifier.
-    pub(crate) fn constant_named(
-        &self,
-        name: &syn::Ident,
-        char_path: FullPathForChars,
-    ) -> TokenStream2 {
-        let type_ = self.type_tokens(char_path);
+    pub(crate) fn constant_named(&self, name: &syn::Ident) -> TokenStream2 {
+        let type_ = self.type_tokens();
         let mut ret = quote!(pub const #name:#type_=);
         ret.append_all(match (&self.prefix, self.is_set()) {
             (None, false) => quote!(structural::pmr::ConstDefault::DEFAULT),
@@ -227,18 +223,18 @@ impl FieldPath {
         len <= other.list.len() && Iterator::eq(self.list.iter(), &other.list[..len])
     }
 
-    pub(crate) fn to_token_stream(&self, char_path: FullPathForChars) -> TokenStream2 {
+    pub(crate) fn to_token_stream(&self) -> TokenStream2 {
         if self.list.len() == 1 {
-            let path_component = self.list[0].single_tokenizer(char_path);
+            let path_component = self.list[0].single_tokenizer();
             path_component.into_token_stream()
         } else {
-            let tuple = self.tuple_tokens(char_path);
+            let tuple = self.tuple_tokens();
             quote!( structural::FieldPath<#tuple> )
         }
     }
 
-    pub(crate) fn tuple_tokens(&self, char_path: FullPathForChars) -> TokenStream2 {
-        let strings = self.list.iter().map(|x| x.single_tokenizer(char_path));
+    pub(crate) fn tuple_tokens(&self) -> TokenStream2 {
+        let strings = self.list.iter().map(|x| x.single_tokenizer());
         quote!( (#(#strings,)*) )
     }
 }
@@ -289,33 +285,6 @@ impl FieldPathComponent {
         input: ParseStream,
         is_first: IsFirst,
     ) -> parse::Result<(Self, Option<Self>)> {
-        fn make_ioi(digits: &str) -> syn::Result<Option<IdentOrIndex>> {
-            if digits.is_empty() {
-                return Ok(None);
-            }
-            syn::parse_str::<IdentOrIndex>(digits).map(Some)
-        }
-        fn handle_float(input: ParseStream) -> parse::Result<(IdentOrIndex, Option<IdentOrIndex>)> {
-            if input.peek(syn::LitFloat) {
-                let f = input.parse::<syn::LitFloat>()?;
-                let digits = f.base10_digits();
-                let mut iter = digits.split('.');
-
-                let first = make_ioi(iter.next().unwrap())?
-                    .expect("float literals can't have a leading `.`");
-
-                // Handling non-integer fields ie:`0."hello"` and `0.world` here,
-                // so that I don't have to store whether a float was parsed.
-                let second = match make_ioi(iter.next().unwrap())? {
-                    Some(x) => Some(x),
-                    None => Some(IdentOrIndex::parse(input)?),
-                };
-                Ok((first, second))
-            } else {
-                Ok((IdentOrIndex::parse(input)?, None))
-            }
-        }
-
         let fork = input.fork();
 
         let first;
@@ -330,7 +299,7 @@ impl FieldPathComponent {
         };
 
         {
-            let ret = handle_float(input)?;
+            let ret = parse_field(input)?;
             first = ret.0;
             second = ret.1;
         }
@@ -341,7 +310,7 @@ impl FieldPathComponent {
             if let Some(field) = second {
                 Ok((FieldPathComponent::VariantField { variant, field }, None))
             } else if input.peek_parse(Token!(.))?.is_some() {
-                let (field, extra) = handle_float(input)?;
+                let (field, extra) = parse_field(input)?;
                 Ok((
                     FieldPathComponent::VariantField { variant, field },
                     extra.map(FieldPathComponent::Ident),
@@ -364,21 +333,56 @@ impl FieldPathComponent {
         }
     }
 
-    fn single_tokenizer(&self, char_path: FullPathForChars) -> TokenStream2 {
+    fn single_tokenizer(&self) -> TokenStream2 {
         use self::FieldPathComponent as FPC;
 
         match self {
-            FPC::Ident(ident) => tident_tokens(ident.to_string(), char_path),
+            FPC::Ident(ident) => tident_tokens(ident.to_string()),
             FPC::VariantField { variant, field } => {
-                variant_field_tokens(variant.to_string(), field.to_string(), char_path)
+                variant_field_tokens(variant.to_string(), field.to_string())
             }
-            FPC::VariantName { variant } => variant_name_tokens(variant.to_string(), char_path),
+            FPC::VariantName { variant } => variant_name_tokens(variant.to_string()),
         }
     }
 }
 
 fn is_field_path_terminator(input: ParseStream) -> bool {
     input.is_empty() || input.peek(Token!(,)) || input.peek(Token!(=>))
+}
+
+fn make_ident_or_index(digits: &str) -> syn::Result<Option<IdentOrIndex>> {
+    if digits.is_empty() {
+        return Ok(None);
+    }
+    syn::parse_str::<IdentOrIndex>(digits).map(Some)
+}
+
+/// For parsing path components.
+///
+/// This function returns a second `IdentOrIndex` if the first token is
+/// a floating point number.
+pub(crate) fn parse_field(
+    input: ParseStream,
+) -> parse::Result<(IdentOrIndex, Option<IdentOrIndex>)> {
+    if input.peek(syn::LitFloat) {
+        let f = input.parse::<syn::LitFloat>()?;
+        let digits = f.base10_digits();
+        let mut iter = digits.split('.');
+
+        let first = make_ident_or_index(iter.next().unwrap())?
+            .expect("float literals can't have a leading `.`");
+
+        // Handling non-integer fields ie:`0."hello"` and `0.world` here,
+        // so that I don't have to store whether a float was parsed.
+        let second = match make_ident_or_index(iter.next().unwrap())? {
+            Some(x) => Some(x),
+            // Parsing the IdentOrIndex after the `###.`  flota literal,
+            None => Some(IdentOrIndex::parse(input)?),
+        };
+        Ok((first, second))
+    } else {
+        Ok((IdentOrIndex::parse(input)?, None))
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

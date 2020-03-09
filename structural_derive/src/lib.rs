@@ -62,6 +62,13 @@ pub fn _FP_impl_(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, fp_impl::FP_impl).into()
 }
 
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _FP_literal_(input: TokenStream1) -> TokenStream1 {
+    parse_or_compile_err(input, fp_impl::FP_literal_impl).into()
+}
+
 /**
 The implementation of the fp macro without enabling proc macros in expression position.
 */
@@ -98,13 +105,10 @@ pub fn _tstring_aliases_impl(input: TokenStream1) -> TokenStream1 {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
-    use crate::tokenizers::{tident_tokens, FullPathForChars};
+    use crate::tokenizers::tident_tokens;
     use crate::tstring_aliases::TString;
 
-    parse_or_compile_err(input, |s: TString| {
-        Ok(tident_tokens(s.0, FullPathForChars::Yes))
-    })
-    .into()
+    parse_or_compile_err(input, |s: TString| Ok(tident_tokens(s.0))).into()
 }
 
 #[proc_macro]

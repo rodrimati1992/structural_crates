@@ -3,7 +3,7 @@ use crate::{
     field_access::{Access, ComputeTrait, IsOptional},
     ident_or_index::IdentOrIndexRef,
     parse_utils::ParsePunctuated,
-    tokenizers::{tident_tokens, FullPathForChars},
+    tokenizers::tident_tokens,
     write_docs::DocsFor,
 };
 
@@ -160,9 +160,7 @@ impl<'a> StructuralField<'a> {
 impl<'a> Display for VariantIdent<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            VariantIdent::Ident(ident) => {
-                Display::fmt(&tident_tokens(&ident.to_string(), FullPathForChars::Yes), f)
-            }
+            VariantIdent::Ident(ident) => Display::fmt(&tident_tokens(&ident.to_string()), f),
             VariantIdent::Generic(ident) => Display::fmt(ident, f),
         }
     }
@@ -262,7 +260,7 @@ impl<'a> TinyStructuralField<'a> {
         let TinyStructuralField { ident, ty, .. } = *self;
 
         let the_trait = self.compute_trait(soe).trait_tokens();
-        let ident = tident_tokens(ident.to_string(), FullPathForChars::Yes);
+        let ident = tident_tokens(ident.to_string());
 
         quote!(
             structural::pmr::#the_trait<
@@ -561,8 +559,7 @@ where
     let mut exhaustive_bound = None;
 
     if let Exhaustiveness::Exhaustive | Exhaustiveness::AndExhaustive { .. } = enum_exhaustiveness {
-        let variant_count_str =
-            tident_tokens(datatype.variants.len().to_string(), FullPathForChars::Yes);
+        let variant_count_str = tident_tokens(datatype.variants.len().to_string());
         let count_bound = quote!( ::structural::pmr::VariantCount<Count=#variant_count_str>+  );
 
         let attrs = attrs.into_iter();
