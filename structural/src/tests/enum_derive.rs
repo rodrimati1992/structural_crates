@@ -379,6 +379,7 @@ mod with_variant_count_attr_1 {
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
+    #[allow(dead_code)]
     enum Enum {
         A,
     }
@@ -396,6 +397,7 @@ mod with_variant_count_attr_4 {
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
+    #[allow(dead_code)]
     pub enum Enum {
         A,
         B,
@@ -421,6 +423,7 @@ mod without_variant_count_attr {
 
     #[derive(Structural)]
     enum Enum {
+        #[allow(dead_code)]
         A,
     }
 

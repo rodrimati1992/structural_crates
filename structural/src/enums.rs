@@ -46,9 +46,7 @@ use crate::field_path::AssertTStrParam;
 ///
 /// fn assertions<T>(foo:T, bar:T, boom:T)
 /// where
-///     // From Rust 1.40 this is equivalent to:
-///     // T: IsVariant<TS!(Foo)> + IsVariant<TS!(Bar)> + IsVariant<TS!(Boom)>
-///     T: IsVariant<TS!(F o o)> + IsVariant<TS!(B a r)> + IsVariant<TS!(B o o m)>
+///     T: IsVariant<TS!(Foo)> + IsVariant<TS!(Bar)> + IsVariant<TS!(Boom)>
 /// {
 ///     assert_eq!( foo.is_variant_(fp!(Foo)), true );
 ///     assert_eq!( foo.is_variant_(fp!(Bar)), false );

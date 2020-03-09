@@ -1,5 +1,5 @@
 use crate::{
-    field_path::{FieldPath, IsTStr, TStr, UncheckedVariantField, VariantField},
+    field_path::{IsTStr, TStr, UncheckedVariantField, VariantField},
     field_traits::{
         variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
         FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, SpecGetFieldMut,
@@ -264,8 +264,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///     Baz(u32),
     /// }
     ///
-    /// // TS!(B a r) can also be TS!(Bar) from Rust 1.40 onwards
-    /// let proxy: &VariantProxy<Foo, TS!(B a r)>= unsafe{
+    /// let proxy: &VariantProxy<Foo, TS!(Bar)>= unsafe{
     ///     VariantProxy::from_ref(&Foo::Bar(99,false), fp!(Bar))
     /// };
     ///
@@ -303,8 +302,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///
     /// let mut this=Foo::Baz(Some(1),vec![]);
     ///
-    /// // TS!(B a z) can also be TS!(Baz) from Rust 1.40 onwards
-    /// let proxy: &mut VariantProxy<Foo, TS!(B a z)>= unsafe{
+    /// let proxy: &mut VariantProxy<Foo, TS!(Baz)>= unsafe{
     ///     VariantProxy::from_mut(&mut this, fp!(Baz))
     /// };
     ///
@@ -344,8 +342,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///
     /// let mut this=Foo::Baz( Ordering::Less, &[0,1,2,3] );
     ///
-    /// // TS!(B a z) can also be TS!(Baz) from Rust 1.40 onwards
-    /// let proxy: *mut VariantProxy<Foo, TS!(B a z)>= unsafe{
+    /// let proxy: *mut VariantProxy<Foo, TS!(Baz)>= unsafe{
     ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz))
     /// };
     ///
@@ -376,8 +373,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///     Baz(u32),
     /// }
     ///
-    /// // TS!(B a r) can also be TS!(Bar) from Rust 1.40 onwards
-    /// let proxy: VariantProxy<Foo, TS!(B a r)>= unsafe{
+    /// let proxy: VariantProxy<Foo, TS!(Bar)>= unsafe{
     ///     VariantProxy::new(Foo::Bar(0), fp!(Bar))
     /// };
     ///
@@ -412,8 +408,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///
     /// let mut this=Foo::Baz(0);
     ///
-    /// // TS!(B a z) can also be TS!(Baz) from Rust 1.40 onwards
-    /// let proxy: &mut VariantProxy<Foo, TS!(B a z)>= unsafe{
+    /// let proxy: &mut VariantProxy<Foo, TS!(Baz)>= unsafe{
     ///     VariantProxy::from_mut(&mut this, fp!(Baz))
     /// };
     ///
@@ -439,8 +434,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///     Baz(u32),
     /// }
     ///
-    /// // TS!(B a r) can also be TS!(Bar) from Rust 1.40 onwards
-    /// let proxy: VariantProxy<Foo, TS!(B a r)>= unsafe{
+    /// let proxy: VariantProxy<Foo, TS!(Bar)>= unsafe{
     ///     VariantProxy::new(Foo::Bar(0), fp!(Bar))
     /// };
     ///
@@ -477,8 +471,7 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
     ///
     /// let mut this=Foo::Baz(0);
     ///
-    /// // TS!(B a z) can also be TS!(Baz) from Rust 1.40 onwards
-    /// let proxy: *mut VariantProxy<Foo, TS!(B a z)>= unsafe{
+    /// let proxy: *mut VariantProxy<Foo, TS!(Baz)>= unsafe{
     ///     VariantProxy::from_raw_mut(&mut this as *mut Foo, fp!(Baz))
     /// };
     ///

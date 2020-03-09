@@ -61,8 +61,7 @@ use std::fmt::Debug;
 
 fn first_2<This,T>(mut foo: This, mut not_foo: This)
 where
-    // `TS!(F o o)` can also be written as `TS!(Foo)` from Rust 1.40 onwards
-    This: Tuple2Variant<&'static str, T, TS!(F o o)> + Copy,
+    This: Tuple2Variant<&'static str, T, TS!(Foo)> + Copy,
     T: Debug + From<u8> + PartialEq,
 {
     {

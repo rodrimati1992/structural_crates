@@ -1,8 +1,6 @@
 /**
 For declaring an anonymous structural type,this expands to an `impl Trait`.
 
-**This is only usable from Rust 1.40 onwards**
-
 To construct an anonymous struct you can to use the
 [`make_struct` macro](./macro.make_struct.html).
 
@@ -28,10 +26,7 @@ with shared,mutable,and by value access to the field.
 
 This demonstrates `impl_struct` with non-accessor bounds.
 
-*/
-#[cfg_attr(feature = "better_macros", doc = " ```rust")]
-#[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
-/**
+```rust
 
 use structural::{fp,impl_struct,make_struct,GetFieldExt};
 
@@ -63,10 +58,7 @@ assert_eq!(
 This demonstrates the field access modifiers.
 In this case the fields are read only.
 
-*/
-#[cfg_attr(feature = "better_macros", doc = " ```rust")]
-#[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
-/**
+```rust
 
 use structural::{fp,impl_struct,make_struct,GetFieldExt};
 

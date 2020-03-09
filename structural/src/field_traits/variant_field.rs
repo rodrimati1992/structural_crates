@@ -52,9 +52,7 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 ///
 /// The `Variant` and `Field` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
-/// Example(since 1.40): `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
-///
-/// Example(before 1.40): `GetVariantFieldType<This, TS!(F o o), TS!(0)>`
+/// Example: `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
 ///
 /// # Example
 ///
@@ -67,8 +65,7 @@ pub unsafe trait GetVariantFieldImpl<V, F>:
 ///
 /// let value: u32= this.into_field(fp!(::Foo.0)).unwrap();
 ///
-/// // TS!(F o o) can also be written as TS!(Foo) from Rust 1.40 onwards.
-/// let value: GetVariantFieldType<Variants, TS!(F o o), TS!(0)>= value;
+/// let value: GetVariantFieldType<Variants, TS!(Foo), TS!(0)>= value;
 ///
 /// assert_eq!( value, 8_u32 );
 ///
@@ -134,8 +131,7 @@ declare_trait_alias! {
     /// use structural::for_examples::{Variants,WithBar};
     /// use structural::{GetFieldExt,TS,fp};
     ///
-    /// /// `TS!(B a r)` can be also written as `TS!(Bar)` from Rust 1.40 onwards
-    /// fn example(this: impl GetVariantField<TS!(B a r),TS!(0),Ty= &'static str>){
+    /// fn example(this: impl GetVariantField<TS!(Bar),TS!(0),Ty= &'static str>){
     ///     assert_eq!( this.field_(fp!(::Bar.0)), Some(&"why?") );
     ///
     ///     // You can use `fp!(::Foo=>bar,baz)` to access multiple fields inside
@@ -168,9 +164,8 @@ declare_trait_alias! {
     ///
     /// fn example<T>(this: &mut T)
     /// where
-    ///     // `TS!(B o o m)` can be also written as `TS!(Boom)` from Rust 1.40 onwards
-    ///     T: GetVariantFieldMut<TS!(B o o m),TS!(a),Ty= &'static str>+
-    ///        GetVariantFieldMut<TS!(B o o m),TS!(b),Ty= &'static [u16]>,
+    ///     T: GetVariantFieldMut<TS!(Boom),TS!(a),Ty= &'static str>+
+    ///        GetVariantFieldMut<TS!(Boom),TS!(b),Ty= &'static [u16]>,
     /// {
     ///     assert_eq!( this.field_(fp!(::Boom.a)), Some(&"why?") );
     ///     assert_eq!( this.field_mut(fp!(::Boom.a)), Some(&mut "why?") );
@@ -208,9 +203,8 @@ declare_trait_alias! {
     ///
     /// fn example<T>(mut this: T)
     /// where
-    ///     // `TS!(B o o m)` can be also written as `TS!(Boom)` from Rust 1.40 onwards
-    ///     T: IntoVariantField<TS!(B o o m),TS!(a),Ty= &'static str>+
-    ///        IntoVariantField<TS!(B o o m),TS!(b),Ty= &'static [u16]>,
+    ///     T: IntoVariantField<TS!(Boom),TS!(a),Ty= &'static str>+
+    ///        IntoVariantField<TS!(Boom),TS!(b),Ty= &'static [u16]>,
     /// {
     ///     assert_eq!( this.is_variant(fp!(Boom)), true );
     ///     assert_eq!( this.field_(fp!(::Boom.a)), Some(&"Because.") );
@@ -241,9 +235,8 @@ declare_trait_alias! {
     ///
     /// fn example<T>(mut this: T)
     /// where
-    ///     // `TS!(B o o m)` can be also written as `TS!(Boom)` from Rust 1.40 onwards
-    ///     T: IntoVariantFieldMut<TS!(B o o m),TS!(a),Ty= &'static str>+
-    ///        IntoVariantFieldMut<TS!(B o o m),TS!(b),Ty= &'static [u16]>,
+    ///     T: IntoVariantFieldMut<TS!(Boom),TS!(a),Ty= &'static str>+
+    ///        IntoVariantFieldMut<TS!(Boom),TS!(b),Ty= &'static [u16]>,
     /// {
     ///     assert_eq!( this.is_variant(fp!(Boom)), true );
     ///     assert_eq!( this.field_(fp!(::Boom.a)), Some(&"Because.") );

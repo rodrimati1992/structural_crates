@@ -15,6 +15,7 @@ macro_rules! slice_test {
         assert_eq!(this.field_(fp!(9)), None);
     }};
     ( mut $this:expr) => {{
+        #[allow(unused_mut)]
         let mut this = $this;
 
         assert_eq!(this.field_mut(fp!(0)), Some(&mut 3));

@@ -143,9 +143,10 @@ macro_rules! declare_array_traits {
             /// up to the size of the array).
             ///
             /// The `V` generic parameter is the name of the variant.
-            /// Example of the `V` parameter for a variant named `Foo`:
-            /// - (since Rust 1.40): `TS!(Foo)`  <br>
-            /// - (before Rust 1.40):`TS!(F o o)`<br>
+            /// Examples of the `V` parameter for a variant named `Foo`:
+            /// - `TS!(Foo)`<br>
+            /// - `TS!(Bar)`<br>
+            /// - `TS!(0)`<br>
             $(#[$meta])*
             pub trait $variant_trait_name<T,V>:
                 $($super_trait<T,V>+)*
@@ -230,7 +231,7 @@ mod tests {
     }
     fn with_array_32_variant<A>(this: A)
     where
-        A: Array32Variant<u32, TS!(F o o)> + Clone,
+        A: Array32Variant<u32, TS!(Foo)> + Clone,
     {
         with_array_32(this.into_field(fp!(::Foo)).unwrap());
     }

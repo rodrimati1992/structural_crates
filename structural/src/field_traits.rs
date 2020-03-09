@@ -141,10 +141,7 @@ The type that `Foo` is converted into when calling
 
 */
 
-use crate::{
-    field_path::{FieldPath, FieldPathSet},
-    Structural,
-};
+use crate::{field_path::FieldPathSet, Structural};
 
 mod enum_impls;
 pub mod errors;
@@ -240,16 +237,14 @@ macro_rules! declare_accessor_trait_alias {
 /// impl<T> Structural for Huh<T>{}
 ///
 ///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
+/// impl<T> GetFieldImpl<FP!(value)> for Huh<T>{
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(value),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
@@ -336,10 +331,9 @@ declare_accessor_trait_alias! {
 /// ```
 /// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(n a m e)>
+/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(name)>
 /// where
-///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:GetField<FP!(n a m e)>
+///     T:GetField<FP!(name)>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -366,8 +360,7 @@ declare_accessor_trait_alias! {
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
-///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:GetField<FP!(n a m e), Ty=O>
+///     T:GetField<FP!(name), Ty=O>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -386,27 +379,21 @@ pub type GetFieldErr<This, FieldName, P = ()> = <This as GetFieldImpl<FieldName,
 
 /// Queries the type of a double nested field (eg:`.a.b`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType2<T,FP!(f o o),FP!(b a r)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType2<T,FP!(foo),FP!(bar)>`
 pub type GetFieldType2<This, FieldName, FieldName2> =
     GetFieldType<GetFieldType<This, FieldName>, FieldName2>;
 
 /// Queries the type of a triple nested field (eg:`.a.b.c`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType3<T,FP!(f o o),FP!(b a r),FP!(b a z)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType3<T,FP!(foo),FP!(bar),FP!(baz)>`
 pub type GetFieldType3<This, FieldName, FieldName2, FieldName3> =
     GetFieldType<GetFieldType2<This, FieldName, FieldName2>, FieldName3>;
 
 /// Queries the type of a quadruple nested field (eg:`.a.b.c.d`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType4<T,FP!(f o o),FP!(b a r),FP!(b a z),FP!(b o o m)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType4<T,FP!(foo),FP!(bar),FP!(baz),FP!(boom)>`
 pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
     GetFieldType2<GetFieldType2<This, FieldName, FieldName2>, FieldName3, FieldName4>;
@@ -471,29 +458,26 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// impl<T> Structural for Huh<T>{}
 ///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
+/// impl<T> GetFieldImpl<FP!(value)> for Huh<T>{
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(value),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// unsafe impl<T> GetFieldMutImpl<FP!(v a l u e)> for Huh<T>{
-///     fn get_field_mut_(&mut self,_:FP!(v a l u e),_:())->Result<&mut Self::Ty,Self::Err>{
+/// unsafe impl<T> GetFieldMutImpl<FP!(value)> for Huh<T>{
+///     fn get_field_mut_(&mut self,_:FP!(value),_:())->Result<&mut Self::Ty,Self::Err>{
 ///         Ok(&mut self.value)
 ///     }
 ///     structural::z_unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
 ///         field_name=value,
-///         name_generic=FP!(v a l u e),
+///         name_generic=FP!(value),
 ///         optionality=nonopt,
 ///     }
 /// }
@@ -557,8 +541,7 @@ declare_accessor_trait_alias! {
     /// use structural::{GetFieldExt,GetFieldMut,FP,fp};
     /// use structural::for_examples::{Struct2,Struct3};
     ///
-    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    /// fn example(this:&mut dyn GetFieldMut<FP!(b a r), Ty=&'static str>){
+    /// fn example(this:&mut dyn GetFieldMut<FP!(bar), Ty=&'static str>){
     ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
     ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
     /// }
@@ -585,9 +568,8 @@ declare_accessor_trait_alias! {
     /// use structural::for_examples::{Struct2,Struct3};
     ///
     /// fn example(
-    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
-    ///     with_some:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
-    ///     with_none:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
+    ///     with_some:&mut impl OptGetFieldMut<FP!(foo), Ty=u128>,
+    ///     with_none:&mut impl OptGetFieldMut<FP!(foo), Ty=u128>,
     /// ){
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
     ///     // it would be `&Some(5)` and `&mut Some(5)` instead of
@@ -656,27 +638,24 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// impl<T> Structural for Huh<T>{}
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
+/// impl<T> GetFieldImpl<FP!(value)> for Huh<T>{
 ///     type Err=NonOptField;
 ///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
+///     fn get_field_(&self,_:FP!(value),_:())->Result<&Self::Ty,Self::Err>{
 ///         Ok(&self.value)
 ///     }
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> IntoFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     fn into_field_(self,_:FP!(v a l u e),_:())->Result<Self::Ty,Self::Err>{
+/// impl<T> IntoFieldImpl<FP!(value)> for Huh<T>{
+///     fn into_field_(self,_:FP!(value),_:())->Result<Self::Ty,Self::Err>{
 ///         Ok(self.value)
 ///     }
 ///
-///     structural::z_impl_box_into_field_method!{FP!(v a l u e)}
+///     structural::z_impl_box_into_field_method!{FP!(value)}
 /// }
 ///
 /// ```
@@ -714,8 +693,7 @@ declare_accessor_trait_alias! {
     ///
     /// fn example<T>(this: T)
     /// where
-    ///     // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    ///     T: IntoField<FP!(b a r), Ty=&'static str>
+    ///     T: IntoField<FP!(bar), Ty=&'static str>
     /// {
     ///     assert_eq!( this.field_(fp!(bar)), &"what" );
     ///
@@ -748,8 +726,7 @@ declare_accessor_trait_alias! {
     ///
     /// fn example<T>(this: T)
     /// where
-    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
-    ///     T: OptIntoField<FP!(f o o), Ty=i8>
+    ///     T: OptIntoField<FP!(foo), Ty=i8>
     /// {
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
     ///     // it would be a `&Some(51)` instead.
@@ -782,8 +759,7 @@ declare_accessor_trait_alias! {
     /// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
     /// use structural::for_examples::{Struct2,Struct3};
     ///
-    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    /// fn example(mut this:Box<dyn IntoFieldMut<FP!(b a r), Ty=&'static str>>){
+    /// fn example(mut this:Box<dyn IntoFieldMut<FP!(bar), Ty=&'static str>>){
     ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
     ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
     ///
@@ -813,10 +789,9 @@ declare_accessor_trait_alias! {
     /// use structural::{GetFieldExt,OptIntoFieldMut,FP,fp};
     /// use structural::for_examples::{Struct2,Struct3};
     ///
-    /// // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
     /// fn example(
-    ///     mut some: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
-    ///     mut none: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
+    ///     mut some: Box<impl OptIntoFieldMut<FP!(foo), Ty=char>>,
+    ///     mut none: Box<impl OptIntoFieldMut<FP!(foo), Ty=char>>,
     /// ){
     ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
     ///     // it would be `&Some('g')` and `&mut Some('g')` instead of

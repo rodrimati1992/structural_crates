@@ -1,6 +1,6 @@
 use crate::{
-    field_traits::NonOptField, GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType,
-    IntoFieldImpl, IntoFieldMut, Structural,
+    field_traits::NonOptField, GetFieldExt, GetFieldImpl, GetFieldMutImpl, IntoFieldImpl,
+    IntoFieldMut, Structural,
 };
 
 #[cfg(feature = "alloc")]
@@ -42,8 +42,8 @@ fn object_safety() {
 
     type TraitObjects<'a, T> = (&'a T, &'a mut T, AllocPtrs<'a, T>);
 
-    let _: TraitObjects<'_, dyn GetFieldImpl<FP!(a b), Ty = (), Err = NonOptField>>;
-    let _: TraitObjects<'_, dyn GetFieldMutImpl<FP!(a b), Ty = (), Err = NonOptField>>;
+    let _: TraitObjects<'_, dyn GetFieldImpl<FP!(ab), Ty = (), Err = NonOptField>>;
+    let _: TraitObjects<'_, dyn GetFieldMutImpl<FP!(ab), Ty = (), Err = NonOptField>>;
     let _: TraitObjects<'_, dyn Huh_SI>;
     let _: TraitObjects<'_, dyn Whoah_SI>;
     let _: TraitObjects<'_, dyn Renamed_SI>;
@@ -141,8 +141,8 @@ assert_equal_bounds! {
         + IntoFieldMut<FP!(e), Ty = u32, Err = NonOptField>
         + GetFieldImpl<FP!(f), Ty = u32, Err = NonOptField>
         + GetFieldMutImpl<FP!(g), Ty = u32, Err = NonOptField>
-        + IntoFieldMut<FP!(h e l l o), Ty = u32, Err = NonOptField>
-        + IntoFieldImpl<FP!(w o r l d), Ty = u32, Err = NonOptField>
+        + IntoFieldMut<FP!(hello), Ty = u32, Err = NonOptField>
+        + IntoFieldImpl<FP!(world), Ty = u32, Err = NonOptField>
     ),
 }
 

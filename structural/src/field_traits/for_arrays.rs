@@ -74,8 +74,7 @@ use std::fmt::Debug;
 
 fn first_2<T>(mut foo:T, mut not_foo:T)
 where
-    // `TS!(F o o)` can also be written as `TS!(Foo)` from Rust 1.40 onwards
-    T: Array2Variant<u8,TS!(F o o)> + Copy
+    T: Array2Variant<u8,TS!(Foo)> + Copy
 {
     {
         assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some(( &101, &202 )) );

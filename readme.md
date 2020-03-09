@@ -52,18 +52,6 @@ These are the cargo features in structural:
 
 - `alloc`:
     Enables alloc crate support,this is enabled by default.
-    If this is enabled on a version prior to 1.36 it will enable `std` support.
-
-- `rust_1_36`:
-    For enabling support of Rust versions from 1.36 onwards ,
-    this is automatically enabled by `structural`'s build script.
-    This feature is required because the `alloc` crate was stabilized for Rust 1.36,
-    while this library supports Rust back to 1.34.
-
-- `rust_1_40`:
-    For enabling support of Rust versions from 1.40 onwards ,
-    this is automatically enabled by `structural`'s build script.
-    This automatically enables the "better_macros" feature.
 
 - `specialization`:
     Enables specialization inside structural,without enabling the nightly feature flag.
@@ -72,15 +60,6 @@ These are the cargo features in structural:
 - `nightly_specialization`:
     Enables specialization inside structural,
     requires nightly because it enables the nightly feature.
-
-- `better_macros`:
-    This enables the `FP` macro to take in the same syntax as the `fp` macro.
-    This requires proc macros in type position,which stabilizes in Rust 1.40.
-
-- `nightly_better_macros`
-    Equivalent to the "better_macros" feature,
-    as well as enable the nightly features required before it was 
-    stabilized in Rust 1.40.
 
 - `impl_fields`:
     This allows using `field_name:impl Foo` fields in the `structural_alias` macro,
@@ -106,11 +85,7 @@ These are the cargo features in structural:
 Specialization is used inside `structural` for performance reasons.
 There are no benchmarks comparing when specialization is enabled and disabled yet.
 
-If it becomes possible to disable build scripts,
-you can manually enable support for Rust past 1.34 features with the `rust_*_*` cargo features.
-
-
 # Minimum Rust version
 
-This crate support Rust back to 1.34,
+This crate support Rust back to 1.40,
 and uses a build script to automatically enable features from newer versions.

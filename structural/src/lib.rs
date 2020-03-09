@@ -14,7 +14,7 @@ and aliases for the optional and non-optional variants of those traits.
 ](./macro.structural_alias.html).
 
 - [The `impl_struct` macro to declare structural parameter/return types
-](./macro.impl_struct.html)(available from Rust 1.40 onwards),
+](./macro.impl_struct.html),
 as well as [`make_struct` to construct anonymous structs ](./macro.make_struct.html)
 
 - [The GetFieldExt extension trait,which defines the main methods to access fields,
@@ -478,13 +478,11 @@ This demonstrates how you can construct an anonymous struct.
 For more details you can look at the docs for the
 [`make_struct`](./macro.make_struct.html) macro.
 
-For a macro to declare a structural type directly as a parameter or return type
-(usable from Rust 1.40) you can look at the
-[`impl_struct`](./macro.impl_struct.html) macro.
+Docs for the [`impl_struct` macro](./macro.impl_struct.html) macro.
 
 ```rust
 
-use structural::{GetFieldExt,make_struct,structural_alias,fp};
+use structural::{GetFieldExt,fp,impl_struct,make_struct,structural_alias};
 
 structural_alias!{
     trait Person<T>{
@@ -497,10 +495,7 @@ structural_alias!{
     }
 }
 
-// From Rust 1.40 you can use
-// `impl_struct!{ ref name:String, value:() }` as the return type,
-// which is equivalent to `Person<()>`.
-fn make_person(name:String)->impl Person<()> {
+fn make_person(name:String)-> impl_struct!{ ref name:String, value:() } {
     make_struct!{
         name,
         value: (),
@@ -508,10 +503,7 @@ fn make_person(name:String)->impl Person<()> {
 }
 
 
-fn print_name<T>(mut this:T)
-where
-    T:Person<Vec<String>>,
-{
+fn print_name(mut this: impl_struct!{ ref name:String, value:Vec<String> } ) {
     println!("Hello, {}!",this.field_(fp!(name)) );
 
     let list=vec!["what".into()];
@@ -522,6 +514,9 @@ where
 
 
 // most structural aliases are object safe
+//
+// This has to use the Person trait,
+// since `impl_struct!{....}` expands to `impl Trait0+Trait0+etc`
 fn print_name_dyn(this:&mut dyn Person<Vec<String>>){
     println!("Hello, {}!",this.field_(fp!(name)) );
 
@@ -572,30 +567,22 @@ struct Cents(u64);
 */
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
 #![cfg_attr(feature = "nightly_specialization", feature(specialization))]
-#![cfg_attr(feature = "nightly_better_macros", feature(proc_macro_hygiene))]
 #![cfg_attr(feature = "nightly_use_const_str", feature(const_if_match))]
 #![cfg_attr(feature = "nightly_use_const_str", feature(const_generics))]
 #![cfg_attr(feature = "nightly_use_const_str", allow(incomplete_features))]
 #![deny(rust_2018_idioms)]
+#![allow(non_camel_case_types)]
 #![no_std]
 
-#[cfg(any(all(feature = "alloc", not(feature = "rust_1_36")), feature = "std",))]
+#[cfg(feature = "std")]
 pub extern crate std;
 
 #[doc(hidden)]
 pub extern crate core as std_;
 
 #[doc(hidden)]
-#[cfg(all(feature = "alloc", feature = "rust_1_36"))]
-pub extern crate alloc as alloc_;
-
-#[doc(hidden)]
-#[cfg(all(feature = "alloc", feature = "rust_1_36"))]
-pub use alloc_ as alloc;
-
-#[doc(hidden)]
-#[cfg(all(feature = "alloc", not(feature = "rust_1_36")))]
-pub use std as alloc;
+#[cfg(all(feature = "alloc"))]
+pub extern crate alloc;
 
 extern crate self as structural;
 
@@ -603,9 +590,8 @@ pub use structural_derive::Structural;
 
 #[doc(hidden)]
 pub use structural_derive::{
-    _FP_impl_, _TStr_from_concatenated_chars, _TStr_impl_, _field_path_aliases_impl,
-    _impl_struct_impl, _switch_tstring_aliases, _tstr_impl_, _tstring_aliases_impl, low_fp_impl_,
-    structural_alias_impl,
+    _FP_impl_, _TStr_impl_, _field_path_aliases_impl, _impl_struct_impl, _switch_tstring_aliases,
+    _tstring_aliases_impl, low_fp_impl_, structural_alias_impl,
 };
 
 #[macro_use]
@@ -629,7 +615,6 @@ pub mod test_utils;
 pub mod tests {
     mod delegation;
     mod enum_derive;
-    #[cfg(feature = "rust_1_40")]
     mod impl_struct;
     mod macro_tests;
     mod multi_nested_fields;

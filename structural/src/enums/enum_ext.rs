@@ -3,7 +3,7 @@ use crate::alloc::boxed::Box;
 
 use crate::{
     enums::{IsVariant, VariantProxy},
-    field_path::{IsTStr, TStr},
+    field_path::TStr,
 };
 
 /// Extension trait for enums.
@@ -27,8 +27,7 @@ pub trait EnumExt {
     ///
     /// let this=Variants::Foo(11,22);
     /// {
-    ///     // `TS!(F o o)` can also be written as `TS!(Foo)` since Rust 1.40.0
-    ///     let proxy: &VariantProxy<Variants,TS!(F o o)>=
+    ///     let proxy: &VariantProxy<Variants,TS!(Foo)>=
     ///         this.as_variant(ts!(Foo)).unwrap();
     ///
     ///     assert_eq!( proxy.field_(ts!(0)), &11);
@@ -64,8 +63,7 @@ pub trait EnumExt {
     /// let mut other=this.clone();
     ///
     /// {
-    ///     // `TS!(B a r)` can also be written as `TS!(Bar)` since Rust 1.40.0
-    ///     let proxy: &mut VariantProxy<Variants,TS!(B a r)>=
+    ///     let proxy: &mut VariantProxy<Variants,TS!(Bar)>=
     ///         this.as_mut_variant(ts!(Bar)).unwrap();
     ///    
     ///     assert_eq!( proxy.field_(ts!(0)), &"hello");
@@ -105,8 +103,7 @@ pub trait EnumExt {
     /// let mut this=Variants::Baz(None);
     ///
     /// unsafe{
-    ///     // `TS!(B a z)` can also be written as `TS!(Baz)` since Rust 1.40.0
-    ///     let proxy: *mut VariantProxy<Variants,TS!(B a z)>=
+    ///     let proxy: *mut VariantProxy<Variants,TS!(Baz)>=
     ///         Variants::as_raw_mut_variant(&mut this,ts!(Baz)).unwrap();
     ///    
     ///     assert_eq!( (*proxy).field_(ts!(0)), None);;
@@ -157,8 +154,7 @@ pub trait EnumExt {
     /// let this=Variants::Baz(Some(Ordering::Less));
     ///
     /// {
-    ///     // `TS!(B a z)` can also be written as `TS!(Baz)` since Rust 1.40.0
-    ///     let mut proxy: VariantProxy<Variants,TS!(B a z)>=
+    ///     let mut proxy: VariantProxy<Variants,TS!(Baz)>=
     ///         this.into_variant(ts!(Baz)).unwrap();
     ///    
     ///     assert_eq!( proxy.field_(ts!(0)), Some(&Ordering::Less));
@@ -201,8 +197,7 @@ pub trait EnumExt {
     /// });
     ///
     /// {
-    ///     // `TS!(B o o m)` can also be written as `TS!(Boom)` since Rust 1.40.0
-    ///     let mut proxy: VariantProxy<Box<Variants>,TS!(B o o m)>=
+    ///     let mut proxy: VariantProxy<Box<Variants>,TS!(Boom)>=
     ///         this.clone().box_into_variant(ts!(Boom)).unwrap();
     ///    
     ///     assert_eq!( proxy.field_(ts!(a)), &None);

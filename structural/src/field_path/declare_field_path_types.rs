@@ -19,21 +19,11 @@
 /// You can get a TStr type (to use as a type argument) with the `TS` macro,
 /// which takes a string literal/ident/integer as an input.
 ///
-/// Examples(usable in every Rust version):
+/// Examples:
 ///
 /// - `TS!(0)`: TStr equivalent of "0"
 ///
-/// - `TS!(f o o)`: TStr equivalent of "foo"
-///
 /// - `TS!(1)`: TStr equivalent of "1"
-///
-/// - `TS!(1 0 0)`: TStr equivalent of "100"
-///
-/// - `TS!(w o r l d)`: TStr equivalent of "world"
-///
-/// - `TS!(1 0 0)`: TStr equivalent of "100"
-///
-/// Examples(usable from Rust 1.40 onwards):
 ///
 /// - `TS!(foo)`: TStr equivalent of "foo"
 ///
@@ -68,7 +58,7 @@
 ///
 /// - The `<TStr<_> as ConstDefault>::DEFAULT` associated constant.
 ///
-/// Examples(usable in every Rust version):
+/// Examples:
 ///
 /// - `ts!(foo)`: TStr equivalent of "foo"
 ///
@@ -96,8 +86,6 @@
 ///
 /// - `<TS!(0)>::DEFAULT`: TStr equivalent of "0"
 /// (requires importing the `ConstDefault` trait)
-///
-/// Examples(usable from Rust 1.40 onwards):
 ///
 /// - `<TS!("hello")>::NEW`: TStr equivalent of "hello"
 ///

@@ -124,11 +124,10 @@ where
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
 
-    // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-    let _: &VariantProxy<This,TS!(F o o)>= foo.field_(fp!(::Foo)).unwrap();
-    let _: &mut VariantProxy<This,TS!(F o o)>= foo.field_mut(fp!(::Foo)).unwrap();
+    let _: &VariantProxy<This,TS!(Foo)>= foo.field_(fp!(::Foo)).unwrap();
+    let _: &mut VariantProxy<This,TS!(Foo)>= foo.field_mut(fp!(::Foo)).unwrap();
     {
-        let mut proxy: VariantProxy<This,TS!(F o o)>=
+        let mut proxy: VariantProxy<This,TS!(Foo)>=
             foo.clone().into_field(fp!(::Foo)).unwrap();
 
         assert_eq!( proxy.field_(fp!(0)), &3 );
@@ -155,8 +154,7 @@ where
             assert_eq!( f1, &false );
 
             // `foo` is a `&VariantProxy<_,_>` inside here
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: &VariantProxy<This,TS!(F o o)>= foo;
+            let _: &VariantProxy<This,TS!(Foo)>= foo;
 
             assert_eq!( foo.fields(fp!(0,1)), (&3,&false) );
         }
@@ -168,8 +166,7 @@ where
             assert_eq!( f1, &mut false );
 
             // `foo` is a `&mut VariantProxy<_,_>` inside here
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: &mut VariantProxy<This,TS!(F o o)>= foo;
+            let _: &mut VariantProxy<This,TS!(Foo)>= foo;
 
             assert_eq!( foo.fields_mut(fp!(0,1)), (&mut 3,&mut false) );
         }
@@ -178,8 +175,7 @@ where
     switch!{variant = foo.clone();
         // Can't destructure an enum into multiple fields by value yet.
         Foo=>{
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: VariantProxy<This,TS!(F o o)>= variant;
+            let _: VariantProxy<This,TS!(Foo)>= variant;
 
             assert_eq!( variant.clone().into_field(fp!(0)), 3 );
             assert_eq!( variant.clone().into_field(fp!(1)), false );

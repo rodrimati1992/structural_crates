@@ -363,22 +363,19 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field_traits::RevGetField;
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
+    ///
+    /// # fn main(){
     /// let tup=(3,5,(8,(13,21)));
-    ///
-    /// assert_eq!( get_nested(&tup), &13 );
-    ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=2.1.0 }
-    /// }
+    ///     assert_eq!( get_nested(&tup), &13 );
+    /// # }
     ///
     /// fn get_nested<T>(this:&T)->&i32
     /// where
-    ///     // You can use `FP!(2.1.0)` instead of `paths::nested` from Rust 1.40 onwards.
-    ///     paths::nested: for<'a> RevGetField<'a,T,Ty=i32>
+    ///     FP!(2.1.0): for<'a> RevGetField<'a,T,Ty=i32>
     /// {
-    ///     this.field_(paths::nested)
+    ///     this.field_(fp!(2.1.0))
     /// }
     ///
     ///
@@ -398,7 +395,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field_traits::OptRevGetField;
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let tup1=(3,5,(8,(Some(13),21)));
     /// let tup2=(3,5,(8,(None,21)));
@@ -406,17 +403,11 @@ declare_accessor_trait_alias! {
     /// assert_eq!( get_nested(&tup1), Some(&13) );
     /// assert_eq!( get_nested(&tup2), None );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=2.1.0.Some }
-    /// }
-    ///
     /// fn get_nested<T>(this:&T)->Option<&i32>
     /// where
-    ///     // You can use `FP!(2.1.0.Some)` instead of
-    ///     // `paths::nested` from Rust 1.40 onwards.
-    ///     paths::nested: for<'a> OptRevGetField<'a,T,Ty=i32>
+    ///     FP!(2.1.0.Some): for<'a> OptRevGetField<'a,T,Ty=i32>
     /// {
-    ///     this.field_(paths::nested)
+    ///     this.field_(fp!(2.1.0.Some))
     /// }
     ///
     ///
@@ -438,7 +429,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::RevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -452,17 +443,11 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(&mut struct_), &mut 101 );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=baz.bar.foo }
-    /// }
-    ///
     /// fn get_nested<T>(this:&mut T)->&mut i32
     /// where
-    ///     // You can use `FP!(baz.bar.foo)` instead of `paths::nested` from
-    ///     // Rust 1.40 onwards.
-    ///     paths::nested: for<'a> RevGetFieldMut<'a,T,Ty=i32>
+    ///     FP!(baz.bar.foo): for<'a> RevGetFieldMut<'a,T,Ty=i32>
     /// {
-    ///     this.field_mut(paths::nested)
+    ///     this.field_mut(fp!(baz.bar.foo))
     /// }
     ///
     ///
@@ -484,7 +469,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::OptRevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -498,17 +483,11 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(&mut struct_), Some(&mut "hello") );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=baz.bar.foo.Some }
-    /// }
-    ///
     /// fn get_nested<T>(this:&mut T)->Option<&mut &'static str>
     /// where
-    ///     // You can use `FP!(baz.bar.foo.Some)` instead of `paths::nested` from
-    ///     // Rust 1.40 onwards.
-    ///     paths::nested: for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
+    ///     FP!(baz.bar.foo.Some): for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
     /// {
-    ///     this.field_mut(paths::nested)
+    ///     this.field_mut(fp!(baz.bar.foo.Some))
     /// }
     ///
     ///
@@ -529,7 +508,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::RevIntoField;
     /// use structural::for_examples::StructBar;
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// use std::cmp::Ordering;
     ///
@@ -543,17 +522,11 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(struct_), Ordering::Greater );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=bar.bar.bar }
-    /// }
-    ///
     /// fn get_nested<T>(this:T)->Ordering
     /// where
-    ///     // You can use `FP!(bar.bar.bar)` instead of `paths::nested` from
-    ///     // Rust 1.40 onwards.
-    ///     paths::nested: for<'a> RevIntoField<'a,T,Ty=Ordering>
+    ///     FP!(bar.bar.bar): for<'a> RevIntoField<'a,T,Ty=Ordering>
     /// {
-    ///     this.into_field(paths::nested)
+    ///     this.into_field(fp!(bar.bar.bar))
     /// }
     ///
     ///
@@ -574,7 +547,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::OptRevIntoField;
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let nope=StructFoo{ foo: WithBoom::Nope };
     /// let boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
@@ -582,17 +555,11 @@ declare_accessor_trait_alias! {
     /// assert_eq!( get_nested(nope), None );
     /// assert_eq!( get_nested(boom), Some(&[3,5,8,13][..]) );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=foo::Boom.b }
-    /// }
-    ///
     /// fn get_nested<T>(this:T)->Option<&'static [u16]>
     /// where
-    ///     // You can use `FP!(foo::Boom.b)` instead of `paths::nested` from
-    ///     // Rust 1.40 onwards.
-    ///     paths::nested: for<'a> OptRevIntoField<'a,T,Ty=&'static [u16]>
+    ///     FP!(foo::Boom.b): for<'a> OptRevIntoField<'a,T,Ty=&'static [u16]>
     /// {
-    ///     this.into_field(paths::nested)
+    ///     this.into_field(fp!(foo::Boom.b))
     /// }
     ///
     ///
@@ -617,7 +584,7 @@ declare_accessor_trait_alias! {
     /// use structural::field_traits::{RevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::StructBar;
     /// use structural::reexports::{ConstDefault,const_default};
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let mut foo=StructBar{
     ///     bar: ([(0,3),(5,8)], [(40,50,60)]),
@@ -633,27 +600,19 @@ declare_accessor_trait_alias! {
     /// assert_eq!( oop.get_nested_mut(), &mut "world" );
     /// assert_eq!( oop.into_nested(), "world" );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=bar.0.1 }
-    /// }
-    ///
     /// trait GetNested: Sized {
     ///     fn get_nested_mut<'a,Ty>(&'a mut self)->&'a mut Ty
     ///     where
-    ///         // You can use `FP!(bar.0.1)` instead of `paths::nested` from
-    ///         // Rust 1.40 onwards.
-    ///         paths::nested: RevIntoFieldMut<'a,Self,Ty=Ty>
+    ///         FP!(bar.0.1): RevIntoFieldMut<'a,Self,Ty=Ty>
     ///     {
-    ///         self.field_mut(paths::nested)
+    ///         self.field_mut(fp!(bar.0.1))
     ///     }
     ///
     ///     fn into_nested<'a,Ty>(self)->Ty
     ///     where
-    ///         // You can use `FP!(bar.0.1)` instead of `paths::nested` from
-    ///         // Rust 1.40 onwards.
-    ///         paths::nested: RevIntoFieldMut<'a,Self,Ty=Ty>
+    ///         FP!(bar.0.1): RevIntoFieldMut<'a,Self,Ty=Ty>
     ///     {
-    ///         self.into_field(paths::nested)
+    ///         self.into_field(fp!(bar.0.1))
     ///     }
     /// }
     ///
@@ -679,7 +638,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field_traits::{OptRevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt, field_path_aliases};
+    /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let mut nope=StructFoo{ foo: WithBoom::Nope };
     /// let mut boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
@@ -690,27 +649,19 @@ declare_accessor_trait_alias! {
     /// assert_eq!( nope.into_nested(), None );
     /// assert_eq!( boom.into_nested(), Some(&[3,5,8,13][..]) );
     ///
-    /// field_path_aliases!{
-    ///     mod paths{ nested=foo::Boom.b }
-    /// }
-    ///
     /// trait GetNested: Sized {
     ///     fn get_nested_mut<'a,Ty>(&'a mut self)->Option<&'a mut Ty>
     ///     where
-    ///         // You can use `FP!(foo::Boom.b)` instead of `paths::nested` from
-    ///         // Rust 1.40 onwards.
-    ///         paths::nested: OptRevIntoFieldMut<'a,Self,Ty=Ty>
+    ///         FP!(foo::Boom.b): OptRevIntoFieldMut<'a,Self,Ty=Ty>
     ///     {
-    ///         self.field_mut(paths::nested)
+    ///         self.field_mut(fp!(foo::Boom.b))
     ///     }
     ///
     ///     fn into_nested<'a,Ty>(self)->Option<Ty>
     ///     where
-    ///         // You can use `FP!(foo::Boom.b)` instead of `paths::nested` from
-    ///         // Rust 1.40 onwards.
-    ///         paths::nested: OptRevIntoFieldMut<'a,Self,Ty=Ty>
+    ///         FP!(foo::Boom.b): OptRevIntoFieldMut<'a,Self,Ty=Ty>
     ///     {
-    ///         self.into_field(paths::nested)
+    ///         self.into_field(fp!(foo::Boom.b))
     ///     }
     /// }
     ///
