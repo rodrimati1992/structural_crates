@@ -1,8 +1,4 @@
-use crate::{
-    ident_or_index::IdentOrIndex,
-    parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, FullPathForChars},
-};
+use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tident_tokens};
 
 use as_derive_utils::{datastructure::StructKind, return_syn_err};
 
@@ -27,10 +23,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
 
         let span = vari.name.span();
         let vari_name = &vari.name;
-        let field_name = vari
-            .fields
-            .iter()
-            .map(|fname| tident_tokens(fname, FullPathForChars::Yes));
+        let field_name = vari.fields.iter().map(|fname| tident_tokens(fname));
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -50,7 +43,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
     let variant_names = parsed.variants.iter().map(|vari| {
         let span = vari.name.span();
         let alias_name = &vari.name;
-        let variant_name = tident_tokens(alias_name.to_string(), FullPathForChars::Yes);
+        let variant_name = tident_tokens(alias_name.to_string());
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -58,7 +51,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         }
     });
 
-    let variant_count_str = tident_tokens(parsed.variants.len().to_string(), FullPathForChars::Yes);
+    let variant_count_str = tident_tokens(parsed.variants.len().to_string());
 
     Ok(quote! {
         #[allow(non_camel_case_types,dead_code)]

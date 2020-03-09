@@ -1,8 +1,4 @@
-use crate::{
-    ident_or_index::IdentOrIndex,
-    parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, FullPathForChars},
-};
+use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tident_tokens};
 
 use as_derive_utils::return_spanned_err;
 
@@ -48,7 +44,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     }
 
     if config.include_count {
-        let alias_count_str = tident_tokens(alias_count.to_string(), FullPathForChars::Yes);
+        let alias_count_str = tident_tokens(alias_count.to_string());
         tokens.append_all(quote!(
             #[allow(non_camel_case_types,dead_code)]
             /// The amount of strings aliased in this module.
@@ -87,7 +83,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     string,
                 );
 
-                let string = tident_tokens(string, FullPathForChars::Yes);
+                let string = tident_tokens(string);
 
                 Ok(quote_spanned!(span=>
                     #[doc=#doc_fp_inner]

@@ -78,6 +78,23 @@ impl IdentOrIndex {
         };
         Ok(Some(ret))
     }
+
+    pub(crate) fn tstr_tokens(&self) -> TokenStream2 {
+        use crate::tokenizers::tident_tokens;
+        let owned: String;
+        let borrowed = match self {
+            IdentOrIndex::Ident(x) => {
+                owned = x.to_string();
+                owned.as_str()
+            }
+            IdentOrIndex::Index(x) => {
+                owned = x.index.to_string();
+                owned.as_str()
+            }
+            IdentOrIndex::Str { str, .. } => str,
+        };
+        tident_tokens(borrowed)
+    }
 }
 
 impl ToTokens for IdentOrIndex {
@@ -166,8 +183,20 @@ impl<'a> IdentOrIndexRef<'a> {
     }
 
     pub(crate) fn tstr_tokens(self) -> TokenStream2 {
-        use crate::tokenizers::{tident_tokens, FullPathForChars};
-        tident_tokens(&self.to_string(), FullPathForChars::Yes)
+        use crate::tokenizers::tident_tokens;
+        let owned: String;
+        let borrowed = match self {
+            IdentOrIndexRef::Ident(x) => {
+                owned = x.to_string();
+                owned.as_str()
+            }
+            IdentOrIndexRef::Index { index, .. } => {
+                owned = index.to_string();
+                owned.as_str()
+            }
+            IdentOrIndexRef::Str { str, .. } => str,
+        };
+        tident_tokens(borrowed)
     }
 }
 

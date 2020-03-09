@@ -261,8 +261,9 @@ macro_rules! fp {
     (6)=>{ $crate::field_path::aliases::index_6 };
     (7)=>{ $crate::field_path::aliases::index_7 };
     (8)=>{ $crate::field_path::aliases::index_8 };
-    // No `($lit:literal)=>` branch because float literals would generate a different type
-    // `FieldPath<(TStr<_>,TStr<_>)>` instead of `TStr<_>`.
+    ($lit:literal) => (
+        <$crate::_FP_literal_!($lit)>::NEW
+    );
     ($($everything:tt)*) => (
         $crate::_delegate_fp_inner!{$($everything)*}
     );
@@ -370,8 +371,9 @@ macro_rules! FP {
     (8)=>{ $crate::field_path::string_aliases::str_8 };
     (9)=>{ $crate::field_path::string_aliases::str_9 };
     (_)=>{ $crate::field_path::string_aliases::str_underscore };
-    // No `($lit:literal)=>` branch because float literals would generate a different type
-    // `FieldPath<(TStr<_>,TStr<_>)>` instead of `TStr<_>`.
+    ($lit:literal)=>{
+        $crate::_FP_literal_!($lit)
+    };
     ($($everything:tt)*) => (
         $crate::_FP_impl_!($($everything)*)
     );
