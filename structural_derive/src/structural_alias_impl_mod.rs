@@ -120,7 +120,7 @@ pub(crate) enum Exhaustiveness<'a> {
 
 pub(crate) type TypeParamBounds = Punctuated<syn::TypeParamBound, syn::token::Add>;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub(crate) enum VariantIdent<'a> {
     Ident(IdentOrIndexRef<'a>),
     /// The variant name is determined by a generic parameter
@@ -176,6 +176,13 @@ impl<'a> ToTokens for VariantIdent<'a> {
 }
 
 impl<'a> VariantIdent<'a> {
+    pub(crate) fn span(&self) -> Span {
+        match *self {
+            VariantIdent::Ident(ident) => ident.span(),
+            VariantIdent::Generic(ident) => ident.span(),
+        }
+    }
+
     pub(crate) fn tokens(&self) -> TokenStream2 {
         match self {
             VariantIdent::Ident(ident) => ident.tstr_tokens(),

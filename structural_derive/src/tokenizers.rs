@@ -35,7 +35,7 @@ where
         };
         syn::Ident::new(&buffer, Span::call_site())
     });
-    quote!( ::structural::TStr<::structural::p::TS<( #( #structural::p:: #bytes,)* )>> )
+    quote!( ::structural::TStr<::structural::p::TS<( #( ::structural::p:: #bytes,)* )>> )
 }
 
 pub(crate) fn variant_field_tokens<S0, S1>(variant: S0, field: S1) -> TokenStream2

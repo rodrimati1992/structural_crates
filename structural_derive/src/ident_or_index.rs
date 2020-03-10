@@ -27,10 +27,7 @@ impl IdentOrIndex {
         match self {
             IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(x),
             IdentOrIndex::Index(x) => x.into(),
-            IdentOrIndex::Str { str, span } => IdentOrIndexRef::Str {
-                str,
-                span: span.value,
-            },
+            IdentOrIndex::Str { str, span } => IdentOrIndexRef::Str { str, span: *span },
         }
     }
 }
@@ -124,11 +121,11 @@ impl From<syn::LitStr> for IdentOrIndex {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub(crate) enum IdentOrIndexRef<'a> {
     Ident(&'a Ident),
-    Index { index: u32, span: Span },
-    Str { str: &'a str, span: Span },
+    Index { index: u32, span: Ignored<Span> },
+    Str { str: &'a str, span: Ignored<Span> },
 }
 
 impl<'a> From<&'a Ident> for IdentOrIndexRef<'a> {
@@ -139,13 +136,19 @@ impl<'a> From<&'a Ident> for IdentOrIndexRef<'a> {
 
 impl<'a> From<SynIndex> for IdentOrIndexRef<'a> {
     fn from(SynIndex { index, span }: SynIndex) -> Self {
-        IdentOrIndexRef::Index { index, span }
+        IdentOrIndexRef::Index {
+            index,
+            span: Ignored::new(span),
+        }
     }
 }
 
 impl<'a> From<&'a SynIndex> for IdentOrIndexRef<'a> {
     fn from(&SynIndex { index, span }: &'a SynIndex) -> Self {
-        IdentOrIndexRef::Index { index, span }
+        IdentOrIndexRef::Index {
+            index,
+            span: Ignored::new(span),
+        }
     }
 }
 
@@ -154,7 +157,7 @@ impl<'a> From<&'_ FieldIdent<'a>> for IdentOrIndexRef<'a> {
         match x {
             FieldIdent::Index(index, ident) => IdentOrIndexRef::Index {
                 index: (*index) as u32,
-                span: ident.span(),
+                span: Ignored::new(ident.span()),
             },
             FieldIdent::Named(index) => IdentOrIndexRef::from(*index),
         }
@@ -168,7 +171,7 @@ impl<'a> IdentOrIndexRef<'a> {
             IdentOrIndex::Index(x) => x.into(),
             IdentOrIndex::Str { str, span } => IdentOrIndexRef::Str {
                 str: arenas.alloc(str),
-                span: span.value,
+                span,
             },
         })
     }
@@ -177,8 +180,8 @@ impl<'a> IdentOrIndexRef<'a> {
     pub(crate) fn span(&self) -> Span {
         match self {
             IdentOrIndexRef::Ident(x) => x.span(),
-            IdentOrIndexRef::Index { span, .. } => *span,
-            IdentOrIndexRef::Str { span, .. } => *span,
+            IdentOrIndexRef::Index { span, .. } => span.value,
+            IdentOrIndexRef::Str { span, .. } => span.value,
         }
     }
 
@@ -206,12 +209,12 @@ impl ToTokens for IdentOrIndexRef<'_> {
             IdentOrIndexRef::Ident(x) => x.to_tokens(tokens),
             IdentOrIndexRef::Index { index, span } => {
                 let mut lit = Literal::u32_unsuffixed(*index);
-                lit.set_span(*span);
+                lit.set_span(span.value);
                 lit.to_tokens(tokens);
             }
             IdentOrIndexRef::Str { str, span } => {
                 let mut lit = Literal::string(*str);
-                lit.set_span(*span);
+                lit.set_span(span.value);
                 lit.to_tokens(tokens);
             }
         }

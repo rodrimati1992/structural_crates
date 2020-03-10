@@ -2,6 +2,7 @@ use crate::{
     arenas::Arenas,
     field_access::{Access, IsOptional},
     ident_or_index::IdentOrIndexRef,
+    ignored_wrapper::Ignored,
 };
 
 use super::{
@@ -10,6 +11,7 @@ use super::{
 };
 
 use as_derive_utils::datastructure::StructKind;
+use as_derive_utils::return_syn_err;
 
 #[allow(unused_imports)]
 use core_extensions::{matches, SelfOps};
@@ -19,6 +21,8 @@ use syn::{
     punctuated::Punctuated,
     token, Attribute, Generics, Ident, Token, TraitItem, Visibility,
 };
+
+use std::collections::HashSet;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -148,6 +152,18 @@ impl<'a> StructuralDataType<'a> {
                 fields.push(StructuralField::parse_braced_field(access, arenas, input)?);
             }
         }
+        {
+            let mut set = HashSet::new();
+            for variant in &variants {
+                if set.replace(variant.name).is_some() {
+                    return_syn_err!(
+                        variant.name.span(),
+                        "Cannot repeat variant name in the same trait declaration"
+                    )
+                }
+            }
+        }
+        check_no_repeated_field(&fields)?;
         Ok(Self {
             type_name: None,
             variants,
@@ -175,6 +191,7 @@ impl<'a> StructuralVariant<'a> {
                         arenas,
                         input,
                     )?);
+                    check_no_repeated_field(&fields)?;
                 }
             }
             StructKind::Tuple => {
@@ -256,7 +273,10 @@ impl<'a> StructuralField<'a> {
         let inner_optionality = input.parse::<IsOptional>()?;
         let span = input.cursor().span();
         let ty = FieldType::parse(arenas, input)?;
-        let ident = IdentOrIndexRef::Index { index, span };
+        let ident = IdentOrIndexRef::Index {
+            index,
+            span: Ignored::new(span),
+        };
 
         if !input.is_empty() {
             input.parse::<Token![,]>()?;
@@ -309,6 +329,16 @@ impl From<VariantToken> for StructKind {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+fn check_no_repeated_field(fields: &[StructuralField<'_>]) -> Result<(), syn::Error> {
+    let mut set = HashSet::with_capacity(fields.len());
+    for field in fields {
+        if set.replace(field.ident).is_some() {
+            return_syn_err!(field.ident.span(), "Cannot redefine field")
+        }
+    }
+    Ok(())
+}
 
 impl<'a> FieldType<'a> {
     pub(super) fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
