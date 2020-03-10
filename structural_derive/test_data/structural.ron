@@ -53,7 +53,7 @@
     (
       name:"rename attribute",
       code:r##"
-        struct Huh{
+        pub struct Huh{
             #[struc(rename="#replaced")]
             pub original:u32,
         }
@@ -61,17 +61,17 @@
       subcase: [
         (
           replacements: { "#replaced":"hello" },
-          find_all:[str("STR_hello"),regex("original *: *u32")], 
+          find_all:[regex("hello *: *u32"),regex("original *: *u32")], 
           error_count: 0,
         ),
         (
           replacements: { "#replaced":"world" },
-          find_all:[str("STR_world"),regex("original *: *u32")], 
+          find_all:[regex("world *: *u32"),regex("original *: *u32")], 
           error_count: 0,
         ),
         (
           replacements: { "#replaced":"0" },
-          find_all:[str("STR_0"),regex("original *: *u32")], 
+          find_all:[regex("0 *: *u32"),regex("original *: *u32")], 
           error_count: 0,
         ),
       ],
