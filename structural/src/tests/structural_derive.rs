@@ -15,7 +15,7 @@ field_path_aliases! {
 }
 tstr_aliases! {
     mod strings{
-        A,B,C,a,b,n0=0,
+        A,B,C,a,b,c,n0=0,
     }
 }
 
@@ -330,6 +330,7 @@ trait Vegetable_ESI {}
 
 mod struct_with_constraints {
     use super::*;
+    use crate::field_traits::IntoVariantFieldMut;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -364,6 +365,15 @@ mod struct_with_constraints {
         ),
         where[ U:Clone, ]
     }
+    assert_equal_bounds! {
+        trait Bounds0_VSI_Dummy[T,U,Vari,],
+        (Bounds0_VSI<T,U,Vari>),
+        (
+            IntoVariantFieldMut<Vari,strings::a,Ty=T>+
+            IntoVariantFieldMut<Vari,strings::b,Ty=U>+
+        ),
+        where[ U:Clone, ]
+    }
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -379,6 +389,15 @@ mod struct_with_constraints {
         (
             IntoFieldMut<paths::a,Ty=&'a T>+
             IntoFieldMut<paths::b,Ty=U>
+        ),
+        where[ T:'a,U:'a, ]
+    }
+    assert_equal_bounds! {
+        trait Bounds1_VSI_Dummy['a,T,U,Vari,],
+        (Bounds1_VSI<'a,T,U,Vari>),
+        (
+            IntoVariantFieldMut<Vari,strings::a,Ty=&'a T>+
+            IntoVariantFieldMut<Vari,strings::b,Ty=U>+
         ),
         where[ T:'a,U:'a, ]
     }

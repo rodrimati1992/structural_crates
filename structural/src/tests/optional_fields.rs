@@ -1,8 +1,19 @@
-use crate::{GetFieldExt, Structural};
+use crate::{
+    enums::IsVariant,
+    field_traits::{IntoFieldMut, IntoVariantFieldMut, OptIntoFieldMut, OptIntoVariantFieldMut},
+    GetFieldExt, Structural,
+};
 
 field_path_aliases! {
     mod names{
-        a,b,c,d
+        a,b,c,d,
+    }
+}
+
+tstr_aliases! {
+    mod strings{
+        A,B,C,a,b,c,d,
+        f0=0,f1=1,
     }
 }
 
@@ -55,6 +66,28 @@ struct StructDerivedExplicit {
     d: Option<bool>,
 }
 
+assert_equal_bounds! {
+    trait StructDerivedExplicit_SI_Dummy[],
+    (StructDerivedExplicit_SI),
+    (
+        OptIntoFieldMut<strings::a,Ty=u32>+
+        OptIntoFieldMut<strings::b,Ty=u64>+
+        OptIntoFieldMut<strings::c,Ty=&'static str>+
+        IntoFieldMut<strings::d,Ty=Option<bool>>+
+    ),
+}
+
+assert_equal_bounds! {
+    trait StructDerivedExplicit_VSI_Dummy[Vari,],
+    (StructDerivedExplicit_VSI<Vari>),
+    (
+        OptIntoVariantFieldMut<Vari,strings::a,Ty=u32>+
+        OptIntoVariantFieldMut<Vari,strings::b,Ty=u64>+
+        OptIntoVariantFieldMut<Vari,strings::c,Ty=&'static str>+
+        IntoVariantFieldMut<Vari,strings::d,Ty=Option<bool>>+
+    ),
+}
+
 #[derive(Structural, Copy, Clone)]
 #[struc(public)]
 struct StructDerivedExplicit2 {
@@ -69,6 +102,28 @@ struct StructDerivedExplicit2 {
 
     #[struc(not_optional)]
     d: Option<bool>,
+}
+
+assert_equal_bounds! {
+    trait StructDerivedExplicit2_SI_Dummy[],
+    (StructDerivedExplicit2_SI),
+    (
+        OptIntoFieldMut<strings::a,Ty=u32>+
+        OptIntoFieldMut<strings::b,Ty=u64>+
+        OptIntoFieldMut<strings::c,Ty=&'static str>+
+        IntoFieldMut<strings::d,Ty=Option<bool>>+
+    ),
+}
+
+assert_equal_bounds! {
+    trait StructDerivedExplicit2_VSI_Dummy[Vari,],
+    (StructDerivedExplicit2_VSI<Vari>),
+    (
+        OptIntoVariantFieldMut<Vari,strings::a,Ty=u32>+
+        OptIntoVariantFieldMut<Vari,strings::b,Ty=u64>+
+        OptIntoVariantFieldMut<Vari,strings::c,Ty=&'static str>+
+        IntoVariantFieldMut<Vari,strings::d,Ty=Option<bool>>+
+    ),
 }
 
 macro_rules! declare_struct_tests {
@@ -150,12 +205,6 @@ declare_struct_tests! {
 
 /////////////////////////////////////////////////////
 
-tstr_aliases! {
-    mod strings{
-        A,B,C,a,b,c,d
-    }
-}
-
 #[derive(Copy, Clone)]
 enum EnumManual {
     A {
@@ -233,6 +282,25 @@ enum EnumDerivedExplicit {
     #[struc(newtype)]
     B(#[struc(optional)] Option<(u32, u64)>),
     C,
+}
+
+assert_equal_bounds! {
+    trait EnumDerived_SI_Dummy[],
+    (EnumDerivedImplicit_SI),
+    (
+        OptIntoVariantFieldMut<strings::A,strings::a,Ty=u32>+
+        OptIntoVariantFieldMut<strings::A,strings::b,Ty=u64>+
+        OptIntoVariantFieldMut<strings::A,strings::c,Ty=&'static str>+
+        IntoVariantFieldMut<strings::A,strings::d,Ty=Option<bool>>+
+        IsVariant<strings::B>+
+        IsVariant<strings::C>+
+    ),
+}
+
+assert_equal_bounds! {
+    trait EnumDerived_SI_DummyB[],
+    (EnumDerivedImplicit_SI),
+    (EnumDerivedExplicit_SI),
 }
 
 fn drop_ref<T>(_: &T) {}
