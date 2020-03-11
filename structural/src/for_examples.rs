@@ -46,6 +46,13 @@ pub struct StructBar<T> {
     pub bar: T,
 }
 
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub struct Delegating<T> {
+    #[struc(delegate_to)]
+    bar: T,
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 use std_::cmp::Ordering;

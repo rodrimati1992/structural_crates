@@ -21,6 +21,18 @@ as well as [`make_struct` to construct anonymous structs ](./macro.make_struct.h
 so long as the type implements the accessor traits to access those fields.
 ](./trait.GetFieldExt.html)
 
+# Clarifications
+
+The way that this library emulates structural types is by using traits as bounds
+or trait objects.
+
+By default all structural types are open,
+structs and enums can have more variants and or fields than are required.
+
+The only exception to this is exhaustive enums,
+in which the variant count and names must match exactly,
+this is useful for exhaustive pattern matching (in the [switch macro](./macro.switch.html)).
+
 # Examples
 
 

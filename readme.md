@@ -6,19 +6,42 @@
 [api-docs]: https://docs.rs/structural
 
 
+
 This library provides field accessor traits,and emulation of structural types.
 
 # Features
 
 These are the features this library provides:
 
-- [Derivation of the 3 accessor traits for every public field](https://docs.rs/structural/0.2/structural/docs/structural_macro/index.html)
-(GetField/GetFieldMut/IntoField).
+- [Derivation of the 3 accessor traits for every public field
+](https://docs.rs/structural/0.3/structural/docs/structural_macro/index.html)
+(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl),
+and aliases for the optional and non-optional variants of those traits.
 
-- [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax,with the `structural_alias` macro.
-](https://docs.rs/structural/0.2/structural/macro.structural_alias.html).
+- [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
+](https://docs.rs/structural/0.3/structural/macro.structural_alias.html).
 
-- [Construction of anonymous structs with `make_struct`](https://docs.rs/structural/0.2/structural/macro.make_struct.html)
+- [The `impl_struct` macro to declare structural parameter/return types
+](https://docs.rs/structural/0.3/structural/macro.impl_struct.html),
+as well as
+[`make_struct` to construct anonymous structs ](https://docs.rs/structural/0.3/structural/macro.make_struct.html)
+
+- [The GetFieldExt extension trait,which defines the main methods to access fields,
+so long as the type implements the accessor traits to access those fields.
+](https://docs.rs/structural/0.3/structural/trait.GetFieldExt.html)
+
+# Clarifications
+
+The way that this library emulates structural types is by using traits as bounds 
+or trait objects.
+
+By default all structural types are open,
+structs and enums can have more variants and or fields than are required.
+
+The only exception to this is exhaustive enums,
+in which the variant count and names must match exactly,
+this is useful for exhaustive pattern matching 
+(in the [switch macro](https://docs.rs/structural/0.3/structural/macro.switch.html)).
 
 # Changelog
 
