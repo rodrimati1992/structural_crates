@@ -22,9 +22,9 @@ use core_extensions::SelfOps;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use quote::{quote, TokenStreamExt};
+use quote::{quote, ToTokens, TokenStreamExt};
 
-use syn::{punctuated::Punctuated, DeriveInput, Ident};
+use syn::{punctuated::Punctuated, DeriveInput, Ident, Visibility};
 
 mod attribute_parsing;
 
@@ -85,6 +85,8 @@ fn delegating_structural<'a>(
         move_bounds,
     } = delegate_to;
 
+    use std::fmt::Write;
+
     let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
 
     let impl_generics = GenParamsIn::new(ds.generics, InWhat::ImplHeader);
@@ -100,7 +102,15 @@ fn delegating_structural<'a>(
         .map_or(&empty_preds, |x| &x.predicates)
         .into_iter();
 
+    let mut docs = format!("`{}` delegates all its accessor trait impls to ", tyname);
+    let ty_tokens = field.ty.to_token_stream();
+    let _ = match field.vis {
+        Visibility::Public { .. } => write!(docs, "the `{}: {}` field", field.ident, ty_tokens),
+        _ => write!(docs, "a private `{}` field", ty_tokens),
+    };
+
     quote!(::structural::unsafe_delegate_structural_with! {
+        #[doc=#docs]
         impl[#impl_generics] #tyname #ty_generics
         where[
             #(#where_preds,)*

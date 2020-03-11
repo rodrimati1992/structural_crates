@@ -228,6 +228,7 @@ unsafe_delegate_structural_with!{
 #[macro_export]
 macro_rules! unsafe_delegate_structural_with {
     (
+        $( #[doc=$doc:expr] )*
         impl $impl_params:tt $self:ty
         where $where_clause:tt
         self_ident=$this:ident;
@@ -238,6 +239,7 @@ macro_rules! unsafe_delegate_structural_with {
         $($rest:tt)*
     ) => (
         $crate::unsafe_delegate_structural_with_inner!{
+            $( #[doc=$doc] )*
             impl $impl_params $self
             where $where_clause
             self_ident=$this;
@@ -254,6 +256,7 @@ macro_rules! unsafe_delegate_structural_with {
 #[doc(hidden)]
 macro_rules! unsafe_delegate_structural_with_inner {
     (
+        $( #[doc=$doc:expr] )*
         impl $impl_params:tt $self:ty
         where $where_clause:tt
         self_ident=$this:ident;
@@ -277,6 +280,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
         $crate::unsafe_delegate_structural_with_inner!{
             inner-structural;
+            $( #[doc=$doc] )*
             impl $impl_params $self
             where $where_clause
             self_ident=$this;
@@ -326,6 +330,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
     );
     (
         inner-structural;
+        $( #[doc=$doc:expr] )*
         impl[$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         self_ident=$this:ident;
@@ -334,6 +339,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
         GetFieldImpl $get_field_closure:block
     )=>{
+        $( #[doc=$doc] )*
         impl<$($impl_params)*> $crate::Structural for $self
         where
             $delegating_to_type: $crate::Structural,
