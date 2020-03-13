@@ -1,5 +1,5 @@
 use crate::{
-    field_access::{Access, IsOptional},
+    field_access::Access,
     ident_or_index::IdentOrIndex,
     parse_utils::ParsePunctuated,
     structural_alias_impl_mod::{ReplaceBounds, TypeParamBounds},
@@ -36,7 +36,6 @@ pub(crate) struct StructuralOptions<'a> {
 
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
-    pub(crate) implicit_optionality: bool,
     pub(crate) generate_docs: bool,
     pub(crate) delegate_to: Option<DelegateTo<'a>>,
 
@@ -52,7 +51,6 @@ impl<'a> StructuralOptions<'a> {
             bounds,
             debug_print,
             with_trait_alias,
-            implicit_optionality,
             generate_docs,
             delegate_to,
             errors: _,
@@ -66,7 +64,6 @@ impl<'a> StructuralOptions<'a> {
             bounds,
             debug_print,
             with_trait_alias,
-            implicit_optionality,
             generate_docs,
             delegate_to,
             _marker,
@@ -95,8 +92,6 @@ pub(crate) struct FieldConfig {
     /// Whether the type is replaced with bounds in the `<deriving_type>_SI` trait.
     pub(crate) is_impl: Option<TypeParamBounds>,
 
-    pub(crate) optionality_override: Option<IsOptional>,
-
     /// Determines whether the field is considered public.
     ///
     /// `false`: means that the field does not get an accessor.
@@ -117,7 +112,6 @@ struct StructuralAttrs<'a> {
 
     debug_print: bool,
     with_trait_alias: bool,
-    implicit_optionality: bool,
     generate_docs: bool,
     delegate_to: Option<DelegateTo<'a>>,
 
@@ -154,7 +148,6 @@ pub(crate) fn parse_attrs_for_structural<'a>(
         access: Default::default(),
         renamed: Default::default(),
         is_impl: None,
-        optionality_override: None,
         is_pub: field.is_public() || ds.data_variant == DataVariant::Enum,
     });
 
@@ -270,10 +263,6 @@ fn parse_sabi_attr<'a>(
                 this.fields[field].is_pub = true;
             } else if path.is_ident("not_public") || path.is_ident("private") {
                 this.fields[field].is_pub = false;
-            } else if path.is_ident("optional") {
-                this.fields[field].optionality_override = Some(IsOptional::Yes);
-            } else if path.is_ident("not_optional") {
-                this.fields[field].optionality_override = Some(IsOptional::No);
             } else if path.is_ident("delegate_to") {
                 parse_delegate_to(this, Default::default(), path.span(), field)?;
             } else {
@@ -337,8 +326,6 @@ fn parse_sabi_attr<'a>(
         ) => {
             if path.is_ident("debug_print") {
                 this.debug_print = true;
-            } else if path.is_ident("implicit_optionality") {
-                this.implicit_optionality = true;
             } else if path.is_ident("no_trait") {
                 this.with_trait_alias = false;
             } else if path.is_ident("no_docs") {

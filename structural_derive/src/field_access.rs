@@ -21,38 +21,33 @@ pub(crate) struct Access {
 
 #[allow(non_upper_case_globals)]
 impl Access {
-    /// A field gets a GetFieldImpl impl.
+    /// A field gets a GetField impl.
     pub(crate) const Shared: Self = Self {
         mutable: false,
         value: false,
     };
 
-    /// A field gets GetFieldImpl,and GetFieldMutImpl impls.
+    /// A field gets GetField,and GetFieldMut impls.
     pub(crate) const Mutable: Self = Self {
         mutable: true,
         value: false,
     };
 
-    /// A field gets GetFieldImpl,and IntoFieldImpl impls.
+    /// A field gets GetField,and IntoField impls.
     pub(crate) const Value: Self = Self {
         mutable: false,
         value: true,
     };
 
-    /// A field gets GetFieldImpl,GetFieldMutImpl,and IntoFieldImpl impls.
+    /// A field gets GetField,GetFieldMut,and IntoField impls.
     pub(crate) const MutValue: Self = Self {
         mutable: true,
         value: true,
     };
 
-    pub(crate) fn compute_trait(
-        self,
-        optionality: IsOptional,
-        struct_or_enum: StructOrEnum,
-    ) -> ComputeTrait {
+    pub(crate) fn compute_trait(self, struct_or_enum: StructOrEnum) -> ComputeTrait {
         ComputeTrait {
             access: self,
-            optionality,
             struct_or_enum,
         }
     }
@@ -97,9 +92,9 @@ impl Parse for Access {
 impl ToTokens for Access {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         match *self {
-            Access::Shared => Ident::new("GetFieldImpl", Span::call_site()),
-            Access::Mutable => Ident::new("GetFieldMutImpl", Span::call_site()),
-            Access::Value => Ident::new("IntoFieldImpl", Span::call_site()),
+            Access::Shared => Ident::new("GetField", Span::call_site()),
+            Access::Mutable => Ident::new("GetFieldMut", Span::call_site()),
+            Access::Value => Ident::new("IntoField", Span::call_site()),
             Access::MutValue => Ident::new("IntoFieldMut", Span::call_site()),
         }
         .to_tokens(tokens);
@@ -109,57 +104,8 @@ impl ToTokens for Access {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) enum IsOptional {
-    Yes,
-    No,
-}
-
-impl IsOptional {
-    pub(crate) fn derive_arg(self) -> IsOptionalDeriveArg {
-        IsOptionalDeriveArg { value: self }
-    }
-}
-
-impl ToTokens for IsOptional {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        tokens.append_all(match *self {
-            IsOptional::Yes => quote!(OptionalField),
-            IsOptional::No => quote!(NonOptField),
-        });
-    }
-}
-
-impl Parse for IsOptional {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        input.peek_parse(syn::Token![?]).map(|x| match x {
-            Some(_) => IsOptional::Yes,
-            None => IsOptional::No,
-        })
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct IsOptionalDeriveArg {
-    value: IsOptional,
-}
-
-impl ToTokens for IsOptionalDeriveArg {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        tokens.append_all(match self.value {
-            IsOptional::Yes => quote!(opt),
-            IsOptional::No => quote!(nonopt),
-        });
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) struct ComputeTrait {
     pub(crate) access: Access,
-    pub(crate) optionality: IsOptional,
     pub(crate) struct_or_enum: StructOrEnum,
 }
 
@@ -180,24 +126,18 @@ fn main(){
         ("MutValue","Into","Mut"),
     ];
 
-    let optionality_list=[("Yes","Opt"), ("No","")];
-
     for (kind,field_pc) in &kind_list {
         for (access,pre_pc,post_pc) in &access_list {
-            for (opt,opt_pc) in &optionality_list {
-                println!(
-                    "(SOE::{0}, {1}, IO::{2})=> \
-                        AAIO_match!(inner; $kind {opt}{pre}{field}{post} ),\
-                    ",
-                    kind,
-                    access,
-                    opt,
-                    opt=opt_pc,
-                    pre=pre_pc,
-                    field=field_pc,
-                    post=post_pc,
-                );
-            }
+            println!(
+                "(SOE::{0}, {1})=> \
+                    AAIO_match!(inner; $kind {pre}{field}{post} ),\
+                ",
+                kind,
+                access,
+                pre=pre_pc,
+                field=field_pc,
+                post=post_pc,
+            );
         }
     }
 }
@@ -215,29 +155,20 @@ mod access_consts {
 macro_rules! AAIO_match {
     ( self=$this:ident kind=$kind:ident ) => ({
         use access_consts::{Shared,Mutable,Value,MutValue};
-        use self::IsOptional as IO;
         use self::StructOrEnum as SOE;
 
 
-        let ComputeTrait{access,optionality,struct_or_enum}=$this;
+        let ComputeTrait{access,struct_or_enum}=$this;
         #[allow(non_upper_case_globals)]
-        match (struct_or_enum,access,optionality) {
-            (SOE::Struct, Shared, IO::Yes)=> AAIO_match!(inner; $kind OptGetField ),
-            (SOE::Struct, Shared, IO::No)=> AAIO_match!(inner; $kind GetField ),
-            (SOE::Struct, Value, IO::Yes)=> AAIO_match!(inner; $kind OptIntoField ),
-            (SOE::Struct, Value, IO::No)=> AAIO_match!(inner; $kind IntoField ),
-            (SOE::Struct, Mutable, IO::Yes)=> AAIO_match!(inner; $kind OptGetFieldMut ),
-            (SOE::Struct, Mutable, IO::No)=> AAIO_match!(inner; $kind GetFieldMut ),
-            (SOE::Struct, MutValue, IO::Yes)=> AAIO_match!(inner; $kind OptIntoFieldMut ),
-            (SOE::Struct, MutValue, IO::No)=> AAIO_match!(inner; $kind IntoFieldMut ),
-            (SOE::Enum, Shared, IO::Yes)=> AAIO_match!(inner; $kind OptGetVariantField ),
-            (SOE::Enum, Shared, IO::No)=> AAIO_match!(inner; $kind GetVariantField ),
-            (SOE::Enum, Value, IO::Yes)=> AAIO_match!(inner; $kind OptIntoVariantField ),
-            (SOE::Enum, Value, IO::No)=> AAIO_match!(inner; $kind IntoVariantField ),
-            (SOE::Enum, Mutable, IO::Yes)=> AAIO_match!(inner; $kind OptGetVariantFieldMut ),
-            (SOE::Enum, Mutable, IO::No)=> AAIO_match!(inner; $kind GetVariantFieldMut ),
-            (SOE::Enum, MutValue, IO::Yes)=> AAIO_match!(inner; $kind OptIntoVariantFieldMut ),
-            (SOE::Enum, MutValue, IO::No)=> AAIO_match!(inner; $kind IntoVariantFieldMut ),
+        match (struct_or_enum,access) {
+            (SOE::Struct, Shared)=> AAIO_match!(inner; $kind GetField ),
+            (SOE::Struct, Value)=> AAIO_match!(inner; $kind IntoField ),
+            (SOE::Struct, Mutable)=> AAIO_match!(inner; $kind GetFieldMut ),
+            (SOE::Struct, MutValue)=> AAIO_match!(inner; $kind IntoFieldMut ),
+            (SOE::Enum, Shared)=> AAIO_match!(inner; $kind GetVariantField ),
+            (SOE::Enum, Value)=> AAIO_match!(inner; $kind IntoVariantField ),
+            (SOE::Enum, Mutable)=> AAIO_match!(inner; $kind GetVariantFieldMut ),
+            (SOE::Enum, MutValue)=> AAIO_match!(inner; $kind IntoVariantFieldMut ),
         }
     });
     (inner; quote $trait_:ident )=>{

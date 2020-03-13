@@ -21,17 +21,18 @@ use syn::{
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct FieldPaths {
-    prefix: Option<FieldPath>,
-    paths: Vec<FieldPath>,
+    prefix: Option<NestedFieldPath>,
+    paths: Vec<NestedFieldPath>,
     path_uniqueness: PathUniqueness,
 }
 
 impl FieldPaths {
     pub(crate) fn from_ident(soi: Ident) -> Self {
-        soi.piped(FieldPath::from_ident).piped(Self::from_path)
+        soi.piped(NestedFieldPath::from_ident)
+            .piped(Self::from_path)
     }
 
-    pub(crate) fn from_path(path: FieldPath) -> Self {
+    pub(crate) fn from_path(path: NestedFieldPath) -> Self {
         Self {
             prefix: None,
             paths: vec![path],
@@ -39,7 +40,7 @@ impl FieldPaths {
         }
     }
 
-    pub(crate) fn contains_aliased_paths(paths: &[FieldPath]) -> bool {
+    pub(crate) fn contains_aliased_paths(paths: &[NestedFieldPath]) -> bool {
         paths
             .iter()
             .enumerate()
@@ -48,12 +49,12 @@ impl FieldPaths {
 
     pub(crate) fn from_iter<I>(mut paths: I) -> Self
     where
-        I: ExactSizeIterator<Item = FieldPath>,
+        I: ExactSizeIterator<Item = NestedFieldPath>,
     {
         match paths.len() {
             1 => paths.next().unwrap().piped(FieldPaths::from_path),
             _ => {
-                let paths = paths.collect::<Vec<FieldPath>>();
+                let paths = paths.collect::<Vec<NestedFieldPath>>();
 
                 let path_uniqueness = if Self::contains_aliased_paths(&paths) {
                     PathUniqueness::Aliased
@@ -137,7 +138,7 @@ impl FieldPaths {
         ret
     }
 
-    /// Gets a tokenizer that outputs a type-level FieldPath(Set) value.
+    /// Gets a tokenizer that outputs a type-level NestedFieldPath(Set) value.
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
             if self.prefix.is_some() {
@@ -153,10 +154,10 @@ impl FieldPaths {
 
 impl Parse for FieldPaths {
     fn parse(input: ParseStream) -> parse::Result<Self> {
-        let mut prefix = None::<FieldPath>;
-        let mut paths = Vec::<FieldPath>::new();
+        let mut prefix = None::<NestedFieldPath>;
+        let mut paths = Vec::<NestedFieldPath>::new();
         while !input.is_empty() {
-            let path = input.parse::<FieldPath>()?;
+            let path = input.parse::<NestedFieldPath>()?;
             if input.peek(Token!(=>)) {
                 if prefix.is_some() {
                     return Err(input.error("Cannot use `=>` multiple times."));
@@ -184,11 +185,11 @@ impl Parse for FieldPaths {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct FieldPath {
+pub(crate) struct NestedFieldPath {
     list: Vec<FieldPathComponent>,
 }
 
-impl Parse for FieldPath {
+impl Parse for NestedFieldPath {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let mut list = Vec::<FieldPathComponent>::new();
         let mut is_first = true;
@@ -201,11 +202,11 @@ impl Parse for FieldPath {
             is_first = false;
         }
 
-        Ok(FieldPath { list })
+        Ok(NestedFieldPath { list })
     }
 }
 
-impl FieldPath {
+impl NestedFieldPath {
     pub(crate) fn from_ident(ident: Ident) -> Self {
         Self {
             list: vec![FieldPathComponent::from_ident(ident)],
@@ -229,7 +230,7 @@ impl FieldPath {
             path_component.into_token_stream()
         } else {
             let tuple = self.tuple_tokens();
-            quote!( structural::FieldPath<#tuple> )
+            quote!( structural::NestedFieldPath<#tuple> )
         }
     }
 
@@ -252,6 +253,7 @@ pub(crate) enum FieldPathComponent {
     VariantName {
         variant: IdentOrIndex,
     },
+    Try,
 }
 
 impl FieldPathComponent {
@@ -278,6 +280,9 @@ impl FieldPathComponent {
             FPC::VariantName { variant } => {
                 let _ = write!(buff, "::{}", variant.to_token_stream());
             }
+            FPC::Try => {
+                buff.push('?');
+            }
         }
     }
 
@@ -287,24 +292,20 @@ impl FieldPathComponent {
     ) -> parse::Result<(Self, Option<Self>)> {
         let fork = input.fork();
 
-        let first;
-        let second;
-
         let prefix_token = if input.peek_parse(Token!(::))?.is_some() {
             PrefixToken::Colon2
         } else if input.peek_parse(Token!(.))?.is_some() {
             PrefixToken::Dot
+        } else if input.peek_parse(Token!(?))?.is_some() {
+            PrefixToken::Question
         } else {
             PrefixToken::Nothing
         };
 
-        {
-            let ret = parse_field(input)?;
-            first = ret.0;
-            second = ret.1;
-        }
-
-        if let PrefixToken::Colon2 = prefix_token {
+        if let PrefixToken::Question = prefix_token {
+            Ok((FieldPathComponent::Try, None))
+        } else if let PrefixToken::Colon2 = prefix_token {
+            let (first, second) = parse_field(input)?;
             let variant = first;
 
             if let Some(field) = second {
@@ -323,6 +324,7 @@ impl FieldPathComponent {
                 );
             }
         } else {
+            let (first, second) = parse_field(input)?;
             if let (PrefixToken::Nothing, IsFirst::No) = (prefix_token, is_first) {
                 return Err(fork.error("expected a period"));
             }
@@ -342,6 +344,7 @@ impl FieldPathComponent {
                 variant_field_tokens(variant.to_string(), field.to_string())
             }
             FPC::VariantName { variant } => variant_name_tokens(variant.to_string()),
+            FPC::Try => quote!(::structural::TryPath),
         }
     }
 }
@@ -427,5 +430,6 @@ impl ToTokens for PathUniqueness {
 enum PrefixToken {
     Colon2,
     Dot,
+    Question,
     Nothing,
 }

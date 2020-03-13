@@ -61,7 +61,7 @@ pub(crate) fn FP_literal_impl(params: FpLitParams) -> Result<TokenStream2, syn::
     let ret = match second {
         Some(second) => {
             let second = second.tstr_tokens();
-            quote::quote!( ::structural::pmr::FieldPath<(#first,#second)> )
+            quote::quote!( ::structural::pmr::NestedFieldPath<(#first,#second)> )
         }
         None => first,
     };

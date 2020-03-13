@@ -1,4 +1,4 @@
-use crate::field_paths::{FieldPath, FieldPaths};
+use crate::field_paths::{FieldPaths, NestedFieldPath};
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
@@ -75,7 +75,9 @@ impl Parse for NameAlias {
                 let _ = syn::parenthesized!(content in input);
                 content.parse::<FieldPaths>()?
             } else {
-                input.parse::<FieldPath>()?.piped(FieldPaths::from_path)
+                input
+                    .parse::<NestedFieldPath>()?
+                    .piped(FieldPaths::from_path)
             }
         } else {
             FieldPaths::from_ident(name.clone())

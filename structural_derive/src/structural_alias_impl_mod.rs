@@ -1,6 +1,6 @@
 use crate::{
     datastructure::StructOrEnum,
-    field_access::{Access, ComputeTrait, IsOptional},
+    field_access::{Access, ComputeTrait},
     ident_or_index::IdentOrIndexRef,
     parse_utils::ParsePunctuated,
     tokenizers::tident_tokens,
@@ -86,7 +86,6 @@ pub struct StructuralVariant<'a> {
 pub(crate) struct TinyStructuralField<'a> {
     pub(crate) access: Access,
     pub(crate) ident: IdentOrIndexRef<'a>,
-    pub(crate) inner_optionality: IsOptional,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -100,7 +99,6 @@ pub(crate) struct StructuralField<'a> {
     /// - the field is public
     /// - the field has a `#[struc(rename="")]` attribute
     pub(crate) pub_field_rename: Option<IdentOrIndexRef<'a>>,
-    pub(crate) inner_optionality: IsOptional,
     pub(crate) ty: FieldType<'a>,
 }
 
@@ -143,7 +141,7 @@ impl<'a> Parse for StructuralAliasesHack {
 macro_rules! declare_structural_field_methods {
     () => {
         pub(crate) fn compute_trait(&self, soe: StructOrEnum) -> ComputeTrait {
-            self.access.compute_trait(self.inner_optionality, soe)
+            self.access.compute_trait(soe)
         }
     };
 }

@@ -1,6 +1,6 @@
 use crate::{
     datastructure::StructOrEnum,
-    field_access::{Access, IsOptional},
+    field_access::Access,
     structural_alias_impl_mod::{FieldType, StructuralDataType, StructuralField, VariantIdent},
 };
 
@@ -179,13 +179,9 @@ fn write_field_docs(
     )?;
     writeln!(
         buff,
-        "{LP}The &nbsp; `{0}: {1}` {2} {3} &nbsp; ",
+        "{LP}The &nbsp; `{0}: {1}` {2} &nbsp; ",
         field.ident,
         field_ty,
-        match field.inner_optionality {
-            IsOptional::Yes => "optional field",
-            IsOptional::No => "field",
-        },
         try_opt2(type_name, field.pub_field_rename).map_or(String::new(), |(t, f)| format!(
             "(named `{}` in `{}`)",
             f, t
