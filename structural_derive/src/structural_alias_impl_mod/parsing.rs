@@ -1,8 +1,5 @@
 use crate::{
-    arenas::Arenas,
-    field_access::{Access, IsOptional},
-    ident_or_index::IdentOrIndexRef,
-    ignored_wrapper::Ignored,
+    arenas::Arenas, field_access::Access, ident_or_index::IdentOrIndexRef, ignored_wrapper::Ignored,
 };
 
 use super::{
@@ -226,15 +223,9 @@ impl<'a> TinyStructuralField<'a> {
     ) -> Result<Self, syn::Error> {
         let ident = IdentOrIndexRef::parse(arenas, input)?;
         let _: Token![:] = input.parse()?;
-        let inner_optionality = input.parse::<IsOptional>()?;
         let ty = FieldType::parse(arenas, input)?;
 
-        Ok(Self {
-            access,
-            ident,
-            inner_optionality,
-            ty,
-        })
+        Ok(Self { access, ident, ty })
     }
 }
 
@@ -247,7 +238,6 @@ impl<'a> StructuralField<'a> {
         let TinyStructuralField {
             access: _,
             ident,
-            inner_optionality,
             ty,
         } = TinyStructuralField::parse(access, arenas, input)?;
 
@@ -259,7 +249,6 @@ impl<'a> StructuralField<'a> {
             access,
             ident,
             pub_field_rename: None,
-            inner_optionality,
             ty,
         })
     }
@@ -270,7 +259,6 @@ impl<'a> StructuralField<'a> {
         arenas: &'a Arenas,
         input: ParseStream,
     ) -> Result<Self, syn::Error> {
-        let inner_optionality = input.parse::<IsOptional>()?;
         let span = input.cursor().span();
         let ty = FieldType::parse(arenas, input)?;
         let ident = IdentOrIndexRef::Index {
@@ -286,7 +274,6 @@ impl<'a> StructuralField<'a> {
             access,
             ident,
             pub_field_rename: None,
-            inner_optionality,
             ty,
         })
     }

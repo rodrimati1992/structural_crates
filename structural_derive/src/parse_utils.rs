@@ -1,7 +1,6 @@
 use syn::{
     parse::{self, Parse, ParseBuffer, ParseStream, Peek},
     punctuated::Punctuated,
-    GenericArgument, PathArguments, Type, TypePath,
 };
 
 pub struct ParsePunctuated<T, P> {
@@ -63,37 +62,3 @@ impl ParseBufferExt for ParseBuffer<'_> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-pub(crate) fn extract_option_parameter(ty: &syn::Type) -> Option<&Type> {
-    let path = match ty {
-        Type::Path(TypePath {
-            qself: _,
-            path: syn::Path { segments, .. },
-        }) if !segments.is_empty() => segments,
-        _ => return None,
-    };
-
-    let p0 = &path[0];
-
-    let arguments = if p0.ident == "Option" {
-        &p0.arguments
-    } else if (p0.ident == "core" || p0.ident == "std")
-        && path.len() == 3
-        && path[1].ident == "option"
-        && path[2].ident == "Option"
-    {
-        &path[2].arguments
-    } else {
-        return None;
-    };
-
-    let arguments = match arguments {
-        PathArguments::AngleBracketed(arguments) => arguments,
-        _ => return None,
-    };
-
-    match arguments.args.iter().next() {
-        Some(GenericArgument::Type(ty)) => Some(ty),
-        _ => None,
-    }
-}
