@@ -11,7 +11,7 @@ use crate::{
 /// This trait has these methods:
 ///
 /// - `*_variant`: For fallibly converting an enum to a VariantProxy of a passed variant.
-/// As opposed to calling GetFieldExt methods with a `ts!(::Foo)` argument,
+/// As opposed to calling GetFieldExt methods with a `fp!(::Foo)` argument,
 /// this allows recovering the enum when it's not the passed variant.
 ///
 pub trait EnumExt {

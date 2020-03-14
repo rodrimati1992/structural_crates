@@ -32,6 +32,7 @@ macro_rules! impl_to_path_to_set {
 pub trait IsTStr: Sealed + Debug + Copy + ConstDefault {}
 
 /// A marker trait to assert that `P` is a [`TStr`](crate::TStr).
+#[doc(hidden)]
 pub trait AssertTStrParam<P>: AssertTStrParamSealed<P> {}
 
 mod is_tstr_param_sealed {
