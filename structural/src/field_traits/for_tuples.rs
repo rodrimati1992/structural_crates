@@ -13,7 +13,7 @@ Eg:`(A,B,C)`,`(A,B,C,D)`,`(A,B,C,D,E)`,etcetera.
 Demonstrates that you can use the `Tuple*` trait with structs.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
-by-value non-optional accessor trait impls,
+by-value accessor trait impls,
 satisfying the [IntoFieldMut trait](crate::field_traits::IntoFieldMut)
 
 ```
@@ -49,7 +49,7 @@ struct MyTuple5(pub u8,pub u16,pub u32,pub u64, String);
 Demonstrates that you can use the `Tuple*Variant` trait with enums.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
-by-value non-optional accessor traits,
+by-value accessor traits,
 satisfying the ([IntoVariantFieldMut trait](../variant_field/trait.IntoVariantFieldMut.html))
 
 ```

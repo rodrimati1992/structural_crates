@@ -11,42 +11,41 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-/// Marker trait for the errors that can be returned from the field accessor traits.
+/// Marker trait for the errors that can be returned from the `RevGetField` trait and subtraits.
 ///
 /// The errors can be:
 ///
-/// - [NonOptField](./enum.NonOptField.html):
-///     An error type that cannot be constructed,used when a field always exists.
+/// - [StructField](./enum.StructField.html):
+///     Used when a field is inside a struct (and it's not nested within an enum).
 ///
-/// - [OptionalField](./struct.OptionalField.html):
-///     Used when a field is optional.
+/// - [EnumField](./struct.EnumField.html):
+///     Used when a field is inside an enum.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
 pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 
-/// The error type for non-optional fields.
+/// The error type for accesses to fields inside a struct,
+/// and it's not nested inside an enum.
 ///
-/// This cannot be constructed,and therefore the field always exists.
-///
-/// When you manually define an non-optional field accessor,
-/// you'd use this as the `Err` associated type,
+/// This is used as the `Err` associated type for `RevGetField` implementors,
+/// which return a `Result<_,StructField>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum NonOptField {}
+pub enum StructField {}
 
-/// The error type for optional fields.
+/// The error type for accesses to fields inside an enum.
 ///
-/// When you manually define an optional field accessor,
-/// you'd use this as the `Err` associated type,
+/// This is used as the `Err` associated type for `RevGetField` implementors,
+/// which return a `Result<_,EnumField>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
-/// `Ok(foo)` into `Some(foo)`,and `Err(NonOptField)` into `None`.
+/// `Ok(foo)` into `Some(foo)`,and `Err(EnumField)` into `None`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct OptionalField;
+pub struct EnumField;
 
-impl Cloned for OptionalField {
+impl Cloned for EnumField {
     type Cloned = Self;
 
     #[inline(always)]
@@ -55,7 +54,7 @@ impl Cloned for OptionalField {
     }
 }
 
-impl Cloned for NonOptField {
+impl Cloned for StructField {
     type Cloned = Self;
 
     #[inline(always)]
@@ -64,11 +63,11 @@ impl Cloned for NonOptField {
     }
 }
 
-impl Sealed for OptionalField {}
-impl IsFieldErr for OptionalField {}
+impl Sealed for EnumField {}
+impl IsFieldErr for EnumField {}
 
-impl Sealed for NonOptField {}
-impl IsFieldErr for NonOptField {}
+impl Sealed for StructField {}
+impl IsFieldErr for StructField {}
 
 #[cfg(feature = "std")]
 mod std_impls {
@@ -76,13 +75,13 @@ mod std_impls {
 
     use std::error::Error;
 
-    impl Error for OptionalField {
+    impl Error for EnumField {
         #[inline(always)]
         fn description(&self) -> &str {
             "Some field could not be accessed"
         }
     }
-    impl Error for NonOptField {
+    impl Error for StructField {
         #[inline(always)]
         fn description(&self) -> &str {
             "The field isn't optional,this function is uncallable"
@@ -92,23 +91,23 @@ mod std_impls {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for OptionalField {
+impl Display for EnumField {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Some field could not be accessed")
     }
 }
 
-impl From<NonOptField> for OptionalField {
+impl From<StructField> for EnumField {
     #[inline(always)]
-    fn from(_: NonOptField) -> Self {
-        OptionalField
+    fn from(_: StructField) -> Self {
+        EnumField
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for NonOptField {
+impl Display for StructField {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("This field can always be accessed.")
@@ -135,9 +134,9 @@ where
     }
 }
 
-impl IntoFieldErr<OptionalField> for NonOptField {
+impl IntoFieldErr<EnumField> for StructField {
     #[inline(always)]
-    fn into_field_err(self) -> OptionalField {
+    fn into_field_err(self) -> EnumField {
         match self {}
     }
 }
@@ -146,10 +145,10 @@ impl IntoFieldErr<OptionalField> for NonOptField {
 
 /// Combines multiple error types into one.
 ///
-/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
-/// otherwise they're combined into an `OptionalField` .
+/// A tuple of errors is combined into a `StructField` so long as all of them are,
+/// otherwise they're combined into an `EnumField` .
 ///
-/// This is used by the `Rev*Field*` impls for [FieldPath](../../struct.FieldPath.html) to
+/// This is used by the `Rev*Field*` impls for [NestedFieldPath](../../struct.NestedFieldPath.html) to
 /// determine whether a nested field access is optional or not.
 pub trait CombinedErrs {
     type Combined: IsFieldErr;
@@ -157,12 +156,12 @@ pub trait CombinedErrs {
 
 /// The combination of all the error types in `This`.
 ///
-/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
-/// otherwise they're combined into an `OptionalField` .
+/// A tuple of errors is combined into a `StructField` so long as all of them are,
+/// otherwise they're combined into an `EnumField` .
 pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {
-    use super::{NonOptField as IF, OptionalField as OF, *};
+    use super::{EnumField as OF, StructField as IF, *};
 
     macro_rules! combined_err_impls {
         (small=>

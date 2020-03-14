@@ -155,11 +155,10 @@ unsafe_delegate_structural_with! {
     self_ident=this;
     specialization_params(?Sized);
     delegating_to_type=T;
-    field_name_param=( fname : FnameTy );
 
-    GetFieldImpl { &*this.value }
+    GetField { &*this.value }
 
-    unsafe GetFieldMutImpl { &mut *this.value }
+    unsafe GetFieldMut { &mut *this.value }
     as_delegating_raw{
         (*(this as *mut MaybeSizedFoo<'a,T>)).value as *mut T
     }
@@ -186,11 +185,10 @@ unsafe_delegate_structural_with! {
     self_ident=this;
     specialization_params(specialize_cfg(feature="specialization"));
     delegating_to_type=T;
-    field_name_param=( fname : FnameTy );
 
-    GetFieldImpl { &*this.value }
+    GetField { &*this.value }
 
-    unsafe GetFieldMutImpl { &mut *this.value }
+    unsafe GetFieldMut { &mut *this.value }
     as_delegating_raw{
         (*(this as *mut SpecializedFoo<'a,T>)).value as *mut T
     }

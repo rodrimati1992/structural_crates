@@ -1,6 +1,5 @@
 use crate::enums::{IsVariant, VariantCount};
 use crate::field_traits::variant_field::*;
-use crate::field_traits::NonOptField;
 use crate::*;
 
 use std_::fmt::Debug;
@@ -15,8 +14,7 @@ mod with_super_traits {
     }
     trait AssertImplies: Trait {}
 
-    impl<This> AssertImplies for This where This: Copy + IntoFieldMut<FP!(a), Ty = u8, Err = NonOptField>
-    {}
+    impl<This> AssertImplies for This where This: Copy + IntoFieldMut<TS!(a), Ty = u8> {}
 
     /// This function ensures that the supertraits and field accessors in Trait
     /// are implied by `T:Trait`.
@@ -50,7 +48,7 @@ mod with_where_clause {
     impl<This, T> AssertImplies<T> for This
     where
         T: Clone + Debug,
-        This: Copy + IntoFieldMut<FP!(a), Ty = T, Err = NonOptField>,
+        This: Copy + IntoFieldMut<TS!(a), Ty = T>,
     {
     }
 }
@@ -78,10 +76,10 @@ mod all_access {
     impl Dummy for () {
         fn well<This, T>()
         where
-            This: IntoFieldMut<FP!(a), Ty = u32>
-                + GetFieldImpl<FP!(b), Ty = T>
-                + GetFieldMutImpl<FP!(c), Ty = i64>
-                + IntoFieldImpl<FP!(d), Ty = &'static str>,
+            This: IntoFieldMut<TS!(a), Ty = u32>
+                + GetField<FP!(b), Ty = T>
+                + GetFieldMut<FP!(c), Ty = i64>
+                + IntoField<FP!(d), Ty = &'static str>,
         {
         }
     }
@@ -143,11 +141,11 @@ mod variants_with_accesses {
                 mut move e:(u16,u8),
             },
             AOpt{
-                a:?(u8,u8),
-                ref b:?(u8,u16),
-                mut c:?(u8,u32),
-                move d:?(u8,u64),
-                mut move e:?(u16,u8),
+                a:Option<(u8,u8)>,
+                ref b:Option<(u8,u16)>,
+                mut c:Option<(u8,u32)>,
+                move d:Option<(u8,u64)>,
+                mut move e:Option<(u16,u8)>,
             },
             mut move B{
                 a:i8,
@@ -174,11 +172,11 @@ mod variants_with_accesses {
             IntoVariantField< strings::A, strings::d, Ty= (u8,u64) >+
             IntoVariantFieldMut< strings::A, strings::e, Ty= (u16,u8) >+
 
-            OptIntoVariantFieldMut< strings::AOpt, strings::a, Ty= (u8,u8) >+
-            OptGetVariantField< strings::AOpt, strings::b, Ty= (u8,u16) >+
-            OptGetVariantFieldMut< strings::AOpt, strings::c, Ty= (u8,u32) >+
-            OptIntoVariantField< strings::AOpt, strings::d, Ty= (u8,u64) >+
-            OptIntoVariantFieldMut< strings::AOpt, strings::e, Ty= (u16,u8) >+
+            IntoVariantFieldMut< strings::AOpt, strings::a, Ty= Option<(u8,u8)> >+
+            GetVariantField< strings::AOpt, strings::b, Ty= Option<(u8,u16)> >+
+            GetVariantFieldMut< strings::AOpt, strings::c, Ty= Option<(u8,u32)> >+
+            IntoVariantField< strings::AOpt, strings::d, Ty= Option<(u8,u64)> >+
+            IntoVariantFieldMut< strings::AOpt, strings::e, Ty= Option<(u16,u8)> >+
 
             IntoVariantFieldMut< strings::B, strings::a, Ty= i8 >+
             GetVariantField< strings::B, strings::b, Ty= i16 >+
@@ -354,29 +352,29 @@ mod tuple_and_unit_variants {
     }
 
     structural_alias! {
-        trait Tuple0{
+        pub trait Tuple0{
             A()
         }
 
-        trait Tuple1{
+        pub trait Tuple1{
             ref A(u8)
         }
 
-        trait Tuple2{
-            mut A(u8,ref ?u16)
+        pub trait Tuple2{
+            mut A(u8,ref Option<u16>)
         }
-        trait Tuple5{
+        pub trait Tuple5{
             A(
                 u8,
                 ref u16,
                 mut u32,
                 move u64,
                 mut move i8,
-                mut move ?i16,
+                mut move Option<i16>,
             ),
         }
 
-        trait Unit1{
+        pub trait Unit1{
             A,
         }
 
@@ -406,7 +404,7 @@ mod tuple_and_unit_variants {
         (
             IsVariant<paths::A>+
             GetVariantFieldMut<strings::A,strings::n0, Ty=u8>+
-            OptGetVariantField<strings::A,strings::n1, Ty=u16>+
+            GetVariantField<strings::A,strings::n1, Ty=Option<u16>>+
         )
     }
     assert_equal_bounds! {
@@ -419,7 +417,7 @@ mod tuple_and_unit_variants {
             GetVariantFieldMut<strings::A,strings::n2, Ty=u32>+
             IntoVariantField<strings::A,strings::n3, Ty=u64>+
             IntoVariantFieldMut<strings::A,strings::n4, Ty=i8>+
-            OptIntoVariantFieldMut<strings::A,strings::n5, Ty=i16>+
+            IntoVariantFieldMut<strings::A,strings::n5, Ty=Option<i16>>+
         )
     }
     assert_equal_bounds! {
@@ -453,14 +451,12 @@ mod with_defaulted_items {
         A,
     }
 
-    impl FieldType<FP!(a)> for G {
+    impl FieldType<TS!(a)> for G {
         type Ty = u32;
     }
-    impl GetFieldImpl<FP!(a)> for G {
-        type Err = NonOptField;
-
-        fn get_field_(&self, _: FP!(a), _: ()) -> Result<&u32, NonOptField> {
-            Ok(&404)
+    impl GetField<TS!(a)> for G {
+        fn get_field_(&self, _: TS!(a)) -> &u32 {
+            &404
         }
     }
 

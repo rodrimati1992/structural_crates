@@ -125,9 +125,7 @@ enum OtherEnum{
 
 use crate::{
     field_path::IsSingleFieldPath,
-    field_traits::{
-        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField,
-    },
+    field_traits::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
     structural_trait::Structural,
     type_level::{
         cmp::{Compare, TGreater},
@@ -164,7 +162,7 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-/// A FieldPath that is usable for indexing (some) arrays.
+/// A NestedFieldPath that is usable for indexing (some) arrays.
 pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
 
@@ -228,54 +226,51 @@ macro_rules! declare_array_paths {
                 type Ty=T;
             }
 
-            impl<T,P> GetFieldImpl<P> for [T;$index]
+            impl<T,P> GetField<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
-                type Err=NonOptField;
-
                 #[inline(always)]
-                fn get_field_(&self,_:P,_:())->Result<&Self::Ty,NonOptField>{
-                    Ok(&self[P::INDEX])
+                fn get_field_(&self,_:P)->&Self::Ty{
+                    &self[P::INDEX]
                 }
             }
 
-            unsafe impl<T,P> GetFieldMutImpl<P> for [T;$index]
+            unsafe impl<T,P> GetFieldMut<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn get_field_mut_(&mut self,_:P,_:())->Result<&mut Self::Ty,NonOptField>{
-                    Ok(&mut self[P::INDEX])
+                fn get_field_mut_(&mut self,_:P)->&mut Self::Ty{
+                    &mut self[P::INDEX]
                 }
 
                 #[inline(always)]
                 unsafe fn get_field_raw_mut(
-                    ptr:*mut *mut (),
+                    ptr:*mut  (),
                     _:P,
-                    _:(),
-                )->Result<*mut Self::Ty,NonOptField>{
-                    let dptr=ptr as *mut *mut T;
-                    Ok((*dptr).add(P::INDEX))
+                )->*mut Self::Ty{
+                    let ptr=ptr as *mut T;
+                    ptr.add(P::INDEX)
                 }
 
                 #[inline(always)]
-                fn get_field_raw_mut_func(&self)->GetFieldRawMutFn<P,(),Self::Ty,NonOptField>{
-                    <Self as GetFieldMutImpl<P>>::get_field_raw_mut
+                fn get_field_raw_mut_fn(&self)->GetFieldRawMutFn<P,Self::Ty>{
+                    <Self as GetFieldMut<P>>::get_field_raw_mut
                 }
             }
 
-            impl<T,P> IntoFieldImpl<P> for [T;$index]
+            impl<T,P> IntoField<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn into_field_(self,_:P,_:())->Result<Self::Ty,NonOptField>{
+                fn into_field_(self,_:P)->Self::Ty{
                     unsafe{
                         let mut this=ManuallyDrop::new(self);
                         ptr::drop_in_place(&mut this[..P::INDEX]);
                         ptr::drop_in_place(&mut this[P::INDEX+1..]);
-                        Ok(this.as_mut_ptr().add(P::INDEX).read())
+                        this.as_mut_ptr().add(P::INDEX).read()
                     }
                 }
 

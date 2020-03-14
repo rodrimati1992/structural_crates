@@ -97,13 +97,13 @@ fn identity_getters() {
         let _:FieldPathSet<(),UniquePaths>=
             fp!();
 
-        let _:FieldPath<()>=
+        let _:NestedFieldPath<()>=
             fp!(());
 
-        let _:FieldPathSet<(FieldPath<()>,FieldPath<()>),AliasedPaths>=
+        let _:FieldPathSet<(NestedFieldPath<()>,NestedFieldPath<()>),AliasedPaths>=
             fp!((),());
 
-        let _:FieldPathSet<(FieldPath<()>,FieldPath<()>,FieldPath<()>),AliasedPaths>=
+        let _:FieldPathSet<(NestedFieldPath<()>,NestedFieldPath<()>,NestedFieldPath<()>),AliasedPaths>=
             fp!((),(),());
     }
     */

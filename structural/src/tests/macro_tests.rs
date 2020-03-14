@@ -76,7 +76,7 @@ mod for_string_tests {
 #[test]
 fn identifier_macros_equality() {
     use self::for_string_tests::*;
-    use crate::field_path::FieldPath;
+    use crate::field_path::NestedFieldPath;
     #[allow(unused_imports)]
     use crate::p::TStrPriv;
 
@@ -88,19 +88,19 @@ fn identifier_macros_equality() {
     path_assertion!(fp!(0), S_0);
     path_assertion!(fp!(21), S_21);
     path_assertion!(fp!(ab0), S_ab0);
-    path_assertion!(fp!(0.1), FieldPath<(S_0, S_1)>);
-    path_assertion!(fp!(0.1.2), FieldPath<(S_0, S_1, S_2)>);
-    path_assertion!(fp!(0.1.2.3), FieldPath<(S_0, S_1, S_2, S_3)>);
-    path_assertion!(fp!(0.1.2.3.4), FieldPath<(S_0, S_1, S_2, S_3, S_4)>);
-    path_assertion!(fp!(0.foo), FieldPath<(S_0, S_foo)>);
-    path_assertion!(fp!(0.foo.1), FieldPath<(S_0, S_foo, S_1)>);
-    path_assertion!(fp!(0.foo.1.bar), FieldPath<(S_0, S_foo, S_1, S_bar)>);
+    path_assertion!(fp!(0.1), NestedFieldPath<(S_0, S_1)>);
+    path_assertion!(fp!(0.1.2), NestedFieldPath<(S_0, S_1, S_2)>);
+    path_assertion!(fp!(0.1.2.3), NestedFieldPath<(S_0, S_1, S_2, S_3)>);
+    path_assertion!(fp!(0.1.2.3.4), NestedFieldPath<(S_0, S_1, S_2, S_3, S_4)>);
+    path_assertion!(fp!(0.foo), NestedFieldPath<(S_0, S_foo)>);
+    path_assertion!(fp!(0.foo.1), NestedFieldPath<(S_0, S_foo, S_1)>);
+    path_assertion!(fp!(0.foo.1.bar), NestedFieldPath<(S_0, S_foo, S_1, S_bar)>);
 }
 
 #[allow(non_camel_case_types)]
 #[test]
 fn field_paths_equality() {
-    use crate::field_path::{FieldPath, FieldPathSet, UniquePaths};
+    use crate::field_path::{FieldPathSet, NestedFieldPath, UniquePaths};
 
     use self::for_string_tests::*;
 
@@ -111,12 +111,12 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(foo.bar,baz),
-        FieldPathSet<(FieldPath<(S_foo,S_bar)>,S_baz,),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_foo,S_bar)>,S_baz,),UniquePaths>,
     }
 
     path_assertion! {
         fp!(foo.bar,a.b),
-        FieldPathSet<(FieldPath<(S_foo,S_bar)>,FieldPath<(S_a,S_b)>,),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_foo,S_bar)>,NestedFieldPath<(S_a,S_b)>,),UniquePaths>,
     }
 
     path_assertion! {
@@ -126,25 +126,25 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(0.1,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1,S_2)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(foo,0.1.2.3),
-        FieldPathSet<(S_foo,FieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
+        FieldPathSet<(S_foo,NestedFieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2.3.4,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
     }
 
     /*
     path_assertion!{
         fp!((FP!(a.b)).(FP!(c.d)),0),
-        FieldPathSet<(FieldPath<(S_a,S_b,S_c,S_d)>,FieldPath<(S_0,)>,),AliasedPaths>,
+        FieldPathSet<(NestedFieldPath<(S_a,S_b,S_c,S_d)>,NestedFieldPath<(S_0,)>,),AliasedPaths>,
     }
     */
 }

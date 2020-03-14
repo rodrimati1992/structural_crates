@@ -6,16 +6,22 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
-    field_path::{FieldPath, IsSingleFieldPath, TStr, VariantField, VariantName},
+    field_path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
-        NonOptField, OptionalField,
+        EnumField, StructField,
     },
-    FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl,
+    FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField, GetVariantFieldMut, IntoField,
+    IntoVariantField,
 };
 
 #[cfg(feature = "alloc")]
 use crate::pmr::Box;
+
+/////////////////////////////////////////////////////////////////////////////
+
+mod components;
+mod nested_field_path;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -28,23 +34,18 @@ use crate::pmr::Box;
 /// use structural::{
 ///     field_traits::RevGetFieldType,
 ///     GetFieldType3,GetFieldExt,Structural,
-///     field_path_aliases,
+///     FP,fp,
 /// };
-///
-/// field_path_aliases!{
-///     foo_bar_baz= foo.bar.baz,
-///     foo_bar_strand= foo.bar.strand,
-/// }
 ///
 /// fn main(){
 ///     let this=TopLevel::default();
 ///     
-///     let baz: &RevGetFieldType<foo_bar_baz, TopLevel>=
-///         this.field_(foo_bar_baz);
+///     let baz: &RevGetFieldType<FP!(foo.bar.baz), TopLevel>=
+///         this.field_(fp!(foo.bar.baz));
 ///     assert_eq!( *baz, Vec::new() );
 ///     
-///     let strand: &RevGetFieldType<foo_bar_strand, TopLevel>=
-///         this.field_(foo_bar_strand);
+///     let strand: &RevGetFieldType<FP!(foo.bar.strand), TopLevel>=
+///         this.field_(fp!(foo.bar.strand));
 ///     assert_eq!( *strand, String::new() );
 /// }
 ///
@@ -84,21 +85,22 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Like GetFieldImpl,except that the parameters are reversed,
+/// Like `Get*Field`,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldImpl` as a bound look at example for
-/// [RevGetField](./trait.RevGetField.html) or
-/// [OptRevGetField](./trait.OptRevGetField.html).
+/// [RevGetField](./trait.RevGetField.html)
+/// (for getting a field in a struct,not inside of a nested enums) or
+/// [OptRevGetField](./trait.OptRevGetField.html) (for getting a field in a (nested) enum).
 ///
 /// # Example
 ///
 /// This example demonstrates implementing RevGetField to index a slice from the end.
 ///
 /// ```rust
-/// use structural::field_traits::{OptionalField,RevFieldType,RevGetFieldImpl};
+/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::GetFieldExt;
 ///
@@ -110,12 +112,12 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///     type Ty = T;
 /// }
 /// impl<'a,T> RevGetFieldImpl<'a,[T]> for FromEnd {
-///     type Err = OptionalField;
+///     type Err = EnumField;
 ///
-///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, OptionalField>{
+///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, EnumField>{
 ///         let len=this.len();
 ///         this.get(len.wrapping_sub(self.0 + 1))
-///             .ok_or(OptionalField)
+///             .ok_or(EnumField)
 ///     }
 /// }
 ///
@@ -139,14 +141,15 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Like GetFieldMutImpl,except that the parameters are reversed,
+/// Like Get*FieldMut,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldMutImpl` as a bound look at example for
-/// [RevGetFieldMut](./trait.RevGetFieldMut.html) or
-/// [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html).
+/// [RevGetFieldMut](./trait.RevGetFieldMut.html)
+/// (for getting a field in a struct,not inside of a nested enum) or
+/// [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html) (for getting a field in a (nested) enum).
 ///
 /// # Safety
 ///
@@ -159,7 +162,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// based on a runtime value.
 ///
 /// ```rust
-/// use structural::field_traits::{OptionalField,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
+/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,ts};
 ///
@@ -217,7 +220,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///         }
 ///     }
 ///
-///     unsafe fn rev_get_field_raw_mut(self, this: *mut *mut T) -> Result<*mut P0::Ty, P0::Err>{
+///     unsafe fn rev_get_field_raw_mut(self, this: *mut  T) -> Result<*mut P0::Ty, P0::Err>{
 ///         match self.0 {
 ///             Which::First=>self.1.rev_get_field_raw_mut(this),
 ///             Which::Second=>self.2.rev_get_field_raw_mut(this),
@@ -231,20 +234,20 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err>;
 
     /// Accesses the field(s) that `self` represents inside of `this`,by raw pointer.
-    unsafe fn rev_get_field_raw_mut(self, this: *mut *mut This)
-        -> Result<*mut Self::Ty, Self::Err>;
+    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err>;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Like IntoFieldImpl,except that the parameters are reversed,
+/// Like Into*Field,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
 /// # Use as bound
 ///
 /// For examples of using `RevIntoFieldImpl` as a bound look at example for
-/// [RevIntoField](./trait.RevIntoField.html) or
-/// [OptRevIntoField](./trait.OptRevIntoField.html).
+/// [RevIntoField](./trait.RevIntoField.html)
+/// (for getting a field in a struct,not inside of a nested enum) or
+/// [OptRevIntoField](./trait.OptRevIntoField.html) (for getting a field in a (nested) enum).
 ///
 /// # Example
 ///
@@ -252,7 +255,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// based on a runtime value.
 ///
 /// ```rust
-/// use structural::field_traits::{OptionalField,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
+/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,fp};
 ///
@@ -359,7 +362,7 @@ declare_accessor_trait_alias! {
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested non-optional field by reference.
+    /// This example shows how you can access a nested field by reference.
     ///
     /// ```rust
     /// use structural::field_traits::RevGetField;
@@ -381,17 +384,17 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevGetField<'a,This>=
-        RevGetFieldImpl<'a,This,Err=NonOptField>
+        RevGetFieldImpl<'a,This,Err=StructField>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like OptGetField with the parameters reversed.
+    /// A trait alias,like GetVariantField with the parameters reversed.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested optional field by reference.
+    /// This example shows how you can access a field inside of a nested enum by reference.
     ///
     /// ```rust
     /// use structural::field_traits::OptRevGetField;
@@ -405,15 +408,15 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&T)->Option<&i32>
     /// where
-    ///     FP!(2.1.0.Some): for<'a> OptRevGetField<'a,T,Ty=i32>
+    ///     FP!(2.1.0?): for<'a> OptRevGetField<'a,T,Ty=i32>
     /// {
-    ///     this.field_(fp!(2.1.0.Some))
+    ///     this.field_(fp!(2.1.0?))
     /// }
     ///
     ///
     /// ```
     pub trait OptRevGetField<'a,This>=
-        RevGetFieldImpl<'a,This,Err=OptionalField>
+        RevGetFieldImpl<'a,This,Err=EnumField>
 }
 
 declare_accessor_trait_alias! {
@@ -423,7 +426,7 @@ declare_accessor_trait_alias! {
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested non-optional field by
+    /// This example shows how you can access a nested field by
     /// mutable reference.
     ///
     /// ```rust
@@ -453,17 +456,17 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevGetFieldMut<'a,This>=
-        RevGetFieldMutImpl<'a,This,Err=NonOptField>
+        RevGetFieldMutImpl<'a,This,Err=StructField>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like OptGetFieldMut with the parameters reversed.
+    /// A trait alias,like GetVariantFieldMut with the parameters reversed.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested optional field by
+    /// This example shows how you can access a field inside of a nested enum by
     /// mutable reference.
     ///
     /// ```rust
@@ -485,15 +488,15 @@ declare_accessor_trait_alias! {
     ///
     /// fn get_nested<T>(this:&mut T)->Option<&mut &'static str>
     /// where
-    ///     FP!(baz.bar.foo.Some): for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
+    ///     FP!(baz.bar.foo?): for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
     /// {
-    ///     this.field_mut(fp!(baz.bar.foo.Some))
+    ///     this.field_mut(fp!(baz.bar.foo?))
     /// }
     ///
     ///
     /// ```
     pub trait OptRevGetFieldMut<'a,This>=
-        RevGetFieldMutImpl<'a,This,Err=OptionalField>
+        RevGetFieldMutImpl<'a,This,Err=EnumField>
 }
 
 declare_accessor_trait_alias! {
@@ -503,7 +506,7 @@ declare_accessor_trait_alias! {
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested non-optional field by value.
+    /// This example shows how you can access a nested field by value.
     ///
     /// ```rust
     /// use structural::field_traits::RevIntoField;
@@ -532,17 +535,17 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=NonOptField>
+        RevIntoFieldImpl<'a,This,Err=StructField>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like OptIntoField with the parameters reversed.
+    /// A trait alias,like IntoVariantField with the parameters reversed.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested optional field by value.
+    /// This example shows how you can access a field inside of a nested enum by value.
     ///
     /// ```rust
     /// use structural::field_traits::OptRevIntoField;
@@ -565,7 +568,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=OptionalField>
+        RevIntoFieldImpl<'a,This,Err=EnumField>
 }
 
 declare_accessor_trait_alias! {
@@ -575,7 +578,7 @@ declare_accessor_trait_alias! {
     ///
     /// # Example
     ///
-    /// This example shows how to access a nested non-optional field by
+    /// This example shows how to access a nested field by
     /// mutable reference,and by value.
     ///
     /// Also,how to write extension traits with `Rev*` traits.
@@ -624,13 +627,13 @@ declare_accessor_trait_alias! {
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like OptIntoFieldMut with the parameters reversed.
+    /// A trait alias,like IntoVariantFieldMut with the parameters reversed.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how to access a nested optional field
+    /// This example shows how to access a field inside of a nested enum
     /// by mutable reference,and by value.
     ///
     /// Also,how to write extension traits with `Rev*` traits.
@@ -670,576 +673,4 @@ declare_accessor_trait_alias! {
     /// ```
     pub trait OptRevIntoFieldMut<'a,This>=
         OptRevIntoField<'a,This> + OptRevGetFieldMut<'a,This>
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-macro_rules! impl_get_nested_field_inner {
-    (inner;
-        receivers( $($receiver:ident)* )
-        first($fname0:ident $ferr0:ident $fty0:ident)
-        second(
-            ($fname1:ident $ferr1:ident $fty1:ident)
-            $($rem_000:tt)*
-        )
-        middle(
-            $(($fname_m:ident $ferr_m:ident $fty_m:ident))*
-        )
-        suffix(
-            $(($fname_s:ident $ferr_s:ident $fty_s:ident))*
-        )
-        all(
-            $(($fname_a:ident $ferr_a:ident $fty_a:ident))*
-        )
-        last($fname_l:ident $ferr_l:ident $fty_l:ident)
-    )=>{
-        impl<$($fname_a,$fty_a,)* This> RevFieldType<This> for FieldPath<($($fname_a,)*)>
-        where
-            This:?Sized,
-            $(
-                $fname_a: RevFieldType<$receiver, Ty=$fty_a>,
-                $fty_a:?Sized,
-            )*
-        {
-            type Ty=$fty_l;
-        }
-
-        impl<'a,$($fname_a,$fty_a, $ferr_a,)* This,CombErr>
-            RevGetFieldImpl<'a,This>
-        for FieldPath<($($fname_a,)*)>
-        where
-            This:?Sized+'a,
-            $(
-                $fname_a: RevGetFieldImpl<'a,$receiver, Ty=$fty_a, Err=$ferr_a>,
-                $fty_a:?Sized+'a,
-                $ferr_a:IntoFieldErr< CombErr >,
-            )*
-            ( $($ferr_a,)* ): CombinedErrs<Combined= CombErr >,
-            CombErr:IsFieldErr,
-        {
-            type Err=CombErr;
-
-            #[inline(always)]
-            fn rev_get_field(self,field:&'a This)->Result<&'a $fty_l,CombErr>{
-                let ($($fname_a,)*)=self.list;
-                $(
-                    let field=try_fe!( $fname_a.rev_get_field(field) );
-                )*
-                Ok(field)
-            }
-        }
-
-
-        unsafe impl<'a,$($fname_a,$fty_a, $ferr_a,)* This,CombErr>
-            RevGetFieldMutImpl<'a,This>
-        for FieldPath<($($fname_a,)*)>
-        where
-            This:?Sized+'a,
-            $(
-                $fname_a: RevGetFieldMutImpl<'a,$receiver, Ty=$fty_a, Err=$ferr_a>,
-                $fty_a:'a,
-                $ferr_a:IntoFieldErr< CombErr >,
-            )*
-            Self:RevGetFieldImpl<'a,This,Ty=$fty_l,Err=CombErr>,
-            CombErr:IsFieldErr,
-        {
-            #[inline(always)]
-            fn rev_get_field_mut(self,field:&'a mut This)->Result<&'a mut $fty_l,CombErr >{
-                let ($($fname_a,)*)=self.list;
-                $(
-                    let field=try_fe!( $fname_a.rev_get_field_mut(field) );
-                )*
-                Ok(field)
-            }
-
-            unsafe fn rev_get_field_raw_mut(
-                self,
-                field:*mut *mut This
-            )->Result<*mut $fty_l,CombErr>{
-                let ($($fname_a,)*)=self.list;
-                let mut field=*field;
-                $(
-                    #[allow(unused_mut)]
-                    let mut field={
-                        let field=&mut field as *mut _;
-                        try_fe!($fname_a.rev_get_field_raw_mut(field))
-                    };
-                )*
-                Ok(field)
-            }
-        }
-
-
-        impl<'a,$($fname_a, $fty_a:'a, $ferr_a,)* This,BoxedTy0:'a,CombErr>
-            RevIntoFieldImpl<'a,This>
-        for FieldPath<($($fname_a,)*)>
-        where
-            Self:RevGetFieldImpl<'a,This,Ty=$fty_l,Err=CombErr>,
-            CombErr:IsFieldErr,
-
-            This:?Sized+'a,
-            $fname0: RevIntoFieldImpl<'a, This, Ty=$fty0, BoxedTy=BoxedTy0, Err=$ferr0>,
-
-            $fname1: RevIntoFieldImpl<
-                'a,
-                BoxedTy0,
-                Ty= RevGetFieldType<$fname1,$fty0>,
-                Err= RevGetFieldErr<'a,$fname1,$fty0>,
-            >,
-
-            $(
-                $fname_s: RevIntoFieldImpl<'a, $fty_m, Ty=$fty_s, Err=$ferr_s>,
-            )*
-
-            $( $ferr_a:IntoFieldErr< CombErr >, )*
-        {
-            type BoxedTy=$fty_l;
-
-            #[inline(always)]
-            fn rev_into_field(self,field:This)->Result<$fty_l,CombErr>
-            where
-                This:Sized
-            {
-                let ($($fname_a,)*)=self.list;
-                $(
-                    let field=try_fe!( $fname_a.rev_into_field(field) );
-                )*
-                Ok(field)
-            }
-
-            #[cfg(feature="alloc")]
-            #[inline(always)]
-            fn rev_box_into_field(
-                self,
-                field:crate::pmr::Box<This>,
-            )->Result<$fty_l,CombErr>{
-                let ($($fname_a,)*)=self.list;
-                let field=try_fe!(
-                    $fname0.rev_box_into_field(field)
-                );
-                $(
-                    let field=try_fe!(
-                        $fname_s.rev_into_field(field)
-                    );
-                )*
-                Ok(field)
-            }
-        }
-
-    };
-    (
-        ($fname0:ident $ferr0:ident $fty0:ident)
-        $(($fname:ident $ferr:ident $fty:ident))*
-        ;last=($fname_l:ident $ferr_l:ident $fty_l:ident)
-    ) => {
-        impl_get_nested_field_inner!{
-            inner;
-
-            receivers( This $fty0 $($fty)* )
-            first ($fname0 $ferr0 $fty0)
-            second (
-                $(($fname $ferr $fty))*
-                ($fname_l $ferr_l $fty_l)
-            )
-            middle(
-                ($fname0 $ferr0 $fty0)
-                $(($fname $ferr $fty))*
-            )
-            suffix(
-                $(($fname $ferr $fty))*
-                ($fname_l $ferr_l $fty_l)
-            )
-            all(
-                ($fname0 $ferr0 $fty0)
-                $(($fname $ferr $fty))*
-                ($fname_l $ferr_l $fty_l)
-            )
-            last($fname_l $ferr_l $fty_l)
-        }
-    }
-}
-
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    (F2 E2 T2)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    (F2 E2 T2)
-    (F3 E3 T3)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    (F2 E2 T2)
-    (F3 E3 T3)
-    (F4 E4 T4)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    (F2 E2 T2)
-    (F3 E3 T3)
-    (F4 E4 T4)
-    (F5 E5 T5)
-    ;last=(FL EL TL)
-}
-impl_get_nested_field_inner! {
-    (F0 E0 T0)
-    (F1 E1 T1)
-    (F2 E2 T2)
-    (F3 E3 T3)
-    (F4 E4 T4)
-    (F5 E5 T5)
-    (F6 E6 T6)
-    ;last=(FL EL TL)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/////           Implementations for FP!() (The empty field path)
-////////////////////////////////////////////////////////////////////////////////
-
-impl<This> RevFieldType<This> for FieldPath<()>
-where
-    This: ?Sized,
-{
-    type Ty = This;
-}
-
-impl<'a, This> RevGetFieldImpl<'a, This> for FieldPath<()>
-where
-    This: ?Sized + 'a,
-{
-    type Err = NonOptField;
-
-    fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err> {
-        Ok(this)
-    }
-}
-
-unsafe impl<'a, This> RevGetFieldMutImpl<'a, This> for FieldPath<()>
-where
-    This: ?Sized + 'a,
-{
-    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err> {
-        Ok(this)
-    }
-
-    unsafe fn rev_get_field_raw_mut(
-        self,
-        this: *mut *mut This,
-    ) -> Result<*mut Self::Ty, Self::Err> {
-        Ok(*this)
-    }
-}
-
-impl<'a, This> RevIntoFieldImpl<'a, This> for FieldPath<()>
-where
-    This: Sized + 'a,
-{
-    type BoxedTy = This;
-
-    fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err> {
-        Ok(this)
-    }
-
-    #[cfg(feature = "alloc")]
-    fn rev_box_into_field(self, this: Box<This>) -> Result<Self::BoxedTy, Self::Err> {
-        Ok(*this)
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/////           Implementations for single path field paths
-////////////////////////////////////////////////////////////////////////////////
-
-impl<This, F0> RevFieldType<This> for FieldPath<(F0,)>
-where
-    This: ?Sized,
-    F0: RevFieldType<This>,
-{
-    type Ty = F0::Ty;
-}
-
-impl<'a, This, F0> RevGetFieldImpl<'a, This> for FieldPath<(F0,)>
-where
-    This: ?Sized + 'a,
-    F0: RevGetFieldImpl<'a, This>,
-{
-    type Err = F0::Err;
-
-    fn rev_get_field(self, this: &'a This) -> Result<&'a F0::Ty, F0::Err> {
-        self.list.0.rev_get_field(this)
-    }
-}
-
-unsafe impl<'a, This, F0> RevGetFieldMutImpl<'a, This> for FieldPath<(F0,)>
-where
-    This: ?Sized + 'a,
-    F0: RevGetFieldMutImpl<'a, This>,
-{
-    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut F0::Ty, F0::Err> {
-        self.list.0.rev_get_field_mut(this)
-    }
-
-    unsafe fn rev_get_field_raw_mut(self, this: *mut *mut This) -> Result<*mut F0::Ty, F0::Err> {
-        self.list.0.rev_get_field_raw_mut(this)
-    }
-}
-
-impl<'a, This, F0> RevIntoFieldImpl<'a, This> for FieldPath<(F0,)>
-where
-    This: ?Sized + 'a,
-    F0: RevIntoFieldImpl<'a, This>,
-{
-    type BoxedTy = F0::BoxedTy;
-
-    fn rev_into_field(self, this: This) -> Result<F0::Ty, F0::Err>
-    where
-        This: Sized,
-        F0::Ty: Sized,
-    {
-        self.list.0.rev_into_field(this)
-    }
-
-    #[cfg(feature = "alloc")]
-    fn rev_box_into_field(self, this: Box<This>) -> Result<F0::BoxedTy, F0::Err> {
-        self.list.0.rev_box_into_field(this)
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/////           Implementations for field path components
-////////////////////////////////////////////////////////////////////////////////
-
-// Used as an implementation detail of the specialized RevGetFieldMutImpl impls.
-//
-// This was created because the error messages with specialization enabled were worse,
-// it said `VariantField<_,_> does not implement RevGetFieldMutImpl<'_,Foo>`,
-// when it should have said `Foo does not implement GetFieldMutImpl<VariantField<_,_>>`,
-// which it does with this.
-#[doc(hidden)]
-unsafe trait SpecRevGetFieldMut<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
-    unsafe fn rev_get_field_raw_mut_inner(
-        self,
-        this: *mut *mut This,
-    ) -> Result<*mut Self::Ty, Self::Err>;
-}
-
-macro_rules! impl_rev_traits {
-    (
-        impl[ $($typarams:tt)*] $self_:ty
-        where[ $($where_:tt)* ]
-    ) => (
-        impl<This,$($typarams)*> RevFieldType<This> for $self_
-        where
-            This: ?Sized + FieldType<Self>,
-            $($where_)*
-        {
-            type Ty =GetFieldType<This,Self>;
-        }
-
-        impl<'a,This,$($typarams)*> RevGetFieldImpl<'a,This> for $self_
-        where
-            This: ?Sized + 'a + GetFieldImpl<Self>,
-            This::Ty: 'a,
-            $($where_)*
-        {
-            type Err=This::Err;
-
-            #[inline(always)]
-            fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty,This::Err>{
-                GetFieldImpl::get_field_( this, self, () )
-            }
-        }
-
-
-        unsafe impl<'a,This,$($typarams)*> RevGetFieldMutImpl<'a,This> for $self_
-        where
-            This: ?Sized + 'a + GetFieldMutImpl<Self>,
-            This::Ty: 'a,
-            $($where_)*
-        {
-            #[inline(always)]
-            fn rev_get_field_mut(self,this:&'a mut This)->Result<&'a mut This::Ty,This::Err >{
-                map_fe!(
-                    GetFieldMutImpl::get_field_mut_( this, self, () )
-                )
-            }
-
-            #[inline(always)]
-            unsafe fn rev_get_field_raw_mut(
-                self,
-                this:*mut *mut This,
-            )->Result<*mut This::Ty,This::Err>{
-                SpecRevGetFieldMut::<'a,This>::rev_get_field_raw_mut_inner(
-                    self,
-                    this
-                )
-            }
-        }
-
-        unsafe impl<'a,This,$($typarams)*> SpecRevGetFieldMut<'a,This> for $self_
-        where
-            This: ?Sized + 'a + GetFieldMutImpl<Self>,
-            This::Ty: 'a,
-            $($where_)*
-        {
-            default_if!{
-                #[inline(always)]
-                cfg(feature="specialization")
-                unsafe fn rev_get_field_raw_mut_inner(
-                    self,
-                    this:*mut *mut This
-                )-> Result<*mut This::Ty,This::Err>{
-                    let func=(**this).get_field_raw_mut_func();
-                    func(
-                        this as *mut *mut (),
-                        self,
-                        (),
-                    )
-                }
-            }
-        }
-
-
-        #[cfg(feature="specialization")]
-        unsafe impl<'a,This,$($typarams)*> SpecRevGetFieldMut<'a,This> for $self_
-        where
-            This: 'a + GetFieldMutImpl<Self>,
-            This::Ty: 'a,
-            $($where_)*
-        {
-            #[inline(always)]
-            unsafe fn rev_get_field_raw_mut_inner(
-                self,
-                this:*mut *mut This,
-            )->Result<*mut This::Ty,This::Err>{
-                <This as
-                    GetFieldMutImpl<Self>
-                >::get_field_raw_mut(this as *mut *mut (), self, ())
-            }
-        }
-
-
-        impl<'a,This,$($typarams)*> RevIntoFieldImpl<'a,This> for $self_
-        where
-            This: ?Sized + 'a + IntoFieldImpl<Self>,
-            This::Ty: 'a,
-            $($where_)*
-        {
-            type BoxedTy=This::Ty;
-
-            #[inline(always)]
-            fn rev_into_field(self,this:This)->Result<This::Ty,This::Err>
-            where
-                This:Sized
-            {
-                this.into_field_(self,())
-            }
-
-            #[cfg(feature="alloc")]
-            #[inline(always)]
-            fn rev_box_into_field(self,this:crate::pmr::Box<This>)->Result<This::Ty,This::Err>{
-                this.box_into_field_(self,())
-            }
-        }
-    )
-}
-
-impl_rev_traits! {
-    impl[T] TStr<T>
-    where[]
-}
-
-impl_rev_traits! {
-    impl[V,T] VariantField<V,T>
-    where[]
-}
-
-////////////////////////////////////////////
-
-impl<This, S> RevFieldType<This> for VariantName<TStr<S>>
-where
-    This: ?Sized + IsVariant<TStr<S>>,
-    S: 'static,
-{
-    type Ty = VariantProxy<This, TStr<S>>;
-}
-
-impl<'a, This, S> RevGetFieldImpl<'a, This> for VariantName<TStr<S>>
-where
-    This: ?Sized + 'a + IsVariant<TStr<S>>,
-    S: 'static,
-{
-    type Err = OptionalField;
-
-    #[inline(always)]
-    fn rev_get_field(
-        self,
-        this: &'a This,
-    ) -> Result<&'a VariantProxy<This, TStr<S>>, OptionalField> {
-        map_of!(this.as_variant(self.name))
-    }
-}
-
-unsafe impl<'a, This, S> RevGetFieldMutImpl<'a, This> for VariantName<TStr<S>>
-where
-    This: ?Sized + 'a + IsVariant<TStr<S>>,
-    S: 'static,
-{
-    #[inline(always)]
-    fn rev_get_field_mut(
-        self,
-        this: &'a mut This,
-    ) -> Result<&'a mut VariantProxy<This, TStr<S>>, OptionalField> {
-        map_of!(this.as_mut_variant(self.name))
-    }
-
-    #[inline(always)]
-    unsafe fn rev_get_field_raw_mut(
-        self,
-        this: *mut *mut This,
-    ) -> Result<*mut VariantProxy<This, TStr<S>>, OptionalField> {
-        map_of!(EnumExt::as_raw_mut_variant(*this, self.name))
-    }
-}
-
-impl<'a, This, S> RevIntoFieldImpl<'a, This> for VariantName<TStr<S>>
-where
-    This: ?Sized + 'a + IsVariant<TStr<S>>,
-    S: 'static,
-{
-    type BoxedTy = VariantProxy<Box<This>, TStr<S>>;
-
-    #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, OptionalField>
-    where
-        This: Sized,
-    {
-        map_of!(this.into_variant(self.name))
-    }
-
-    #[cfg(feature = "alloc")]
-    #[inline(always)]
-    fn rev_box_into_field(
-        self,
-        this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<Box<This>, TStr<S>>, OptionalField> {
-        map_of!(this.box_into_variant(self.name))
-    }
 }

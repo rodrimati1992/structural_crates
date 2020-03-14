@@ -245,7 +245,7 @@ pub struct VariantName<V> {
 ///
 /// - [fp](./macro.fp.html) macro,when you access a nested field
 ///
-/// - The `FieldPath{list}` struct literal
+/// - The `NestedFieldPath{list}` struct literal
 ///
 /// - The `one` or `many` constructors.
 ///
@@ -259,7 +259,7 @@ pub struct VariantName<V> {
 /// [GetFieldExt](./trait.GetFieldExt.html) methods.
 #[repr(transparent)]
 #[derive(Default, Copy, Clone)]
-pub struct FieldPath<T> {
+pub struct NestedFieldPath<T> {
     pub list: T,
 }
 
@@ -310,8 +310,7 @@ pub struct FieldPathSet<T, U> {
 
 /// Allows accessing multiple fields inside of some nested field.
 ///
-/// This is useful for accessing multiple fields inside of an optional one,
-/// including accessing the fields in an enum variant.
+/// This is useful for accessing multiple fields inside of a (nested) enum.
 ///
 /// # Uniqueness
 ///
@@ -334,7 +333,7 @@ pub struct FieldPathSet<T, U> {
 /// `fp!(a.b=>uh,what)`,
 /// this gets the `uh`,and `what` fields from inside the `a.b` field.<br>
 ///
-/// - Constructing it from a FieldPath and a FieldPathSet.<br>
+/// - Constructing it from a NestedFieldPath and a FieldPathSet.<br>
 /// Example:
 /// `NestedFieldPathSet::new( fp!(a.b.c), fp!(foo,bar,baz) )`,
 /// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.<br>
@@ -351,7 +350,7 @@ pub struct FieldPathSet<T, U> {
 /// # Drop Types
 ///
 /// To make all the inherent methods in this type `const fn`
-/// this type wraps the `FieldPath<F>` inside a `ManuallyDrop`,
+/// this type wraps the `NestedFieldPath<F>` inside a `ManuallyDrop`,
 /// which means that `F` won't be dropped inside.
 /// If that is a problem don't construct a NestedFieldPathSet with an `F`
 /// that owns some resource.
@@ -369,3 +368,5 @@ pub struct NestedFieldPathSet<F, S, U> {
     /// The field path for fields accessed inside of the nested field.
     set: FieldPathSet<S, U>,
 }
+
+////////////////////////////////////////////////////////////////////////////////

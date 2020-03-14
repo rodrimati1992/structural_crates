@@ -1,8 +1,8 @@
 use crate::{
-    field_path::{IsTStr, TStr, UncheckedVariantField, VariantField},
+    field_path::{IsTStr, TStr, VariantField},
     field_traits::{
-        variant_field::{GetVariantFieldImpl, GetVariantFieldMutImpl, IntoVariantFieldImpl},
-        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, SpecGetFieldMut,
+        variant_field::{GetVariantField, GetVariantFieldMut, IntoVariantField},
+        FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField, SpecGetFieldMut,
     },
 };
 
@@ -515,136 +515,104 @@ where
     type Ty = T::Ty;
 }
 
-impl<T, V, F> GetFieldImpl<F> for VariantProxy<T, V>
+impl<T, V, F> GetField<F> for VariantProxy<T, V>
 where
-    T: ?Sized + GetVariantFieldImpl<V, F>,
+    T: ?Sized + GetVariantField<V, F>,
     V: IsTStr,
 {
-    type Err = T::Err;
-
     #[inline(always)]
-    fn get_field_(&self, path: F, _: ()) -> Result<&T::Ty, T::Err> {
+    fn get_field_(&self, fname: F) -> &T::Ty {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe {
-            self.value.get_field_(
-                VariantField::new(V::DEFAULT, path),
-                UncheckedVariantField::<V, F>::new(),
-            )
-        }
+        unsafe { self.value.get_vfield_unchecked(V::DEFAULT, fname) }
     }
 }
 
-unsafe impl<T, V, F> GetFieldMutImpl<F> for VariantProxy<T, V>
+unsafe impl<T, V, F> GetFieldMut<F> for VariantProxy<T, V>
 where
-    T: ?Sized + GetVariantFieldMutImpl<V, F>,
+    T: ?Sized + GetVariantFieldMut<V, F>,
     V: IsTStr,
 {
     #[inline(always)]
-    fn get_field_mut_(&mut self, path: F, _: ()) -> Result<&mut T::Ty, T::Err> {
+    fn get_field_mut_(&mut self, fname: F) -> &mut T::Ty {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe {
-            self.value.get_field_mut_(
-                VariantField::new(V::DEFAULT, path),
-                UncheckedVariantField::<V, F>::new(),
-            )
-        }
+        unsafe { self.value.get_vfield_mut_unchecked(V::DEFAULT, fname) }
     }
 
     #[inline(always)]
-    unsafe fn get_field_raw_mut(this: *mut *mut (), path: F, _: ()) -> Result<*mut T::Ty, T::Err>
+    unsafe fn get_field_raw_mut(this: *mut (), fname: F) -> *mut T::Ty
     where
         Self: Sized,
     {
-        <Self as SpecGetFieldMut<F>>::get_field_raw_mut_inner(this, path, ())
+        <Self as SpecGetFieldMut<F>>::get_field_raw_mut_inner(this, fname)
     }
 
     #[inline(always)]
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<F, (), T::Ty, T::Err> {
+    fn get_field_raw_mut_fn(&self) -> GetFieldRawMutFn<F, T::Ty> {
         // safety:
         // This transmute should be sound,
-        // since every parameter of `GetFieldMutImpl::get_field_mut_`
-        // except for `this: *mut *mut ()` is a zero sized type,
-        // and this converts those parameters to other zero sized types.
-        unsafe {
-            std::mem::transmute::<
-                GetFieldRawMutFn<VariantField<V, F>, UncheckedVariantField<V, F>, T::Ty, T::Err>,
-                GetFieldRawMutFn<F, (), T::Ty, T::Err>,
-            >((**self).get_field_raw_mut_func())
-        }
+        // since the single parameter of `GetFieldMut::get_field_mut_`
+        // other than `this: *mut  ()` is a PhantomData.
+        (**self).get_vfield_raw_mut_unchecked_fn()
     }
 }
 
 unsafe impl<T, V, F> SpecGetFieldMut<F> for VariantProxy<T, V>
 where
-    T: ?Sized + GetVariantFieldMutImpl<V, F>,
+    T: ?Sized + GetVariantFieldMut<V, F>,
     V: IsTStr,
 {
     default_if! {
         #[inline(always)]
         cfg(feature="specialization")
         unsafe fn get_field_raw_mut_inner(
-            this: *mut *mut (),
-            path: F,
-            _: (),
-        ) -> Result<*mut T::Ty, T::Err>
+            this: *mut (),
+            fname: F,
+        ) -> *mut T::Ty
         where
             Self: Sized
         {
-            let func=(**(this as *mut *mut T)).get_field_raw_mut_func();
+            let func=(**(this as *mut Self)).get_vfield_raw_mut_unchecked_fn();
             // safety: VariantProxy<T,V> guarantees that it wraps an enum
             // with the variant that `V` names.
             func(
                 this,
-                VariantField::new(V::DEFAULT, path),
-                UncheckedVariantField::<V, F>::new(),
+                fname,
             )
+
         }
     }
 }
 #[cfg(feature = "specialization")]
 unsafe impl<T, V, F> SpecGetFieldMut<F> for VariantProxy<T, V>
 where
-    T: GetVariantFieldMutImpl<V, F>,
+    T: GetVariantFieldMut<V, F>,
     V: IsTStr,
 {
-    unsafe fn get_field_raw_mut_inner(
-        this: *mut *mut (),
-        path: F,
-        _: (),
-    ) -> Result<*mut T::Ty, T::Err> {
+    unsafe fn get_field_raw_mut_inner(this: *mut (), fname: F) -> *mut T::Ty {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         // Because it's a `#[repr(transparent)]` wrapper around `T`,
-        // it can pass this to `<T as GetFieldMutImpl<_,_>>::get_field_raw_mut`.
-        T::get_field_raw_mut(
-            this,
-            VariantField::new(V::DEFAULT, path),
-            UncheckedVariantField::<V, F>::new(),
-        )
+        // it can pass this to `<T as GetFieldMut<_,_>>::get_field_raw_mut`.
+        T::get_vfield_raw_mut_unchecked(this, fname)
     }
 }
 
-impl<T, V, F> IntoFieldImpl<F> for VariantProxy<T, V>
+impl<T, V, F> IntoField<F> for VariantProxy<T, V>
 where
-    T: IntoVariantFieldImpl<V, F>,
+    T: IntoVariantField<V, F>,
     V: IsTStr,
 {
     #[inline(always)]
-    fn into_field_(self, path: F, _: ()) -> Result<T::Ty, T::Err>
+    fn into_field_(self, fname: F) -> T::Ty
     where
         Self: Sized,
     {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe {
-            self.value.into_field_(
-                VariantField::new(V::DEFAULT, path),
-                UncheckedVariantField::<V, F>::new(),
-            )
-        }
+        unsafe { self.value.into_vfield_unchecked(V::DEFAULT, fname) }
     }
 
-    z_impl_box_into_field_method! {F,T::Ty,T::Err}
+    z_impl_box_into_field_method! {F,T::Ty}
 }

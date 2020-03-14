@@ -10,7 +10,7 @@
 /// This allows accessing a non-nested field.<br>
 /// Eg: `fp!(a)`, `fp!(::Foo.bar)`, ``fp!(::Foo)``
 ///
-/// - [FieldPath](./struct.FieldPath.html), [example](#examplenested-fields): <br>
+/// - [NestedFieldPath](./struct.NestedFieldPath.html), [example](#examplenested-fields): <br>
 /// When multiple [path components](#path-components) are passed to the macro.
 /// This allows accessing a nested field.<br>
 /// Eg: `fp!(a.b.c)`, `fp!(::Foo.bar.baz)`
@@ -18,7 +18,7 @@
 /// - [FieldPathSet](./struct.FieldPathSet.html), [example](#examplemultiple-fields): <br>
 /// When a comma separated list of paths are passed to the macro.
 /// This allows accessing multiple fields.<br>
-/// Eg: `fp!(a, b.c.d, c::Some.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
+/// Eg: `fp!(a, b.c.d, c::Some.0.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
 ///
 /// - [NestedFieldPathSet](./struct.NestedFieldPathSet.html),
 /// [example](#examplemultiple-fields-insde-a-nested-field):<br>
@@ -96,8 +96,7 @@
 /// You can access multiple fields inside of a nested field with the `=>` in
 /// `fp!(foo.bar.baz => 0,1,2)`.
 ///
-/// This is most useful when accessing multiple fields inside of an
-/// optional field or inside an enum variant.
+/// This is most useful when accessing multiple fields inside of an enum.
 ///
 /// The `=>` operator was defined for ergonomics,
 /// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
@@ -631,7 +630,7 @@ macro_rules! field_path_aliases {
         #[allow(non_upper_case_globals)]
         #[allow(unused_imports)]
         $(#[$attr])*
-        /// Type aliases and constants for FieldPath and FieldPathSet
+        /// Type aliases and constants for NestedFieldPath and FieldPathSet
         /// (from the structural crate).
         ///
         /// The source code for this module can only be accessed from
