@@ -179,7 +179,7 @@ fn write_field_docs(
     )?;
     writeln!(
         buff,
-        "{LP}The &nbsp; `{0}: {1}` {2} &nbsp; ",
+        "{LP}The &nbsp; `{0}: {1}` field {2} &nbsp; ",
         field.ident,
         field_ty,
         try_opt2(type_name, field.pub_field_rename).map_or(String::new(), |(t, f)| format!(

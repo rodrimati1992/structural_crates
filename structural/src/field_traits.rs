@@ -3,7 +3,7 @@ Accessor and extension traits for fields.
 
 # GetFieldExt
 
-The [GetFieldExt](./trait.GetFieldExt.html)trait,
+The [GetFieldExt](./trait.GetFieldExt.html) trait,
 which is the way you're expected to call accessor methods.
 
 # Traits
@@ -161,9 +161,7 @@ pub trait FieldType<FieldName> {
 
 /// Provides shared access to the `FieldName` field.
 ///
-/// `FieldName` represents the name of the field on the type level,
-/// It is a type because a `FIELD_NAME:&'static str` const parameter
-/// was neither stable nor worked in nightly at the time this was defined.
+/// `FieldName` is expected to be a [TStr](../struct.TStr.html).
 ///
 /// # Safety
 ///
@@ -177,12 +175,16 @@ pub trait FieldType<FieldName> {
 /// ```
 /// use structural::{GetFieldExt,GetField,FP,fp};
 ///
-/// fn example(this:impl GetField<FP!(0), Ty=u32>){
-///     assert_eq!( this.field_(fp!(0)), &99_u32 );
+/// fn example(this:impl GetField<FP!(0), Ty=u32> + GetField<FP!(1), Ty=&'static str>){
+///     assert_eq!( this.field_(fp!(0)), &99 );
+///     assert_eq!( this.field_(fp!(1)), &"world" );
+///
+///     assert_eq!( this.fields(fp!(0,1)), (&99, &"world") );
+///     assert_eq!( this.cloned_fields(fp!(0,1)), (99, "world") );
 /// }
 ///
-/// example((99,));
-/// example((99,100,101,102,));
+/// example((99,"world",));
+/// example((99,"world",100,101,102,));
 ///
 /// ```
 ///
@@ -329,9 +331,18 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// use structural::{GetFieldExt,GetFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
-/// fn example(this:&mut dyn GetFieldMut<FP!(bar), Ty=&'static str>){
+/// fn example<T>(this:&mut T)
+/// where
+///     T: GetFieldMut<FP!(foo), Ty=Option<u32>> + GetFieldMut<FP!(bar), Ty=&'static str>
+/// {
+///     assert_eq!( this.field_(fp!(foo)), &Some(21) );
 ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+///     assert_eq!( this.fields(fp!(foo,bar)), (&Some(21), &"oh boy") );
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (Some(21), "oh boy") );
+///
+///     assert_eq!( this.field_mut(fp!(foo)), &mut Some(21) );
 ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(21), &mut "oh boy") );
 /// }
 ///
 /// example(&mut Struct2{ foo:Some(21), bar: "oh boy" });
@@ -432,18 +443,22 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// fn example<T>(this: T)
 /// where
-///     T: IntoField<FP!(bar), Ty=&'static str>
+///     T: Copy + IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
 /// {
-///     assert_eq!( this.field_(fp!(bar)), &"what" );
+///     assert_eq!( this.field_(fp!(foo)), &None );
+///     assert_eq!( this.field_(fp!(bar)), &"great" );
+///     assert_eq!( this.fields(fp!(foo,bar)), (&None, &"great") );
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (None, "great") );
 ///
 ///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
-///     // assert_eq!( this.field_mut(fp!(bar)), &mut "what" );
+///     // assert_eq!( this.field_mut(fp!(bar)), &mut "great" );
 ///
-///     assert_eq!( this.into_field(fp!(bar)), "what" );
+///     assert_eq!( this.into_field(fp!(foo)), None );
+///     assert_eq!( this.into_field(fp!(bar)), "great" );
 /// }
 ///
-/// example(Struct2{ foo:Some(0), bar: "what" });
-/// example(Struct3{ foo:Some(0), bar: "what", baz:5 });
+/// example(Struct2{ foo:None, bar: "great" });
+/// example(Struct3{ foo:None, bar: "great", baz:5 });
 ///
 /// ```
 ///
@@ -505,16 +520,40 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 /// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
-/// fn example(mut this:Box<dyn IntoFieldMut<FP!(bar), Ty=&'static str>>){
+///
+/// fn example(mut this:Box<dyn Bounds>){
+///     assert_eq!( this.field_(fp!(foo)), &Some(false) );
 ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+///
+///     assert_eq!( this.fields(fp!(foo,bar)), (&Some(false), &"oh boy") );
+///
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (Some(false), "oh boy") );
+///
+///     assert_eq!( this.field_mut(fp!(foo)), &mut Some(false) );
 ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+///
+///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(false), &mut "oh boy") );
 ///
 ///     // You need to use `box_into_field` to unwrap a `Box<dyn Trait>`.
 ///     assert_eq!( this.box_into_field(fp!(bar)), "oh boy" );
 /// }
 ///
-/// example(Box::new(Struct2{ foo:Some(21), bar: "oh boy" }));
-/// example(Box::new(Struct3{ foo:Some(21), bar: "oh boy", baz:5 }));
+/// example(Box::new(Struct2{ foo:Some(false), bar: "oh boy" }));
+/// example(Box::new(Struct3{ foo:Some(false), bar: "oh boy", baz:5 }));
+///
+///
+/// // This trait and impl block is what the `structural_alias` macro expands to.
+/// trait Bounds:
+///     IntoFieldMut<FP!(foo), Ty=Option<bool>> +
+///     IntoFieldMut<FP!(bar), Ty=&'static str>
+/// {}
+///
+/// impl<This> Bounds for This
+/// where
+///     This:?Sized +
+///         IntoFieldMut<FP!(foo), Ty=Option<bool>> +
+///         IntoFieldMut<FP!(bar), Ty=&'static str>
+/// {}
 ///
 /// ```
 pub trait IntoFieldMut<F>: IntoField<F> + GetFieldMut<F> {}

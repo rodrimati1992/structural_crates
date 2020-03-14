@@ -76,19 +76,18 @@ use self::sealed::Sealed;
 
 impl<T> Sealed for TStr<T> {}
 
-/// A marker trait for field paths that only refer to one field.
+/// A marker trait for field paths that only refers to one field.
 ///
 /// # Expectations
 ///
-/// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`,and `RevIntoFieldImpl`.
+/// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`, `RevIntoFieldImpl`.
 pub trait IsSingleFieldPath: Sized {}
 
 /// A marker trait for field paths that refer to multiple fields
 ///
 /// # Expectations
 ///
-/// This type is expected to implement `RevGetMultiField`,
-/// and to only implement `RevGetMultiFieldMut` if and only if `PathUniqueness == UniquePaths`.
+/// This type is expected to implement `RevGetMultiField`.
 pub trait IsMultiFieldPath: Sized {
     /// Whether the paths in the set can contain duplicate paths.
     ///
@@ -98,7 +97,7 @@ pub trait IsMultiFieldPath: Sized {
     /// for a field path that might refer to the same field multiple times.
     ///
     /// - `structural::field_path::UniquePaths`:
-    /// for a field path that only refers to a field once.
+    /// for a field path that doesn't refer to a field more than once.
     ///
     type PathUniqueness;
 }
@@ -250,15 +249,22 @@ impl_cmp_traits! {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A merker type indicating that FieldPathSet contains unique paths,
+/// A merker type indicating that a ([`Nested`])[`FieldPathSet`] contains unique field paths,
 /// in which no path is a prefix of any other path in the set,
 /// this is required to call `GetFieldExt::fields_mut`.
+///
+/// [`FieldPathSet`]: ../struct.FieldPathSet.html
+/// [`Nested`]: ../struct.NestedFieldPathSet.html
 #[derive(Debug, Copy, Clone)]
 pub struct UniquePaths;
 
-/// A merker type indicating that FieldPathSet may not contain unique `FielsPath`s,
-/// which means that its possible to pass a `FieldPathSet<__,AliasedPaths>` to
+/// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
+/// may not contain unique field paths,
+/// which means that its **not** possible to pass a `FieldPathSet<__,AliasedPaths>` to
 /// `GetFieldExt::fields_mut`.
+///
+/// [`FieldPathSet`]: ../struct.FieldPathSet.html
+/// [`Nested`]: ../struct.NestedFieldPathSet.html
 #[derive(Debug, Copy, Clone)]
 pub struct AliasedPaths;
 
@@ -542,7 +548,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     }
 
     /// Converts a `NestedFieldPathSet<F, S, AliasedPaths>` to a
-    /// `NestedFieldPathSet<F, S, UniquePaths>`
+    /// `NestedFieldPathSet<F, S, U>`
     ///
     /// # Safety
     ///
