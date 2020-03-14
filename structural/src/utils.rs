@@ -2,7 +2,7 @@
 Some helper functions.
 */
 
-use crate::field_traits::OptionalField;
+use crate::field_traits::EnumField;
 
 use std::marker::PhantomData;
 
@@ -37,6 +37,16 @@ pub type OptionParamOut<This> = <This as OptionParam>::Param;
 
 impl<T> OptionParam for Option<T> {
     type Param = T;
+}
+
+/////////////////////////////////////////////////////////
+
+/// Defined this function just in case that `unreachable_unchecked`
+/// doesn't optimize as expected.
+#[inline(always)]
+#[doc(hidden)]
+pub unsafe fn unreachable_unchecked() -> ! {
+    std_::hint::unreachable_unchecked()
 }
 
 /////////////////////////////////////////////////////////
@@ -76,9 +86,9 @@ where
 
 #[inline(always)]
 #[doc(hidden)]
-pub unsafe fn option_as_mut_result<T>(ptr: *mut Option<T>) -> Result<*mut T, OptionalField> {
+pub unsafe fn option_as_mut_result<T>(ptr: *mut Option<T>) -> Result<*mut T, EnumField> {
     match *ptr {
         Some(ref mut x) => Ok(x as *mut T),
-        None => Err(OptionalField),
+        None => Err(EnumField),
     }
 }

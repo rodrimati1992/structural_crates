@@ -7,8 +7,7 @@ This library provides field accessor traits,and emulation of structural types.
 These are the features this library provides:
 
 - [Derivation of the 3 accessor traits for every public field](./docs/structural_macro/index.html)
-(GetFieldImpl/GetFieldMutImpl/IntoFieldImpl),
-and aliases for the optional and non-optional variants of those traits.
+(GetField/GetFieldMut/IntoField).
 
 - [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
 ](./macro.structural_alias.html).
@@ -186,7 +185,7 @@ where
         }
         // `cmd` is moved into the branch here,
         // wrapped into a `VariantProxy<S,TS!(RemoveAddress)>`,
-        // which allows non-optional access to the fields in the variant.
+        // which allows direct access to the fields in the variant.
         //
         // This does not destructure the variant because
         // it's not possible to unwrap a structural type into multiple fields yet
@@ -646,9 +645,9 @@ pub use crate::field_traits::GetFieldExt;
 
 pub use crate::{
     field_traits::{
-        FieldType, GetField, GetFieldImpl, GetFieldMut, GetFieldMutImpl, GetFieldType,
-        GetFieldType2, GetFieldType3, GetFieldType4, IntoField, IntoFieldImpl, IntoFieldMut,
-        OptGetField, OptGetFieldMut, OptIntoField, OptIntoFieldMut,
+        FieldType, GetField, GetFieldMut, GetFieldType, GetFieldType2, GetFieldType3,
+        GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
+        IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
     structural_trait::Structural,
 };
@@ -676,15 +675,15 @@ pub mod pmr {
     pub use crate::field_traits::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
-    pub use crate::utils::{as_phantomdata, OptionParamOut, _Structural_BorrowSelf};
+    pub use crate::utils::{_Structural_BorrowSelf, as_phantomdata};
     pub use core_extensions::type_level_bool::{Boolean, False, True};
     pub use core_extensions::{ConstDefault, MarkerType};
 
     pub use crate::std_::{
-        hint::unreachable_unchecked,
         marker::PhantomData,
         mem::drop,
         option::Option::{self, None, Some},
+        ptr::NonNull,
     };
 
     #[cfg(feature = "alloc")]

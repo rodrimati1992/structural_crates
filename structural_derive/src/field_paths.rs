@@ -1,5 +1,6 @@
 use crate::{
     ident_or_index::IdentOrIndex,
+    ignored_wrapper::Ignored,
     parse_utils::ParseBufferExt,
     tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens},
 };
@@ -253,7 +254,6 @@ pub(crate) enum FieldPathComponent {
     VariantName {
         variant: IdentOrIndex,
     },
-    Try,
 }
 
 impl FieldPathComponent {
@@ -280,9 +280,6 @@ impl FieldPathComponent {
             FPC::VariantName { variant } => {
                 let _ = write!(buff, "::{}", variant.to_token_stream());
             }
-            FPC::Try => {
-                buff.push('?');
-            }
         }
     }
 
@@ -296,14 +293,28 @@ impl FieldPathComponent {
             PrefixToken::Colon2
         } else if input.peek_parse(Token!(.))?.is_some() {
             PrefixToken::Dot
-        } else if input.peek_parse(Token!(?))?.is_some() {
+        } else if input.peek(Token!(?)) {
             PrefixToken::Question
         } else {
             PrefixToken::Nothing
         };
 
         if let PrefixToken::Question = prefix_token {
-            Ok((FieldPathComponent::Try, None))
+            let question = input.parse::<Token!(?)>()?;
+            let span = Ignored::new(question.spans[0]);
+            Ok((
+                FieldPathComponent::VariantField {
+                    variant: IdentOrIndex::Str {
+                        str: "Some".to_string(),
+                        span,
+                    },
+                    field: IdentOrIndex::Str {
+                        str: "0".to_string(),
+                        span,
+                    },
+                },
+                None,
+            ))
         } else if let PrefixToken::Colon2 = prefix_token {
             let (first, second) = parse_field(input)?;
             let variant = first;
@@ -344,7 +355,6 @@ impl FieldPathComponent {
                 variant_field_tokens(variant.to_string(), field.to_string())
             }
             FPC::VariantName { variant } => variant_name_tokens(variant.to_string()),
-            FPC::Try => quote!(::structural::TryPath),
         }
     }
 }

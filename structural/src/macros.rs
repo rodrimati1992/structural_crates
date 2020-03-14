@@ -35,7 +35,7 @@ macro_rules! _private_impl_getter{
     (
         $(unsafe)?
         impl[$($typarams:tt)*]
-            GetFieldImpl <$field_name:tt : $field_ty:ty,$optionality:ident,$name_param:ty>
+            GetField <$field_name:tt : $field_ty:ty,$name_param:ty>
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
@@ -45,100 +45,84 @@ macro_rules! _private_impl_getter{
             type Ty=$field_ty;
         }
 
-        impl<$($typarams)*> $crate::GetFieldImpl<$name_param> for $self_
+        impl<$($typarams)*> $crate::GetField<$name_param> for $self_
         $( where $($where_)* )?
         {
-            type Err=$crate::optionality_ty!($optionality);
-
-            fn get_field_(
-                &self,
-                _:$name_param,
-                _:(),
-            )->Result<&Self::Ty,$crate::optionality_ty!($optionality)>{
-                $crate::handle_optionality!($optionality,ref,&self.$field_name)
+            fn get_field_(&self,_:$name_param)->&Self::Ty{
+                &self.$field_name
             }
         }
     };
     (
         unsafe impl[$($typarams:tt)*]
-            GetFieldMutImpl <$field_name:tt : $field_ty:ty,$optionality:ident,$name_param:ty>
+            GetFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty>
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
         $crate::_private_impl_getter!{
-            impl[$($typarams)*] GetFieldImpl<$field_name:$field_ty,$optionality,$name_param>
+            impl[$($typarams)*] GetField<$field_name:$field_ty,$name_param>
             for $self_
             $( where[$($where_)*] )?
         }
 
-        unsafe impl<$($typarams)*> $crate::GetFieldMutImpl<$name_param> for $self_
+        unsafe impl<$($typarams)*> $crate::GetFieldMut<$name_param> for $self_
         $( where $($where_)* )?
         {
-            fn get_field_mut_(
-                &mut self,
-                _:$name_param,
-                _:(),
-            )->Result<&mut Self::Ty,$crate::optionality_ty!($optionality)>{
-                $crate::handle_optionality!($optionality,mut,&mut self.$field_name)
+            fn get_field_mut_(&mut self,_:$name_param)->&mut Self::Ty{
+                &mut self.$field_name
             }
 
             $crate::z_unsafe_impl_get_field_raw_mut_method!{
                 Self,
                 field_name=$field_name,
                 name_generic=$name_param,
-                optionality=$optionality,
             }
         }
     };
     (
         $(unsafe)?
         impl[$($typarams:tt)*]
-            IntoFieldImpl <$field_name:tt : $field_ty:ty,$optionality:ident,$name_param:ty>
+            IntoField <$field_name:tt : $field_ty:ty,$name_param:ty>
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
         $crate::_private_impl_getter!{
             impl[$($typarams)*]
-                GetFieldImpl<$field_name:$field_ty,$optionality,$name_param>
+                GetField<$field_name:$field_ty,$name_param>
             for $self_
             $( where[$($where_)*] )?
         }
 
-        impl<$($typarams)*> $crate::IntoFieldImpl<$name_param> for $self_
+        impl<$($typarams)*> $crate::IntoField<$name_param> for $self_
         $( where $($where_)* )?
         {
-            fn into_field_(
-                self,
-                _:$name_param,
-                _:(),
-            )->Result<Self::Ty,$crate::optionality_ty!($optionality)>{
-                $crate::handle_optionality!($optionality,move,self.$field_name)
+            fn into_field_(self,_:$name_param)->Self::Ty{
+                self.$field_name
             }
             $crate::z_impl_box_into_field_method!{$name_param}
         }
     };
     (
         unsafe impl[$($typarams:tt)*]
-            IntoFieldMut <$field_name:tt : $field_ty:ty,$optionality:ident,$name_param:ty>
+            IntoFieldMut <$field_name:tt : $field_ty:ty,$name_param:ty>
         for $self_:ty
         $( where[$($where_:tt)*] )?
     )=>{
         $crate::_private_impl_getter!{
             unsafe impl[$($typarams)*]
-                GetFieldMutImpl<$field_name:$field_ty,$optionality,$name_param>
+                GetFieldMut<$field_name:$field_ty,$name_param>
             for $self_
             $( where[$($where_)*] )?
         }
 
-        impl<$($typarams)*> $crate::IntoFieldImpl<$name_param> for $self_
+        impl<$($typarams)*> $crate::IntoField<$name_param> for $self_
         $( where $($where_)* )?
         {
             fn into_field_(
                 self,
                 _:$name_param,
-                _:(),
-            )->Result<Self::Ty,$crate::optionality_ty!($optionality)>{
-                $crate::handle_optionality!($optionality,move,self.$field_name)
+            )->Self::Ty{
+                self.$field_name
             }
             $crate::z_impl_box_into_field_method!{$name_param}
         }
@@ -152,15 +136,15 @@ macro_rules! _private_impl_getter{
 /// The `Self` parameter of this macro must delegate accessor trait impls
 /// parameterized by `<VariantField<V,F>,UncheckedVariantField<V,F>>`
 /// to the `delegated_to` type,
-/// with the option to return `OptionalField` when the delegated to type does not.
+/// with the option to return `EnumField` when the delegated to type does not.
 ///
-/// Example:in `impl<V,F> GetFieldImpl<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
+/// Example:in `impl<V,F> GetField<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
 /// it must gelegate that trait to the same trait impl of the delegated-to type.
 #[macro_export]
 #[doc(hidden)]
-macro_rules! unsafe_delegate_variant_field {
+macro_rules! unsafe_delegate_vfield {
     (
-        impl[$($typarams:tt)*] GetVariantFieldImpl for $self_:ty
+        impl[$($typarams:tt)*] GetVariantField for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
@@ -173,49 +157,49 @@ macro_rules! unsafe_delegate_variant_field {
         }
 
         unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::GetVariantFieldImpl<_V,_F>
+            $crate::pmr::GetVariantField<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::GetVariantFieldImpl<_V,_F>,
+            $delegating_to: $crate::pmr::GetVariantField<_V,_F>,
             $($where_)*
         {}
     };
     (
-        impl[$($typarams:tt)*] GetVariantFieldMutImpl for $self_:ty
+        impl[$($typarams:tt)*] GetVariantFieldMut for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
-        unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantFieldImpl for $self_
+        unsafe_delegate_vfield!{
+            impl[$($typarams)*] GetVariantField for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
 
         unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::GetVariantFieldMutImpl<_V,_F>
+            $crate::pmr::GetVariantFieldMut<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::GetVariantFieldMutImpl<_V,_F>,
+            $delegating_to: $crate::pmr::GetVariantFieldMut<_V,_F>,
             $($where_)*
         {}
     };
     (
-        impl[$($typarams:tt)*] IntoVariantFieldImpl for $self_:ty
+        impl[$($typarams:tt)*] IntoVariantField for $self_:ty
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
-        unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantFieldImpl for $self_
+        unsafe_delegate_vfield!{
+            impl[$($typarams)*] GetVariantField for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
 
 
         unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::IntoVariantFieldImpl<_V,_F>
+            $crate::pmr::IntoVariantField<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>,
+            $delegating_to: $crate::pmr::IntoVariantField<_V,_F>,
             $($where_)*
         {}
     };
@@ -224,18 +208,18 @@ macro_rules! unsafe_delegate_variant_field {
         where[$($where_:tt)*]
         delegate_to=$delegating_to:ty,
     )=>{
-        unsafe_delegate_variant_field!{
-            impl[$($typarams)*] GetVariantFieldMutImpl for $self_
+        unsafe_delegate_vfield!{
+            impl[$($typarams)*] GetVariantFieldMut for $self_
             where[$($where_)*]
             delegate_to=$delegating_to,
         }
 
 
         unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::IntoVariantFieldImpl<_V,_F>
+            $crate::pmr::IntoVariantField<_V,_F>
         for $self_
         where
-            $delegating_to: $crate::pmr::IntoVariantFieldImpl<_V,_F>,
+            $delegating_to: $crate::pmr::IntoVariantField<_V,_F>,
             $($where_)*
         {}
     };
@@ -260,136 +244,113 @@ macro_rules! default_if {
 }
 
 /// For semi-manual implementors of the
-/// [GetFieldMutImpl](./field_traits/trait.GetFieldMutImpl.html)
+/// [GetFieldMut](./field_traits/trait.GetFieldMut.html)
 /// trait for structs.
 ///
-/// This implements the [GetFieldMutImpl::get_field_raw_mut]
+/// This implements the [GetFieldMut::get_field_raw_mut]
 /// by returning a mutable pointer to a field,
-/// and [GetFieldMutImpl::get_field_raw_mut_func] by returning
+/// and [GetFieldMut::get_field_raw_mut_fn] by returning
 /// `get_field_raw_mut` as a function pointer.
 ///
 /// # Safety
 ///
 /// This is an unsafe macro,
-/// because GetFieldMutImpl requires no impl to borrow the same field mutably as any other,
+/// because GetFieldMut requires no impl to borrow the same field mutably as any other,
 /// otherwise this would cause undefined behavior because it would
 /// create multiple mutable borrows to the same field.
-///
-/// # Parapmeters
-///
-/// - `optionality`: whether the field is optional.
-/// The value of this can be either `opt` for an optional field,
-/// or `nonopt` for a regular (non-optional) field.
 ///
 /// # Example
 ///
 /// For an example where this macro is used,
 /// you can look at the
-/// [manual implementation example of the GetFieldMutImpl trait
-/// ](./field_traits/trait.GetFieldMutImpl.html#manual-implementation-example)
+/// [manual implementation example of the GetFieldMut trait
+/// ](./field_traits/trait.GetFieldMut.html#manual-implementation-example)
 #[macro_export]
 macro_rules! z_unsafe_impl_get_field_raw_mut_method {
     (
         $Self:ident,
         field_name=$field_name:tt,
         name_generic=$name_param:ty,
-        optionality=$optionality:ident,
-    ) => (
+    ) => {
         unsafe fn get_field_raw_mut(
-            this:*mut *mut (),
-            _:$name_param,
-            _:(),
-        )->Result<
-            *mut $crate::GetFieldType<$Self,$name_param>,
-            $crate::pmr::GetFieldErr<$Self,$name_param>,
-        >{
-            $crate::handle_optionality!(
-                $optionality,
-                raw,
-                &mut (**(this as *mut *mut $Self)).$field_name
-                    as *mut $crate::option_or_value_ty!(
-                        $optionality,
-                        $crate::GetFieldType<$Self,$name_param>
-                    )
-            )
+            this: *mut (),
+            _: $name_param,
+        ) -> *mut $crate::GetFieldType<$Self, $name_param> {
+            &mut (*(this as *mut $Self)).$field_name
+                as *mut $crate::GetFieldType<$Self, $name_param>
         }
 
-        fn get_field_raw_mut_func(
-            &self
-        )->$crate::field_traits::GetFieldRawMutFn<
+        fn get_field_raw_mut_fn(
+            &self,
+        ) -> $crate::field_traits::GetFieldRawMutFn<
             $name_param,
-            (),
-            $crate::GetFieldType<$Self,$name_param>,
-            $crate::pmr::GetFieldErr<$Self,$name_param>,
-        >{
-            <$Self as $crate::field_traits::GetFieldMutImpl<$name_param>>::get_field_raw_mut
+            $crate::GetFieldType<$Self, $name_param>,
+        > {
+            <$Self as $crate::field_traits::GetFieldMut<$name_param>>::get_field_raw_mut
         }
-    )
+    };
 }
 
-/// For use in manual implementations of the IntoFieldImpl trait.
+/// For use in manual implementations of the IntoField trait.
 ///
-/// Implements the `IntoFieldImpl::box_into_field_` method
-/// by delegatign to the [IntoFieldImpl::into_field_] method,
+/// Implements the `IntoField::box_into_field_` method
+/// by delegatign to the [IntoField::into_field_] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoFieldImpl
-/// ](./field_traits/trait.IntoFieldImpl.html#manual-implementation-example)
+/// [the documentation for IntoField
+/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
 #[macro_export]
 #[cfg(not(feature = "alloc"))]
 macro_rules! z_impl_box_into_field_method {
     ($($anything:tt)*) => {};
 }
 
-/// For use in semi-manual implementations of the IntoFieldImpl trait.
+/// For use in semi-manual implementations of the IntoField trait.
 ///
-/// Implements the [IntoFieldImpl::box_into_field_] method
-/// by delegatign to the [IntoFieldImpl::into_field_] method,
+/// Implements the [IntoField::box_into_field_] method
+/// by delegatign to the [IntoField::into_field_] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoFieldImpl
-/// ](./field_traits/trait.IntoFieldImpl.html#manual-implementation-example)
+/// [the documentation for IntoField
+/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
 #[macro_export]
 #[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_field_method {
     ($field_name:ty) => {
         $crate::z_impl_box_into_field_method! {
             $field_name,
-            (),
             $crate::GetFieldType<Self,$field_name>,
-            $crate::pmr::GetFieldErr<Self,$field_name>,
         }
     };
-    ($field_name:ty, $field_ty:ty, $field_err:ty $(,)*) => {
-        $crate::z_impl_box_into_field_method! {
-            $field_name,
-            (),
-            $field_ty,
-            $field_err,
-        }
-    };
-    ($field_name:ty, $param_ty:ty, $field_ty:ty, $field_err:ty $(,)*) => {
+    ($field_name:ty, $field_ty:ty $(,)*) => {
         #[inline(always)]
-        fn box_into_field_(
-            self: $crate::pmr::Box<Self>,
-            name: $field_name,
-            param: $param_ty,
-        ) -> Result<$field_ty, $field_err> {
-            <Self as $crate::IntoFieldImpl<$field_name, $param_ty>>::into_field_(*self, name, param)
+        fn box_into_field_(self: $crate::pmr::Box<Self>, name: $field_name) -> $field_ty {
+            <Self as $crate::IntoField<$field_name>>::into_field_(*self, name)
         }
     };
 }
 
-#[doc(hidden)]
 #[macro_export]
-macro_rules! optionality_from {
-    (opt) => {
-        $crate::structural_trait::IsOptional::Yes
-    };
-    (nonopt) => {
-        $crate::structural_trait::IsOptional::No
+#[cfg(not(feature = "alloc"))]
+macro_rules! z_impl_box_into_variant_field_method {
+    ($($anything:tt)*) => {};
+}
+
+#[macro_export]
+#[cfg(feature = "alloc")]
+macro_rules! z_impl_box_into_variant_field_method {
+    ($variant_name:ty, $field_name:ty, $field_ty:ty $(,)*) => {
+        fn box_into_vfield_(
+            self: $crate::alloc::boxed::Box<Self>,
+            vname: $variant_name,
+            fname: $field_name,
+        ) -> Option<Self::Ty> {
+            <Self as $crate::IntoVariantField<$variant_name, $field_name>>::into_vfield_(
+                *self, vname, fname,
+            )
+        }
     };
 }
 
@@ -406,7 +367,6 @@ macro_rules! _private_impl_structural{
                 (
                     $field_name:tt,
                     $name_param_str:expr,
-                    opt=$optionality:ident,
                 ),
             )*]
         }
@@ -444,7 +404,6 @@ macro_rules! _private_impl_getters_for_derive_struct{
                 $getter_trait:ident<
                     $field_name:tt : $field_ty:ty,
                     $name_param_ty:ty,
-                    opt=$optionality:ident,
                     $name_param_str:expr,
                 >
             ))*
@@ -461,7 +420,6 @@ macro_rules! _private_impl_getters_for_derive_struct{
                         (
                             $field_name,
                             $name_param_str,
-                            opt=$optionality,
                         ),
                     )*
                 ]
@@ -471,7 +429,7 @@ macro_rules! _private_impl_getters_for_derive_struct{
         $(
             $crate::_private_impl_getter!{
                 unsafe impl $typarams
-                    $getter_trait<$field_name : $field_ty,$optionality,$name_param_ty>
+                    $getter_trait<$field_name : $field_ty,$name_param_ty>
                 for $self_
                 where $where_preds
             }
@@ -479,6 +437,7 @@ macro_rules! _private_impl_getters_for_derive_struct{
     }
 }
 
+/// Asserts that the `$left` bounds are the same as the `$right` bounds
 #[cfg(test)]
 macro_rules! assert_equal_bounds {
     (
@@ -527,126 +486,23 @@ macro_rules! try_fe {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! map_fe {
-    ( $expr:expr ) => {
-        match $expr {
-            Ok(x) => Ok(x),
-            Err(e) => Err($crate::field_traits::IntoFieldErr::into_field_err(e)),
-        }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! try_of {
-    ( $expr:expr ) => {
-        match $expr {
-            Ok(x) => x,
-            Err(_) => return Err($crate::field_traits::OptionalField),
-        }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
 macro_rules! map_of {
     ( $expr:expr ) => {
         match $expr {
             Ok(x) => Ok(x),
-            Err(_) => Err($crate::field_traits::OptionalField),
+            Err(_) => Err($crate::field_traits::EnumField),
         }
     };
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! handle_optionality {
-    ( nonopt,$pointerness:ident,$value:expr $(,)* ) => {
-        Ok($value)
-    };
-    ( opt,raw,$value:expr $(,)* ) => {
-        $crate::utils::option_as_mut_result($value)
-    };
-    ( opt,$remaining_pointerness:ident,$value:expr $(,)* ) => {
-        match $value {
+macro_rules! ok_or_of {
+    ( $expr:expr ) => {
+        match $expr {
             Some(x) => Ok(x),
-            None => Err($crate::pmr::OptionalField),
+            None => Err($crate::field_traits::EnumField),
         }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! try_optionality {
-    ( nonopt,$pointerness:ident,$value:expr $(,)* ) => {
-        $value
-    };
-    ( opt,raw,$value:expr $(,)* ) => {{
-        let value: *mut Option<_> = $value;
-        match *value {
-            Some(ref mut x) => x as *mut _,
-            None => return Err($crate::pmr::OptionalField),
-        }
-    }};
-    ( opt,$pointerness:ident,$value:expr $(,)* ) => {
-        match $value {
-            Some(x) => x,
-            None => return Err($crate::pmr::OptionalField),
-        }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! map_optionality {
-    ( nonopt,$value:expr $(,)* ) => {
-        $value
-    };
-    ( opt,$value:expr $(,)* ) => {
-        match $value {
-            Ok(x) => Ok(x),
-            Err(_) => Err($crate::pmr::OptionalField),
-        }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! err_from_opt {
-    ( nonopt ) => {
-        $crate::pmr::NonOptField
-    };
-    ( opt ) => {
-        $crate::pmr::OptionalField
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! vf_err {
-    ( nonopt,$field:ty,$field_name_string:ty ) => {
-        $crate::pmr::GetFieldErr<$field,$field_name_string>
-    };
-    ( opt,$field:ty,$field_name:ty ) => {
-        $crate::pmr::OptionalField
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! option_or_value_ty {
-    (opt,$ty:ty) => ( $crate::pmr::Option<$ty> );
-    (nonopt,$ty:ty) => ( $ty );
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! optionality_ty {
-    (opt) => {
-        $crate::pmr::OptionalField
-    };
-    (nonopt) => {
-        $crate::pmr::NonOptField
     };
 }
 

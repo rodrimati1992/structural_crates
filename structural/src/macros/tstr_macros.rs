@@ -362,13 +362,13 @@ they are paired up with the `fp` macro for comparison.
 use structural::{GetFieldExt, Structural, ts, fp, field_path_aliases};
 use structural::enums::VariantProxy;
 use structural::field_path::{
-    VariantField, VariantName, FieldPath, FieldPathSet, NestedFieldPathSet,
+    VariantField, VariantName, NestedFieldPath, FieldPathSet, NestedFieldPathSet,
 };
 
 let tuple=( 3, 5, (8,80,800), (13,21,(34,55)), Some(('a','b','c')) );
 
 ////////////////////////////////////////////////////////////////////
-////               Constructing `FieldPath`
+////               Constructing `NestedFieldPath`
 
 let path_0=ts!(0);
 assert_eq!( tuple.field_(path_0), &3 );
@@ -378,23 +378,23 @@ let path_1=ts!(1);
 assert_eq!( tuple.field_(path_1), &5 );
 assert_eq!( tuple.field_(fp!(1)), &5 );
 
-let path_2_0=FieldPath::many((ts!(2), ts!(0)));
+let path_2_0=NestedFieldPath::many((ts!(2), ts!(0)));
 assert_eq!( tuple.field_(path_2_0), &8 );
 assert_eq!( tuple.field_(fp!(2.0)), &8 );
 
-let path_2_1=FieldPath::many((ts!(2), ts!(1)));
+let path_2_1=NestedFieldPath::many((ts!(2), ts!(1)));
 assert_eq!( tuple.field_(path_2_1), &80 );
 assert_eq!( tuple.field_(fp!(2.1)), &80 );
 
-let path_2_2=FieldPath::many((ts!(2), ts!(2)));
+let path_2_2=NestedFieldPath::many((ts!(2), ts!(2)));
 assert_eq!( tuple.field_(path_2_2), &800 );
 assert_eq!( tuple.field_(fp!(2.2)), &800 );
 
-let path_3_2_0=FieldPath::many((ts!(3), ts!(2), ts!(0)));
+let path_3_2_0=NestedFieldPath::many((ts!(3), ts!(2), ts!(0)));
 assert_eq!( tuple.field_(path_3_2_0), &34 );
 assert_eq!( tuple.field_(fp!(3.2.0)), &34 );
 
-let path_3_2_1=FieldPath::many((ts!(3), ts!(2), ts!(1)));
+let path_3_2_1=NestedFieldPath::many((ts!(3), ts!(2), ts!(1)));
 assert_eq!( tuple.field_(path_3_2_1), &55 );
 assert_eq!( tuple.field_(fp!(3.2.1)), &55 );
 

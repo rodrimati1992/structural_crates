@@ -2,7 +2,6 @@
 
 use super::*;
 
-use crate::field_traits::NonOptField;
 #[allow(unused_imports)]
 use crate::GetFieldExt;
 
@@ -23,8 +22,8 @@ _private_impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,opt=nonopt,"start",> )
-        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
+        (IntoFieldMut < start : T,Start_STR,"start",> )
+        (IntoFieldMut < end : T,End_STR,"end",> )
     }
 }
 
@@ -32,7 +31,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,opt=nonopt,"start",> )
+        (IntoFieldMut < start : T,Start_STR,"start",> )
     }
 }
 
@@ -40,7 +39,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
+        (IntoFieldMut < end : T,End_STR,"end",> )
     }
 }
 
@@ -48,7 +47,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,opt=nonopt,"end",> )
+        (IntoFieldMut < end : T,End_STR,"end",> )
     }
 }
 
@@ -63,30 +62,26 @@ impl<T> FieldType<End_STR> for RangeInclusive<T> {
     type Ty = T;
 }
 
-impl<T> GetFieldImpl<Start_STR> for RangeInclusive<T> {
-    type Err = NonOptField;
-
-    fn get_field_(&self, _: Start_STR, _: ()) -> Result<&Self::Ty, NonOptField> {
-        Ok(self.start())
+impl<T> GetField<Start_STR> for RangeInclusive<T> {
+    fn get_field_(&self, _: Start_STR) -> &Self::Ty {
+        self.start()
     }
 }
-impl<T> GetFieldImpl<End_STR> for RangeInclusive<T> {
-    type Err = NonOptField;
-
-    fn get_field_(&self, _: End_STR, _: ()) -> Result<&Self::Ty, NonOptField> {
-        Ok(self.end())
+impl<T> GetField<End_STR> for RangeInclusive<T> {
+    fn get_field_(&self, _: End_STR) -> &Self::Ty {
+        self.end()
     }
 }
 
-impl<T> IntoFieldImpl<Start_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: Start_STR, _: ()) -> Result<Self::Ty, NonOptField> {
-        Ok(self.into_inner().0)
+impl<T> IntoField<Start_STR> for RangeInclusive<T> {
+    fn into_field_(self, _: Start_STR) -> Self::Ty {
+        self.into_inner().0
     }
     z_impl_box_into_field_method! {Start_STR}
 }
-impl<T> IntoFieldImpl<End_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: End_STR, _: ()) -> Result<Self::Ty, NonOptField> {
-        Ok(self.into_inner().0)
+impl<T> IntoField<End_STR> for RangeInclusive<T> {
+    fn into_field_(self, _: End_STR) -> Self::Ty {
+        self.into_inner().0
     }
     z_impl_box_into_field_method! {End_STR}
 }
@@ -100,14 +95,13 @@ unsafe_delegate_structural_with! {
     self_ident=this;
     specialization_params(Sized);
     delegating_to_type=T;
-    field_name_param=( fname : FnameTy );
 
-    GetFieldImpl { this }
+    GetField { this }
 
-    unsafe GetFieldMutImpl { this }
+    unsafe GetFieldMut { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
 
-    IntoFieldImpl { ManuallyDrop::into_inner(this) }
+    IntoField { ManuallyDrop::into_inner(this) }
 }
 
 #[test]
@@ -137,9 +131,8 @@ unsafe_delegate_structural_with! {
     ]
     self_ident=this;
     delegating_to_type=P::Target;
-    field_name_param=( fname : FnameTy );
 
-    GetFieldImpl { &*this }
+    GetField { &*this }
 }
 
 #[test]
@@ -152,87 +145,81 @@ fn delegated_pin() {
 
 ///////////////////////////////////////////////////////
 
+#[cfg(feature = "alloc")]
+mod alloc_impls {
+    use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
+
+    macro_rules! impl_shared_ptr_accessors {
+        ( $this:ident ) => {
+            unsafe_delegate_structural_with! {
+                impl[T,] $this<T>
+                where[T:?Sized,]
+
+                self_ident=this;
+                delegating_to_type=T;
+
+                GetField {
+                    &*this
+                }
+            }
+        };
+    }
+    impl_shared_ptr_accessors! {Arc}
+    impl_shared_ptr_accessors! {Rc}
+
+    unsafe_delegate_structural_with! {
+        impl[T,] Box<T>
+        where[T:?Sized,]
+
+        self_ident=this;
+        specialization_params(specialize_cfg(feature="specialization"));
+        delegating_to_type=T;
+
+        GetField {
+            &*this
+        }
+
+        unsafe GetFieldMut{
+            &mut **this
+        }
+        as_delegating_raw{
+            *(this as *mut Box<T> as *mut *mut T)
+        }
+
+
+        IntoField{
+            *this
+        }
+    }
+}
+
+///////////////////////////////////////////////////////
+
 unsafe_delegate_structural_with! {
     impl['a,T,] &'a T
     where [T:?Sized,]
     self_ident=this;
     delegating_to_type=T;
-    field_name_param=( fname_var : FnameTy );
 
-    GetFieldImpl { &**this }
+    GetField { &**this }
 
 }
 
 ///////////////////////////////////////////////////////
 
 unsafe_delegate_structural_with! {
-    impl['a,T,] &'a mut T
+    impl['a,T:'a,] &'a mut T
     where [T:?Sized,]
     self_ident=this;
+    specialization_params(specialize_cfg(feature="specialization"));
     delegating_to_type=T;
-    field_name_param=( fname_var : FnameTy );
 
-    GetFieldImpl { &**this }
+    GetField { &**this }
 
-}
-
-unsafe impl<'a, T: 'a, __FieldName, P> GetFieldMutImpl<__FieldName, P> for &'a mut T
-where
-    T: ?Sized + GetFieldMutImpl<__FieldName, P>,
-{
-    fn get_field_mut_(&mut self, name: __FieldName, param: P) -> Result<&mut Self::Ty, Self::Err> {
-        <T as GetFieldMutImpl<__FieldName, P>>::get_field_mut_(self, name, param)
+    unsafe GetFieldMut{
+        *this
     }
-
-    #[inline(always)]
-    unsafe fn get_field_raw_mut(
-        this: *mut *mut (),
-        name: __FieldName,
-        param: P,
-    ) -> Result<*mut Self::Ty, Self::Err> {
-        <Self as SpecGetFieldMut<__FieldName, P>>::get_field_raw_mut_inner(this, name, param)
-    }
-
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<__FieldName, P, Self::Ty, Self::Err> {
-        <Self as GetFieldMutImpl<__FieldName, P>>::get_field_raw_mut
-    }
-}
-
-unsafe impl<'a, T: 'a, __FieldName, P> SpecGetFieldMut<__FieldName, P> for &'a mut T
-where
-    T: ?Sized + GetFieldMutImpl<__FieldName, P>,
-{
-    default_if! {
-        #[inline(always)]
-        cfg(feature="specialization")
-        unsafe fn get_field_raw_mut_inner(
-            this:*mut *mut (),
-            name:__FieldName,
-            param:P,
-        )->Result<*mut Self::Ty,Self::Err> {
-            let func={
-                // this is a triple pointer on purpose
-                let this:*mut T=**(this as *mut *mut *mut T);
-                T::get_field_raw_mut_func(&*this)
-            };
-
-            let this: *mut *mut () = *(this as *mut *mut *mut ());
-            func( this, name, param )
-        }
-    }
-}
-
-#[cfg(feature = "specialization")]
-unsafe impl<'a, T: 'a, __FieldName, P> SpecGetFieldMut<__FieldName, P> for &'a mut T
-where
-    T: Sized + GetFieldMutImpl<__FieldName, P>,
-{
-    unsafe fn get_field_raw_mut_inner(
-        this: *mut *mut (),
-        name: __FieldName,
-        param: P,
-    ) -> Result<*mut Self::Ty, Self::Err> {
-        let this: *mut *mut () = *(this as *mut *mut *mut ());
-        T::get_field_raw_mut(this, name, param)
+    as_delegating_raw{
+        *(this as *mut *mut T)
     }
 }

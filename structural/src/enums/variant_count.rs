@@ -322,7 +322,7 @@ impl<This, T, Expected> GetElseValue<T> for ExpectedVariantCount<This, Expected,
 
     #[inline(always)]
     unsafe fn get_else_values(self) -> (Self::ExpectedMsg, Self::FoundMsg, T) {
-        std::hint::unreachable_unchecked()
+        crate::utils::unreachable_unchecked()
     }
 }
 

@@ -79,16 +79,16 @@ The methods and constants turn into defaulted methods and defaulted constants in
     allowing shared,mutable,and by value access to the field.
 
 - `ref  b:T`:
-    Corresponds to the `GetFieldImpl<FP!(b),Ty=T>` shared reference
+    Corresponds to the `GetField<FP!(b),Ty=T>` shared reference
     field accessor trait.
 
 - `mut  c:i64`:
-    Corresponds to the `GetFieldMutImpl<FP!(c),Ty=i64>` mutable reference
-    field accessor trait (which`itself implies `GetFieldImpl`).
+    Corresponds to the `GetFieldMut<FP!(c),Ty=i64>` mutable reference
+    field accessor trait (which`itself implies `GetField`).
 
 - `move d:String`:
-    Corresponds to the `IntoFieldImpl<FP!(d),Ty=String>` by value
-    field accessor trait (which itself implies `GetFieldImpl`).
+    Corresponds to the `IntoField<FP!(d),Ty=String>` by value
+    field accessor trait (which itself implies `GetField`).
 
 - `mut move e:String`:
     Corresponds to the `IntoFieldMut<FP!(e),Ty=String>` trait,

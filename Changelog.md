@@ -22,11 +22,16 @@ accessor traits with different optionalities and access.
 Added `*_VSI` trait to the generated code for structs,
 to use it as the bound for an enum variant with compatible fields.
 
+Changed output of single "path component" (non nested field/variant/variant field access)
+`fp` or `FP` macro invocation to be an `S` instead of a `FieldPath<(S,)>`
+
+Renamed `FieldPath` to `NestedFieldPath`,since they are always for nested fields.
+
 Moved `type_level::field_path` to the root module,
-moved the `TStr`,`VariantName`,`VariantField`,`FieldPath`,`FieldPathSet`,`NestedFieldPathSet`
+moved the `TStr`,`VariantName`,`VariantField`,`NestedFieldPath`,`FieldPathSet`,`NestedFieldPathSet`
 to the root module for error messages to be shorter.
 
-Changed representation of `FieldPath`,`FieldPathSet` to store their tuple type parameter 
+Changed representation of `NestedFieldPath`,`FieldPathSet` to store their tuple type parameter 
 as a field (the same for `VariantName`,`VariantField`,`NestedFieldPathSet`),
 constructible from their fields by value
 (some with a constructor,some with the struct literal).<br>
@@ -182,9 +187,6 @@ Removed support for Rust versions prior to 1.40,so that type proc macros could b
 
 Defined `use_const_str` and `nightly_use_const_str` features to use const generics as an
 implementation detail of `TStr`.
-
-Changed output of single "path component" (non nested field/variant/variant field access)
-`fp` or `FP` macro invocation to be an `S` instead of a `FieldPath<(S,)>`
 
 Removed the `FieldPath1` type alias.
 

@@ -106,8 +106,8 @@ pub trait EnumExt {
     ///     let proxy: *mut VariantProxy<Variants,TS!(Baz)>=
     ///         Variants::as_raw_mut_variant(&mut this,ts!(Baz)).unwrap();
     ///    
-    ///     assert_eq!( (*proxy).field_(ts!(0)), None);;
-    ///     assert_eq!( (*proxy).field_mut(ts!(0)), None);;
+    ///     assert_eq!( (*proxy).field_(ts!(0)), &None);;
+    ///     assert_eq!( (*proxy).field_mut(ts!(0)), &None);;
     /// }
     /// unsafe{
     ///     assert_eq!(
@@ -157,8 +157,8 @@ pub trait EnumExt {
     ///     let mut proxy: VariantProxy<Variants,TS!(Baz)>=
     ///         this.into_variant(ts!(Baz)).unwrap();
     ///    
-    ///     assert_eq!( proxy.field_(ts!(0)), Some(&Ordering::Less));
-    ///     assert_eq!( proxy.field_mut(ts!(0)), Some(&mut Ordering::Less));
+    ///     assert_eq!( proxy.field_(ts!(0)), &Some(Ordering::Less));
+    ///     assert_eq!( proxy.field_mut(ts!(0)), &mut Some(Ordering::Less));
     ///     assert_eq!( proxy.into_field(ts!(0)), Some(Ordering::Less));
     /// }
     /// {

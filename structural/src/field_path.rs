@@ -29,7 +29,9 @@ mod to_usize;
 
 include! { "./field_path/path_components.rs" }
 
-pub use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, TStr, VariantField, VariantName};
+pub use crate::{
+    FieldPathSet, NestedFieldPath, NestedFieldPathSet, TStr, VariantField, VariantName,
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -103,37 +105,37 @@ pub trait IsMultiFieldPath: Sized {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<T> IsSingleFieldPath for FieldPath<T> {}
+impl<T> IsSingleFieldPath for NestedFieldPath<T> {}
 
-impl<T> IsMultiFieldPath for FieldPath<T> {
+impl<T> IsMultiFieldPath for NestedFieldPath<T> {
     type PathUniqueness = UniquePaths;
 }
 
-impl<T> Debug for FieldPath<T> {
+impl<T> Debug for NestedFieldPath<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FieldPath").finish()
+        f.debug_struct("NestedFieldPath").finish()
     }
 }
 
-impl<T> FieldPath<T>
+impl<T> NestedFieldPath<T>
 where
     T: ConstDefault,
 {
-    /// Constructs a `FieldPath<T>`
+    /// Constructs a `NestedFieldPath<T>`
     pub const NEW: Self = Self::DEFAULT;
 }
 
-impl<T> FieldPath<(T,)> {
+impl<T> NestedFieldPath<(T,)> {
     /// Construcst a field path from a single path component.
     ///
-    /// Example: `FieldPath::one(ts!(a))` is equivalent to `fp!(a)`
+    /// Example: `NestedFieldPath::one(ts!(a))` is equivalent to `fp!(a)`
     ///
     /// Example:
-    /// `FieldPath::one(VariantField::new(ts!(a),ts!(b)))`
+    /// `NestedFieldPath::one(VariantField::new(ts!(a),ts!(b)))`
     /// is equivalent to `fp!(::a.b)`
     ///
     /// Example:
-    /// `FieldPath::one(VariantName::new(ts!(Left)))`
+    /// `NestedFieldPath::one(VariantName::new(ts!(Left)))`
     /// is equivalent to `fp!(::Left)`
     #[inline(always)]
     pub const fn one(value: T) -> Self {
@@ -141,15 +143,15 @@ impl<T> FieldPath<(T,)> {
     }
 }
 
-impl<T> FieldPath<T> {
+impl<T> NestedFieldPath<T> {
     /// Constructs a field path for a nested field.
     ///
     /// Example:
-    /// `FieldPath::many(( ts!(a), ts!(b) ))`
+    /// `NestedFieldPath::many(( ts!(a), ts!(b) ))`
     /// is equivalent to `fp!(a.b)`
     ///
     /// Example:
-    /// `FieldPath::many(( VariantField::new(ts!(A), ts!(b)), ts!(c) ))`
+    /// `NestedFieldPath::many(( VariantField::new(ts!(A), ts!(b)), ts!(c) ))`
     /// is equivalent to `fp!(::A.b.c)`
     #[inline(always)]
     pub const fn many(list: T) -> Self {
@@ -157,64 +159,64 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<T> ConstDefault for FieldPath<T>
+impl<T> ConstDefault for NestedFieldPath<T>
 where
     T: ConstDefault,
 {
-    const DEFAULT: Self = FieldPath {
+    const DEFAULT: Self = NestedFieldPath {
         list: ConstDefault::DEFAULT,
     };
 }
 
-impl<S> ToTString for FieldPath<(TStr<S>,)> {
+impl<S> ToTString for NestedFieldPath<(TStr<S>,)> {
     type Output = TStr<S>;
 }
 
-impl<T> ToTList for FieldPath<T>
+impl<T> ToTList for NestedFieldPath<T>
 where
     T: ToTList,
 {
     type Output = ToTListOut<T>;
 }
 
-impl<T, S> PushBack<S> for FieldPath<T>
+impl<T, S> PushBack<S> for NestedFieldPath<T>
 where
     T: PushBack<S>,
 {
-    type Output = FieldPath<PushBackOut<T, S>>;
+    type Output = NestedFieldPath<PushBackOut<T, S>>;
 }
 
-impl<T, U> Append<FieldPath<U>> for FieldPath<T>
+impl<T, U> Append<NestedFieldPath<U>> for NestedFieldPath<T>
 where
     T: Append<U>,
 {
-    type Output = FieldPath<AppendOut<T, U>>;
+    type Output = NestedFieldPath<AppendOut<T, U>>;
 }
 
-impl<T> FieldPath<T> {
-    /// Constructs a new FieldPath with `_other` appended at the end.
+impl<T> NestedFieldPath<T> {
+    /// Constructs a new NestedFieldPath with `_other` appended at the end.
     ///
     /// Example arguments:`fp!(a)`/`fp!(foo)`/`fp!(bar)`
     #[inline(always)]
-    pub fn push<U, V>(self, _other: U) -> FieldPath<V>
+    pub fn push<U, V>(self, _other: U) -> NestedFieldPath<V>
     where
-        Self: PushBack<U, Output = FieldPath<V>>,
-        FieldPath<V>: ConstDefault,
+        Self: PushBack<U, Output = NestedFieldPath<V>>,
+        NestedFieldPath<V>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 
-    /// Constructs a new FieldPath with `_other` appended at the end.
+    /// Constructs a new NestedFieldPath with `_other` appended at the end.
     #[inline(always)]
-    pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<AppendOut<T, U>>
+    pub fn append<U>(self, _other: NestedFieldPath<U>) -> NestedFieldPath<AppendOut<T, U>>
     where
         T: Append<U>,
-        FieldPath<AppendOut<T, U>>: ConstDefault,
+        NestedFieldPath<AppendOut<T, U>>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 
-    /// Converts this `FieldPath` to a `FieldPathSet`.
+    /// Converts this `NestedFieldPath` to a `FieldPathSet`.
     ///
     /// # Example
     ///
@@ -232,7 +234,7 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<C> FieldPath<(C,)> {
+impl<C> NestedFieldPath<(C,)> {
     /// Unwraps this non-nested field path into `C`.
     ///
     /// This can also be done with `path.list.0`.
@@ -242,7 +244,7 @@ impl<C> FieldPath<(C,)> {
 }
 
 impl_cmp_traits! {
-    impl[T] FieldPath<T>
+    impl[T] NestedFieldPath<T>
     where[]
 }
 
@@ -304,7 +306,7 @@ impl<T> FieldPathSet<(T,), UniquePaths> {
 impl<T> FieldPathSet<T, AliasedPaths> {
     /// Constructs a FieldPathSet from a tuple of field paths.
     ///
-    /// Note that this doesn't enforce that its input is in fact a tuple of FieldPath,
+    /// Note that this doesn't enforce that its input is in fact a tuple of NestedFieldPath,
     /// so you can use type inference for the arguments to this function.
     ///
     /// To be able to access multiple fields mutably at the same time,
@@ -429,11 +431,11 @@ where
     type Output = ToTListOut<T>;
 }
 
-impl<T, U, P> PushBack<FieldPath<P>> for FieldPathSet<T, U>
+impl<T, U, P> PushBack<NestedFieldPath<P>> for FieldPathSet<T, U>
 where
-    T: PushBack<FieldPath<P>>,
+    T: PushBack<NestedFieldPath<P>>,
 {
-    type Output = FieldPathSet<PushBackOut<T, FieldPath<P>>, AliasedPaths>;
+    type Output = FieldPathSet<PushBackOut<T, NestedFieldPath<P>>, AliasedPaths>;
 }
 
 impl<T, U, P, U2> PushBack<FieldPathSet<(P,), U2>> for FieldPathSet<T, U>
@@ -497,12 +499,12 @@ impl<F, S, U> NestedFieldPathSet<F, S, U> {
         }
     }
 
-    /// Unwraps a `NestedFieldPathSet` into a `FieldPath` and a `FieldPathSet`
+    /// Unwraps a `NestedFieldPathSet` into a `NestedFieldPath` and a `FieldPathSet`
     pub const fn into_inner(self) -> (F, FieldPathSet<S, U>) {
         (ManuallyDrop::into_inner(self.nested), self.set)
     }
 
-    /// Unwraps a `NestedFieldPathSet` into the `FieldPath` for the nested field.
+    /// Unwraps a `NestedFieldPathSet` into the `NestedFieldPath` for the nested field.
     pub const fn into_nested(self) -> F {
         ManuallyDrop::into_inner(self.nested)
     }
