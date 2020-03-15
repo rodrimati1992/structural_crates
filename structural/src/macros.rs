@@ -74,7 +74,7 @@ macro_rules! _private_impl_getter{
 
             $crate::z_unsafe_impl_get_field_raw_mut_method!{
                 Self,
-                field_name=$field_name,
+                field_tstr=$field_name,
                 name_generic=$name_param,
             }
         }
@@ -99,7 +99,7 @@ macro_rules! _private_impl_getter{
             fn into_field_(self,_:$name_param)->Self::Ty{
                 self.$field_name
             }
-            $crate::z_impl_box_into_field_method!{$name_param}
+            $crate::z_impl_box_into_field_method!{field_tstr=$name_param}
         }
     };
     (
@@ -124,104 +124,8 @@ macro_rules! _private_impl_getter{
             )->Self::Ty{
                 self.$field_name
             }
-            $crate::z_impl_box_into_field_method!{$name_param}
+            $crate::z_impl_box_into_field_method!{field_tstr=$name_param}
         }
-    };
-}
-
-/// Delegates the enum traits that don't have required methods.
-///
-/// # Safety
-///
-/// The `Self` parameter of this macro must delegate accessor trait impls
-/// parameterized by `<VariantField<V,F>,UncheckedVariantField<V,F>>`
-/// to the `delegated_to` type,
-/// with the option to return `EnumField` when the delegated to type does not.
-///
-/// Example:in `impl<V,F> GetField<VariantField<V,F>,UncheckedVariantField<V,F>> for Foo`
-/// it must gelegate that trait to the same trait impl of the delegated-to type.
-#[macro_export]
-#[doc(hidden)]
-macro_rules! unsafe_delegate_vfield {
-    (
-        impl[$($typarams:tt)*] GetVariantField for $self_:ty
-        where[$($where_:tt)*]
-        delegate_to=$delegating_to:ty,
-    )=>{
-        unsafe impl<$($typarams)*> $crate::pmr::VariantCount for $self_
-        where
-            $delegating_to: $crate::pmr::VariantCount,
-            $($where_)*
-        {
-            type Count=$crate::pmr::VariantCountOut<$delegating_to>;
-        }
-
-        unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::GetVariantField<_V,_F>
-        for $self_
-        where
-            $delegating_to: $crate::pmr::GetVariantField<_V,_F>,
-            $($where_)*
-        {}
-    };
-    (
-        impl[$($typarams:tt)*] GetVariantFieldMut for $self_:ty
-        where[$($where_:tt)*]
-        delegate_to=$delegating_to:ty,
-    )=>{
-        unsafe_delegate_vfield!{
-            impl[$($typarams)*] GetVariantField for $self_
-            where[$($where_)*]
-            delegate_to=$delegating_to,
-        }
-
-        unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::GetVariantFieldMut<_V,_F>
-        for $self_
-        where
-            $delegating_to: $crate::pmr::GetVariantFieldMut<_V,_F>,
-            $($where_)*
-        {}
-    };
-    (
-        impl[$($typarams:tt)*] IntoVariantField for $self_:ty
-        where[$($where_:tt)*]
-        delegate_to=$delegating_to:ty,
-    )=>{
-        unsafe_delegate_vfield!{
-            impl[$($typarams)*] GetVariantField for $self_
-            where[$($where_)*]
-            delegate_to=$delegating_to,
-        }
-
-
-        unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::IntoVariantField<_V,_F>
-        for $self_
-        where
-            $delegating_to: $crate::pmr::IntoVariantField<_V,_F>,
-            $($where_)*
-        {}
-    };
-    (
-        impl[$($typarams:tt)*] IntoVariantFieldMut for $self_:ty
-        where[$($where_:tt)*]
-        delegate_to=$delegating_to:ty,
-    )=>{
-        unsafe_delegate_vfield!{
-            impl[$($typarams)*] GetVariantFieldMut for $self_
-            where[$($where_)*]
-            delegate_to=$delegating_to,
-        }
-
-
-        unsafe impl<$($typarams)* _V,_F>
-            $crate::pmr::IntoVariantField<_V,_F>
-        for $self_
-        where
-            $delegating_to: $crate::pmr::IntoVariantField<_V,_F>,
-            $($where_)*
-        {}
     };
 }
 
@@ -269,7 +173,7 @@ macro_rules! default_if {
 macro_rules! z_unsafe_impl_get_field_raw_mut_method {
     (
         $Self:ident,
-        field_name=$field_name:tt,
+        field_tstr=$field_name:tt,
         name_generic=$name_param:ty,
     ) => {
         unsafe fn get_field_raw_mut(
@@ -291,40 +195,123 @@ macro_rules! z_unsafe_impl_get_field_raw_mut_method {
     };
 }
 
+/// For borrowing an enum field as either `Some(NonNull<_>)` or `None`.
+///
+/// # Safety
+///
+/// The `$pointer` must be raw pointer to a valid(and fully initialized)
+/// instance of the `$enum` type.
+///
+/// # Example
+///
+/// For an example of using this macro look at
+/// [the manual implementation example for `GetVariantFieldMut`
+/// ](./field_traits/variant_field/trait.GetVariantFieldMut.html#manual-impl-example)
+#[macro_export]
+macro_rules! z_raw_borrow_enum_field {
+    (
+        $pointer:expr,
+        $enum:ident::$variant:ident.$field:tt : $field_ty:ty
+    ) => {{
+        match *$pointer {
+            $enum::$variant {
+                $field: ref mut field,
+                ..
+            } => {
+                if false {
+                    let _: *mut $field_ty = field;
+                }
+                let ptr = field as *mut $field_ty;
+                Some($crate::pmr::NonNull::new_unchecked(ptr))
+            }
+            #[allow(unreachable_patterns)]
+            _ => None,
+        }
+    }};
+}
+
+/// Implements the `get_vfield_raw_mut_fn` and `get_vfield_raw_mut_unchecked_fn`
+/// methods from the `GetVariantFieldMut` trait.
+///
+/// # Safety
+///
+/// The `$Self` argument must be the `Self` type in the impl block.
+///
+/// # Example
+///
+/// For an example of using this macro look at
+/// [the manual implementation example for `GetVariantFieldMut`
+/// ](./field_traits/variant_field/trait.GetVariantFieldMut.html#manual-impl-example)
+#[macro_export]
+macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
+    (
+        Self=$Self:ty,
+        variant_tstr=$variant_name:ty,
+        field_tstr=$field_name:ty,
+        field_type=$field_ty:ty,
+    ) => {
+        fn get_vfield_raw_mut_fn(
+            &self,
+        ) -> $crate::pmr::GetVFieldRawMutFn<$variant_name, $field_name, $field_ty> {
+            <$Self as
+                                        $crate::pmr::GetVariantFieldMut<$variant_name,$field_name>
+                                    >::get_vfield_raw_mut_
+        }
+
+        fn get_vfield_raw_mut_unchecked_fn(
+            &self,
+        ) -> $crate::pmr::GetFieldRawMutFn<$field_name, $field_ty> {
+            <$Self as
+                                $crate::pmr::GetVariantFieldMut<$variant_name, $field_name>
+                            >::get_vfield_raw_mut_unchecked
+        }
+    };
+}
+
 /// For use in manual implementations of the IntoField trait.
 ///
-/// Implements the `IntoField::box_into_field_` method
-/// by delegatign to the [IntoField::into_field_] method,
+/// Implements the [`IntoField::box_into_field_`] method
+/// by delegatign to the [`IntoField::into_field_`] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
+///
+/// # Example
 ///
 /// For an example of using this macro look at
 /// [the documentation for IntoField
 /// ](./field_traits/trait.IntoField.html#manual-implementation-example)
+///
+/// [`IntoField::box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
+/// [`IntoField::into_field_`]: ./field_traits/trait.IntoField.html#tymethod.into_field_
 #[macro_export]
 #[cfg(not(feature = "alloc"))]
 macro_rules! z_impl_box_into_field_method {
     ($($anything:tt)*) => {};
 }
 
-/// For use in semi-manual implementations of the IntoField trait.
+/// For use in manual implementations of the IntoField trait.
 ///
-/// Implements the [IntoField::box_into_field_] method
-/// by delegatign to the [IntoField::into_field_] method,
+/// Implements the [`IntoField::box_into_field_`] method
+/// by delegatign to the [`IntoField::into_field_`] method,
 /// automatically handling conditional `#![no_std]` support in `structural`.
+///
+/// # Example
 ///
 /// For an example of using this macro look at
 /// [the documentation for IntoField
 /// ](./field_traits/trait.IntoField.html#manual-implementation-example)
+///
+/// [`IntoField::box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
+/// [`IntoField::into_field_`]: ./field_traits/trait.IntoField.html#tymethod.into_field_
 #[macro_export]
 #[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_field_method {
-    ($field_name:ty) => {
+    (field_tstr= $field_name:ty) => {
         $crate::z_impl_box_into_field_method! {
-            $field_name,
-            $crate::GetFieldType<Self,$field_name>,
+            field_tstr= $field_name,
+            field_type= $crate::GetFieldType<Self,$field_name>,
         }
     };
-    ($field_name:ty, $field_ty:ty $(,)*) => {
+    (field_tstr= $field_name:ty, field_type= $field_ty:ty $(,)*) => {
         #[inline(always)]
         fn box_into_field_(self: $crate::pmr::Box<Self>, name: $field_name) -> $field_ty {
             <Self as $crate::IntoField<$field_name>>::into_field_(*self, name)
@@ -338,10 +325,30 @@ macro_rules! z_impl_box_into_variant_field_method {
     ($($anything:tt)*) => {};
 }
 
+/// For use in manual implementations of the IntoVariantField trait.
+///
+/// Implements the [`IntoVariantField::box_into_vfield_`] method
+/// by delegatign to the [`IntoVariantField::into_vfield_`] method,
+/// automatically handling conditional `#![no_std]` support in `structural`.
+///
+/// # Example
+///
+/// For an example of using this macro look at
+/// [the documentation for IntoVariantField
+/// ](./field_traits/variant_field/trait.IntoVariantField.html#manual-impl-example)
+///
+/// [`IntoField::box_into_vfield_`]:
+/// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.box_into_vfield_
+/// [`IntoField::into_vfield_`]:
+/// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.into_vfield_
 #[macro_export]
 #[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_variant_field_method {
-    ($variant_name:ty, $field_name:ty, $field_ty:ty $(,)*) => {
+    (
+        variant_tstr= $variant_name:ty,
+        field_tstr= $field_name:ty,
+        field_type=$field_ty:ty $(,)*
+    ) => {
         fn box_into_vfield_(
             self: $crate::alloc::boxed::Box<Self>,
             vname: $variant_name,

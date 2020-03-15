@@ -92,7 +92,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 /// For examples of using `RevGetFieldImpl` as a bound look at example for
 /// [RevGetField](./trait.RevGetField.html)
-/// (for getting a field in a struct,not inside of a nested enums) or
+/// (for getting a field in a struct,not inside of a nested enum) or
 /// [OptRevGetField](./trait.OptRevGetField.html) (for getting a field in a (nested) enum).
 ///
 /// # Example
@@ -133,9 +133,18 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 /// ```
 pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
     /// The error returned by `rev_*` methods.
+    ///
+    /// This can be either:
+    ///
+    /// - [`StructField`]:For a field in a struct (not inside a nested enum).
+    ///
+    /// - [`EnumField`]: For a field inside a (potentially nested) enum.
+    ///
+    /// [`StructField`]: ../errors/enum.StructField.html
+    /// [`EnumField`]: ../errors/struct.EnumField.html
     type Err: IsFieldErr;
 
-    /// Accesses the field(s) that `self` represents inside of `this`,by reference.
+    /// Accesses the field that `self` represents inside of `this`,by reference.
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err>;
 }
 
@@ -144,17 +153,17 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// Like Get*FieldMut,except that the parameters are reversed,
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
+/// # Safety
+///
+/// The `rev_get_field_raw_mut` function must return a valid pointer derived
+/// from the passed in pointer, that is safe to dereference mutably.
+///
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldMutImpl` as a bound look at example for
 /// [RevGetFieldMut](./trait.RevGetFieldMut.html)
 /// (for getting a field in a struct,not inside of a nested enum) or
 /// [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html) (for getting a field in a (nested) enum).
-///
-/// # Safety
-///
-/// The `rev_get_field_raw_mut` function must return a non-aliasing pointer,
-/// that is safe to dereference.
 ///
 /// # Example
 ///
@@ -230,10 +239,10 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///
 /// ```
 pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
-    /// Accesses the field(s) that `self` represents inside of `this`,by mutable reference.
+    /// Accesses the field that `self` represents inside of `this`,by mutable reference.
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err>;
 
-    /// Accesses the field(s) that `self` represents inside of `this`,by raw pointer.
+    /// Accesses the field that `self` represents inside of `this`,by raw pointer.
     unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err>;
 }
 
@@ -324,15 +333,19 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// }
 /// ```
 pub trait RevIntoFieldImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
+    /// The type returned by `rev_box_into_field`,often the same as `Self::Tỳ`.
+    ///
+    /// The only type from `structural` where `Self::Ty` isn't the same as `Self::BoxedTy`
+    /// is `VariantName`.
     type BoxedTy;
 
-    /// Accesses the field(s) that `self` represents inside of `this`,by value.
+    /// Accesses the field that `self` represents inside of `this`,by value.
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err>
     where
         This: Sized,
         Self::Ty: Sized;
 
-    /// Accesses the field(s) that `self` represents inside of `this`,by value.
+    /// Accesses the field that `self` represents inside of `this`,by value.
     #[cfg(feature = "alloc")]
     fn rev_box_into_field(self, this: Box<This>) -> Result<Self::BoxedTy, Self::Err>;
 }

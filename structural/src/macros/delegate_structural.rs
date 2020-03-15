@@ -375,9 +375,6 @@ macro_rules! unsafe_delegate_structural_with_inner {
             type Count=$crate::pmr::VariantCountOut<$delegating_to_type>;
         }
 
-        // This is defined separately from `unsafe_delegate_vfield!`
-        // because additional bounds might be added to GetField.
-        //
         unsafe impl<$($impl_params)* __V,__F,__Ty>
             $crate::GetVariantField<$crate::TStr<__V>,__F>
         for $self
@@ -885,8 +882,6 @@ macro_rules! unsafe_delegate_structural_with_inner {
         IntoField $into_field_closure:block
     )=>{
 
-        // This is defined separately from `unsafe_delegate_vfield!`
-        // because additional bounds might be added to IntoField.
         unsafe impl<$($impl_params)* __V,__F,__Ty>
             $crate::pmr::IntoVariantField<$crate::TStr<__V>,__F>
         for $self
@@ -909,9 +904,9 @@ macro_rules! unsafe_delegate_structural_with_inner {
             }
 
             $crate::z_impl_box_into_variant_field_method!{
-                $crate::TStr<__V>,
-                __F,
-                $crate::GetVariantFieldType<$delegating_to_type,$crate::TStr<__V>,__F>,
+                variant_tstr= $crate::TStr<__V>,
+                field_tstr= __F,
+                field_type= $crate::GetVariantFieldType<$delegating_to_type,$crate::TStr<__V>,__F>,
             }
         }
 
@@ -936,8 +931,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
             }
 
             $crate::z_impl_box_into_field_method!{
-                __F,
-                __Ty,
+                field_tstr=__F,
+                field_type=__Ty,
             }
         }
     };

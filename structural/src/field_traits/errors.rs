@@ -27,7 +27,7 @@ pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 /// The error type for accesses to fields inside a struct,
 /// and it's not nested inside an enum.
 ///
-/// This is used as the `Err` associated type for `RevGetField` implementors,
+/// This is used as the `Err` associated type for `Rev*Field*` implementors,
 /// which return a `Result<_,StructField>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
@@ -37,7 +37,7 @@ pub enum StructField {}
 
 /// The error type for accesses to fields inside an enum.
 ///
-/// This is used as the `Err` associated type for `RevGetField` implementors,
+/// This is used as the `Err` associated type for `Rev*Field*` implementors,
 /// which return a `Result<_,EnumField>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn

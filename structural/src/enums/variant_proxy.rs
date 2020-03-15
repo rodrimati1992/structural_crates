@@ -599,5 +599,5 @@ where
         unsafe { self.value.into_vfield_unchecked(V::DEFAULT, fname) }
     }
 
-    z_impl_box_into_field_method! {F,T::Ty}
+    z_impl_box_into_field_method! {field_tstr=F, field_type=T::Ty}
 }

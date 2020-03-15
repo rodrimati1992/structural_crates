@@ -2,9 +2,7 @@
 Some helper functions.
 */
 
-use crate::field_traits::EnumField;
-
-use std::marker::PhantomData;
+use std_::marker::PhantomData;
 
 /// Used to coerce `&[T;N]` to `&[T]`.
 #[inline(always)]
@@ -83,12 +81,3 @@ where
 }
 
 /////////////////////////////////////////////////////////
-
-#[inline(always)]
-#[doc(hidden)]
-pub unsafe fn option_as_mut_result<T>(ptr: *mut Option<T>) -> Result<*mut T, EnumField> {
-    match *ptr {
-        Some(ref mut x) => Ok(x as *mut T),
-        None => Err(EnumField),
-    }
-}
