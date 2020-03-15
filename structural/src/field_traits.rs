@@ -418,6 +418,12 @@ pub unsafe trait GetFieldMut<FieldName>: GetField<FieldName> {
 /// This trait has the same safety requirements as `GetFieldMut`.
 #[doc(hidden)]
 pub unsafe trait SpecGetFieldMut<FieldName>: GetField<FieldName> {
+    /// Gets a mutable pointer for the field.
+    ///
+    /// # Safety
+    ///
+    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
+    /// pointing to a fully initialized instance of the type.
     unsafe fn get_field_raw_mut_inner(ptr: *mut (), field_name: FieldName) -> *mut Self::Ty
     where
         Self: Sized;

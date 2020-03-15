@@ -1,8 +1,9 @@
 /*!
 types that represent values.
 */
-
-// pub use core_extensions::type_level_bool::{self,True,False,Boolean};
+// The types here represent values,
+// so warning about "type complexity" for them is silly .
+#![allow(clippy::type_complexity)]
 
 pub mod cmp;
 pub mod collection_traits;

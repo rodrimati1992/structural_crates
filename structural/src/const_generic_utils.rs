@@ -7,7 +7,11 @@ pub(crate) const fn str_to_usize(s: &str) -> usize {
     const fn inner(s: &[u8], index: usize, curr: usize) -> usize {
         if index < s.len() {
             let digit = (s[index] - b'0') as usize;
-            [(); 10][9 - digit];
+            // This has the effect of panicking on non to '0' to '9' characters.
+            #[allow(clippy::no_effect)]
+            {
+                [(); 10][9 - digit];
+            }
             inner(s, index + 1, (curr * 10) + digit)
         } else {
             curr
