@@ -243,6 +243,10 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err>;
 
     /// Accesses the field that `self` represents inside of `this`,by raw pointer.
+    ///
+    /// # Safety
+    ///
+    /// You must pass a pointer to a fully initialized instance of `This`.
     unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err>;
 }
 

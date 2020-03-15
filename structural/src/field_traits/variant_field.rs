@@ -18,6 +18,9 @@ use std_::ptr::NonNull;
 ///
 /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
 ///
+/// Every instance of "the `F` field"/"the `V` variant" in the docs mean
+/// "in the field/variant named by the `F`/`V` type parameter"
+///
 /// # Safety
 ///
 /// `IsVariant<V>` and `GetVariantField<V, F>` must agree on what variant the enum currently is.
@@ -156,6 +159,10 @@ pub unsafe trait GetVariantField<V, F>:
 
     /// Accesses the `F` field in the `V` variant by reference,
     /// without checking that the enum is currently the `V` variant.
+    ///
+    /// # Safety
+    ///
+    /// The enum must be the `V` variant.
     #[inline(always)]
     unsafe fn get_vfield_unchecked(&self, variant: V, field: F) -> &Self::Ty {
         match self.get_vfield_(variant, field) {
@@ -193,6 +200,9 @@ pub type GetVariantFieldType<This, Variant, Field> =
 /// Provides shared and mutable access to an enum variant field.
 ///
 /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+///
+/// Every instance of "the `F` field"/"the `V` variant" in the docs mean
+/// "in the field/variant named by the `F`/`V` type parameter"
 ///
 /// # Safety
 ///
@@ -402,6 +412,10 @@ pub unsafe trait GetVariantFieldMut<V, F>: GetVariantField<V, F> {
 
     /// Accesses the `F` field in the `V` variant by mutable reference,
     /// without checking that the enum is currently the `V` variant.
+    ///
+    /// # Safety
+    ///
+    /// The enum must be the `V` variant.
     #[inline(always)]
     unsafe fn get_vfield_mut_unchecked(&mut self, variant: V, field: F) -> &mut Self::Ty {
         match self.get_vfield_mut_(variant, field) {
@@ -432,6 +446,8 @@ pub unsafe trait GetVariantFieldMut<V, F>: GetVariantField<V, F> {
     ///
     /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
     /// pointing to a fully initialized instance of the type.
+    ///
+    /// The enum must also be the `V` variant (type parameter of this trait).
     ///
     // This function takes only the `F` parameter so that its parameters are
     // the same as `GetFieldMut::get_field_raw_mut`.
@@ -465,6 +481,9 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// Provides shared and by-value access to an enum variant field.
 ///
 /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+///
+/// Every instance of "the `F` field"/"the `V` variant" in the docs mean
+/// "in the field/variant named by the `F`/`V` type parameter"
 ///
 /// # Safety
 ///
@@ -647,6 +666,10 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 
     /// Converts this into the `F` field in the `V` variant by value,
     /// without checking that the enum is currently the `V` variant.
+    ///
+    /// # Safety
+    ///
+    /// The enum must be the `V` variant.
     #[inline(always)]
     unsafe fn into_vfield_unchecked(self, variant_name: V, field_name: F) -> Self::Ty
     where
@@ -672,6 +695,10 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
     /// without checking that the enum is currently the `V` variant.
     ///
     /// This method exists so that `Box<dyn Trait>` can be converted into a field by value.
+    ///
+    /// # Safety
+    ///
+    /// The enum must be the `V` variant.
     #[cfg(feature = "alloc")]
     #[inline(always)]
     unsafe fn box_into_vfield_unchecked(
@@ -691,6 +718,9 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 /// A bound for shared,mutable,and by-value access to the field `F` inside of the `V` variant.
 ///
 /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+///
+/// Every instance of "the `F` field"/"the `V` variant" in the docs mean
+/// "in the field/variant named by the `F`/`V` type parameter"
 ///
 /// # Example
 ///
@@ -737,11 +767,23 @@ impl<This, V, F> IntoVariantFieldMut<V, F> for This where
 
 /// A `GetVariantFieldMut` specifically used for specialization internally.
 ///
+/// By specializing a separate trait,the compiler shows the same error message
+/// with specialization and without.
+///
+/// Every instance of "the `F` field"/"the `V` variant" in the docs mean
+/// "in the field/variant named by the `F`/`V` type parameter"
+///
 /// # Safety
 ///
 /// This trait has the same safety requirements as `GetVariantFieldMut`.
 #[doc(hidden)]
 pub unsafe trait SpecGetVariantFieldMut<V, F>: GetVariantField<V, F> {
+    /// Accesses the `F` field in the `V` variant by raw pointer.
+    ///
+    /// # Safety
+    ///
+    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
+    /// pointing to a fully initialized instance of the type.
     unsafe fn get_vfield_raw_mut_inner(
         ptr: *mut (),
         variant_name: V,

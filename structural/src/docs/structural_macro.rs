@@ -133,7 +133,7 @@ Delegates the implementation of the Structural and accessor traits to this field
 You can only delegate the implementation and Structural and accessor traits
 to a single field.
 
-Using this attribute will disable the generation of the `<DerivingType>_SI` trait.
+Using this attribute will disable the generation traits.
 
 Optional arguments for `delegate_to`:
 
@@ -142,19 +142,11 @@ Optional arguments for `delegate_to`:
 - `into_bound="T:bound"`: Adds the constraint to the `IntoField` impl.
 
 
-# Container/Field Attributes
+# Container/Variant/Field Attributes
 
 Unless stated otherwise,
-when these attributes are put on the container it will have the same effect as
+when these attributes are put on the container or variant it will have the same effect as
 being put on the field,and are overriden by attributes directly on the field.
-
-### `#[struc(public)]`
-
-Marks the fields as public,generating the accessor traits for the field.
-
-### `#[struc(not_public)]`
-
-Marks the fields as private,not generating the accessor traits for the field.
 
 ### `#[struc(access="")]`
 
@@ -174,6 +166,21 @@ Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field
 
 When this attribute is used on a non-pub field,
 it'll mark the field as public for the purpose of generating accessor trait impls.
+
+# Container/Field Attributes
+
+Unless stated otherwise,
+when these attributes are put on the container it will have the same effect as
+being put on the field,and are overriden by attributes directly on the field.
+
+### `#[struc(public)]`
+
+Marks the fields as public,generating the accessor traits for the field.
+
+### `#[struc(not_public)]`
+
+Marks the fields as private,not generating the accessor traits for the field.
+
 
 # Examples
 

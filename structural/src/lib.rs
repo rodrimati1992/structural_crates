@@ -584,6 +584,11 @@ struct Cents(u64);
 #![deny(rust_2018_idioms)]
 #![allow(non_camel_case_types)]
 #![no_std]
+// The associated constants from this crate use trait bounds,
+// so they can't be translated to `const fn`.
+// Also,the constants don't use cell types,they're just generic.
+#![allow(clippy::declare_interior_mutable_const)]
+#![deny(clippy::missing_safety_doc)]
 
 #[cfg(feature = "std")]
 pub extern crate std;

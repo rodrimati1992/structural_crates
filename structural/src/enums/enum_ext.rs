@@ -125,6 +125,10 @@ pub trait EnumExt {
     /// }
     ///
     /// ```
+    ///
+    /// # Safety
+    ///
+    /// You must pass a pointer to a fully initialized instance of `Self`.
     #[inline(always)]
     unsafe fn as_raw_mut_variant<V>(
         this: *mut Self,
