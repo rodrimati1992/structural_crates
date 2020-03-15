@@ -1,8 +1,9 @@
+use crate::for_examples::{EnumOptFlying, EnumOptFlying_SI};
 use crate::{
     field_path_aliases, structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
 };
 
-use std_::{fmt::Debug, marker::PhantomData};
+use std_::{fmt::Debug, marker::PhantomData, mem};
 
 use core_extensions::type_level_bool::{False, True};
 
@@ -20,11 +21,31 @@ structural_alias! {
     }
 }
 
-fn huh<T>(mut this: T)
+fn struct_testing<T>(mut this: T)
 where
     T: MutArray3<u32>,
 {
-    assert_eq!(this.fields_mut(fp!(0, 1, 2)), (&mut 1, &mut 1, &mut 1));
+    let (a, b, c) = this.fields_mut(fp!(0, 1, 2));
+    mem::swap(a, c);
+    assert_eq!(a, &mut 5);
+    assert_eq!(b, &mut 3);
+    assert_eq!(c, &mut 2);
+}
+
+fn enum_testing<T>(mut this: T)
+where
+    T: EnumOptFlying_SI,
+{
+    let (a, b, c) = this.fields_mut(fp!(::Limbs=>legs,hands,noodles)).unwrap();
+    assert_eq!(a, &mut Some(3));
+    assert_eq!(b, &mut Some(5));
+    assert_eq!(c, &mut 8);
+
+    mem::swap(a, b);
+    *c += 20;
+    assert_eq!(a, &mut Some(5));
+    assert_eq!(b, &mut Some(3));
+    assert_eq!(c, &mut 28);
 }
 
 //////////////////////////////////////////////////
@@ -38,7 +59,17 @@ struct SizedFoo<T> {
 
 #[test]
 fn delegate_sized() {
-    huh(SizedFoo { value: [1; 10] });
+    struct_testing(SizedFoo {
+        value: [2, 3, 5, 8, 13, 21, 34],
+    });
+
+    let mut value = EnumOptFlying::Limbs {
+        legs: Some(3),
+        hands: Some(5),
+        noodles: 8,
+    };
+    enum_testing(SizedFoo { value });
+    enum_testing(SizedFoo { value: &mut value });
 }
 
 //////////////////////////////////////////////////
@@ -166,10 +197,17 @@ unsafe_delegate_structural_with! {
 
 #[test]
 fn delegate_unsized() {
-    let array: &mut dyn MutArray3<u32> = &mut [1; 10];
+    let array: &mut dyn MutArray3<u32> = &mut [2, 3, 5, 8, 13, 21, 34];
     let this: MaybeSizedFoo<'_, dyn MutArray3<u32>> = MaybeSizedFoo { value: array };
+    struct_testing(this);
 
-    huh(this);
+    let mut value = EnumOptFlying::Limbs {
+        legs: Some(3),
+        hands: Some(5),
+        noodles: 8,
+    };
+    let this: MaybeSizedFoo<'_, dyn EnumOptFlying_SI> = MaybeSizedFoo { value: &mut value };
+    enum_testing(this);
 }
 
 //////////////////////////////////////////////////
@@ -196,12 +234,33 @@ unsafe_delegate_structural_with! {
 
 #[test]
 fn delegate_cfg() {
-    let array: &mut dyn MutArray3<u32> = &mut [1; 10];
-    let this: SpecializedFoo<'_, dyn MutArray3<u32>> = SpecializedFoo { value: array };
+    {
+        let value: &mut dyn MutArray3<u32> = &mut [2, 3, 5, 8, 13, 21, 34];
+        let this: SpecializedFoo<'_, dyn MutArray3<u32>> = SpecializedFoo { value };
 
-    huh(this);
+        struct_testing(this);
 
-    huh(SizedFoo {
-        value: &mut [1; 10],
-    });
+        struct_testing(SizedFoo {
+            value: &mut [2, 3, 5, 8, 13, 21, 34],
+        });
+    }
+
+    {
+        let value = EnumOptFlying::Limbs {
+            legs: Some(3),
+            hands: Some(5),
+            noodles: 8,
+        };
+        {
+            let mut value = value.clone();
+
+            let this: SpecializedFoo<'_, dyn EnumOptFlying_SI> =
+                SpecializedFoo { value: &mut value };
+
+            enum_testing(this);
+        }
+        enum_testing(SizedFoo {
+            value: &mut value.clone(),
+        });
+    }
 }

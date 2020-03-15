@@ -9,7 +9,7 @@ use super::delegation::{DelegateTo, RawMutImplParam};
 
 use as_derive_utils::{
     attribute_parsing::with_nested_meta,
-    datastructure::{DataStructure, DataVariant, Field, FieldMap},
+    datastructure::{DataStructure, DataVariant, Field, FieldMap, Struct},
     return_spanned_err, return_syn_err, spanned_err,
     utils::{LinearResult, SynResultExt},
 };
@@ -129,6 +129,7 @@ enum ParseContext<'a> {
     Variant {
         name: &'a Ident,
         index: usize,
+        variant: &'a Struct<'a>,
     },
     Field {
         field: &'a Field<'a>,
@@ -163,6 +164,7 @@ pub(crate) fn parse_attrs_for_structural<'a>(
         let ctx = ParseContext::Variant {
             name: variant.name,
             index: var_i,
+            variant,
         };
         parse_inner(&mut this, variant.attrs, ctx)?;
 
@@ -277,7 +279,7 @@ fn parse_sabi_attr<'a>(
             }
         }
         (
-            ParseContext::Variant { index, .. },
+            ParseContext::Variant { index, variant, .. },
             Meta::NameValue(MetaNameValue {
                 lit: Lit::Str(unparsed_lit),
                 path,
@@ -293,6 +295,11 @@ fn parse_sabi_attr<'a>(
                     bounds: unparsed_lit.value(),
                     span: unparsed_lit.span(),
                 });
+            } else if path.is_ident("access") {
+                let access = unparsed_lit.parse::<Access>()?;
+                for field in &variant.fields {
+                    this.fields[field.index].access = access;
+                }
             } else if path.is_ident("rename") {
                 this.variants[index].renamed = Some(IdentOrIndex::from(unparsed_lit));
             } else {

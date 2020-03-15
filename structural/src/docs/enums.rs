@@ -12,6 +12,9 @@ If have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
 
 The Structural derive macro generates these items+impls for enums:
 
+- Implementation of the `Structural` trait for the deriving type,
+with documentation describing all the accessor trait impls for the type.
+
 - Impls of the accessor traits (
 [GetVariantField](../../field_traits/variant_field/trait.GetVariantField.html)/
 [GetVariantFieldMut](../../field_traits/variant_field/trait.GetVariantFieldMut.html)/

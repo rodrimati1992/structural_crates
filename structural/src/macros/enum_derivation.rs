@@ -399,7 +399,7 @@ macro_rules! _private_impl_getter_enum{
     (
         shared $shared:tt
         kind=$kind:tt
-        delegate_to( IntoFieldMut, $($field_params:tt)* )
+        delegate_to( IntoVariantFieldMut, $($field_params:tt)* )
     )=>{
         $crate::_private_impl_getter_enum!{
             GetVariantField

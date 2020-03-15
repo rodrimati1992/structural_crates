@@ -57,6 +57,7 @@ use std_::cmp::Ordering;
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
 #[struc(no_trait)]
+#[struc(variant_count_alias)]
 pub enum Variants {
     Foo(u32, u64),
     Bar(&'static str),
@@ -99,7 +100,7 @@ pub enum EnumOptA {
 }
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
-#[struc(no_trait)]
+#[struc(access = "mut")]
 pub enum EnumOptFlying {
     Limbs {
         legs: Option<usize>,

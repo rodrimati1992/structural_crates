@@ -54,6 +54,9 @@
 /// it'll be a [VariantField](./struct.VariantField.html) instead.<br>
 /// Examples: `fp!(::Foo)`, `fp!(::Boom)`
 ///
+/// - `?`: Syntactic sugar for `::Some.0`,used to access the value inside an Option.
+/// Examples: `fp!(foo?.bar)`, `fp!(::Quax.foo?.0)`
+///
 /// These can be passed to the
 /// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
 /// to access a single non-nested field.
@@ -145,7 +148,7 @@
 /// struct Foo{
 ///     bar:Bar,
 ///     baz:u32,
-///     ooo:(u32,u32),
+///     ooo:Option<(u32,u32)>,
 /// }
 ///
 /// #[derive(Debug,Clone,PartialEq,Structural)]
@@ -167,10 +170,17 @@
 ///
 ///     assert_eq!( foo.field_(fp!(bar.aaa.1)), &301 );
 ///
-///     assert_eq!(
-///         foo.fields_mut(fp!( bar.aaa, ooo.0, ooo.1 )),
-///         ( &mut (300,301), &mut 66, &mut 99 )
-///     );
+///     assert_eq!( foo.field_mut(fp!( bar.aaa )), &mut (300,301) );
+///
+///     assert_eq!( foo.field_mut(fp!( ooo )), &mut Some((66,99)) );
+///
+///     // You can use the `?` operator inside of `fp` to access fields from inside an Option.
+///     //
+///     // `?` is syntactic sugar for `::Some.0`,so if you defined your own enum with
+///     // a `Some(T)` variant,you could also use the operator with that enum.
+///     assert_eq!( foo.field_mut(fp!( ooo? )), Some(&mut (66,99)) );
+///     assert_eq!( foo.field_mut(fp!( ooo?.0 )), Some(&mut 66) );
+///     assert_eq!( foo.field_mut(fp!( ooo?.1 )), Some(&mut 99) );
 /// }
 ///
 /// fn main(){
@@ -179,13 +189,13 @@
 ///     with_foo(&mut Foo{
 ///         bar:bar.clone(),
 ///         baz:44,
-///         ooo:(66,99),
+///         ooo:Some((66,99)),
 ///     });
 ///
 ///     with_foo(&mut make_struct!{
 ///         bar:bar.clone(),
 ///         baz:44,
-///         ooo:(66,99),
+///         ooo:Some((66,99)),
 ///     });
 ///
 /// }
@@ -400,20 +410,34 @@ use structural::field_path_aliases;
 
 field_path_aliases!{
     a,
+
     b=b,
+
     // This has the same value as the `b` alias
     b_str="b",
+
     // strings allow for arbitrary identifiers.
     at_me="@me",
+
     c=d.e,
+
     // field paths used to access multiple fields must be wrapped in parentheses.
     d=(a,b,c,"#D"),
+
     // Accesses the variant,if the enum is currently that variant
     e=::Foo,
+
     // Accesses the a,b,and c fields inside of the Foo variant.
     f=(::Foo=>a,b,c),
+
     // Accesses the a,b,and c fields inside of the `ñ` variant.
     g=(::"ñ"=>a,b,c),
+
+    // `?` is syntactic sugar for `::Some.0`,
+    // allowing you to access the value inside an `Option`,
+    // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
+    // trait and subtraits.
+    h=d?.e,
 }
 # fn main(){}
 ```
@@ -431,20 +455,34 @@ fn hello(){
     field_path_aliases!{
         mod hello{
             a,
+
             b=b,
+
             // This has the same value as the `b` alias
             b_str="b",
+
             // strings allow for arbitrary identifiers.
             at_me="@me",
+
             c=d.e,
+
             // field paths used to access multiple fields must be wrapped in parentheses.
             d=(a,b,c,"#D"),
+
             // Accesses the variant,if the enum is currently that variant
             e=::Foo,
+
             // Accesses the a,b,and c fields inside of the Foo variant.
             f=(::Foo=>a,b,c),
+
             // Accesses the a,b,and c fields inside of the `ñ` variant.
             g=(::"ñ"=>a,b,c),
+
+            // `?` is syntactic sugar for `::Some.0`,
+            // allowing you to access the value inside an `Option`,
+            // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
+            // trait and subtraits.
+            h=d?.e,
         }
     }
 }
@@ -453,13 +491,12 @@ fn hello(){
 # Example
 
 ```rust
-use structural::{field_path_aliases,structural_alias,GetField,GetFieldExt,Structural};
+use structural::{ GetField, GetFieldExt, IntoVariantFieldMut, Structural, field_path_aliases };
 use structural::enums::VariantProxy;
 
 field_path_aliases!{
     // Equivalent to hello=hello
     hello,
-
     // Equivalent to world=world
     world,
 
@@ -476,6 +513,8 @@ field_path_aliases!{
     j=(p), // The identifier can also be parenthesised
 
     boom=Boom,
+    path_a=a,
+    path_b=b,
     boom_variant=::Boom,
     boom_a=::Boom.a,
     boom_b=::Boom.b,
@@ -497,24 +536,10 @@ where
     assert_eq!( this.fields(FirstThree), (&2,&3,&5) );
 }
 
-structural_alias!{
-    trait BoomVariant{
-        Boom {
-            a: &'static [u8],
-            b: &'static [u16],
-        }
-    }
-}
-
 fn assert_variant<T>(this:&T)
 where
-    // You need to use `structural::TStr` to manually bound `T` by the
-    // enum field accessor traits.
-    //
-    // The `tstr_aliases` macro
-    // (which is the equivalent of this macro for type-level-strings)
-    // has an example for how to manually write bounds for enum fields.
-    T: BoomVariant,
+    T: IntoVariantFieldMut<boom,path_a,Ty= &'static [u8]> +
+        IntoVariantFieldMut<boom,path_b,Ty= &'static [u16]>,
 {
     let _:&VariantProxy<T,boom>=this.field_(boom_variant).unwrap();
 

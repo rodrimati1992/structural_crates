@@ -60,15 +60,15 @@ _private_impl_getters_for_derive_enum! {
             AllCorrect,
             pair_strs::AllCorrect,
             kind=newtype,
-            fields((IntoFieldMut,0:T))
+            fields((IntoVariantFieldMut,0:T))
         )
         (
             Pair,
             pair_strs::Pair,
             kind=regular,
             fields(
-                (IntoFieldMut,left:T ,pair_strs::left )
-                (IntoFieldMut,right:U,pair_strs::right)
+                (IntoVariantFieldMut,left:T ,pair_strs::left )
+                (IntoVariantFieldMut,right:U,pair_strs::right)
             )
         )
         (
@@ -369,6 +369,50 @@ fn test_replace_bounds_trait_object() {
         &mut HuhRB::U(11, 22, 33, 44),
         &mut HuhRB::V { a: "55", b: 66 },
     )
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Structural, Debug, Clone, PartialEq)]
+#[allow(dead_code)]
+enum Accesses {
+    #[struc(access = "ref")]
+    RefVar(u8),
+
+    #[struc(access = "mut")]
+    MutVar(u16),
+
+    #[struc(access = "move")]
+    MoveVar(u32),
+
+    #[struc(access = "mut move")]
+    MutMoveVar(u64),
+
+    #[struc(access = "ref")]
+    MixedVar(
+        (),
+        #[struc(access = "ref")] i8,
+        #[struc(access = "mut")] i16,
+        #[struc(access = "move")] i32,
+        #[struc(access = "mut move")] i64,
+    ),
+}
+
+assert_equal_bounds! {
+    trait AssertA[],
+    (Accesses_ESI),
+    (
+        GetVariantField<TS!(RefVar), TS!(0), Ty = u8> +
+        GetVariantFieldMut<TS!(MutVar), TS!(0), Ty = u16> +
+        IntoVariantField<TS!(MoveVar), TS!(0), Ty = u32> +
+        IntoVariantFieldMut<TS!(MutMoveVar), TS!(0), Ty = u64> +
+        GetVariantField<TS!(MixedVar), TS!(0), Ty = ()> +
+        GetVariantField<TS!(MixedVar), TS!(1), Ty = i8> +
+        GetVariantFieldMut<TS!(MixedVar), TS!(2), Ty = i16> +
+        IntoVariantField<TS!(MixedVar), TS!(3), Ty = i32> +
+        IntoVariantFieldMut<TS!(MixedVar), TS!(4), Ty = i64> +
+        VariantCount<Count = TS!(5)>
+    ),
 }
 
 ///////////////////////////////////////////////////////////////////////////////
