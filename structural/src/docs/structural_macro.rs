@@ -16,7 +16,8 @@ For complementary documentation on using the `Structural` derive macro with enum
 
 By default,this derive generates:
 
-- Implementation of the structural trait for the deriving type.
+- Implementation of the structural trait for the deriving type,
+with documentation describing all the accessor trait impls for the type.
 
 - Implementations of the accessor traits
 ([GetField](../../field_traits/trait.GetField.html)/

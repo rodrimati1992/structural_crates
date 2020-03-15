@@ -161,10 +161,10 @@ _private_impl_getters_for_derive_enum! {
             strings::A,
             kind=regular,
             fields(
-                (IntoFieldMut,a:Option<u32>,strings::a)
-                (IntoFieldMut,b:Option<u64>,strings::b)
-                (IntoFieldMut,c:Option<&'static str>,strings::c)
-                (IntoFieldMut,d:Option<bool>,strings::d)
+                (IntoVariantFieldMut,a:Option<u32>,strings::a)
+                (IntoVariantFieldMut,b:Option<u64>,strings::b)
+                (IntoVariantFieldMut,c:Option<&'static str>,strings::c)
+                (IntoVariantFieldMut,d:Option<bool>,strings::d)
             )
         )
         (

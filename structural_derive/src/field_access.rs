@@ -3,13 +3,13 @@ use crate::{datastructure::StructOrEnum, parse_utils::ParseBufferExt};
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 
 use quote::{quote, ToTokens, TokenStreamExt};
 
 use syn::{
     parse::{Parse, ParseStream},
-    Ident, Token,
+    Token,
 };
 
 /// Whether a field can be accessed by reference/mutable-reference/value.
@@ -86,18 +86,6 @@ impl Default for Access {
 impl Parse for Access {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
         Self::parse_optional(input).map(|x| x.unwrap_or(Access::MutValue))
-    }
-}
-
-impl ToTokens for Access {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match *self {
-            Access::Shared => Ident::new("GetField", Span::call_site()),
-            Access::Mutable => Ident::new("GetFieldMut", Span::call_site()),
-            Access::Value => Ident::new("IntoField", Span::call_site()),
-            Access::MutValue => Ident::new("IntoFieldMut", Span::call_site()),
-        }
-        .to_tokens(tokens);
     }
 }
 

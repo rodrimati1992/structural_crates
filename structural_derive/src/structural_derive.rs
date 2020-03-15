@@ -309,7 +309,10 @@ fn deriving_structural<'a>(
                     .filter(|&f| config_fields[f].is_pub)
                     .collect::<Vec<&Field<'_>>>();
 
-                let getter_trait = sdt.fields.iter().map(|f| f.access);
+                let getter_trait = sdt
+                    .fields
+                    .iter()
+                    .map(|f| f.access.compute_trait(StructOrEnum::Struct));
 
                 let field_names = fields.iter().map(|f| &f.ident);
 
@@ -361,7 +364,7 @@ fn deriving_structural<'a>(
 
                             let field_tokens = fields.iter().zip(&sdt_variant.fields).map(
                                 |(&field, sdt_field)| {
-                                    let access = sdt_field.access;
+                                    let access = sdt_field.access.compute_trait(StructOrEnum::Enum);
                                     let fname = &field.ident;
                                     let fty = field.ty;
                                     let f_tstr = sdt_field.ident.tstr_tokens();
@@ -390,10 +393,10 @@ fn deriving_structural<'a>(
                     let variant_count_ident_str = format!("{}_VC", ds.name);
                     let variant_count_docs = format!(
                         "\
-                        The amount of variants in the {} enum\n\
+                        The amount of variants in the [{0} enum](./enum.{0}.html)\n\
                         \n\
                         This is a structural::TStr,\
-                        which can be instantiated with {}::NEW.\n\
+                        which can be instantiated with {1}::NEW.\n\
                     ",
                         ds.name, variant_count_ident_str,
                     );
