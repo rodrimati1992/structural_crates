@@ -139,8 +139,8 @@ pub use self::{
         RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
     variant_field::{
-        GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoVariantField,
-        IntoVariantFieldMut,
+        GetVFieldRawMutFn, GetVariantField, GetVariantFieldMut, GetVariantFieldType,
+        IntoVariantField, IntoVariantFieldMut,
     },
 };
 
@@ -313,7 +313,9 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// - It must be side-effect free,
 ///
-/// - The field you borrow must always be the same one.
+/// - The method must return a pointer to a fully initialized field,
+///
+/// - The field you access must always be the same one.
 ///
 /// - That no implementation returns a pointer to a field that other ones also return,
 ///
@@ -325,7 +327,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// [here](#raw_mut_properties).
 ///
 ///
-/// # Usage as Bound Example
+/// # Example: Usage as Bound
 ///
 /// ```
 /// use structural::{GetFieldExt,GetFieldMut,FP,fp};
@@ -350,7 +352,8 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// ```
 ///
-/// # Implementation Example
+/// <span id="manual-implementation-example"></span>
+/// # Example: Manual implementation
 ///
 /// While this trait is intended to be implemented using the `Structural` derive macro,
 /// you can also implement it like this:
@@ -380,7 +383,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     }
 ///     structural::z_unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
-///         field_name=value,
+///         field_tstr=value,
 ///         name_generic=FP!(value),
 ///     }
 /// }
@@ -395,7 +398,8 @@ pub unsafe trait GetFieldMut<FieldName>: GetField<FieldName> {
     ///
     /// # Safety
     ///
-    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`.
+    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
+    /// pointing to a fully initialized instance of the type.
     unsafe fn get_field_raw_mut(ptr: *mut (), field_name: FieldName) -> *mut Self::Ty
     where
         Self: Sized;
@@ -492,7 +496,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///         self.value
 ///     }
 ///
-///     structural::z_impl_box_into_field_method!{FP!(value)}
+///     structural::z_impl_box_into_field_method!{field_tstr=FP!(value)}
 /// }
 ///
 /// ```

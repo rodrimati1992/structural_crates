@@ -274,7 +274,7 @@ macro_rules! declare_array_paths {
                     }
                 }
 
-                z_impl_box_into_field_method!{ P }
+                z_impl_box_into_field_method!{ field_tstr=P }
             }
         )*
     )

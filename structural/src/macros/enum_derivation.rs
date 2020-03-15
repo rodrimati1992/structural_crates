@@ -230,18 +230,10 @@ macro_rules! _private_impl_getter_enum{
                 _:$variant_name_str,
                 _:$field_name_param,
             )->Option<$crate::pmr::NonNull<$field_ty>> {
-                match *(this as *mut  Self) {
-                    $enum_::$variant{$field_name:ref mut field,..}=>{
-                        let _:&mut $field_ty=field;
-                        let ptr=field as *mut $field_ty;
-                        // Safety:
-                        // Calling `NonNull::new_unchecked` because the pointer returned by
-                        // `get_field_raw_mut` must be valid.
-                        Some($crate::pmr::NonNull::new_unchecked( ptr ))
-                    }
-                    #[allow(unreachable_patterns)]
-                    _=>None
-                }
+                $crate::z_raw_borrow_enum_field!(
+                    this as *mut  Self,
+                    $enum_::$variant.$field_name : $field_ty
+                )
             }
 
             #[inline(always)]
@@ -310,9 +302,9 @@ macro_rules! _private_impl_getter_enum{
             }
 
             $crate::z_impl_box_into_variant_field_method!{
-                $variant_name_str,
-                __F,
-                __Ty,
+                variant_tstr= $variant_name_str,
+                field_tstr= __F,
+                field_type= __Ty,
             }
         }
     };
@@ -351,9 +343,9 @@ macro_rules! _private_impl_getter_enum{
             }
 
             $crate::z_impl_box_into_variant_field_method!{
-                $variant_name_str,
-                $field_name_param,
-                $field_ty,
+                variant_tstr= $variant_name_str,
+                field_tstr= $field_name_param,
+                field_type= $field_ty,
             }
         }
     };

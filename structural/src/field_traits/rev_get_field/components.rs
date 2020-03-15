@@ -277,7 +277,11 @@ where
     This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
-    type BoxedTy = VariantProxy<Box<This>, TStr<S>>;
+    #[cfg(feature = "alloc")]
+    type BoxedTy = VariantProxy<crate::pmr::Box<This>, TStr<S>>;
+
+    #[cfg(not(feature = "alloc"))]
+    type BoxedTy = VariantProxy<This, TStr<S>>;
 
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, EnumField>
@@ -292,7 +296,7 @@ where
     fn rev_box_into_field(
         self,
         this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<Box<This>, TStr<S>>, EnumField> {
+    ) -> Result<VariantProxy<crate::pmr::Box<This>, TStr<S>>, EnumField> {
         map_of!(this.box_into_variant(self.name))
     }
 }

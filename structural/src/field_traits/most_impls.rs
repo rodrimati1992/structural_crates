@@ -77,13 +77,13 @@ impl<T> IntoField<Start_STR> for RangeInclusive<T> {
     fn into_field_(self, _: Start_STR) -> Self::Ty {
         self.into_inner().0
     }
-    z_impl_box_into_field_method! {Start_STR}
+    z_impl_box_into_field_method! {field_tstr=Start_STR}
 }
 impl<T> IntoField<End_STR> for RangeInclusive<T> {
     fn into_field_(self, _: End_STR) -> Self::Ty {
         self.into_inner().0
     }
-    z_impl_box_into_field_method! {End_STR}
+    z_impl_box_into_field_method! {field_tstr=End_STR}
 }
 
 ///////////////////////////////////////////////////////
