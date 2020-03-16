@@ -15,37 +15,42 @@ use self::sealed::Sealed;
 ///
 /// The errors can be:
 ///
-/// - [StructField](./enum.StructField.html):
-///     Used when a field is inside a struct (and it's not nested within an enum).
+/// - [InfallibleAccess](./enum.InfallibleAccess.html):
+///     For `Rev*` accessors that return a field that always exists,
+///     most often in a struct.
+///     Because the field always exists this error is never actually returned.
 ///
-/// - [EnumField](./struct.EnumField.html):
-///     Used when a field is inside an enum.
+/// - [FailedAccess](./struct.FailedAccess.html):
+///     For `Rev*` accessors that failed to return a field that may not exist,
+///     most often inside an enum.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
 pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 
-/// The error type for accesses to fields inside a struct,
-/// and it's not nested inside an enum.
+/// The error type for accesses to fields that always exist,most often in a struct.
+///
+/// Because the fields always exist,this error is never actually returned,
+/// and `Result<T, InfallibleAccess>` has the same size as `T` (as of Rust 1.42).
 ///
 /// This is used as the `Err` associated type for `Rev*Field*` implementors,
-/// which return a `Result<_,StructField>`,
+/// which return a `Result<_,InfallibleAccess>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StructField {}
+pub enum InfallibleAccess {}
 
-/// The error type for accesses to fields inside an enum.
+/// The error type for accesses to fields that may not exist,most often inside an enum.
 ///
 /// This is used as the `Err` associated type for `Rev*Field*` implementors,
-/// which return a `Result<_,EnumField>`,
+/// which return a `Result<_,FailedAccess>`,
 /// then [GetFieldExt](../trait.GetFieldExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
-/// `Ok(foo)` into `Some(foo)`,and `Err(EnumField)` into `None`.
+/// `Ok(foo)` into `Some(foo)`,and `Err(FailedAccess)` into `None`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct EnumField;
+pub struct FailedAccess;
 
-impl Cloned for EnumField {
+impl Cloned for FailedAccess {
     type Cloned = Self;
 
     #[inline(always)]
@@ -54,7 +59,7 @@ impl Cloned for EnumField {
     }
 }
 
-impl Cloned for StructField {
+impl Cloned for InfallibleAccess {
     type Cloned = Self;
 
     #[inline(always)]
@@ -63,11 +68,11 @@ impl Cloned for StructField {
     }
 }
 
-impl Sealed for EnumField {}
-impl IsFieldErr for EnumField {}
+impl Sealed for FailedAccess {}
+impl IsFieldErr for FailedAccess {}
 
-impl Sealed for StructField {}
-impl IsFieldErr for StructField {}
+impl Sealed for InfallibleAccess {}
+impl IsFieldErr for InfallibleAccess {}
 
 #[cfg(feature = "std")]
 mod std_impls {
@@ -75,13 +80,13 @@ mod std_impls {
 
     use std::error::Error;
 
-    impl Error for EnumField {
+    impl Error for FailedAccess {
         #[inline(always)]
         fn description(&self) -> &str {
             "Some field could not be accessed"
         }
     }
-    impl Error for StructField {
+    impl Error for InfallibleAccess {
         #[inline(always)]
         fn description(&self) -> &str {
             "The field isn't optional,this function is uncallable"
@@ -91,23 +96,23 @@ mod std_impls {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for EnumField {
+impl Display for FailedAccess {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Some field could not be accessed")
     }
 }
 
-impl From<StructField> for EnumField {
+impl From<InfallibleAccess> for FailedAccess {
     #[inline(always)]
-    fn from(_: StructField) -> Self {
-        EnumField
+    fn from(_: InfallibleAccess) -> Self {
+        FailedAccess
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for StructField {
+impl Display for InfallibleAccess {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("This field can always be accessed.")
@@ -134,9 +139,9 @@ where
     }
 }
 
-impl IntoFieldErr<EnumField> for StructField {
+impl IntoFieldErr<FailedAccess> for InfallibleAccess {
     #[inline(always)]
-    fn into_field_err(self) -> EnumField {
+    fn into_field_err(self) -> FailedAccess {
         match self {}
     }
 }
@@ -145,8 +150,8 @@ impl IntoFieldErr<EnumField> for StructField {
 
 /// Combines multiple error types into one.
 ///
-/// A tuple of errors is combined into a `StructField` so long as all of them are,
-/// otherwise they're combined into an `EnumField` .
+/// A tuple of errors is combined into a `InfallibleAccess` so long as all of them are,
+/// otherwise they're combined into an `FailedAccess` .
 ///
 /// This is used by the `Rev*Field*` impls for [NestedFieldPath](../../struct.NestedFieldPath.html) to
 /// determine whether a nested field access is optional or not.
@@ -156,12 +161,12 @@ pub trait CombinedErrs {
 
 /// The combination of all the error types in `This`.
 ///
-/// A tuple of errors is combined into a `StructField` so long as all of them are,
-/// otherwise they're combined into an `EnumField` .
+/// A tuple of errors is combined into a `InfallibleAccess` so long as all of them are,
+/// otherwise they're combined into an `FailedAccess` .
 pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {
-    use super::{EnumField as OF, StructField as IF, *};
+    use super::{FailedAccess as OF, InfallibleAccess as IF, *};
 
     macro_rules! combined_err_impls {
         (small=>

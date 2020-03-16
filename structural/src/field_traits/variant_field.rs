@@ -173,8 +173,9 @@ pub unsafe trait GetVariantField<V, F>:
 }
 
 /// Gets the type of a variant field,
+/// most useful when the variant and field [`TStr`]s are passed separately.,
 ///
-/// The `Variant` and `Field` type parameters are expected to be [TStr](../../struct.TStr.html).
+/// The `Variant` and `Field` type parameters are expected to be [`TStr`].
 ///
 /// Example: `GetVariantFieldType<This, TS!(Foo), TS!(0)>`
 ///
@@ -194,6 +195,8 @@ pub unsafe trait GetVariantField<V, F>:
 /// assert_eq!( value, 8_u32 );
 ///
 /// ```
+///
+/// [`TStr`]: ../../struct.TStr.html
 pub type GetVariantFieldType<This, Variant, Field> =
     <This as FieldType<VariantField<Variant, Field>>>::Ty;
 

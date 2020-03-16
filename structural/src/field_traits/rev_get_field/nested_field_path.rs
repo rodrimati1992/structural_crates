@@ -249,7 +249,7 @@ impl<'a, This> RevGetFieldImpl<'a, This> for NestedFieldPath<()>
 where
     This: ?Sized + 'a,
 {
-    type Err = StructField;
+    type Err = InfallibleAccess;
 
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err> {
         Ok(this)

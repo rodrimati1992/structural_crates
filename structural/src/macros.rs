@@ -497,7 +497,7 @@ macro_rules! map_of {
     ( $expr:expr ) => {
         match $expr {
             Ok(x) => Ok(x),
-            Err(_) => Err($crate::field_traits::EnumField),
+            Err(_) => Err($crate::field_traits::FailedAccess),
         }
     };
 }
@@ -508,7 +508,7 @@ macro_rules! ok_or_of {
     ( $expr:expr ) => {
         match $expr {
             Some(x) => Ok(x),
-            None => Err($crate::field_traits::EnumField),
+            None => Err($crate::field_traits::FailedAccess),
         }
     };
 }

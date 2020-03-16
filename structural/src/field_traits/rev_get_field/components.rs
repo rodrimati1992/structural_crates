@@ -30,10 +30,10 @@ where
     This: ?Sized + 'a + GetField<Self>,
     This::Ty: 'a,
 {
-    type Err = StructField;
+    type Err = InfallibleAccess;
 
     #[inline(always)]
-    fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, StructField> {
+    fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, InfallibleAccess> {
         Ok(GetField::get_field_(this, self))
     }
 }
@@ -44,12 +44,15 @@ where
     This::Ty: 'a,
 {
     #[inline(always)]
-    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut This::Ty, StructField> {
+    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut This::Ty, InfallibleAccess> {
         Ok(GetFieldMut::get_field_mut_(this, self))
     }
 
     #[inline(always)]
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut This::Ty, StructField> {
+    unsafe fn rev_get_field_raw_mut(
+        self,
+        this: *mut This,
+    ) -> Result<*mut This::Ty, InfallibleAccess> {
         SpecRevGetFieldMut::<'a, This>::rev_get_field_raw_mut_inner(self, this)
     }
 }
@@ -65,7 +68,7 @@ where
         unsafe fn rev_get_field_raw_mut_inner(
             self,
             this:*mut  This
-        )-> Result<*mut This::Ty,StructField>{
+        )-> Result<*mut This::Ty,InfallibleAccess>{
             let func=(*this).get_field_raw_mut_fn();
             Ok(func(
                 this as *mut  (),
@@ -85,7 +88,7 @@ where
     unsafe fn rev_get_field_raw_mut_inner(
         self,
         this: *mut This,
-    ) -> Result<*mut This::Ty, StructField> {
+    ) -> Result<*mut This::Ty, InfallibleAccess> {
         Ok(<This as GetFieldMut<Self>>::get_field_raw_mut(
             this as *mut (),
             self,
@@ -101,7 +104,7 @@ where
     type BoxedTy = This::Ty;
 
     #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<This::Ty, StructField>
+    fn rev_into_field(self, this: This) -> Result<This::Ty, InfallibleAccess>
     where
         This: Sized,
     {
@@ -110,7 +113,7 @@ where
 
     #[cfg(feature = "alloc")]
     #[inline(always)]
-    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, StructField> {
+    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, InfallibleAccess> {
         Ok(this.box_into_field_(self))
     }
 }
@@ -131,10 +134,10 @@ where
     This: ?Sized + 'a + GetVariantField<_V, _F>,
     This::Ty: 'a,
 {
-    type Err = EnumField;
+    type Err = FailedAccess;
 
     #[inline(always)]
-    fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, EnumField> {
+    fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, FailedAccess> {
         ok_or_of!(GetVariantField::get_vfield_(this, self.variant, self.field))
     }
 }
@@ -145,7 +148,7 @@ where
     This::Ty: 'a,
 {
     #[inline(always)]
-    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut This::Ty, EnumField> {
+    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut This::Ty, FailedAccess> {
         ok_or_of!(GetVariantFieldMut::get_vfield_mut_(
             this,
             self.variant,
@@ -154,7 +157,7 @@ where
     }
 
     #[inline(always)]
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut This::Ty, EnumField> {
+    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut This::Ty, FailedAccess> {
         SpecRevGetFieldMut::<'a, This>::rev_get_field_raw_mut_inner(self, this)
     }
 }
@@ -170,11 +173,11 @@ where
         unsafe fn rev_get_field_raw_mut_inner(
             self,
             this:*mut  This
-        )-> Result<*mut This::Ty,EnumField>{
+        )-> Result<*mut This::Ty,FailedAccess>{
             let func=(*this).get_vfield_raw_mut_fn();
             match func( this as *mut  (), self.variant, self.field ) {
                 Some(x) => Ok(x.as_ptr()),
-                None => Err(EnumField),
+                None => Err(FailedAccess),
             }
         }
     }
@@ -190,7 +193,7 @@ where
     unsafe fn rev_get_field_raw_mut_inner(
         self,
         this: *mut This,
-    ) -> Result<*mut This::Ty, EnumField> {
+    ) -> Result<*mut This::Ty, FailedAccess> {
         let ret = <This as GetVariantFieldMut<_V, _F>>::get_vfield_raw_mut_(
             this as *mut (),
             self.variant,
@@ -198,7 +201,7 @@ where
         );
         match ret {
             Some(x) => Ok(x.as_ptr()),
-            None => Err(EnumField),
+            None => Err(FailedAccess),
         }
     }
 }
@@ -211,7 +214,7 @@ where
     type BoxedTy = This::Ty;
 
     #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<This::Ty, EnumField>
+    fn rev_into_field(self, this: This) -> Result<This::Ty, FailedAccess>
     where
         This: Sized,
     {
@@ -220,7 +223,7 @@ where
 
     #[cfg(feature = "alloc")]
     #[inline(always)]
-    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, EnumField> {
+    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, FailedAccess> {
         ok_or_of!(this.box_into_vfield_(self.variant, self.field))
     }
 }
@@ -242,10 +245,13 @@ where
     This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
-    type Err = EnumField;
+    type Err = FailedAccess;
 
     #[inline(always)]
-    fn rev_get_field(self, this: &'a This) -> Result<&'a VariantProxy<This, TStr<S>>, EnumField> {
+    fn rev_get_field(
+        self,
+        this: &'a This,
+    ) -> Result<&'a VariantProxy<This, TStr<S>>, FailedAccess> {
         map_of!(this.as_variant(self.name))
     }
 }
@@ -259,7 +265,7 @@ where
     fn rev_get_field_mut(
         self,
         this: &'a mut This,
-    ) -> Result<&'a mut VariantProxy<This, TStr<S>>, EnumField> {
+    ) -> Result<&'a mut VariantProxy<This, TStr<S>>, FailedAccess> {
         map_of!(this.as_mut_variant(self.name))
     }
 
@@ -267,7 +273,7 @@ where
     unsafe fn rev_get_field_raw_mut(
         self,
         this: *mut This,
-    ) -> Result<*mut VariantProxy<This, TStr<S>>, EnumField> {
+    ) -> Result<*mut VariantProxy<This, TStr<S>>, FailedAccess> {
         map_of!(EnumExt::as_raw_mut_variant(this, self.name))
     }
 }
@@ -284,7 +290,7 @@ where
     type BoxedTy = VariantProxy<This, TStr<S>>;
 
     #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, EnumField>
+    fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, FailedAccess>
     where
         This: Sized,
     {
@@ -296,7 +302,7 @@ where
     fn rev_box_into_field(
         self,
         this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<crate::pmr::Box<This>, TStr<S>>, EnumField> {
+    ) -> Result<VariantProxy<crate::pmr::Box<This>, TStr<S>>, FailedAccess> {
         map_of!(this.box_into_variant(self.name))
     }
 }
