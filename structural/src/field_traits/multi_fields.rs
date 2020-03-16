@@ -24,6 +24,14 @@ pub type RevGetMultiFieldMutRaw<'a, Field, This> =
     <Field as RevGetMultiFieldMut<'a, This>>::FieldsRawMut;
 
 /// Gets references to multiple fields from `This`.
+///
+/// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the
+/// [`GetFieldExt::fields`](../../trait.GetFieldExt.html#method.fields).
+/// and [`GetFieldExt::cloned_fields`](../../trait.GetFieldExt.html#method.cloned_fields).
+/// methods.
+///
 pub trait RevGetMultiField<'a, This: ?Sized + 'a>: IsMultiFieldPath {
     /// A collection of references to fields.
     type Fields: 'a + NormalizeFields;
@@ -32,17 +40,28 @@ pub trait RevGetMultiField<'a, This: ?Sized + 'a>: IsMultiFieldPath {
     fn rev_get_multi_field(self, this: &'a This) -> Self::Fields;
 }
 
-/// Gets multiple fields from `This` mutably.
+/// Gets mutable references to multiple fields from `This`.
+///
+/// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the
+/// [`GetFieldExt::fields_mut`](../../trait.GetFieldExt.html#method.fields_mut).
+/// method.
 ///
 /// # Safety
 ///
 /// The `rev_get_multi_field_raw_mut` function must return non-aliasing pointers,
 /// where all of them are safe to dereference.
+///
+/// As a reminder: mutable references imply uniqueness,
+/// which means that it's undefined behavior for implementors to
+/// return multiple mutable references to the same field.
 pub unsafe trait RevGetMultiFieldMut<'a, This: ?Sized + 'a>:
     IsMultiFieldPath<PathUniqueness = UniquePaths>
 {
     /// A collection of mutable references to fields.
     type FieldsMut: 'a + NormalizeFields;
+
     /// A collection of mutable pointers to fields.
     type FieldsRawMut: 'a + NormalizeFields;
 

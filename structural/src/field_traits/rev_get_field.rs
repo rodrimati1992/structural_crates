@@ -9,7 +9,7 @@ use crate::{
     field_path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
     field_traits::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
-        EnumField, StructField,
+        FailedAccess, InfallibleAccess,
     },
     FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField, GetVariantFieldMut, IntoField,
     IntoVariantField,
@@ -26,7 +26,7 @@ mod nested_field_path;
 /////////////////////////////////////////////////////////////////////////////
 
 /// Queries the type of a nested field in This,
-/// what field is queried is determined by `FieldName`,
+/// what field is queried is determined by `FieldPath`,
 ///
 /// # Example
 ///
@@ -65,18 +65,18 @@ mod nested_field_path;
 ///     pub strand:String,
 /// }
 /// ```
-pub type RevGetFieldType<FieldName, This> = <FieldName as RevFieldType<This>>::Ty;
+pub type RevGetFieldType<FieldPath, This> = <FieldPath as RevFieldType<This>>::Ty;
 
-/// Queries the type returned by `RevIntoFieldImpl::rev_box_into_field`.
-pub type RevIntoBoxedFieldType<'a, FieldName, This> =
-    <FieldName as RevIntoFieldImpl<'a, This>>::BoxedTy;
+/// Queries the `T` type in the `Result<T,_>` returned by `RevIntoFieldImpl::rev_box_into_field`.
+pub type RevIntoBoxedFieldType<'a, FieldPath, This> =
+    <FieldPath as RevIntoFieldImpl<'a, This>>::BoxedTy;
 
 /// Queries the error type returned by `Rev*Field` methods.
-pub type RevGetFieldErr<'a, FieldName, This> = <FieldName as RevGetFieldImpl<'a, This>>::Err;
+pub type RevGetFieldErr<'a, FieldPath, This> = <FieldPath as RevGetFieldImpl<'a, This>>::Err;
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Like FieldType,except that the parameters are reversed.
+/// Like `FieldType`,except that the parameters are reversed.
 /// `This` is the type we are accessing,and `Self` is a field path.
 pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
     /// The type of the field.
@@ -86,21 +86,29 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 /////////////////////////////////////////////////////////////////////////////
 
 /// Like `Get*Field`,except that the parameters are reversed,
+///
 /// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the [`GetFieldExt::field_`](../../trait.GetFieldExt.html#method.field_)
+/// method.
 ///
 /// # Use as bound
 ///
-/// For examples of using `RevGetFieldImpl` as a bound look at example for
-/// [RevGetField](./trait.RevGetField.html)
-/// (for getting a field in a struct,not inside of a nested enum) or
-/// [OptRevGetField](./trait.OptRevGetField.html) (for getting a field in a (nested) enum).
+/// For examples of using `RevGetFieldImpl` as a bound look at example for:
+///
+/// - [RevGetField](./trait.RevGetField.html):
+/// For infallible field access,generally struct fields,not inside of a nested enum.
+///
+/// - [OptRevGetField](./trait.OptRevGetField.html):
+/// Fallible field access,generally for getting a field in a (potentially nested) enum.
 ///
 /// # Example
 ///
-/// This example demonstrates implementing RevGetField to index a slice from the end.
+/// This example demonstrates implementing `RevGetFieldImpl` to index a slice from the end.
+///
 ///
 /// ```rust
-/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl};
+/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::GetFieldExt;
 ///
@@ -112,12 +120,12 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///     type Ty = T;
 /// }
 /// impl<'a,T> RevGetFieldImpl<'a,[T]> for FromEnd {
-///     type Err = EnumField;
+///     type Err = FailedAccess;
 ///
-///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, EnumField>{
+///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, FailedAccess>{
 ///         let len=this.len();
 ///         this.get(len.wrapping_sub(self.0 + 1))
-///             .ok_or(EnumField)
+///             .ok_or(FailedAccess)
 ///     }
 /// }
 ///
@@ -136,12 +144,16 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
     ///
     /// This can be either:
     ///
-    /// - [`StructField`]:For a field in a struct (not inside a nested enum).
+    /// - [`InfallibleAccess`]:
+    ///     For `Rev*` accessors that return a field that always exists,
+    ///     most often in a struct.
     ///
-    /// - [`EnumField`]: For a field inside a (potentially nested) enum.
+    /// - [`FailedAccess`]:
+    ///     For `Rev*` accessors that attempt to return a field that may not exist,
+    ///     most often inside an enum.
     ///
-    /// [`StructField`]: ../errors/enum.StructField.html
-    /// [`EnumField`]: ../errors/struct.EnumField.html
+    /// [`InfallibleAccess`]: ../errors/enum.InfallibleAccess.html
+    /// [`FailedAccess`]: ../errors/struct.FailedAccess.html
     type Err: IsFieldErr;
 
     /// Accesses the field that `self` represents inside of `this`,by reference.
@@ -151,7 +163,11 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /////////////////////////////////////////////////////////////////////////////
 
 /// Like Get*FieldMut,except that the parameters are reversed,
+///
 /// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the [`GetFieldExt::field_mut`](../../trait.GetFieldExt.html#method.field_mut)
+/// method.
 ///
 /// # Safety
 ///
@@ -160,18 +176,21 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///
 /// # Use as bound
 ///
-/// For examples of using `RevGetFieldMutImpl` as a bound look at example for
-/// [RevGetFieldMut](./trait.RevGetFieldMut.html)
-/// (for getting a field in a struct,not inside of a nested enum) or
-/// [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html) (for getting a field in a (nested) enum).
+/// For examples of using `RevGetFieldMutImpl` as a bound look at example for:
+///
+/// - [RevGetFieldMut](./trait.RevGetFieldMut.html):
+/// For infallible field access,generally struct fields,not inside of a nested enum.
+///
+/// - [OptRevGetFieldMut](./trait.OptRevGetFieldMut.html):
+/// Fallible field access,generally for getting a field in a (potentially nested) enum.
 ///
 /// # Example
 ///
-/// This example demonstrates implementing RevGetFieldMut to choose between 2 fields
+/// This example demonstrates implementing `RevGetFieldMutImpl` to choose between 2 fields
 /// based on a runtime value.
 ///
 /// ```rust
-/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
+/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,ts};
 ///
@@ -253,22 +272,37 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /////////////////////////////////////////////////////////////////////////////
 
 /// Like Into*Field,except that the parameters are reversed,
+///
 /// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the
+/// [`GetFieldExt::into_field`](../../trait.GetFieldExt.html#method.into_field)
+/// and [`GetFieldExt::box_into_field`](../../trait.GetFieldExt.html#method.box_into_field)
+/// method.
 ///
 /// # Use as bound
 ///
-/// For examples of using `RevIntoFieldImpl` as a bound look at example for
-/// [RevIntoField](./trait.RevIntoField.html)
-/// (for getting a field in a struct,not inside of a nested enum) or
-/// [OptRevIntoField](./trait.OptRevIntoField.html) (for getting a field in a (nested) enum).
+/// For examples of using `RevIntoFieldImpl` as a bound look at example for:
+///
+/// - [RevIntoField](./trait.RevIntoField.html):
+/// For infallible field access,generally struct fields,not inside of a nested enum.
+///
+/// - [OptRevIntoField](./trait.OptRevIntoField.html):
+/// Fallible field access,generally for getting a field in a (potentially nested) enum.
 ///
 /// # Example
 ///
-/// This example demonstrates implementing RevGetFieldMut to choose between 2 fields
-/// based on a runtime value.
+/// This example demonstrates implementing `RevIntoFieldImpl`.
+///
+/// The transmute in this example is only sound because of the
+/// `#[repr(transparent)]` attribute on the `Wrapper` struct,
+/// and the reference to` T` is converted into a reference to `Wrapper<T>`.<br>
+/// Transmutes like that are not sound in the more general case,
+/// like transmuting from an arbitrary `Foo<T>` to `Foo<Newtype<T>>` using `std::mem::transmute`,
+/// since the layout of `Foo` is allowed to change.
 ///
 /// ```rust
-/// use structural::field_traits::{EnumField,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
+/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,fp};
 ///
@@ -373,13 +407,15 @@ macro_rules! declare_accessor_trait_alias {
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like GetField with the parameters reversed.
+    /// A trait alias for an infallible [`RevGetFieldImpl`](./trait.RevGetFieldImpl.html),
+    /// generally used to access fields in structs(not in a nested enum inside the struct).
+    ///
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested field by reference.
+    /// This example shows how to access a nested struct field by reference.
     ///
     /// ```rust
     /// use structural::field_traits::RevGetField;
@@ -391,9 +427,9 @@ declare_accessor_trait_alias! {
     ///     assert_eq!( get_nested(&tup), &13 );
     /// # }
     ///
-    /// fn get_nested<T>(this:&T)->&i32
+    /// fn get_nested<'a,T>(this:&'a T)->&'a i32
     /// where
-    ///     FP!(2.1.0): for<'a> RevGetField<'a,T,Ty=i32>
+    ///     FP!(2.1.0): RevGetField<'a,T,Ty=i32>
     /// {
     ///     this.field_(fp!(2.1.0))
     /// }
@@ -401,17 +437,18 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevGetField<'a,This>=
-        RevGetFieldImpl<'a,This,Err=StructField>
+        RevGetFieldImpl<'a,This,Err=InfallibleAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like GetVariantField with the parameters reversed.
+    /// A trait alias for a fallible [`RevGetFieldImpl`](./trait.RevGetFieldImpl.html),
+    /// generally used to access fields inside enums.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a field inside of a nested enum by reference.
+    /// This example shows how you can access an enum field by reference.
     ///
     /// ```rust
     /// use structural::field_traits::OptRevGetField;
@@ -423,9 +460,9 @@ declare_accessor_trait_alias! {
     /// assert_eq!( get_nested(&tup1), Some(&13) );
     /// assert_eq!( get_nested(&tup2), None );
     ///
-    /// fn get_nested<T>(this:&T)->Option<&i32>
+    /// fn get_nested<'a,T>(this:&'a T)->Option<&'a i32>
     /// where
-    ///     FP!(2.1.0?): for<'a> OptRevGetField<'a,T,Ty=i32>
+    ///     FP!(2.1.0?): OptRevGetField<'a,T,Ty=i32>
     /// {
     ///     this.field_(fp!(2.1.0?))
     /// }
@@ -433,18 +470,18 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevGetField<'a,This>=
-        RevGetFieldImpl<'a,This,Err=EnumField>
+        RevGetFieldImpl<'a,This,Err=FailedAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like GetFieldMut with the parameters reversed.
+    /// A trait alias for an infallible [`RevGetFieldMutImpl`](./trait.RevGetFieldMutImpl.html),
+    /// generally used to access fields in structs(not in a nested enum inside the struct).
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested field by
-    /// mutable reference.
+    /// This example shows how to access a nested struct field by mutable reference.
     ///
     /// ```rust
     /// use structural::field_traits::RevGetFieldMut;
@@ -463,9 +500,9 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(&mut struct_), &mut 101 );
     ///
-    /// fn get_nested<T>(this:&mut T)->&mut i32
+    /// fn get_nested<'a,T>(this:&'a mut T)->&'a mut i32
     /// where
-    ///     FP!(baz.bar.foo): for<'a> RevGetFieldMut<'a,T,Ty=i32>
+    ///     FP!(baz.bar.foo): RevGetFieldMut<'a,T,Ty=i32>
     /// {
     ///     this.field_mut(fp!(baz.bar.foo))
     /// }
@@ -473,18 +510,18 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevGetFieldMut<'a,This>=
-        RevGetFieldMutImpl<'a,This,Err=StructField>
+        RevGetFieldMutImpl<'a,This,Err=InfallibleAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like GetVariantFieldMut with the parameters reversed.
+    /// A trait alias for a fallible [`RevGetFieldMutImpl`](./trait.RevGetFieldMutImpl.html),
+    /// generally used to access fields inside enums.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a field inside of a nested enum by
-    /// mutable reference.
+    /// This example shows how you can access an enum field by mutable reference.
     ///
     /// ```rust
     /// use structural::field_traits::OptRevGetFieldMut;
@@ -503,9 +540,9 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(&mut struct_), Some(&mut "hello") );
     ///
-    /// fn get_nested<T>(this:&mut T)->Option<&mut &'static str>
+    /// fn get_nested<'a,T>(this:&'a mut T)->Option<&'a mut &'static str>
     /// where
-    ///     FP!(baz.bar.foo?): for<'a> OptRevGetFieldMut<'a,T,Ty=&'static str>
+    ///     FP!(baz.bar.foo?): OptRevGetFieldMut<'a,T,Ty=&'static str>
     /// {
     ///     this.field_mut(fp!(baz.bar.foo?))
     /// }
@@ -513,17 +550,18 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevGetFieldMut<'a,This>=
-        RevGetFieldMutImpl<'a,This,Err=EnumField>
+        RevGetFieldMutImpl<'a,This,Err=FailedAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like IntoField with the parameters reversed.
+    /// A trait alias for an infallible [`RevIntoFieldImpl`](./trait.RevIntoFieldImpl.html),
+    /// generally used to access fields in structs(not in a nested enum inside the struct).
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a nested field by value.
+    /// This example shows how to access a nested struct field by value.
     ///
     /// ```rust
     /// use structural::field_traits::RevIntoField;
@@ -542,9 +580,9 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(struct_), Ordering::Greater );
     ///
-    /// fn get_nested<T>(this:T)->Ordering
+    /// fn get_nested<'a,T>(this:T)->Ordering
     /// where
-    ///     FP!(bar.bar.bar): for<'a> RevIntoField<'a,T,Ty=Ordering>
+    ///     FP!(bar.bar.bar): RevIntoField<'a,T,Ty=Ordering>
     /// {
     ///     this.into_field(fp!(bar.bar.bar))
     /// }
@@ -552,17 +590,18 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=StructField>
+        RevIntoFieldImpl<'a,This,Err=InfallibleAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like IntoVariantField with the parameters reversed.
+    /// A trait alias for a fallible [`RevIntoFieldImpl`](./trait.RevIntoFieldImpl.html),
+    /// generally used to access fields inside enums.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
     /// # Example
     ///
-    /// This example shows how you can access a field inside of a nested enum by value.
+    /// This example shows how you can access an enum field by value.
     ///
     /// ```rust
     /// use structural::field_traits::OptRevIntoField;
@@ -575,9 +614,9 @@ declare_accessor_trait_alias! {
     /// assert_eq!( get_nested(nope), None );
     /// assert_eq!( get_nested(boom), Some(&[3,5,8,13][..]) );
     ///
-    /// fn get_nested<T>(this:T)->Option<&'static [u16]>
+    /// fn get_nested<'a,T>(this:T)->Option<&'static [u16]>
     /// where
-    ///     FP!(foo::Boom.b): for<'a> OptRevIntoField<'a,T,Ty=&'static [u16]>
+    ///     FP!(foo::Boom.b): OptRevIntoField<'a,T,Ty=&'static [u16]>
     /// {
     ///     this.into_field(fp!(foo::Boom.b))
     /// }
@@ -585,18 +624,21 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=EnumField>
+        RevIntoFieldImpl<'a,This,Err=FailedAccess>
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like IntoFieldMut with the parameters reversed.
+    /// A trait alias for infallible [`RevIntoFieldImpl`] + [`RevGetFieldMutImpl`],
+    /// generally used to access fields in structs(not in a nested enum inside the struct).
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
+    /// [`RevIntoFieldImpl`]: ./trait.RevIntoFieldImpl.html
+    /// [`RevGetFieldMutImpl`]: ./trait.RevGetFieldMutImpl.html
+    ///
     /// # Example
     ///
-    /// This example shows how to access a nested field by
-    /// mutable reference,and by value.
+    /// This example shows how to access a struct field by mutable reference,and by value.
     ///
     /// Also,how to write extension traits with `Rev*` traits.
     ///
@@ -644,14 +686,17 @@ declare_accessor_trait_alias! {
 }
 
 declare_accessor_trait_alias! {
-    /// A trait alias,like IntoVariantFieldMut with the parameters reversed.
+    /// A trait alias for fallible [`RevIntoFieldImpl`] + [`RevGetFieldMutImpl`],
+    /// generally used to access fields inside enums.
     ///
     /// `This` is the type we are accessing,and `Self` is a field path.
     ///
+    /// [`RevIntoFieldImpl`]: ./trait.RevIntoFieldImpl.html
+    /// [`RevGetFieldMutImpl`]: ./trait.RevGetFieldMutImpl.html
+    ///
     /// # Example
     ///
-    /// This example shows how to access a field inside of a nested enum
-    /// by mutable reference,and by value.
+    /// This example shows how to access an enum field by mutable reference,and by value.
     ///
     /// Also,how to write extension traits with `Rev*` traits.
     ///

@@ -127,7 +127,9 @@ mod tuple_impls;
 pub mod variant_field;
 
 pub use self::{
-    errors::{CombinedErrs, CombinedErrsOut, EnumField, IntoFieldErr, IsFieldErr, StructField},
+    errors::{
+        CombinedErrs, CombinedErrsOut, FailedAccess, InfallibleAccess, IntoFieldErr, IsFieldErr,
+    },
     for_arrays::array_traits::*,
     for_tuples::*,
     get_field_ext::GetFieldExt,
@@ -222,12 +224,9 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 
 /// Queries the type of a field.
 ///
-/// For a type alias to get the type of an enum field,
-/// there's [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
-///
 /// # Example
 ///
-/// Here is one way you can get the type of a field.
+/// Here is one way you can get the type of a struct field.
 ///
 /// ```
 /// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
@@ -270,7 +269,53 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 /// makes it less ergonomic to specify the type of `T` while ignoring the field type,
 /// since one has to write it as `get_name::<Foo,_>(&foo)`.
 ///
+/// # Example
 ///
+/// Here's an example of accessing an enum field,using `GetFieldType` to get the field type.
+///
+/// This also demonstrates a way to write extension traits.
+///
+/// ```
+/// use structural::{FP, GetFieldExt, GetFieldType, GetVariantField, Structural, TS, fp};
+/// use structural::for_examples::EnumOptA;
+///
+/// let foo= EnumOptA::Limbs{legs:Some(9), hands:None};
+/// assert_eq!( foo.get_limbs(), Some((&Some(9), &None)) );
+///
+/// let array=[0,1,2,3];
+/// let baz=EnumGround::Limbs{legs:"many", hands:&array};
+/// assert_eq!( baz.get_limbs(), Some((&"many", &&array[..])) );
+///
+/// trait GetLimbs:
+///     GetVariantField<TS!(Limbs),TS!(legs)> +
+///     GetVariantField<TS!(Limbs),TS!(hands)>
+/// {
+///     fn get_limbs(&self)-> Option<(
+///         &GetFieldType<Self, FP!(::Limbs.legs)>,
+///         &GetFieldType<Self, FP!(::Limbs.hands)>,
+///     )> {
+///         self.fields(fp!(::Limbs=>legs,hands))
+///     }
+/// }
+///
+/// impl<T> GetLimbs for T
+/// where
+///     T: ?Sized +
+///        GetVariantField<TS!(Limbs),TS!(legs)> +
+///        GetVariantField<TS!(Limbs),TS!(hands)>
+/// {}
+///
+///
+/// #[derive(Structural, Copy, Clone, Debug, PartialEq)]
+/// #[struc(no_trait)]
+/// pub enum EnumGround<'a> {
+///     Limbs {
+///         legs: &'static str,
+///         hands: &'a [u8],
+///     },
+/// }
+///
+/// ```
 pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
 
 /// Queries the type of a double nested field (eg:`.a.b`).
