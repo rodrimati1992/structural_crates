@@ -1,5 +1,5 @@
 /// Constructs a field path value,
-/// which determines the fields accessed in [GetFieldExt](./trait.GetFieldExt.html) methods.
+/// which determines the field(s) accessed in [GetFieldExt](./trait.GetFieldExt.html) methods.
 ///
 /// ### Type
 ///
@@ -8,12 +8,12 @@
 /// - [A path component](#path-components):<br>
 /// When it's the only thing passed to the macro.
 /// This allows accessing a non-nested field.<br>
-/// Eg: `fp!(a)`, `fp!(::Foo.bar)`, ``fp!(::Foo)``
+/// Eg: `fp!(a)`, `fp!(::Foo.bar)`, `fp!(::Foo)`
 ///
 /// - [NestedFieldPath](./struct.NestedFieldPath.html), [example](#examplenested-fields): <br>
 /// When multiple [path components](#path-components) are passed to the macro.
 /// This allows accessing a nested field.<br>
-/// Eg: `fp!(a.b.c)`, `fp!(::Foo.bar.baz)`
+/// Eg: `fp!(a.b)`, `fp!(::Foo.bar.baz)`, `fp!(a.b?.c)`, `fp!(::Foo.bar?.baz)`
 ///
 /// - [FieldPathSet](./struct.FieldPathSet.html), [example](#examplemultiple-fields): <br>
 /// When a comma separated list of paths are passed to the macro.
@@ -33,25 +33,36 @@
 ///
 /// ### Identifier
 ///
-/// The macro takes in identifiers,integers,or strings for the names of variants and fields.
+/// The macro takes in identifiers,integers,or strings literals
+/// for the names of variants and fields.
+///
+/// String literals are used as a workaround for non-ascii identifiers not being
+/// supported in Rust.
+/// If the contents of the string literal is a valid identifier,
+/// then you can also write it as one,
+/// eg:`fp!("Foo")` is equivalent to `fp!(Foo)`.
 ///
 /// ### Path Components
 ///
 /// These are the basic building blocks for field paths:
 ///
 /// - `foo`: A [TStr](./struct.TStr.html)
-/// with the name of a field,which accesses the `foo` field,
-/// The `.` is required after other path components.<br>
+/// with the name of a field,which accesses the `foo` field.<br>
+/// A `.` prefixing the field name is required after other path components.<br>
 /// Examples: `fp!(foo)`, `fp!(0)`
 ///
 /// - `::Foo.bar`: A [VariantField](./struct.VariantField.html),
 /// which accesses the `bar` field in the `Foo` variant.<br>
+/// The `::` prefix is required to distinguish between `::Foo`
+/// and field access to a `Foo` field.<br>
 /// Examples: `fp!(::Foo.bar)`, `fp!(::Boom.0)`
 ///
 /// - `::Foo`: A [VariantName](./struct.VariantName.html),
 /// which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
 /// If this is directly followed by a field access,
 /// it'll be a [VariantField](./struct.VariantField.html) instead.<br>
+/// The `::` prefix is required to distinguish between `::Foo`
+/// and field access to a `Foo` field.<br>
 /// Examples: `fp!(::Foo)`, `fp!(::Boom)`
 ///
 /// - `?`: Syntactic sugar for `::Some.0`,used to access the value inside an Option.
@@ -79,7 +90,8 @@
 /// You can construct field paths with a sequence of [path components](#path-components)
 /// to access nested fields,eg:`fp!(a.b.c)`.
 ///
-/// Doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
+/// Doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`
+/// (except that it can also be done in a generic context).
 ///
 /// This can be passed to the
 /// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
@@ -255,7 +267,6 @@
 /// ```
 ///
 ///
-
 #[macro_export]
 macro_rules! fp {
     ($ident:ident) => (

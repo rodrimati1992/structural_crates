@@ -84,9 +84,6 @@ until the size of the tuple,in which all field types can be different.
 
 ### type aliases
 
-The [GetFieldErr](./type.GetFieldErr.html)
-type alias allows querying the `RevGetField::Err` associated type,
-useful when delegating the `Rev*Impl` traits.
 
 The [GetFieldType](./type.GetFieldType.html),
 [GetFieldType2](./type.GetFieldType2.html),
@@ -101,6 +98,10 @@ most useful when the name of the variant and the field are passed separately.
 The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
 type alias gets the type of a nested field
 (which one is determined by the field path).
+
+The [RevGetFieldErr](./rev_get_field/type.RevGetFieldErr.html)
+type alias allows querying the `RevGetField::Err` associated type,
+useful when delegating the `Rev*Impl` traits.
 
 ### Errors
 

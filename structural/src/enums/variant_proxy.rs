@@ -179,12 +179,12 @@ use std_::{
 ///
 ///
 /// #[derive(Structural)]
+/// // The `#[struc(no_trait)]` attribute disables the generation of
+/// // the `*_SI` and `*_ESI` traits for this type.
 /// #[struc(no_trait)]
 /// pub enum Foo{
 ///     // You would write this as `#[struc(newtype(bounds = "Point_VSI<@variant>"))]`
 ///     // if you didn't use the  `#[struc(no_trait)]` attribute.
-///     // The attribute disables the generation of the `Foo_SI` and `Foo_ESI` traits,
-///     // which use the written bounds,
 ///     #[struc(newtype)]
 ///     Point(Point),
 /// }
