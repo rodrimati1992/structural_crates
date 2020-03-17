@@ -1,11 +1,9 @@
-use super::*;
-
 use crate::{
     enums::IsVariant,
     field_path::IsTStr,
     field_traits::{
-        multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
-        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
+        NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
+        RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
     },
 };
 
@@ -180,11 +178,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>
+    fn fields<'a, P>(&'a self, path: P) -> RevGetMultiFieldOut<'a, P, Self>
     where
         P: RevGetMultiField<'a, Self>,
     {
-        path.rev_get_multi_field(self).normalize_fields()
+        path.rev_get_multi_field(self)
     }
 
     /// Gets clones of multiple fields,determined by `path`.
@@ -291,15 +289,12 @@ pub trait GetFieldExt {
     ///
     ///
     /// ```
-    fn cloned_fields<'a, P>(
-        &'a self,
-        path: P,
-    ) -> ClonedOut<NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>>
+    fn cloned_fields<'a, P>(&'a self, path: P) -> ClonedOut<RevGetMultiFieldOut<'a, P, Self>>
     where
         P: RevGetMultiField<'a, Self>,
-        NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>: Cloned,
+        RevGetMultiFieldOut<'a, P, Self>: Cloned,
     {
-        path.rev_get_multi_field(self).normalize_fields().cloned_()
+        path.rev_get_multi_field(self).cloned_()
     }
 
     /// Gets a mutable reference to a field,determined by `path`.
@@ -518,14 +513,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields_mut<'a, P>(
-        &'a mut self,
-        path: P,
-    ) -> NormalizeFieldsOut<RevGetMultiFieldMutOut<'a, P, Self>>
+    fn fields_mut<'a, P>(&'a mut self, path: P) -> RevGetMultiFieldMutOut<'a, P, Self>
     where
         P: RevGetMultiFieldMut<'a, Self>,
     {
-        path.rev_get_multi_field_mut(self).normalize_fields()
+        path.rev_get_multi_field_mut(self)
     }
 
     /// Converts ´self´ into a field,determined by `path`.
