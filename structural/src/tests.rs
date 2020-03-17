@@ -1,0 +1,10 @@
+mod delegation;
+mod enum_derive;
+mod impl_struct;
+mod macro_tests;
+mod multi_fields;
+mod multi_nested_fields;
+mod optional_fields;
+mod structural_alias;
+mod structural_derive;
+mod switch;
