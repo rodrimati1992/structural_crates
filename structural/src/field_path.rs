@@ -580,3 +580,21 @@ where
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+/// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
+/// on the type level.
+pub trait IntoAliasing: IsMultiFieldPath {
+    type Output: IsMultiFieldPath<PathUniqueness = AliasedPaths>;
+}
+
+/// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
+/// on the type level.
+pub type IntoAliasingOut<This> = <This as IntoAliasing>::Output;
+
+impl<F, U> IntoAliasing for FieldPathSet<F, U> {
+    type Output = FieldPathSet<F, AliasedPaths>;
+}
+
+impl<F, S, U> IntoAliasing for NestedFieldPathSet<F, S, U> {
+    type Output = NestedFieldPathSet<F, S, AliasedPaths>;
+}

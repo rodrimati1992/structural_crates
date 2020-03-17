@@ -35,23 +35,30 @@ a trait alias for `GetVariantFieldMut` + `IntoVariantField`.
 
 The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-in type.
 
-There are two kinds of `Rev*` traits:
+There are two kinds of `Rev*` traits,single field and multi field traits.
 
-- Single field traits:
+The [GetFieldExt](./trait.GetFieldExt.html) trait
+uses the `Rev*` impls of the passed-in path to access the
+fields in `Self`.
+
+### Single Field traits
+
 Which are [RevGetFieldImpl](./rev_get_field/trait.RevGetFieldImpl.html),
 [RevGetFieldMutImpl](./rev_get_field/trait.RevGetFieldMutImpl.html),
 and [RevIntoFieldImpl](./rev_get_field/trait.RevIntoFieldImpl.html),
 mirroring the regular field accessor traits.
 
-- Multiple field traits:
-Which are [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
-and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMut.html)
-(no RevIntoMultiField for now),
-allowing access to multiple fields at once.
+### Multiple field traits
 
-The [GetFieldExt](./trait.GetFieldExt.html) trait
-uses the `Rev*` impls of the passed-in path to access the
-fields in `Self`.
+For bounds to access multiple fields at once,
+there's [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
+and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
+(no RevIntoMultiField for now).
+
+For implementing a new way to access multiple fields,
+there's [RevGetMultiFieldImpl](./multi_fields/trait.RevGetMultiFieldImpl.html),
+and [RevGetMultiFieldMutImpl](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
+(no RevIntoMultiFieldImpl for now).
 
 # Additional items
 
@@ -78,7 +85,7 @@ until the size of the tuple,in which all field types can be different.
 ### type aliases
 
 The [GetFieldErr](./type.GetFieldErr.html)
-type alias allows querying the `GetField::Err` associated type,
+type alias allows querying the `RevGetField::Err` associated type,
 useful when delegating the `Rev*Impl` traits.
 
 The [GetFieldType](./type.GetFieldType.html),
@@ -88,7 +95,8 @@ The [GetFieldType](./type.GetFieldType.html),
 type aliases allow querying the type of a field up to 4 levels of nesting.
 
 The [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
-allows querying the type of an enum variant field(an alias of `GetFieldType` for enums).
+for querying the type of an enum variant field,
+most useful when the name of the variant and the field are passed separately.
 
 The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
 type alias gets the type of a nested field
@@ -112,7 +120,7 @@ The type that `Foo` is converted into when calling
 
 */
 
-use crate::{field_path::FieldPathSet, Structural};
+use crate::Structural;
 
 mod enum_impls;
 pub mod errors;
@@ -133,7 +141,10 @@ pub use self::{
     for_arrays::array_traits::*,
     for_tuples::*,
     get_field_ext::GetFieldExt,
-    multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
+    multi_fields::{
+        RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
+        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
+    },
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
         OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
@@ -226,7 +237,7 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// # Example
 ///
-/// Here is one way you can get the type of a struct field.
+/// Here is one way you can get the type of a `struct` field.
 ///
 /// ```
 /// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
@@ -271,7 +282,7 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// # Example
 ///
-/// Here's an example of accessing an enum field,using `GetFieldType` to get the field type.
+/// Here's an example of accessing an `enum` field,using `GetFieldType` to get the field type.
 ///
 /// This also demonstrates a way to write extension traits.
 ///
