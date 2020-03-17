@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::p as chars;
 
 #[cfg(feature = "use_const_str")]
@@ -34,11 +35,11 @@ macro_rules! tstr_asserts{
     };
 }
 
-#[cfg(feature = "better_macros")]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 #[macro_use]
-mod for_better_macros {
+mod for_string_tests {
+    #[allow(unused_imports)]
     use crate::{p as chars, p::TStrPriv};
 
     cond_tstr_alias!(S_foo = ((chars::_f, chars::_o, chars::_o), "foo"));
@@ -72,11 +73,11 @@ mod for_better_macros {
 
 /// Tests that the fp and FP macros are correct
 #[allow(non_camel_case_types)]
-#[cfg(feature = "better_macros")]
 #[test]
 fn identifier_macros_equality() {
-    use self::for_better_macros::*;
-    use crate::field_path::FieldPath;
+    use self::for_string_tests::*;
+    use crate::field_path::NestedFieldPath;
+    #[allow(unused_imports)]
     use crate::p::TStrPriv;
 
     cond_tstr_alias!(S_abcd = ((chars::_a, chars::_b, chars::_c, chars::_d), "abcd"));
@@ -87,22 +88,21 @@ fn identifier_macros_equality() {
     path_assertion!(fp!(0), S_0);
     path_assertion!(fp!(21), S_21);
     path_assertion!(fp!(ab0), S_ab0);
-    path_assertion!(fp!(0.1), FieldPath<(S_0, S_1)>);
-    path_assertion!(fp!(0.1.2), FieldPath<(S_0, S_1, S_2)>);
-    path_assertion!(fp!(0.1.2.3), FieldPath<(S_0, S_1, S_2, S_3)>);
-    path_assertion!(fp!(0.1.2.3.4), FieldPath<(S_0, S_1, S_2, S_3, S_4)>);
-    path_assertion!(fp!(0.foo), FieldPath<(S_0, S_foo)>);
-    path_assertion!(fp!(0.foo.1), FieldPath<(S_0, S_foo, S_1)>);
-    path_assertion!(fp!(0.foo.1.bar), FieldPath<(S_0, S_foo, S_1, S_bar)>);
+    path_assertion!(fp!(0.1), NestedFieldPath<(S_0, S_1)>);
+    path_assertion!(fp!(0.1.2), NestedFieldPath<(S_0, S_1, S_2)>);
+    path_assertion!(fp!(0.1.2.3), NestedFieldPath<(S_0, S_1, S_2, S_3)>);
+    path_assertion!(fp!(0.1.2.3.4), NestedFieldPath<(S_0, S_1, S_2, S_3, S_4)>);
+    path_assertion!(fp!(0.foo), NestedFieldPath<(S_0, S_foo)>);
+    path_assertion!(fp!(0.foo.1), NestedFieldPath<(S_0, S_foo, S_1)>);
+    path_assertion!(fp!(0.foo.1.bar), NestedFieldPath<(S_0, S_foo, S_1, S_bar)>);
 }
 
 #[allow(non_camel_case_types)]
-#[cfg(feature = "better_macros")]
 #[test]
 fn field_paths_equality() {
-    use crate::field_path::{FieldPath, FieldPathSet, UniquePaths};
+    use crate::field_path::{FieldPathSet, NestedFieldPath, UniquePaths};
 
-    use self::for_better_macros::*;
+    use self::for_string_tests::*;
 
     path_assertion! {
         fp!(foo,bar),
@@ -111,12 +111,12 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(foo.bar,baz),
-        FieldPathSet<(FieldPath<(S_foo,S_bar)>,S_baz,),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_foo,S_bar)>,S_baz,),UniquePaths>,
     }
 
     path_assertion! {
         fp!(foo.bar,a.b),
-        FieldPathSet<(FieldPath<(S_foo,S_bar)>,FieldPath<(S_a,S_b)>,),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_foo,S_bar)>,NestedFieldPath<(S_a,S_b)>,),UniquePaths>,
     }
 
     path_assertion! {
@@ -126,25 +126,25 @@ fn field_paths_equality() {
 
     path_assertion! {
         fp!(0.1,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1,S_2)>,S_foo),UniquePaths>,
     }
     path_assertion! {
         fp!(foo,0.1.2.3),
-        FieldPathSet<(S_foo,FieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
+        FieldPathSet<(S_foo,NestedFieldPath<(S_0,S_1,S_2,S_3)>),UniquePaths>,
     }
     path_assertion! {
         fp!(0.1.2.3.4,foo),
-        FieldPathSet<(FieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
+        FieldPathSet<(NestedFieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
     }
 
     /*
     path_assertion!{
         fp!((FP!(a.b)).(FP!(c.d)),0),
-        FieldPathSet<(FieldPath<(S_a,S_b,S_c,S_d)>,FieldPath<(S_0,)>,),AliasedPaths>,
+        FieldPathSet<(NestedFieldPath<(S_a,S_b,S_c,S_d)>,NestedFieldPath<(S_0,)>,),AliasedPaths>,
     }
     */
 }
@@ -251,6 +251,7 @@ mod names_module_tests {
 }
 
 mod tstr_aliases_tests {
+    #[allow(unused_imports)]
     use crate::{p as chars, p::TStrPriv};
 
     #[test]
@@ -278,6 +279,16 @@ mod tstr_aliases_tests {
             ((chars::_0,),"0") = (strs::p0::NEW,ts!("0"),ts!(0));
             ((chars::_1, chars::_0),"10") = (strs::p10::NEW,ts!("10"),ts!(10));
             ((chars::_1, chars::_0, chars::_0),"100") = (strs::p100::NEW,ts!("100"),ts!(100));
+        }
+    }
+
+    #[test]
+    fn escaped() {
+        tstr_asserts! {
+            (
+                (chars::B0,chars::B92,chars::B240, chars::B159, chars::B153, chars::B130),
+                "\0\\🙂"
+            ) = (ts!("\0\\🙂"));
         }
     }
 

@@ -11,42 +11,46 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-/// Marker trait for the errors that can be returned from the field accessor traits.
+/// Marker trait for the errors that can be returned from the `RevGetField` trait and subtraits.
 ///
 /// The errors can be:
 ///
-/// - [NonOptField]:
-///     An error type that cannot be constructed,used when a field always exists.
+/// - [InfallibleAccess](./enum.InfallibleAccess.html):
+///     For `Rev*` accessors that return a field that always exists,
+///     most often in a struct.
+///     Because the field always exists this error is never actually returned.
 ///
-/// - [OptionalField]:
-///     Used when a field is optional.
+/// - [FailedAccess](./struct.FailedAccess.html):
+///     For `Rev*` accessors that failed to return a field that may not exist,
+///     most often inside an enum.
 ///
 /// This trait is sealed,and cannot be implemented outside of the `structural` crate.
 pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 
-/// The error type for non-optional fields.
+/// The error type for accesses to fields that always exist,most often in a struct.
 ///
-/// This cannot be constructed,and therefore the field always exists.
+/// Because the fields always exist,this error is never actually returned,
+/// and `Result<T, InfallibleAccess>` has the same size as `T` (as of Rust 1.42).
 ///
-/// When you manually define an non-optional field accessor,
-/// you'd use this as the `Err` associated type,
-/// then [GetFieldExt](crate::GetFieldExt) methods use
-/// [NormalizeFields](crate::field_traits::NormalizeFields) to turn
+/// This is used as the `Err` associated type for `Rev*Field*` implementors,
+/// which return a `Result<_,InfallibleAccess>`,
+/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum NonOptField {}
+pub enum InfallibleAccess {}
 
-/// The error type for optional fields.
+/// The error type for accesses to fields that may not exist,most often inside an enum.
 ///
-/// When you manually define an optional field accessor,
-/// you'd use this as the `Err` associated type,
-/// then [GetFieldExt](crate::GetFieldExt) methods use
-/// sNormalizeFields](crate::field_traits::NormalizeFields) to turn
-/// `Ok(foo)` into `Some(foo)`,and `Err(NonOptField)` into `None`.
+/// This is used as the `Err` associated type for `Rev*Field*` implementors,
+/// which return a `Result<_,FailedAccess>`,
+/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// [NormalizeFields](../trait.NormalizeFields.html) to turn
+/// `Ok(foo)` into `Some(foo)`,and `Err(FailedAccess)` into `None`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct OptionalField;
+pub struct FailedAccess;
 
-impl Cloned for OptionalField {
+impl Cloned for FailedAccess {
     type Cloned = Self;
 
     #[inline(always)]
@@ -55,7 +59,7 @@ impl Cloned for OptionalField {
     }
 }
 
-impl Cloned for NonOptField {
+impl Cloned for InfallibleAccess {
     type Cloned = Self;
 
     #[inline(always)]
@@ -64,11 +68,11 @@ impl Cloned for NonOptField {
     }
 }
 
-impl Sealed for OptionalField {}
-impl IsFieldErr for OptionalField {}
+impl Sealed for FailedAccess {}
+impl IsFieldErr for FailedAccess {}
 
-impl Sealed for NonOptField {}
-impl IsFieldErr for NonOptField {}
+impl Sealed for InfallibleAccess {}
+impl IsFieldErr for InfallibleAccess {}
 
 #[cfg(feature = "std")]
 mod std_impls {
@@ -76,13 +80,13 @@ mod std_impls {
 
     use std::error::Error;
 
-    impl Error for OptionalField {
+    impl Error for FailedAccess {
         #[inline(always)]
         fn description(&self) -> &str {
             "Some field could not be accessed"
         }
     }
-    impl Error for NonOptField {
+    impl Error for InfallibleAccess {
         #[inline(always)]
         fn description(&self) -> &str {
             "The field isn't optional,this function is uncallable"
@@ -92,23 +96,23 @@ mod std_impls {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for OptionalField {
+impl Display for FailedAccess {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Some field could not be accessed")
     }
 }
 
-impl From<NonOptField> for OptionalField {
+impl From<InfallibleAccess> for FailedAccess {
     #[inline(always)]
-    fn from(_: NonOptField) -> Self {
-        OptionalField
+    fn from(_: InfallibleAccess) -> Self {
+        FailedAccess
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Display for NonOptField {
+impl Display for InfallibleAccess {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("This field can always be accessed.")
@@ -135,9 +139,9 @@ where
     }
 }
 
-impl IntoFieldErr<OptionalField> for NonOptField {
+impl IntoFieldErr<FailedAccess> for InfallibleAccess {
     #[inline(always)]
-    fn into_field_err(self) -> OptionalField {
+    fn into_field_err(self) -> FailedAccess {
         match self {}
     }
 }
@@ -146,10 +150,10 @@ impl IntoFieldErr<OptionalField> for NonOptField {
 
 /// Combines multiple error types into one.
 ///
-/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
-/// otherwise they're combined into an `OptionalField` .
+/// A tuple of errors is combined into a `InfallibleAccess` so long as all of them are,
+/// otherwise they're combined into an `FailedAccess` .
 ///
-/// This is used by the `Rev*Field*` impls for [FieldPath](crate::FieldPath) to
+/// This is used by the `Rev*Field*` impls for [NestedFieldPath](../../struct.NestedFieldPath.html) to
 /// determine whether a nested field access is optional or not.
 pub trait CombinedErrs {
     type Combined: IsFieldErr;
@@ -157,12 +161,12 @@ pub trait CombinedErrs {
 
 /// The combination of all the error types in `This`.
 ///
-/// A tuple of errors is combined into a `NonOptField` so long as all of them are,
-/// otherwise they're combined into an `OptionalField` .
+/// A tuple of errors is combined into a `InfallibleAccess` so long as all of them are,
+/// otherwise they're combined into an `FailedAccess` .
 pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {
-    use super::{NonOptField as IF, OptionalField as OF, *};
+    use super::{FailedAccess as OF, InfallibleAccess as IF, *};
 
     macro_rules! combined_err_impls {
         (small=>

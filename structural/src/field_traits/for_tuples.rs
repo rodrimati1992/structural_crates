@@ -13,8 +13,8 @@ Eg:`(A,B,C)`,`(A,B,C,D)`,`(A,B,C,D,E)`,etcetera.
 Demonstrates that you can use the `Tuple*` trait with structs.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
-by-value non-optional accessor traits,
-satisfying the ([IntoFieldMut trait](crate::field_traits::IntoFieldMut))
+by-value accessor trait impls,
+satisfying the [IntoFieldMut trait](crate::field_traits::IntoFieldMut)
 
 ```
 use structural::field_traits::for_tuples::Tuple4;
@@ -49,8 +49,8 @@ struct MyTuple5(pub u8,pub u16,pub u32,pub u64, String);
 Demonstrates that you can use the `Tuple*Variant` trait with enums.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
-by-value non-optional accessor traits,
-satisfying the ([IntoVariantFieldMut trait](crate::field_traits::IntoVariantFieldMut))
+by-value accessor traits,
+satisfying the ([IntoVariantFieldMut trait](../variant_field/trait.IntoVariantFieldMut.html))
 
 ```
 use structural::field_traits::Tuple2Variant;
@@ -61,8 +61,7 @@ use std::fmt::Debug;
 
 fn first_2<This,T>(mut foo: This, mut not_foo: This)
 where
-    // `TS!(F o o)` can also be written as `TS!(Foo)` from Rust 1.40 onwards
-    This: Tuple2Variant<&'static str, T, TS!(F o o)> + Copy,
+    This: Tuple2Variant<&'static str, T, TS!(Foo)> + Copy,
     T: Debug + From<u8> + PartialEq,
 {
     {

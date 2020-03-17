@@ -1,25 +1,15 @@
-use super::*;
-
 use crate::{
     enums::IsVariant,
     field_path::IsTStr,
     field_traits::{
-        multi_fields::{RevGetMultiFieldMutOut, RevGetMultiFieldOut},
-        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
+        NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
+        RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
     },
 };
 
-use core_extensions::collection_traits::Cloned;
+use core_extensions::collection_traits::{Cloned, ClonedOut};
 
 /// A trait defining the primary way to call methods from structural traits.
-///
-/// # Optionality
-///
-/// The reference accessor methods in this trait can return either the field type or
-/// an `Option<&>`,depending on whether the field accessor is optional.
-///
-/// Accessing a variant field (eg:`.field(fp!(::Foo.bar))`) always returns an `Option` .
-///
 pub trait GetFieldExt {
     /// Gets a reference to a field,determined by `path`.
     ///
@@ -76,6 +66,9 @@ pub trait GetFieldExt {
     ///
     ///     // Constructing the variant proxy is the only Option we have to handle here,
     ///     // instead of every access to the fields in the Circle variant being optional.
+    ///     //
+    ///     // For a more ergonomic alternative,
+    ///     // you can look at the example for the `fields` method
     ///     let proxy=circle.field_(fp!(::Circle)).expect("Expected a circle");
     ///     assert_eq!( proxy.field_(fp!(x)), &3 );
     ///     assert_eq!( proxy.field_(fp!(y)), &5 );
@@ -156,7 +149,7 @@ pub trait GetFieldExt {
     ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
     ///     // this allows accessing multiple fields inside an enum variant without having to
     ///     // create an intermediate variant proxy
-    ///     // (look at the next assert for what what looks like).
+    ///     // (look at the next assert for what that looks like).
     ///     assert_eq!( car.fields(fp!(::Car=>name,km)), Some((&"initial-c",&9001)) );
     ///
     ///     assert_eq!(
@@ -185,11 +178,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields<'a, P>(&'a self, path: P) -> NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>
+    fn fields<'a, P>(&'a self, path: P) -> RevGetMultiFieldOut<'a, P, Self>
     where
         P: RevGetMultiField<'a, Self>,
     {
-        path.rev_get_multi_field(self).normalize_fields()
+        path.rev_get_multi_field(self)
     }
 
     /// Gets clones of multiple fields,determined by `path`.
@@ -268,7 +261,7 @@ pub trait GetFieldExt {
     ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
     ///     // this allows accessing multiple fields inside an enum variant without having to
     ///     // create an intermediate variant proxy
-    ///     // (look at the next assert for what what looks like).
+    ///     // (look at the next assert for what that looks like).
     ///     assert_eq!( pc.cloned_fields(fp!(::Pc=>manufacturer,year)), Some(("dawn",2038)) );
     ///
     ///     assert_eq!(
@@ -296,15 +289,12 @@ pub trait GetFieldExt {
     ///
     ///
     /// ```
-    fn cloned_fields<'a, P>(
-        &'a self,
-        path: P,
-    ) -> <NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>> as Cloned>::Cloned
+    fn cloned_fields<'a, P>(&'a self, path: P) -> ClonedOut<RevGetMultiFieldOut<'a, P, Self>>
     where
         P: RevGetMultiField<'a, Self>,
-        NormalizeFieldsOut<RevGetMultiFieldOut<'a, P, Self>>: Cloned,
+        RevGetMultiFieldOut<'a, P, Self>: Cloned,
     {
-        path.rev_get_multi_field(self).normalize_fields().cloned_()
+        path.rev_get_multi_field(self).cloned_()
     }
 
     /// Gets a mutable reference to a field,determined by `path`.
@@ -492,7 +482,7 @@ pub trait GetFieldExt {
     ///     // You can use `=>` to access multiple fields inside of a nested field(or a variant)
     ///     // this allows accessing multiple fields inside an enum variant without having to
     ///     // create an intermediate variant proxy
-    ///     // (look at the next assert for what what looks like).
+    ///     // (look at the next assert for what that looks like).
     ///     assert_eq!(
     ///         book.fields_mut(fp!(::Book=>pages,title)),
     ///         Some((&mut 500,&mut "Dracular")),
@@ -523,14 +513,11 @@ pub trait GetFieldExt {
     ///
     /// ```
     #[inline(always)]
-    fn fields_mut<'a, P>(
-        &'a mut self,
-        path: P,
-    ) -> NormalizeFieldsOut<RevGetMultiFieldMutOut<'a, P, Self>>
+    fn fields_mut<'a, P>(&'a mut self, path: P) -> RevGetMultiFieldMutOut<'a, P, Self>
     where
         P: RevGetMultiFieldMut<'a, Self>,
     {
-        path.rev_get_multi_field_mut(self).normalize_fields()
+        path.rev_get_multi_field_mut(self)
     }
 
     /// Converts ´self´ into a field,determined by `path`.

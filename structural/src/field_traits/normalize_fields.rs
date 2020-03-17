@@ -1,12 +1,12 @@
-use super::{NonOptField, OptionalField};
+use super::{FailedAccess, InfallibleAccess};
 
 /// Converts the `Result<T,E>` representation of accessed fields to either `T` or `Option<T>`
 ///
 /// If Self is a:
 ///
-/// - `Result<T,NonOptField>`: it's converted to `T`
+/// - `Result<T,InfallibleAccess>`: it's converted to `T`
 ///
-/// - `Result<T,OptionalField>`: it's converted to `Option<T>`
+/// - `Result<T,FailedAccess>`: it's converted to `Option<T>`
 ///
 /// - A tuple of `Result`s:
 /// it's converted to a tuple of what those `Result`s `.normalize_fields()` into.
@@ -23,7 +23,7 @@ pub trait NormalizeFields {
 /// The type `This` is converted into when calling `.normalize_fields()`.
 pub type NormalizeFieldsOut<This> = <This as NormalizeFields>::Output;
 
-impl<T> NormalizeFields for Result<T, NonOptField> {
+impl<T> NormalizeFields for Result<T, InfallibleAccess> {
     type Output = T;
 
     #[inline(always)]
@@ -35,7 +35,7 @@ impl<T> NormalizeFields for Result<T, NonOptField> {
     }
 }
 
-impl<T> NormalizeFields for Result<T, OptionalField> {
+impl<T> NormalizeFields for Result<T, FailedAccess> {
     type Output = Option<T>;
 
     #[inline(always)]

@@ -1,8 +1,4 @@
-use crate::{
-    ident_or_index::IdentOrIndex,
-    parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, FullPathForChars},
-};
+use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tident_tokens};
 
 use as_derive_utils::return_spanned_err;
 
@@ -48,8 +44,9 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     }
 
     if config.include_count {
-        let alias_count_str = tident_tokens(alias_count.to_string(), FullPathForChars::Yes);
+        let alias_count_str = tident_tokens(alias_count.to_string());
         tokens.append_all(quote!(
+            #[allow(non_camel_case_types,dead_code)]
             /// The amount of strings aliased in this module.
             pub type __TString_Aliases_Count=#alias_count_str;
         ));
@@ -77,16 +74,16 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
 
                 let _ = writeln!(
                     doc_fp_inner,
-                    "The [TStr](::structural::TStr) equivalent of {:?}",
+                    "The `structural::TStr` equivalent of {:?}",
                     string
                 );
                 let _ = writeln!(
                     doc_fpc_inner,
-                    "An instance of the [TStr](::structural::TStr) equivalent of {:?}.",
+                    "An instance of the `structural::TStr` equivalent of {:?}.",
                     string,
                 );
 
-                let string = tident_tokens(string, FullPathForChars::Yes);
+                let string = tident_tokens(string);
 
                 Ok(quote_spanned!(span=>
                     #[doc=#doc_fp_inner]
@@ -94,7 +91,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     pub type #alias_name=#string;
 
                     #[doc=#doc_fpc_inner]
-                    #[allow(non_camel_case_types,dead_code)]
+                    #[allow(non_upper_case_globals,dead_code)]
                     pub const #alias_name:#alias_name=#alias_name::NEW;
                 ))
             })

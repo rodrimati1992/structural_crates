@@ -1,6 +1,6 @@
 use crate::{
     field_traits::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
-    structural_trait::{FieldInfo, FieldInfos, Structural},
+    structural_trait::Structural,
 };
 
 macro_rules! impl_tuple {
@@ -10,7 +10,7 @@ macro_rules! impl_tuple {
     )=>{
         _private_impl_getter!{
             unsafe impl[$($tuple_param),*]
-                IntoFieldMut< $field:$field_ty,nonopt,$field_param >
+                IntoFieldMut< $field:$field_ty,$field_param >
             for ($($tuple_param,)*)
         }
     };
@@ -22,13 +22,7 @@ macro_rules! impl_tuple {
         ]
         $tuple_ty:tt
     ) => {
-        impl<$($field_ty),*> Structural for $tuple_ty {
-            const FIELDS: &'static $crate::structural_trait::FieldInfos={
-                &FieldInfos::Struct(&[
-                    $( FieldInfo::not_renamed(stringify!( $field )) ,)*
-                ])
-            };
-        }
+        impl<$($field_ty),*> Structural for $tuple_ty {}
 
         /// A structural alias for a tuple of the size.
         pub trait $the_trait<$($field_ty),*>:
@@ -49,7 +43,8 @@ macro_rules! impl_tuple {
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
         ///
-        /// The last type parameter takes the name of the variant as a [TStr](crate::TStr)
+        /// The last type parameter takes the name of the variant as a
+        /// [TStr](../../struct.TStr.html)
         pub trait $variant_trait<$($field_ty,)* V>:
             $(
                 IntoVariantFieldMut<V,names::$field_param,Ty=$field_ty>+
@@ -362,7 +357,7 @@ mod tests {
 
     fn takes_tuple4_variant<This>(this: This)
     where
-        This: Tuple4Variant<u32, u32, u32, u32, TS!(F o o)> + Clone,
+        This: Tuple4Variant<u32, u32, u32, u32, TS!(Foo)> + Clone,
     {
         takes_tuple4(this.into_field(fp!(::Foo)).unwrap())
     }

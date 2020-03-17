@@ -74,8 +74,7 @@ use std::fmt::Debug;
 
 fn first_2<T>(mut foo:T, mut not_foo:T)
 where
-    // `TS!(F o o)` can also be written as `TS!(Foo)` from Rust 1.40 onwards
-    T: Array2Variant<u8,TS!(F o o)> + Copy
+    T: Array2Variant<u8,TS!(Foo)> + Copy
 {
     {
         assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some(( &101, &202 )) );
@@ -126,12 +125,10 @@ enum OtherEnum{
 
 use crate::{
     field_path::IsSingleFieldPath,
-    field_traits::{
-        FieldType, GetFieldImpl, GetFieldMutImpl, GetFieldRawMutFn, IntoFieldImpl, NonOptField,
-    },
-    structural_trait::{FieldInfo, FieldInfos, Structural},
+    field_traits::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
+    structural_trait::Structural,
     type_level::{
-        cmp::{Compare_, TGreater},
+        cmp::{Compare, TGreater},
         integer::*,
     },
 };
@@ -165,7 +162,7 @@ mod sealed {
 }
 use self::sealed::Sealed;
 
-/// A FieldPath that is usable for indexing (some) arrays.
+/// A NestedFieldPath that is usable for indexing (some) arrays.
 pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
 
@@ -203,14 +200,7 @@ macro_rules! declare_array_paths {
         use self::names::*;
 
         $(
-            #[allow(dead_code)]
-            const $fi_ind:FieldInfo=FieldInfo::not_renamed(stringify!($index));
-
-            impl<T> Structural for [T;$index]{
-                const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-                    $( $fi_in_array, )*
-                ]);
-            }
+            impl<T> Structural for [T;$index]{}
 
 
             impl Sealed for $index_name{}
@@ -223,7 +213,7 @@ macro_rules! declare_array_paths {
             impl<T,P> IsPathForArray<[T;$index]> for P
             where
                 P:ArrayPath,
-                $tnum:Compare_<P::Index,Output=TGreater>,
+                $tnum:Compare<P::Index,Output=TGreater>,
             {
                 #[doc(hidden)]
                 const _SEALED_IPFA:SealedIPFA<P,[T;$index]>=SealedIPFA{_marker:PhantomData};
@@ -236,58 +226,55 @@ macro_rules! declare_array_paths {
                 type Ty=T;
             }
 
-            impl<T,P> GetFieldImpl<P> for [T;$index]
+            impl<T,P> GetField<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
-                type Err=NonOptField;
-
                 #[inline(always)]
-                fn get_field_(&self,_:P,_:())->Result<&Self::Ty,NonOptField>{
-                    Ok(&self[P::INDEX])
+                fn get_field_(&self,_:P)->&Self::Ty{
+                    &self[P::INDEX]
                 }
             }
 
-            unsafe impl<T,P> GetFieldMutImpl<P> for [T;$index]
+            unsafe impl<T,P> GetFieldMut<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn get_field_mut_(&mut self,_:P,_:())->Result<&mut Self::Ty,NonOptField>{
-                    Ok(&mut self[P::INDEX])
+                fn get_field_mut_(&mut self,_:P)->&mut Self::Ty{
+                    &mut self[P::INDEX]
                 }
 
                 #[inline(always)]
                 unsafe fn get_field_raw_mut(
-                    ptr:*mut *mut (),
+                    ptr:*mut  (),
                     _:P,
-                    _:(),
-                )->Result<*mut Self::Ty,NonOptField>{
-                    let dptr=ptr as *mut *mut T;
-                    Ok((*dptr).add(P::INDEX))
+                )->*mut Self::Ty{
+                    let ptr=ptr as *mut T;
+                    ptr.add(P::INDEX)
                 }
 
                 #[inline(always)]
-                fn get_field_raw_mut_func(&self)->GetFieldRawMutFn<P,(),Self::Ty,NonOptField>{
-                    <Self as GetFieldMutImpl<P>>::get_field_raw_mut
+                fn get_field_raw_mut_fn(&self)->GetFieldRawMutFn<P,Self::Ty>{
+                    <Self as GetFieldMut<P>>::get_field_raw_mut
                 }
             }
 
-            impl<T,P> IntoFieldImpl<P> for [T;$index]
+            impl<T,P> IntoField<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
                 #[inline(always)]
-                fn into_field_(self,_:P,_:())->Result<Self::Ty,NonOptField>{
+                fn into_field_(self,_:P)->Self::Ty{
                     unsafe{
                         let mut this=ManuallyDrop::new(self);
                         ptr::drop_in_place(&mut this[..P::INDEX]);
                         ptr::drop_in_place(&mut this[P::INDEX+1..]);
-                        Ok(this.as_mut_ptr().add(P::INDEX).read())
+                        this.as_mut_ptr().add(P::INDEX).read()
                     }
                 }
 
-                z_impl_box_into_field_method!{ P }
+                z_impl_box_into_field_method!{ field_tstr=P }
             }
         )*
     )

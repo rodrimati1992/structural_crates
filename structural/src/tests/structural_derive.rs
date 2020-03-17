@@ -1,12 +1,20 @@
-use crate::{
-    field_traits::NonOptField,
-    structural_trait::{accessor_names, FieldInfo, FieldInfos},
-    GetFieldExt, GetFieldImpl, GetFieldMutImpl, GetFieldType, IntoFieldImpl, IntoFieldMut,
-    Structural,
-};
+use crate::{GetField, GetFieldExt, GetFieldMut, IntoField, IntoFieldMut, Structural};
 
 #[cfg(feature = "alloc")]
 use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
+
+////////////////////////////////////////////////////////////////////////////////
+
+field_path_aliases! {
+    mod paths{
+        a,b
+    }
+}
+tstr_aliases! {
+    mod strings{
+        A,B,C,a,b,c,n0=0,
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -31,8 +39,8 @@ fn object_safety() {
 
     type TraitObjects<'a, T> = (&'a T, &'a mut T, AllocPtrs<'a, T>);
 
-    let _: TraitObjects<'_, dyn GetFieldImpl<FP!(a b), Ty = (), Err = NonOptField>>;
-    let _: TraitObjects<'_, dyn GetFieldMutImpl<FP!(a b), Ty = (), Err = NonOptField>>;
+    let _: TraitObjects<'_, dyn GetField<FP!(ab), Ty = ()>>;
+    let _: TraitObjects<'_, dyn GetFieldMut<FP!(ab), Ty = ()>>;
     let _: TraitObjects<'_, dyn Huh_SI>;
     let _: TraitObjects<'_, dyn Whoah_SI>;
     let _: TraitObjects<'_, dyn Renamed_SI>;
@@ -125,13 +133,13 @@ assert_equal_bounds! {
     trait Privacies1Test,
     ( Privacies1_SI ),
     (
-        IntoFieldMut<FP!(a), Ty = u32, Err = NonOptField>
-        + IntoFieldMut<FP!(b), Ty = u32, Err = NonOptField>
-        + IntoFieldMut<FP!(e), Ty = u32, Err = NonOptField>
-        + GetFieldImpl<FP!(f), Ty = u32, Err = NonOptField>
-        + GetFieldMutImpl<FP!(g), Ty = u32, Err = NonOptField>
-        + IntoFieldMut<FP!(h e l l o), Ty = u32, Err = NonOptField>
-        + IntoFieldImpl<FP!(w o r l d), Ty = u32, Err = NonOptField>
+        IntoFieldMut<FP!(a), Ty = u32>
+        + IntoFieldMut<FP!(b), Ty = u32>
+        + IntoFieldMut<FP!(e), Ty = u32>
+        + GetField<FP!(f), Ty = u32>
+        + GetFieldMut<FP!(g), Ty = u32>
+        + IntoFieldMut<FP!(hello), Ty = u32>
+        + IntoField<FP!(world), Ty = u32>
     ),
 }
 
@@ -145,11 +153,6 @@ fn privacies() {
         let _ = this.clone().into_field(fp!(b));
     };
     let _ = generic_1::<Privacies1>;
-
-    assert!(accessor_names::<Privacies0>().eq(["a", "b"].iter().cloned()),);
-
-    assert!(accessor_names::<Privacies1>()
-        .eq(["a", "b", "e", "f", "g", "hello", "world"].iter().cloned()),);
 }
 
 // This tests that boxed trait objects can still call GetFieldExt methods.
@@ -218,31 +221,75 @@ struct Renamed {
     pub c: u32,
 }
 
+#[derive(Structural)]
+#[struc(no_trait)]
+enum Vegetable {
+    #[struc(rename = "foo")]
+    Potato {
+        #[struc(rename = "bar")]
+        volume_cm: u32,
+    },
+    #[struc(rename = "baz")]
+    Letuce {
+        #[struc(rename = "qux")]
+        leaves: u32,
+    },
+}
+
 #[test]
 fn renamed() {
-    assert!(accessor_names::<Renamed>().eq(["a", "b", "e"].iter().cloned()));
+    // struct
+    {
+        let mut this = Renamed { a: 3, b: 5, c: 8 };
 
-    let _: GetFieldType<Renamed, FP!(a)>;
-    let _: GetFieldType<Renamed, FP!(b)>;
-    let _: GetFieldType<Renamed, FP!(e)>;
+        assert_eq!(this.field_(fp!(a)), &3);
+        assert_eq!(this.field_mut(fp!(a)), &mut 3);
+        assert_eq!(this.clone().into_field(fp!(a)), 3);
+
+        assert_eq!(this.field_(fp!(b)), &5);
+        assert_eq!(this.field_mut(fp!(b)), &mut 5);
+        assert_eq!(this.clone().into_field(fp!(b)), 5);
+
+        assert_eq!(this.field_(fp!(e)), &8);
+        assert_eq!(this.field_mut(fp!(e)), &mut 8);
+        assert_eq!(this.clone().into_field(fp!(e)), 8);
+    }
+
+    // enum
+    //
+    // Copied this from a documentation example so that it doesn't get deleted if
+    // the example gets deleted.
+    {
+        let mut potato = Vegetable::Potato { volume_cm: 13 };
+        let mut letuce = Vegetable::Letuce { leaves: 21 };
+
+        assert_eq!(potato.field_(fp!(::foo.bar)), Some(&13));
+        assert_eq!(potato.field_(fp!(::baz.qux)), None);
+
+        assert_eq!(letuce.field_(fp!(::foo.bar)), None);
+        assert_eq!(letuce.field_(fp!(::baz.qux)), Some(&21));
+
+        assert_eq!(potato.field_mut(fp!(::foo.bar)), Some(&mut 13));
+        assert_eq!(potato.field_mut(fp!(::baz.qux)), None);
+
+        assert_eq!(letuce.field_mut(fp!(::foo.bar)), None);
+        assert_eq!(letuce.field_mut(fp!(::baz.qux)), Some(&mut 21));
+
+        assert_eq!(potato.is_variant(ts!(foo)), true);
+        assert_eq!(potato.is_variant(ts!(baz)), false);
+
+        assert_eq!(letuce.is_variant(ts!(foo)), false);
+        assert_eq!(letuce.is_variant(ts!(baz)), true);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Structural, Clone)]
+#[struc(no_trait)]
 struct Foo<T> {
     #[struc(delegate_to)]
     value: T,
-}
-
-fn get_fields_assoc_const<T>(_: &T) -> &'static [FieldInfo]
-where
-    T: Structural,
-{
-    match T::FIELDS {
-        FieldInfos::Struct(x) => x,
-        x => panic!("{:?} wasn't expected here", x),
-    }
 }
 
 #[test]
@@ -250,16 +297,6 @@ fn delegate_to_test() {
     let mut this = Foo {
         value: (3, 5, 8, 13, 21),
     };
-
-    let fields = &[
-        FieldInfo::not_renamed("0"),
-        FieldInfo::not_renamed("1"),
-        FieldInfo::not_renamed("2"),
-        FieldInfo::not_renamed("3"),
-        FieldInfo::not_renamed("4"),
-    ];
-
-    assert_eq!(get_fields_assoc_const(&this), &fields[..]);
 
     assert_eq!(this.fields(fp!(1, 3, 0, 2, 4)), (&5, &13, &3, &8, &21),);
     assert_eq!(
@@ -276,19 +313,21 @@ fn delegate_to_test() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-field_path_aliases! {
-    mod paths{
-        a,b
-    }
-}
-tstr_aliases! {
-    mod strings{
-        A,B,C,a,b,n0=0,
-    }
-}
+/// Tests that `#[struc(no_trait)]` has an effect on structs.
+trait Foo_SI {}
+trait Foo_VSI {}
+trait Foo_ESI {}
+
+/// Tests that `#[struc(no_trait)]` has an effect on enums.
+trait Vegetable_SI {}
+trait Vegetable_VSI {}
+trait Vegetable_ESI {}
+
+////////////////////////////////////////////////////////////////////////////////
 
 mod struct_with_constraints {
     use super::*;
+    use crate::field_traits::IntoVariantFieldMut;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -323,6 +362,15 @@ mod struct_with_constraints {
         ),
         where[ U:Clone, ]
     }
+    assert_equal_bounds! {
+        trait Bounds0_VSI_Dummy[T,U,Vari,],
+        (Bounds0_VSI<T,U,Vari>),
+        (
+            IntoVariantFieldMut<Vari,strings::a,Ty=T>+
+            IntoVariantFieldMut<Vari,strings::b,Ty=U>+
+        ),
+        where[ U:Clone, ]
+    }
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -338,6 +386,15 @@ mod struct_with_constraints {
         (
             IntoFieldMut<paths::a,Ty=&'a T>+
             IntoFieldMut<paths::b,Ty=U>
+        ),
+        where[ T:'a,U:'a, ]
+    }
+    assert_equal_bounds! {
+        trait Bounds1_VSI_Dummy['a,T,U,Vari,],
+        (Bounds1_VSI<'a,T,U,Vari>),
+        (
+            IntoVariantFieldMut<Vari,strings::a,Ty=&'a T>+
+            IntoVariantFieldMut<Vari,strings::b,Ty=U>+
         ),
         where[ T:'a,U:'a, ]
     }

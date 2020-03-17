@@ -1,5 +1,6 @@
 use crate::{
     arenas::Arenas,
+    datastructure::StructOrEnum,
     parse_utils::ParseBufferExt,
     structural_alias_impl_mod::{TinyStructuralField, TypeParamBounds},
 };
@@ -62,7 +63,7 @@ impl<'a> ImplStruct<'a> {
 impl<'a> ToTokens for ImplStruct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         let bounds = self.bounds.iter();
-        let fields = self.fields.iter().map(|f| f.tokens());
+        let fields = self.fields.iter().map(|f| f.tokens(StructOrEnum::Struct));
         tokens.append_all(quote!(
             impl #( #bounds+ )* #( #fields+ )*
         ));

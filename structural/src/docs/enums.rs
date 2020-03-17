@@ -12,24 +12,20 @@ If have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
 
 The Structural derive macro generates these items+impls for enums:
 
-- Optional accessors for newtype variants
-(variants which have the `#[struc(newtype)]` attribute).
-Accessing the single field of the variant by passing `fp!(VariantName)` to
-the GetFieldExt methods.
-This is not included as a bound in the `*_SI` and `*_ESI` traits generated for the enum.
+- Implementation of the `Structural` trait for the deriving type,
+with documentation describing all the accessor trait impls for the type.
 
-- Optional accessors for variant fields
-(accessed with `fp!(::VariantName.field)`).
-
-- Unsafe accessor impls that get a variant field,
-which causes UB if it's not the current variant,
-used to implement [`VariantProxy`](../../enums/struct.VariantProxy.html).
+- Impls of the accessor traits (
+[GetVariantField](../../field_traits/variant_field/trait.GetVariantField.html)/
+[GetVariantFieldMut](../../field_traits/variant_field/trait.GetVariantFieldMut.html)/
+[IntoVariantField](../../field_traits/variant_field/trait.IntoVariantField.html
+) for variant fields (accessed with `fp!(::VariantName.field)`).
 
 - IsVariant impls for every variant,
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - Enums with the `#[struc(variant_count_alias)]` attribute
-have the `<DerivingType_VC>` type alias,
+have the `<DerivingType>_VC` type alias,
 a `TStr` with the amount of variants in the enum,
 which can be used in `VariantCount<Count= _ >` bounds.
 
@@ -48,17 +44,38 @@ This is useful for doing exhaustive matching inside the `switch` macro.
 
 ### Newtype Variants
 
-You often want to use the `#[struc(newtype(...))]` attribute on newtype variants
-(single field variants that wrap a struct),.
+You can move variant fields to a to struct,
+then use the `#[struc(newtype(...))]` attribute on the variant to delegate the
+variant fields to the struct.
 
-`#[struc(newtype(bounds="Foo_VSI<'a,T,@variant>"))]`
-variants are structurally equivalent to the type of their single field,
-since they delegate field accessors to the wrapped type.<br>
-Given `#[derive(Structural)] struct Foo(pub u32,pub u64);`,
-a regular `Bar(u32,u64)` enum variant is structurally equivalent to a
-`#[struc(newtype(bounds="Foo_VSI<@variant>"))] Bar(Foo)` variant.<br>
-[Docs for the `#[struc(newtype)]` attribute
-](../structural_macro/index.html#strucnewtype)
+For example,
+you can transition from a `Bar{x:u32,y:u64}` variant to a `Bar` struct,
+like it's done in this example:
+```rust
+use structural::{GetFieldExt,Structural,fp};
+
+#[derive(Structural)]
+#[struc(public)]
+struct Bar{
+    x:u32,
+    y:u64,
+}
+
+#[derive(Structural)]
+enum Foo{
+    #[struc(newtype(bounds="Bar_VSI<@variant>"))]
+    Bar(Bar)
+}
+
+let mut foo=Foo::Bar(Bar{x:10,y:64});
+
+assert_eq!( foo.field_(fp!(::Bar.x)), Some(&10) );
+assert_eq!( foo.field_(fp!(::Bar.y)), Some(&64) );
+assert_eq!( foo.fields_mut(fp!(::Bar=>x,y)), Some((&mut 10, &mut 64)) );
+
+```
+
+[Docs for the `#[struc(newtype)]` attribute](../structural_macro/index.html#strucnewtype)
 
 The `*_VSI` trait is generated for structs that derive `Structural` and
 don't have a `#[struc(no_trait)]` attribute,
@@ -78,7 +95,7 @@ Regarding what bounds are generated for the variant in the
 - `#[struc(newtype(bounds="Foo_VSI<'a,T,@variant>"))]` variants
 will get `Foo_VSI<'a,T,TS!(NameOfTheVariant)>` as the bound for the variant.<br>
 
-Every variant also gets a [`IsVariant<_>`](crate::enums::IsVariant) bound.
+Every variant also gets a [`IsVariant<_>`](../../enums/trait.IsVariant.html) bound.
 
 # Examples
 
@@ -124,11 +141,10 @@ where
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
 
-    // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-    let _: &VariantProxy<This,TS!(F o o)>= foo.field_(fp!(::Foo)).unwrap();
-    let _: &mut VariantProxy<This,TS!(F o o)>= foo.field_mut(fp!(::Foo)).unwrap();
+    let _: &VariantProxy<This,TS!(Foo)>= foo.field_(fp!(::Foo)).unwrap();
+    let _: &mut VariantProxy<This,TS!(Foo)>= foo.field_mut(fp!(::Foo)).unwrap();
     {
-        let mut proxy: VariantProxy<This,TS!(F o o)>=
+        let mut proxy: VariantProxy<This,TS!(Foo)>=
             foo.clone().into_field(fp!(::Foo)).unwrap();
 
         assert_eq!( proxy.field_(fp!(0)), &3 );
@@ -155,8 +171,7 @@ where
             assert_eq!( f1, &false );
 
             // `foo` is a `&VariantProxy<_,_>` inside here
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: &VariantProxy<This,TS!(F o o)>= foo;
+            let _: &VariantProxy<This,TS!(Foo)>= foo;
 
             assert_eq!( foo.fields(fp!(0,1)), (&3,&false) );
         }
@@ -168,8 +183,7 @@ where
             assert_eq!( f1, &mut false );
 
             // `foo` is a `&mut VariantProxy<_,_>` inside here
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: &mut VariantProxy<This,TS!(F o o)>= foo;
+            let _: &mut VariantProxy<This,TS!(Foo)>= foo;
 
             assert_eq!( foo.fields_mut(fp!(0,1)), (&mut 3,&mut false) );
         }
@@ -178,8 +192,7 @@ where
     switch!{variant = foo.clone();
         // Can't destructure an enum into multiple fields by value yet.
         Foo=>{
-            // `TS!(F o o)` could also be written as `TS!(Foo)` from Rust 1.40 onwards
-            let _: VariantProxy<This,TS!(F o o)>= variant;
+            let _: VariantProxy<This,TS!(Foo)>= variant;
 
             assert_eq!( variant.clone().into_field(fp!(0)), 3 );
             assert_eq!( variant.clone().into_field(fp!(1)), false );
@@ -405,7 +418,7 @@ enum EnumNoTrait<'a>{
     // (`#[struc(no_trait)]` disables the generation of the `*_SI` and `*_ESI` traits ),
     //
     // Not passing the `bounds` argument to this attribute causes the
-    // `*_SI` trait to require a `U32` variant with a `Wrapper<'a,u32>` field.
+    // `*_SI` trait to treat the variant as having no fields.
     // With the `bounds` argument,the bounds for the fields of
     // the variant are replaced with the bounds that were passed.
     #[struc(newtype)]

@@ -45,7 +45,6 @@ enum Enum{
     Bar{b:u64},
     Baz{c:&'static str},
     Bam{
-      #[struc(optional)]
       d:Option<usize>
     },
 }
@@ -103,7 +102,7 @@ where
         // No `_=>{4}` branch is necessary,because this is an exhaustive enum.
         //
         // This would be necessary if the `Enum_SI` trait was used instead of `Enum_ESI`,
-        // with the advantage that enums with more variants than `Enum` would be supported..
+        // with the advantage that enums with more variants than `Enum` would be supported.
     }
 }
 
@@ -121,7 +120,6 @@ use structural::{GetFieldExt,Structural,fp,switch};
 #     Bar{b:u64},
 #     Baz{c:&'static str},
 #     Bam{
-#       #[struc(optional)]
 #       d:Option<usize>
 #     },
 # }
@@ -134,7 +132,7 @@ let mut this=Enum::Foo{a:100};
 switch!{ ref this ;
     Foo=>{
         // The `this` here is a `&VariantProxy<Enum,TS!(Foo)>`,
-        // which allows accessing fields in variants non-optionally.
+        // which allows accessing fields in variants as struct fields.
         assert_eq!( this.field_(fp!(a)), &100 )
     }
     // You can copy `Copy` fields in `ref` branches with `&field_name`
@@ -146,7 +144,7 @@ switch!{ ref this ;
     ref mut Baz{ &mut c }=>assert_eq!( c, "hello" ),
 
     // The `ref` here is redundant,since it's inherited from the switch header
-    ref Bam{d}=>assert_eq!( d, Some(&400) )// The `,` is optional after the last switch arm.
+    ref Bam{d}=>assert_eq!( d, &Some(400) )// The `,` is optional after the last switch arm.
 }
 ```
 
@@ -163,7 +161,6 @@ use structural::{GetFieldExt,Structural,fp,switch};
 #     Bar{b:u64},
 #     Baz{c:&'static str},
 #     Bam{
-#       #[struc(optional)]
 #       d:Option<usize>
 #     },
 # }
@@ -199,12 +196,12 @@ let number = switch!{ other = this;
         x
     }
     ref mut Bam{d} =>{
-        assert_eq!( d, Some(&mut 9999) );
+        assert_eq!( d, &mut Some(9999) );
 
         // The `other` here is a `&mut VariantProxy<Enum,TS!(Bam)>`,
         // you can access all the fields using it,
         // but only after the last use of destructured fields.
-        assert_eq!( other.field_mut(fp!(d)), Some(&mut 9999) );
+        assert_eq!( other.field_mut(fp!(d?)), Some(&mut 9999) );
 
         100
     }, // The `,` is optional after `{...}`
@@ -274,7 +271,7 @@ enum GenericDirection4<T>{
 # More Examples
 
 For more examples you can look at the ones
-[in the docs for enums](./docs/structural_macro/enums/index.html)
+[in the docs for enums](./docs/enums/index.html)
 
 
 # Syntax
@@ -327,7 +324,7 @@ it is stored in the `$proxy` variable by value before any pattern matching happe
 
 In switch arms that match on the variant of the enum,
 `$proxy` is a `VariantProxy<TypeOfMatchedEnum, TS!(NameOfVariant)>`,
-which allows directly accessing variant fields.
+which allows accessing variant fields as struct fields.
 
 In switch arms that don't match on the variant of the enum,
 `$proxy` is the type of the matched enum.

@@ -3,7 +3,7 @@ Small,type-level integers.
 */
 
 use crate::type_level::{
-    cmp::{Compare_, TEqual, TGreater, TLess},
+    cmp::{Compare, TEqual, TGreater, TLess},
     to_value_traits::ToUsize,
 };
 
@@ -207,7 +207,7 @@ fn main() {
     for i in 0..len{
         print!("L{0},R{0},T{0},",i);
     }
-    print!(">\n    Compare_<Unsigned<(");
+    print!(">\n    Compare<Unsigned<(");
     for i in 0..len{
         print!("R{0},",i);
     }
@@ -225,7 +225,7 @@ fn main() {
 */
 
 impl<L0, R0, T0, L1, R1, T1, L2, R2, T2, L3, R3, T3, L4, R4, T4, L5, R5, T5>
-    Compare_<Unsigned<(R0, R1, R2, R3, R4, R5)>> for Unsigned<(L0, L1, L2, L3, L4, L5)>
+    Compare<Unsigned<(R0, R1, R2, R3, R4, R5)>> for Unsigned<(L0, L1, L2, L3, L4, L5)>
 where
     L0: CompareBit<TEqual, R0, Output = T0>,
     L1: CompareBit<T0, R1, Output = T1>,

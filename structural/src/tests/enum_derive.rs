@@ -8,13 +8,13 @@ use std_::mem;
 fn option_test() {
     {
         let mut tup = (0, Some((1, "hello", 3, Some((19, 30)))), 2);
-        assert_eq!(tup.field_(fp!(1::Some.0)), Some(&1));
-        assert_eq!(tup.field_(fp!(1::Some.1)), Some(&"hello"));
-        assert_eq!(tup.field_(fp!(1::Some.2)), Some(&3));
-        assert_eq!(tup.field_(fp!(1::Some.3::Some.0)), Some(&19));
-        assert_eq!(tup.field_(fp!(1::Some.3::Some.1)), Some(&30));
+        assert_eq!(tup.field_(fp!(1::Some.0.0)), Some(&1));
+        assert_eq!(tup.field_(fp!(1::Some.0.1)), Some(&"hello"));
+        assert_eq!(tup.field_(fp!(1::Some.0.2)), Some(&3));
+        assert_eq!(tup.field_(fp!(1::Some.0.3::Some.0.0)), Some(&19));
+        assert_eq!(tup.field_(fp!(1::Some.0.3::Some.0.1)), Some(&30));
         assert_eq!(
-            tup.fields_mut(fp!(1::Some.0,1::Some.1,1::Some.2)),
+            tup.fields_mut(fp!(1::Some.0.0,1::Some.0.1,1::Some.0.2)),
             (Some(&mut 1), Some(&mut "hello"), Some(&mut 3)),
         );
     }
@@ -33,7 +33,7 @@ fn option_test() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum Pair<T, U> {
     AllCorrect(T),
     Pair { left: T, right: U },
@@ -60,15 +60,15 @@ _private_impl_getters_for_derive_enum! {
             AllCorrect,
             pair_strs::AllCorrect,
             kind=newtype,
-            fields((IntoFieldMut,0:T,nonopt))
+            fields((IntoVariantFieldMut,0:T))
         )
         (
             Pair,
             pair_strs::Pair,
             kind=regular,
             fields(
-                (IntoFieldMut,left:T ,nonopt,pair_strs::left )
-                (IntoFieldMut,right:U,nonopt,pair_strs::right)
+                (IntoVariantFieldMut,left:T ,pair_strs::left )
+                (IntoVariantFieldMut,right:U,pair_strs::right)
             )
         )
         (
@@ -82,7 +82,7 @@ _private_impl_getters_for_derive_enum! {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Structural, Debug, Clone)]
+#[derive(Structural, Debug, Clone, PartialEq)]
 // #[struc(debug_print)]
 enum DerivingPair<T, U> {
     #[struc(newtype)]
@@ -123,7 +123,7 @@ macro_rules! pair_accessors {
     ( $type_:ident ) => {{
         {
             let mut this = $type_::<(i32, i32), ()>::AllCorrect((11, 22));
-            assert_eq!(this.field_(fp!(AllCorrect)), Some(&(11, 22)));
+            assert_eq!(this.field_(fp!(::AllCorrect)).map(|_|()), Some(()));
             assert_eq!(this.field_(fp!(::AllCorrect.0)), Some(&11));
             assert_eq!(this.field_(fp!(::AllCorrect.1)), Some(&22));
             assert_eq!(this.fields(fp!(::AllCorrect=>0,1)), Some((&11,&22)));
@@ -131,7 +131,7 @@ macro_rules! pair_accessors {
             assert_eq!(this.field_(fp!(::Pair.right)), None);
             assert_eq!(this.fields(fp!(::Pair=>left,right)), None);
 
-            assert_eq!(this.field_mut(fp!(AllCorrect)), Some(&mut (11, 22)));
+            assert_eq!(this.field_mut(fp!(::AllCorrect)).map(|_|()), Some(()));
             assert_eq!(this.field_mut(fp!(::AllCorrect.0)), Some(&mut 11));
             assert_eq!(this.field_mut(fp!(::AllCorrect.1)), Some(&mut 22));
             assert_eq!(this.fields_mut(fp!(::AllCorrect=>0,1)), Some((&mut 11,&mut 22)));
@@ -139,7 +139,7 @@ macro_rules! pair_accessors {
             assert_eq!(this.field_mut(fp!(::Pair.right)), None);
             assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), None);
 
-            assert_eq!(this.clone().into_field(fp!(AllCorrect)), Some((11, 22)));
+            assert_eq!(this.clone().into_field(fp!(::AllCorrect)).map(drop), Some(()));
             assert_eq!(this.clone().into_field(fp!(::AllCorrect.0)), Some(11));
             assert_eq!(this.clone().into_field(fp!(::AllCorrect.1)), Some(22));
             assert_eq!(this.clone().into_field(fp!(::Pair.left)), None);
@@ -150,17 +150,17 @@ macro_rules! pair_accessors {
                 left: false,
                 right: 100,
             };
-            assert_eq!(this.field_(fp!(AllCorrect)), None);
+            assert_eq!(this.field_(fp!(::AllCorrect)).map(drop), None);
             assert_eq!(this.field_(fp!(::Pair.left)), Some(&false));
             assert_eq!(this.field_(fp!(::Pair.right)), Some(&100));
             assert_eq!(this.fields(fp!(::Pair=>left,right)), Some((&false,&100)));
 
-            assert_eq!(this.field_mut(fp!(AllCorrect)), None);
+            assert_eq!(this.field_mut(fp!(::AllCorrect)).map(|_|()), None);
             assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut false));
             assert_eq!(this.field_mut(fp!(::Pair.right)), Some(&mut 100));
             assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), Some((&mut false,&mut 100)));
 
-            assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
+            assert_eq!(this.clone().into_field(fp!(::AllCorrect)), None);
             assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(false));
             assert_eq!(this.clone().into_field(fp!(::Pair.right)), Some(100));
         }
@@ -179,13 +179,13 @@ macro_rules! pair_accessors {
         }
         {
             let mut this = $type_::<bool, u32>::Unit;
-            assert_eq!(this.field_(fp!(AllCorrect)), None);
-            assert_eq!(this.field_(fp!(::Unit)).map(drop), Some(()));
+            assert_eq!(this.field_(fp!(::AllCorrect)).map(|_|()), None);
+            assert_eq!(this.field_(fp!(::Unit)).map(|_|()), Some(()));
 
-            assert_eq!(this.field_mut(fp!(AllCorrect)), None);
-            assert_eq!(this.field_mut(fp!(::Unit)).map(drop), Some(()));
+            assert_eq!(this.field_mut(fp!(::AllCorrect)).map(|_|()), None);
+            assert_eq!(this.field_mut(fp!(::Unit)).map(|_|()), Some(()));
 
-            assert_eq!(this.clone().into_field(fp!(AllCorrect)), None);
+            assert_eq!(this.clone().into_field(fp!(::AllCorrect)).map(drop), None);
             assert_eq!(this.clone().into_field(fp!(::Unit)).map(drop), Some(()));
         }
     }};
@@ -297,7 +297,7 @@ fn test_replace_newtype_trait_object() {
         d: 44,
     };
     let mut this = HuhNT::U(what_nt.clone());
-    assert_eq!(this.field_(fp!(U)), Some(&what_nt));
+    assert_eq!(this.field_(fp!(::U)).map(|_| ()), Some(()));
 
     hi(&mut this, &mut HuhNT::V { a: "55", b: 66 })
 }
@@ -373,12 +373,57 @@ fn test_replace_bounds_trait_object() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Structural, Debug, Clone, PartialEq)]
+#[allow(dead_code)]
+enum Accesses {
+    #[struc(access = "ref")]
+    RefVar(u8),
+
+    #[struc(access = "mut")]
+    MutVar(u16),
+
+    #[struc(access = "move")]
+    MoveVar(u32),
+
+    #[struc(access = "mut move")]
+    MutMoveVar(u64),
+
+    #[struc(access = "ref")]
+    MixedVar(
+        (),
+        #[struc(access = "ref")] i8,
+        #[struc(access = "mut")] i16,
+        #[struc(access = "move")] i32,
+        #[struc(access = "mut move")] i64,
+    ),
+}
+
+assert_equal_bounds! {
+    trait AssertA[],
+    (Accesses_ESI),
+    (
+        GetVariantField<TS!(RefVar), TS!(0), Ty = u8> +
+        GetVariantFieldMut<TS!(MutVar), TS!(0), Ty = u16> +
+        IntoVariantField<TS!(MoveVar), TS!(0), Ty = u32> +
+        IntoVariantFieldMut<TS!(MutMoveVar), TS!(0), Ty = u64> +
+        GetVariantField<TS!(MixedVar), TS!(0), Ty = ()> +
+        GetVariantField<TS!(MixedVar), TS!(1), Ty = i8> +
+        GetVariantFieldMut<TS!(MixedVar), TS!(2), Ty = i16> +
+        IntoVariantField<TS!(MixedVar), TS!(3), Ty = i32> +
+        IntoVariantFieldMut<TS!(MixedVar), TS!(4), Ty = i64> +
+        VariantCount<Count = TS!(5)>
+    ),
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 mod with_variant_count_attr_1 {
     use crate::enums::VariantCountOut;
     use crate::{Structural, TS};
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
+    #[allow(dead_code)]
     enum Enum {
         A,
     }
@@ -396,6 +441,7 @@ mod with_variant_count_attr_4 {
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
+    #[allow(dead_code)]
     pub enum Enum {
         A,
         B,
@@ -421,6 +467,7 @@ mod without_variant_count_attr {
 
     #[derive(Structural)]
     enum Enum {
+        #[allow(dead_code)]
         A,
     }
 

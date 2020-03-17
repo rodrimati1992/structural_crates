@@ -1,14 +1,14 @@
 use super::*;
 
-use crate::type_level::cmp::{Compare, ReverseOrdering};
+use crate::type_level::cmp::{CompareOut, ReverseOrdering};
 
 use core_extensions::type_asserts::AssertEq;
 
 #[test]
 fn compare() {
     type AssertCmp<L, R, Expected> = (
-        AssertEq<Compare<L, R>, Expected>,
-        AssertEq<Compare<R, L>, ReverseOrdering<Expected>>,
+        AssertEq<CompareOut<L, R>, Expected>,
+        AssertEq<CompareOut<R, L>, ReverseOrdering<Expected>>,
     );
 
     /*

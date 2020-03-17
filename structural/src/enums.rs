@@ -30,9 +30,9 @@ use crate::field_path::AssertTStrParam;
 /// must only return true if the enum is the `Foo` variant
 /// (`Foo` is just an example,it applies to all variants).
 ///
-/// Undefined behavior will happen if this trait is implemented wrong.<br>
-/// For example:A `VariantProxy<Self,V>` has accessor impls that assume that the enum
-/// is the variant that `V` stands for,causing UB if the enum is not that variant.
+/// Undefined behavior will happen if this trait return `true`,
+/// while the accessor for a field of that variant returns `None`.
+///
 ///
 /// # Example
 ///
@@ -46,9 +46,7 @@ use crate::field_path::AssertTStrParam;
 ///
 /// fn assertions<T>(foo:T, bar:T, boom:T)
 /// where
-///     // From Rust 1.40 this is equivalent to:
-///     // T: IsVariant<TS!(Foo)> + IsVariant<TS!(Bar)> + IsVariant<TS!(Boom)>
-///     T: IsVariant<TS!(F o o)> + IsVariant<TS!(B a r)> + IsVariant<TS!(B o o m)>
+///     T: IsVariant<TS!(Foo)> + IsVariant<TS!(Bar)> + IsVariant<TS!(Boom)>
 /// {
 ///     assert_eq!( foo.is_variant_(fp!(Foo)), true );
 ///     assert_eq!( foo.is_variant_(fp!(Bar)), false );

@@ -1,12 +1,16 @@
 /*!
-Type-level representatins of access to one or multiple fields.
+Types used to refer to the field(s) that one is accessing.
+
+The re-exported items are all field-path related.
 */
 
 #![allow(non_snake_case, non_camel_case_types)]
 
 use crate::type_level::collection_traits::{
-    Append, Append_, PushBack, PushBack_, ToTList, ToTList_, ToTString_,
+    Append, AppendOut, PushBack, PushBackOut, ToTList, ToTListOut, ToTString,
 };
+
+pub use crate::{field_path_aliases, fp, FP};
 
 use core_extensions::ConstDefault;
 
@@ -23,12 +27,11 @@ mod tests;
 
 mod to_usize;
 
-mod path_components;
+include! { "./field_path/path_components.rs" }
 
-pub use self::path_components::*;
-
-#[doc(inline)]
-pub use crate::*;
+pub use crate::{
+    FieldPathSet, NestedFieldPath, NestedFieldPathSet, TStr, VariantField, VariantName,
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -73,19 +76,18 @@ use self::sealed::Sealed;
 
 impl<T> Sealed for TStr<T> {}
 
-/// A marker trait for field paths that only refer to one field.
+/// A marker trait for field paths that only refers to one field.
 ///
 /// # Expectations
 ///
-/// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`,and `RevIntoFieldImpl`.
+/// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`, `RevIntoFieldImpl`.
 pub trait IsSingleFieldPath: Sized {}
 
 /// A marker trait for field paths that refer to multiple fields
 ///
 /// # Expectations
 ///
-/// This type is expected to implement `RevGetMultiField`,
-/// and to only implement `RevGetMultiFieldMut` if and only if `PathUniqueness == UniquePaths`.
+/// This type is expected to implement `RevGetMultiField`.
 pub trait IsMultiFieldPath: Sized {
     /// Whether the paths in the set can contain duplicate paths.
     ///
@@ -95,60 +97,50 @@ pub trait IsMultiFieldPath: Sized {
     /// for a field path that might refer to the same field multiple times.
     ///
     /// - `structural::field_path::UniquePaths`:
-    /// for a field path that only refers to a field once.
+    /// for a field path that doesn't refer to a field more than once.
     ///
     type PathUniqueness;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<T> IsSingleFieldPath for FieldPath<T> {}
+impl<T> IsSingleFieldPath for NestedFieldPath<T> {}
 
-impl<T> IsMultiFieldPath for FieldPath<T> {
+impl<T> IsMultiFieldPath for NestedFieldPath<T> {
     type PathUniqueness = UniquePaths;
 }
 
-impl<T> Debug for FieldPath<T> {
+impl<T> Debug for NestedFieldPath<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FieldPath").finish()
+        f.debug_struct("NestedFieldPath").finish()
     }
 }
 
-impl<T> FieldPath<T>
+impl<T> NestedFieldPath<T>
 where
     T: ConstDefault,
 {
-    /// Constructs a `FieldPath<T>`
+    /// Constructs a `NestedFieldPath<T>`
     pub const NEW: Self = Self::DEFAULT;
 }
 
-impl<T> FieldPath<(T,)> {
-    /// Construcst a field path from a single path component.
-    ///
-    /// Example: `FieldPath::one(ts!(a))` is equivalent to `fp!(a)`
-    ///
-    /// Example:
-    /// `FieldPath::one(VariantField::new(ts!(a),ts!(b)))`
-    /// is equivalent to `fp!(::a.b)`
-    ///
-    /// Example:
-    /// `FieldPath::one(VariantName::new(ts!(Left)))`
-    /// is equivalent to `fp!(::Left)`
+impl<T> NestedFieldPath<(T,)> {
+    /// Construcst a `NestedFieldPath` from a single path component.
     #[inline(always)]
     pub const fn one(value: T) -> Self {
         Self { list: (value,) }
     }
 }
 
-impl<T> FieldPath<T> {
-    /// Constructs a field path for a nested field.
+impl<T> NestedFieldPath<T> {
+    /// Constructs a `NestedFieldPath` for a nested field.
     ///
     /// Example:
-    /// `FieldPath::many(( ts!(a), ts!(b) ))`
+    /// `NestedFieldPath::many(( ts!(a), ts!(b) ))`
     /// is equivalent to `fp!(a.b)`
     ///
     /// Example:
-    /// `FieldPath::many(( VariantField::new(ts!(A), ts!(b)), ts!(c) ))`
+    /// `NestedFieldPath::many(( VariantField::new(ts!(A), ts!(b)), ts!(c) ))`
     /// is equivalent to `fp!(::A.b.c)`
     #[inline(always)]
     pub const fn many(list: T) -> Self {
@@ -156,64 +148,66 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<T> ConstDefault for FieldPath<T>
+impl<T> ConstDefault for NestedFieldPath<T>
 where
     T: ConstDefault,
 {
-    const DEFAULT: Self = FieldPath {
+    const DEFAULT: Self = NestedFieldPath {
         list: ConstDefault::DEFAULT,
     };
 }
 
-impl<S> ToTString_ for FieldPath<(TStr<S>,)> {
+impl<S> ToTString for NestedFieldPath<(TStr<S>,)> {
     type Output = TStr<S>;
 }
 
-impl<T> ToTList_ for FieldPath<T>
+impl<T> ToTList for NestedFieldPath<T>
 where
-    T: ToTList_,
+    T: ToTList,
 {
-    type Output = ToTList<T>;
+    type Output = ToTListOut<T>;
 }
 
-impl<T, S> PushBack_<S> for FieldPath<T>
+impl<T, S> PushBack<S> for NestedFieldPath<T>
 where
-    T: PushBack_<S>,
+    T: PushBack<S>,
 {
-    type Output = FieldPath<PushBack<T, S>>;
+    type Output = NestedFieldPath<PushBackOut<T, S>>;
 }
 
-impl<T, U> Append_<FieldPath<U>> for FieldPath<T>
+impl<T, U> Append<NestedFieldPath<U>> for NestedFieldPath<T>
 where
-    T: Append_<U>,
+    T: Append<U>,
 {
-    type Output = FieldPath<Append<T, U>>;
+    type Output = NestedFieldPath<AppendOut<T, U>>;
 }
 
-impl<T> FieldPath<T> {
-    /// Constructs a new FieldPath with `_other` appended at the end.
+impl<T> NestedFieldPath<T> {
+    /// Constructs a new NestedFieldPath with `_other` appended at the end.
     ///
-    /// Example arguments:`fp!(a)`/`fp!(foo)`/`fp!(bar)`
+    /// Example arguments:`fp!(a)`/`fp!(::Foo.bar)`/`fp!(::Foo)`
     #[inline(always)]
-    pub fn push<U, V>(self, _other: U) -> FieldPath<V>
+    pub fn push<U, V>(self, _other: U) -> NestedFieldPath<V>
     where
-        Self: PushBack_<U, Output = FieldPath<V>>,
-        FieldPath<V>: ConstDefault,
+        Self: PushBack<U, Output = NestedFieldPath<V>>,
+        NestedFieldPath<V>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 
-    /// Constructs a new FieldPath with `_other` appended at the end.
+    /// Constructs a new NestedFieldPath with `_other` appended at the end.
+    ///
+    /// Example arguments:`fp!(a,b)`/`fp!(::Foo.bar.baz)`
     #[inline(always)]
-    pub fn append<U>(self, _other: FieldPath<U>) -> FieldPath<Append<T, U>>
+    pub fn append<U>(self, _other: NestedFieldPath<U>) -> NestedFieldPath<AppendOut<T, U>>
     where
-        T: Append_<U>,
-        FieldPath<Append<T, U>>: ConstDefault,
+        T: Append<U>,
+        NestedFieldPath<AppendOut<T, U>>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 
-    /// Converts this `FieldPath` to a `FieldPathSet`.
+    /// Converts this `NestedFieldPath` to a `FieldPathSet`.
     ///
     /// # Example
     ///
@@ -231,7 +225,7 @@ impl<T> FieldPath<T> {
     }
 }
 
-impl<C> FieldPath<(C,)> {
+impl<C> NestedFieldPath<(C,)> {
     /// Unwraps this non-nested field path into `C`.
     ///
     /// This can also be done with `path.list.0`.
@@ -241,21 +235,28 @@ impl<C> FieldPath<(C,)> {
 }
 
 impl_cmp_traits! {
-    impl[T] FieldPath<T>
+    impl[T] NestedFieldPath<T>
     where[]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A merker type indicating that FieldPathSet contains unique paths,
+/// A merker type indicating that a ([`Nested`])[`FieldPathSet`] contains unique field paths,
 /// in which no path is a prefix of any other path in the set,
 /// this is required to call `GetFieldExt::fields_mut`.
+///
+/// [`FieldPathSet`]: ../struct.FieldPathSet.html
+/// [`Nested`]: ../struct.NestedFieldPathSet.html
 #[derive(Debug, Copy, Clone)]
 pub struct UniquePaths;
 
-/// A merker type indicating that FieldPathSet may not contain unique `FielsPath`s,
-/// which means that its possible to pass a `FieldPathSet<__,AliasedPaths>` to
+/// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
+/// might not contain unique field paths.
+/// Its not possible to pass a `FieldPathSet<_,AliasedPaths>` to
 /// `GetFieldExt::fields_mut`.
+///
+/// [`FieldPathSet`]: ../struct.FieldPathSet.html
+/// [`Nested`]: ../struct.NestedFieldPathSet.html
 #[derive(Debug, Copy, Clone)]
 pub struct AliasedPaths;
 
@@ -303,11 +304,11 @@ impl<T> FieldPathSet<(T,), UniquePaths> {
 impl<T> FieldPathSet<T, AliasedPaths> {
     /// Constructs a FieldPathSet from a tuple of field paths.
     ///
-    /// Note that this doesn't enforce that its input is in fact a tuple of FieldPath,
-    /// so you can use type inference for the arguments to this function.
+    /// Note that this doesn't enforce that its input is in fact a tuple of field paths
+    /// (because `const fn` can't have bounds yet).
     ///
     /// To be able to access multiple fields mutably at the same time,
-    /// must call the unsafe `.upgrade()` method.
+    /// you must call the unsafe `.upgrade()` method.
     pub const fn many(paths: T) -> Self {
         FieldPathSet {
             paths: ManuallyDrop::new(paths),
@@ -323,7 +324,7 @@ where
     /// Constructs a `FieldPathSet`.
     ///
     /// This can also be used to construct a `FieldPathSet<T, UniquePaths>`
-    /// in a const context where `T` can be inferred,
+    /// in a context where `T` can be inferred,
     /// by doing `unsafe{ FieldPathSet::NEW.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW: Self = Self::DEFAULT;
@@ -334,7 +335,7 @@ where
     T: ConstDefault,
 {
     /// This can be used to construct a `FieldPathSet<T, UniquePaths>`
-    /// from a type alias in a const context,
+    /// from a type alias,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: FieldPathSet<T, AliasedPaths> = FieldPathSet::NEW;
@@ -356,8 +357,8 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the `FieldPath`s are unique,
-    /// there must be no field path that is a prefix of any other `FieldPath`.
+    /// You must ensure that all the field paths are unique,
+    /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> FieldPathSet<T, UniquePaths> {
         self.set_uniqueness()
@@ -367,8 +368,8 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that if `U==UniquePaths`,then all the `FieldPath`s are unique,
-    /// there must be no field path that is a prefix of any other `FieldPath`.
+    /// You must ensure that if `U==UniquePaths`,then all the field paths are unique,
+    /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> FieldPathSet<T, U> {
         FieldPathSet {
@@ -400,7 +401,7 @@ impl<T, U> FieldPathSet<T, U> {
     #[inline(always)]
     pub fn push<O, Out>(self, _other: O) -> FieldPathSet<Out, AliasedPaths>
     where
-        Self: PushBack_<O, Output = FieldPathSet<Out, AliasedPaths>>,
+        Self: PushBack<O, Output = FieldPathSet<Out, AliasedPaths>>,
         FieldPathSet<Out, AliasedPaths>: ConstDefault,
     {
         ConstDefault::DEFAULT
@@ -412,41 +413,41 @@ impl<T, U> FieldPathSet<T, U> {
     pub fn append<T2, U2>(
         self,
         _other: FieldPathSet<T2, U2>,
-    ) -> FieldPathSet<Append<T, T2>, AliasedPaths>
+    ) -> FieldPathSet<AppendOut<T, T2>, AliasedPaths>
     where
-        T: Append_<T2>,
-        FieldPathSet<Append<T, T2>, AliasedPaths>: ConstDefault,
+        T: Append<T2>,
+        FieldPathSet<AppendOut<T, T2>, AliasedPaths>: ConstDefault,
     {
         ConstDefault::DEFAULT
     }
 }
 
-impl<T, U> ToTList_ for FieldPathSet<T, U>
+impl<T, U> ToTList for FieldPathSet<T, U>
 where
-    T: ToTList_,
+    T: ToTList,
 {
-    type Output = ToTList<T>;
+    type Output = ToTListOut<T>;
 }
 
-impl<T, U, P> PushBack_<FieldPath<P>> for FieldPathSet<T, U>
+impl<T, U, P> PushBack<NestedFieldPath<P>> for FieldPathSet<T, U>
 where
-    T: PushBack_<FieldPath<P>>,
+    T: PushBack<NestedFieldPath<P>>,
 {
-    type Output = FieldPathSet<PushBack<T, FieldPath<P>>, AliasedPaths>;
+    type Output = FieldPathSet<PushBackOut<T, NestedFieldPath<P>>, AliasedPaths>;
 }
 
-impl<T, U, P, U2> PushBack_<FieldPathSet<(P,), U2>> for FieldPathSet<T, U>
+impl<T, U, P, U2> PushBack<FieldPathSet<(P,), U2>> for FieldPathSet<T, U>
 where
-    T: PushBack_<P>,
+    T: PushBack<P>,
 {
-    type Output = FieldPathSet<PushBack<T, P>, AliasedPaths>;
+    type Output = FieldPathSet<PushBackOut<T, P>, AliasedPaths>;
 }
 
-impl<T, T2, U, U2> Append_<FieldPathSet<T2, U2>> for FieldPathSet<T, U>
+impl<T, T2, U, U2> Append<FieldPathSet<T2, U2>> for FieldPathSet<T, U>
 where
-    T: Append_<T2>,
+    T: Append<T2>,
 {
-    type Output = FieldPathSet<Append<T, T2>, AliasedPaths>;
+    type Output = FieldPathSet<AppendOut<T, T2>, AliasedPaths>;
 }
 
 impl_cmp_traits! {
@@ -471,7 +472,7 @@ where
     S: ConstDefault,
 {
     /// This can be used to construct a `NestedFieldPathSet<T, UniquePaths>`
-    /// from a type alias in a const context,
+    /// from a type alias,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: NestedFieldPathSet<F, S, AliasedPaths> = NestedFieldPathSet::NEW;
@@ -496,12 +497,12 @@ impl<F, S, U> NestedFieldPathSet<F, S, U> {
         }
     }
 
-    /// Unwraps a `NestedFieldPathSet` into a `FieldPath` and a `FieldPathSet`
+    /// Unwraps a `NestedFieldPathSet` into a `NestedFieldPath` and a `FieldPathSet`
     pub const fn into_inner(self) -> (F, FieldPathSet<S, U>) {
         (ManuallyDrop::into_inner(self.nested), self.set)
     }
 
-    /// Unwraps a `NestedFieldPathSet` into the `FieldPath` for the nested field.
+    /// Unwraps a `NestedFieldPathSet` into the `NestedFieldPath` for the nested field.
     pub const fn into_nested(self) -> F {
         ManuallyDrop::into_inner(self.nested)
     }
@@ -531,21 +532,21 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the `FieldPath`s in `S` are unique,
-    /// there must be no field path that is a prefix of any other `FieldPath`.
+    /// You must ensure that all the field paths in `S` are unique,
+    /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> NestedFieldPathSet<F, S, UniquePaths> {
         self.set_uniqueness()
     }
 
     /// Converts a `NestedFieldPathSet<F, S, AliasedPaths>` to a
-    /// `NestedFieldPathSet<F, S, UniquePaths>`
+    /// `NestedFieldPathSet<F, S, U>`
     ///
     /// # Safety
     ///
     /// If `U == UniquePaths`,
-    /// you must ensure that all the `FieldPath`s in `S` are unique,
-    /// there must be no field path that is a prefix of any other `FieldPath`.
+    /// you must ensure that all the field paths in `S` are unique,
+    /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> NestedFieldPathSet<F, S, U> {
         NestedFieldPathSet {
@@ -571,3 +572,21 @@ where
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+/// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
+/// on the type level.
+pub trait IntoAliasing: IsMultiFieldPath {
+    type Output: IsMultiFieldPath<PathUniqueness = AliasedPaths>;
+}
+
+/// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
+/// on the type level.
+pub type IntoAliasingOut<This> = <This as IntoAliasing>::Output;
+
+impl<F, U> IntoAliasing for FieldPathSet<F, U> {
+    type Output = FieldPathSet<F, AliasedPaths>;
+}
+
+impl<F, S, U> IntoAliasing for NestedFieldPathSet<F, S, U> {
+    type Output = NestedFieldPathSet<F, S, AliasedPaths>;
+}

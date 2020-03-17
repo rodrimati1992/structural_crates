@@ -1,5 +1,5 @@
 /// Constructs a field path value,
-/// which determines the fields accessed in [GetFieldExt] methods.
+/// which determines the field(s) accessed in [GetFieldExt](./trait.GetFieldExt.html) methods.
 ///
 /// ### Type
 ///
@@ -8,47 +8,65 @@
 /// - [A path component](#path-components):<br>
 /// When it's the only thing passed to the macro.
 /// This allows accessing a non-nested field.<br>
-/// Eg: `fp!(a)`, `fp!(::Foo.bar)`, ``fp!(::Foo)``
+/// Eg: `fp!(a)`, `fp!(::Foo.bar)`, `fp!(::Foo)`
 ///
-/// - [FieldPath], [example](#examplenested-fields): <br>
+/// - [NestedFieldPath](./struct.NestedFieldPath.html), [example](#examplenested-fields): <br>
 /// When multiple [path components](#path-components) are passed to the macro.
 /// This allows accessing a nested field.<br>
-/// Eg: `fp!(a.b.c)`, `fp!(::Foo.bar.baz)`
+/// Eg: `fp!(a.b)`, `fp!(::Foo.bar.baz)`, `fp!(a.b?.c)`, `fp!(::Foo.bar?.baz)`
 ///
-/// - [FieldPathSet], [example](#examplemultiple-fields): <br>
+/// - [FieldPathSet](./struct.FieldPathSet.html), [example](#examplemultiple-fields): <br>
 /// When a comma separated list of paths are passed to the macro.
 /// This allows accessing multiple fields.<br>
-/// Eg: `fp!(a, b.c.d, c::Some.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
+/// Eg: `fp!(a, b.c.d, c::Some.0.bar)`, `fp!(::Foo.bar, baz, ::Boo)`
 ///
-/// - [NestedFieldPathSet], [example](#examplemultiple-fields-insde-a-nested-field):<br>
+/// - [NestedFieldPathSet](./struct.NestedFieldPathSet.html),
+/// [example](#examplemultiple-fields-insde-a-nested-field):<br>
 /// When a `=>` is passed to the macro.
 /// This allows accessing multiple fields from within a nested field.<br>
 /// Eg: `fp!(a => b, c)`, `fp!(::Foo => bar, baz, bam)`
 ///
 /// If you want type aliases and constants for a particular field path,
-/// you can use the [field_path_aliases] macro.
+/// you can use the [field_path_aliases](./macro.field_path_aliases.html) macro.
 ///
-/// From Rust 1.40.0 onwards you can also use [the FP macro](FP)
-/// to get the type of any field path.
+/// You can use [the FP macro](./macro.FP.html) to get the type of any field path.
 ///
 /// ### Identifier
 ///
-/// The macro takes in identifiers,integers,or strings for the names of variants and fields.
+/// The macro takes in identifiers,integers,or strings literals
+/// for the names of variants and fields.
+///
+/// String literals are used as a workaround for non-ascii identifiers not being
+/// supported in Rust.
+/// If the contents of the string literal is a valid identifier,
+/// then you can also write it as one,
+/// eg:`fp!("Foo")` is equivalent to `fp!(Foo)`.
 ///
 /// ### Path Components
 ///
 /// These are the basic building blocks for field paths:
 ///
-/// - `foo`: A [TStr] with the name of a field,which accesses the `foo` field,
-/// The `.` is required after other path components.<br>
+/// - `foo`: A [TStr](./struct.TStr.html)
+/// with the name of a field,which accesses the `foo` field.<br>
+/// A `.` prefixing the field name is required after other path components.<br>
 /// Examples: `fp!(foo)`, `fp!(0)`
 ///
-/// - `::Foo.bar`: A [VariantField],which accesses the `bar` field in the `Foo` variant.<br>
+/// - `::Foo.bar`: A [VariantField](./struct.VariantField.html),
+/// which accesses the `bar` field in the `Foo` variant.<br>
+/// The `::` prefix is required to distinguish between `::Foo`
+/// and field access to a `Foo` field.<br>
 /// Examples: `fp!(::Foo.bar)`, `fp!(::Boom.0)`
 ///
-/// - `::Foo`: A [VariantName],which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
-/// If this is directly followed by a field access,it'll be a [VariantField] instead.<br>
+/// - `::Foo`: A [VariantName](./struct.VariantName.html),
+/// which wraps the type in a `VariantProxy<Self,TS!(Foo)>`.
+/// If this is directly followed by a field access,
+/// it'll be a [VariantField](./struct.VariantField.html) instead.<br>
+/// The `::` prefix is required to distinguish between `::Foo`
+/// and field access to a `Foo` field.<br>
 /// Examples: `fp!(::Foo)`, `fp!(::Boom)`
+///
+/// - `?`: Syntactic sugar for `::Some.0`,used to access the value inside an Option.
+/// Examples: `fp!(foo?.bar)`, `fp!(::Quax.foo?.0)`
 ///
 /// These can be passed to the
 /// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
@@ -72,7 +90,8 @@
 /// You can construct field paths with a sequence of [path components](#path-components)
 /// to access nested fields,eg:`fp!(a.b.c)`.
 ///
-/// Doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`.
+/// Doing `this.field_(fp!(0.1.2))` is equivalent to `&((this.0).1).2`
+/// (except that it can also be done in a generic context).
 ///
 /// This can be passed to the
 /// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
@@ -92,8 +111,7 @@
 /// You can access multiple fields inside of a nested field with the `=>` in
 /// `fp!(foo.bar.baz => 0,1,2)`.
 ///
-/// This is most useful when accessing multiple fields inside of an
-/// optional field or inside an enum variant.
+/// This is most useful when accessing multiple fields inside of an enum.
 ///
 /// The `=>` operator was defined for ergonomics,
 /// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
@@ -142,7 +160,7 @@
 /// struct Foo{
 ///     bar:Bar,
 ///     baz:u32,
-///     ooo:(u32,u32),
+///     ooo:Option<(u32,u32)>,
 /// }
 ///
 /// #[derive(Debug,Clone,PartialEq,Structural)]
@@ -164,10 +182,17 @@
 ///
 ///     assert_eq!( foo.field_(fp!(bar.aaa.1)), &301 );
 ///
-///     assert_eq!(
-///         foo.fields_mut(fp!( bar.aaa, ooo.0, ooo.1 )),
-///         ( &mut (300,301), &mut 66, &mut 99 )
-///     );
+///     assert_eq!( foo.field_mut(fp!( bar.aaa )), &mut (300,301) );
+///
+///     assert_eq!( foo.field_mut(fp!( ooo )), &mut Some((66,99)) );
+///
+///     // You can use the `?` operator inside of `fp` to access fields from inside an Option.
+///     //
+///     // `?` is syntactic sugar for `::Some.0`,so if you defined your own enum with
+///     // a `Some(T)` variant,you could also use the operator with that enum.
+///     assert_eq!( foo.field_mut(fp!( ooo? )), Some(&mut (66,99)) );
+///     assert_eq!( foo.field_mut(fp!( ooo?.0 )), Some(&mut 66) );
+///     assert_eq!( foo.field_mut(fp!( ooo?.1 )), Some(&mut 99) );
 /// }
 ///
 /// fn main(){
@@ -176,13 +201,13 @@
 ///     with_foo(&mut Foo{
 ///         bar:bar.clone(),
 ///         baz:44,
-///         ooo:(66,99),
+///         ooo:Some((66,99)),
 ///     });
 ///
 ///     with_foo(&mut make_struct!{
 ///         bar:bar.clone(),
 ///         baz:44,
-///         ooo:(66,99),
+///         ooo:Some((66,99)),
 ///     });
 ///
 /// }
@@ -242,20 +267,10 @@
 /// ```
 ///
 ///
-
 #[macro_export]
 macro_rules! fp {
-    ( $($strings:tt)* ) => {{
-        $crate::_delegate_fp!{$($strings)*}
-    }};
-}
-
-#[macro_export]
-#[doc(hidden)]
-//#[cfg(not(feature="better_macros"))]
-macro_rules! _delegate_fp {
     ($ident:ident) => (
-        $crate::_construct_tstr_from_token!{$ident}
+        <$crate::_TStr_from_ident!{$ident}>::NEW
     );
     (0)=>{ $crate::field_path::aliases::index_0 };
     (1)=>{ $crate::field_path::aliases::index_1 };
@@ -266,9 +281,12 @@ macro_rules! _delegate_fp {
     (6)=>{ $crate::field_path::aliases::index_6 };
     (7)=>{ $crate::field_path::aliases::index_7 };
     (8)=>{ $crate::field_path::aliases::index_8 };
-    ($($everything:tt)*) => ({
-        $crate::_delegate_fp_inner!( [normal] $($everything)* )
-    })
+    ($lit:literal) => (
+        <$crate::_FP_literal_!($lit)>::NEW
+    );
+    ($($everything:tt)*) => (
+        $crate::_delegate_fp_inner!{$($everything)*}
+    );
 }
 
 #[macro_export]
@@ -276,8 +294,6 @@ macro_rules! _delegate_fp {
 macro_rules! _delegate_fp_inner {
     ($($everything:tt)*) => ({
         mod dummy{
-            #[allow(unused_imports)]
-            use structural::pmr as __struct_pmr;
             $crate::low_fp_impl_!{$($everything)*}
         }
 
@@ -285,40 +301,14 @@ macro_rules! _delegate_fp_inner {
     })
 }
 
-// #[macro_export]
-// #[doc(hidden)]
-// #[cfg(feature="better_macros")]
-// macro_rules! _delegate_fp {
-//     ($($everything:tt)*) => (
-//         let $crate::new_fp_impl_!($($everything)*)
-//     )
-// }
-
 /// Constructs a field path type for use as a generic parameter.
 ///
-/// # Variants of the macro
-///
-/// ### Improved macro
+/// # Input
 ///
 /// <span id="improved-macro"></span>
 ///
-/// This takes the same input as [the `fp` macro],getting the type of that field path.
-///
-/// This variant of the macro requires one of these:
-///
-/// - Use Rust 1.40 or greater.
-///
-/// - Use the `nightly_better_macros` cargo feature.
-///
-/// - Use the `better_macros` cargo feature.
-///
-/// ### Space separated characters
-///
-/// This variant of the macro takes in space separated characters.
-///
-/// This exists to support Rust versions older than 1.40.
-///
-/// Example: `FP!(f o o)` `FP!(4 1 3)` `FP!(c o u n t d o w n)`
+/// This takes the same input as [the fp macro](./macro.fp.html),
+/// getting the type of that field path.
 ///
 /// # Examples
 ///
@@ -331,11 +321,7 @@ macro_rules! _delegate_fp_inner {
 ///
 /// fn greet_entity<This,S>(entity:&This)
 /// where
-///     // From 1.40 onwards you can also write `FP!(name)`.
-///     //
-///     // Before 1.40, you can also use `field_path_aliases!{ name }` before this function,
-///     // then write this as `This:GetField<name,Ty=S>`
-///     This:GetField<FP!(n a m e),Ty=S>,
+///     This:GetField<FP!(name),Ty=S>,
 ///     S:AsRef<str>,
 /// {
 ///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
@@ -346,9 +332,6 @@ macro_rules! _delegate_fp_inner {
 ///     // Quotes allow for arbitrary identifiers,
 ///     // useful for non-ascii identifiers before they are supported by Rust.
 ///     //
-///     // Before Rust 1.40,the only way to write bounds for accessors parameterized by
-///     // non-ascii identifiers is to use `field_path_alaises` or `tstr_aliases`
-///     //
 ///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
 ///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
 /// }
@@ -357,10 +340,8 @@ macro_rules! _delegate_fp_inner {
 ///
 /// # Example
 ///
-/// This demonstrates [the improved version of this macro](#improved-macro).
+/// ```rust
 ///
-#[cfg_attr(feature = "better_macros", doc = " ```rust")]
-#[cfg_attr(not(feature = "better_macros"), doc = " ```ignore")]
 /// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
 ///
 /// let struc=make_struct!{
@@ -396,24 +377,23 @@ macro_rules! _delegate_fp_inner {
 ///
 #[macro_export]
 macro_rules! FP {
-    ($($char:tt)*) => {
-        $crate::_delegate_FP!($($char)*)
+    ($ident:ident) => {
+        $crate::_TStr_from_ident!($ident)
     };
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(not(feature = "better_macros"))]
-macro_rules! _delegate_FP {
-    ($($char:tt)*) => (
-        $crate::pmr::TStr<$crate::p::TS<($($crate::TChar!($char),)*)>>
-    )
-}
-
-#[macro_export]
-#[doc(hidden)]
-#[cfg(feature = "better_macros")]
-macro_rules! _delegate_FP {
+    (0)=>{ $crate::field_path::string_aliases::str_0 };
+    (1)=>{ $crate::field_path::string_aliases::str_1 };
+    (2)=>{ $crate::field_path::string_aliases::str_2 };
+    (3)=>{ $crate::field_path::string_aliases::str_3 };
+    (4)=>{ $crate::field_path::string_aliases::str_4 };
+    (5)=>{ $crate::field_path::string_aliases::str_5 };
+    (6)=>{ $crate::field_path::string_aliases::str_6 };
+    (7)=>{ $crate::field_path::string_aliases::str_7 };
+    (8)=>{ $crate::field_path::string_aliases::str_8 };
+    (9)=>{ $crate::field_path::string_aliases::str_9 };
+    (_)=>{ $crate::field_path::string_aliases::str_underscore };
+    ($lit:literal)=>{
+        $crate::_FP_literal_!($lit)
+    };
     ($($everything:tt)*) => (
         $crate::_FP_impl_!($($everything)*)
     );
@@ -441,20 +421,34 @@ use structural::field_path_aliases;
 
 field_path_aliases!{
     a,
+
     b=b,
+
     // This has the same value as the `b` alias
     b_str="b",
+
     // strings allow for arbitrary identifiers.
     at_me="@me",
+
     c=d.e,
+
     // field paths used to access multiple fields must be wrapped in parentheses.
     d=(a,b,c,"#D"),
+
     // Accesses the variant,if the enum is currently that variant
     e=::Foo,
+
     // Accesses the a,b,and c fields inside of the Foo variant.
     f=(::Foo=>a,b,c),
+
     // Accesses the a,b,and c fields inside of the `ñ` variant.
     g=(::"ñ"=>a,b,c),
+
+    // `?` is syntactic sugar for `::Some.0`,
+    // allowing you to access the value inside an `Option`,
+    // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
+    // trait and subtraits.
+    h=d?.e,
 }
 # fn main(){}
 ```
@@ -472,20 +466,34 @@ fn hello(){
     field_path_aliases!{
         mod hello{
             a,
+
             b=b,
+
             // This has the same value as the `b` alias
             b_str="b",
+
             // strings allow for arbitrary identifiers.
             at_me="@me",
+
             c=d.e,
+
             // field paths used to access multiple fields must be wrapped in parentheses.
             d=(a,b,c,"#D"),
+
             // Accesses the variant,if the enum is currently that variant
             e=::Foo,
+
             // Accesses the a,b,and c fields inside of the Foo variant.
             f=(::Foo=>a,b,c),
+
             // Accesses the a,b,and c fields inside of the `ñ` variant.
             g=(::"ñ"=>a,b,c),
+
+            // `?` is syntactic sugar for `::Some.0`,
+            // allowing you to access the value inside an `Option`,
+            // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
+            // trait and subtraits.
+            h=d?.e,
         }
     }
 }
@@ -494,13 +502,12 @@ fn hello(){
 # Example
 
 ```rust
-use structural::{field_path_aliases,structural_alias,GetField,GetFieldExt,Structural};
+use structural::{ GetField, GetFieldExt, IntoVariantFieldMut, Structural, field_path_aliases };
 use structural::enums::VariantProxy;
 
 field_path_aliases!{
     // Equivalent to hello=hello
     hello,
-
     // Equivalent to world=world
     world,
 
@@ -517,6 +524,8 @@ field_path_aliases!{
     j=(p), // The identifier can also be parenthesised
 
     boom=Boom,
+    path_a=a,
+    path_b=b,
     boom_variant=::Boom,
     boom_a=::Boom.a,
     boom_b=::Boom.b,
@@ -538,24 +547,10 @@ where
     assert_eq!( this.fields(FirstThree), (&2,&3,&5) );
 }
 
-structural_alias!{
-    trait BoomVariant{
-        Boom {
-            a: &'static [u8],
-            b: &'static [u16],
-        }
-    }
-}
-
 fn assert_variant<T>(this:&T)
 where
-    // You need to use [TStr](crate::TStr) to manually bound `T` by the
-    // enum field accessor traits.
-    //
-    // The `tstr_aliases` macro
-    // (which is the equivalent of this macro for type-level-strings)
-    // has an example for how to manually write bounds for enum fields.
-    T: BoomVariant,
+    T: IntoVariantFieldMut<boom,path_a,Ty= &'static [u8]> +
+        IntoVariantFieldMut<boom,path_b,Ty= &'static [u16]>,
 {
     let _:&VariantProxy<T,boom>=this.field_(boom_variant).unwrap();
 
@@ -671,7 +666,7 @@ macro_rules! field_path_aliases {
         #[allow(non_upper_case_globals)]
         #[allow(unused_imports)]
         $(#[$attr])*
-        /// Type aliases and constants for FieldPath and FieldPathSet
+        /// Type aliases and constants for NestedFieldPath and FieldPathSet
         /// (from the structural crate).
         ///
         /// The source code for this module can only be accessed from

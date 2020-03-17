@@ -24,6 +24,7 @@ use std::marker::PhantomData;
 #[derive(Debug)]
 pub(crate) struct StructuralAliasOptions<'a> {
     pub(crate) debug_print: bool,
+    pub(crate) generate_docs: bool,
     pub(crate) enum_exhaustiveness: Exhaustiveness<'a>,
     errors: LinearResult<()>,
 
@@ -45,6 +46,7 @@ pub(crate) fn parse_attrs<'a>(
 ) -> Result<StructuralAliasOptions<'a>, syn::Error> {
     let mut this = StructuralAliasOptions {
         debug_print: false,
+        generate_docs: true,
         enum_exhaustiveness: Exhaustiveness::Nonexhaustive,
         errors: LinearResult::ok(()),
         _marker: PhantomData,
@@ -110,6 +112,8 @@ fn parse_sabi_attr<'a>(
         (ParseContext::Trait { ident }, Meta::Path(ref path)) => {
             if path.is_ident("debug_print") {
                 this.debug_print = true;
+            } else if path.is_ident("no_docs") {
+                this.generate_docs = false;
             } else if path.is_ident("exhaustive_enum") {
                 this.enum_exhaustiveness = Exhaustiveness::Exhaustive;
             } else if path.is_ident("and_exhaustive_enum") {

@@ -1,24 +1,20 @@
 use crate::{
-    field_paths::FieldPaths, ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt,
-    tokenizers::FullPathForChars,
+    field_paths::{parse_field, FieldPaths},
+    ident_or_index::IdentOrIndex,
 };
 
 use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use quote::quote;
-
 use syn::{
     parse::{self, ParseStream},
     Ident,
 };
 
-/// This is the implementation of the FP macro when
-/// the input isn't space separated characters.
 #[allow(non_snake_case)]
 pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2, syn::Error> {
-    parsed.type_tokens(FullPathForChars::Yes).piped(Ok)
+    parsed.type_tokens().piped(Ok)
 }
 
 #[cfg(test)]
@@ -37,40 +33,49 @@ fn test_FP_macro() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) fn low_fp_impl(params: LowFpParams) -> Result<TokenStream2, syn::Error> {
+pub(crate) fn low_fp_impl(LowFpParams { paths }: LowFpParams) -> Result<TokenStream2, syn::Error> {
     let const_name = Ident::new("VALUE", proc_macro2::Span::call_site());
-    let constant = match params {
-        LowFpParams::Ident(ident) => {
-            FieldPaths::constant_from_single(&const_name, &ident, FullPathForChars::Yes)
-        }
-        LowFpParams::FieldPaths(fps) => fps.constant_named(&const_name, FullPathForChars::Yes),
-    };
 
-    Ok(quote!(
-        #constant
-    ))
+    Ok(paths.constant_named(&const_name))
 }
 
-mod low_fp_kw {
-    use syn::custom_keyword;
-    custom_keyword! {normal}
-    custom_keyword! {ident}
-}
-
-pub(crate) enum LowFpParams {
-    Ident(IdentOrIndex),
-    FieldPaths(FieldPaths),
+pub(crate) struct LowFpParams {
+    paths: FieldPaths,
 }
 
 impl parse::Parse for LowFpParams {
     fn parse(input: ParseStream) -> parse::Result<Self> {
-        let s_tokens;
-        let _ = syn::bracketed!(s_tokens in input);
-        if s_tokens.peek_parse(low_fp_kw::ident)?.is_some() {
-            input.parse::<IdentOrIndex>().map(LowFpParams::Ident)
-        } else {
-            s_tokens.peek_parse(low_fp_kw::normal)?;
-            input.parse::<FieldPaths>().map(LowFpParams::FieldPaths)
+        input
+            .parse::<FieldPaths>()
+            .map(|paths| LowFpParams { paths })
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[allow(non_snake_case)]
+pub(crate) fn FP_literal_impl(params: FpLitParams) -> Result<TokenStream2, syn::Error> {
+    let FpLitParams { first, second } = params;
+
+    let first = first.tstr_tokens();
+    let ret = match second {
+        Some(second) => {
+            let second = second.tstr_tokens();
+            quote::quote!( ::structural::pmr::NestedFieldPath<(#first,#second)> )
         }
+        None => first,
+    };
+    Ok(ret)
+}
+
+pub(crate) struct FpLitParams {
+    first: IdentOrIndex,
+    second: Option<IdentOrIndex>,
+}
+
+impl parse::Parse for FpLitParams {
+    fn parse(input: ParseStream) -> parse::Result<Self> {
+        let (first, second) = parse_field(input)?;
+        Ok(FpLitParams { first, second })
     }
 }

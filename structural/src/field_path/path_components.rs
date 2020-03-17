@@ -1,16 +1,3 @@
-use super::Sealed;
-use crate::field_path::{FieldPath, FieldPathSet, IsSingleFieldPath, UniquePaths};
-use crate::type_level::collection_traits::ToTString_;
-use crate::{TStr, VariantField, VariantName};
-
-use core_extensions::ConstDefault;
-
-use std_::{
-    fmt::{self, Debug},
-    marker::PhantomData,
-};
-
-////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! impl_to_path_to_set {
     (
@@ -21,10 +8,10 @@ macro_rules! impl_to_path_to_set {
         where
             $($($where_clause)*)?
         {
-            /// Constructs a FieldPath from this.
+            /// Constructs a NestedFieldPath from this.
             #[inline(always)]
-            pub const fn into_path(self) -> FieldPath<(Self,)> {
-                FieldPath::one(self)
+            pub const fn into_path(self) -> NestedFieldPath<(Self,)> {
+                NestedFieldPath::one(self)
             }
 
             /// Constructs a FieldPathSet from this.
@@ -40,11 +27,12 @@ macro_rules! impl_to_path_to_set {
 
 /// A marker trait for type-level strings.
 ///
-/// This is only implemented on [`TStr`](::structural::TStr).
+/// This is only implemented on [`TStr`](../struct.TStr.html).
 ///
 pub trait IsTStr: Sealed + Debug + Copy + ConstDefault {}
 
 /// A marker trait to assert that `P` is a [`TStr`](crate::TStr).
+#[doc(hidden)]
 pub trait AssertTStrParam<P>: AssertTStrParamSealed<P> {}
 
 mod is_tstr_param_sealed {
@@ -85,7 +73,7 @@ impl<T> ConstDefault for TStr<T> {
     const DEFAULT: Self = TStr(PhantomData);
 }
 
-impl<T> ToTString_ for TStr<T> {
+impl<T> ToTString for TStr<T> {
     type Output = Self;
 }
 
@@ -136,9 +124,6 @@ where
         field: ConstDefault::DEFAULT,
     };
 }
-
-/// A FieldPath for the `F` field inside the `V` variant.
-pub type VariantFieldPath<V, F> = VariantField<V, F>;
 
 impl_cmp_traits! {
     impl[V,F] VariantField<V,F>
@@ -191,34 +176,3 @@ impl_cmp_traits! {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// A marker type passed to accessor trait methods called on an enum,
-/// which guarantees that the enum is the variant that `V` represents.
-pub struct UncheckedVariantField<V, F>(PhantomData<(V, F)>);
-
-impl<V, F> UncheckedVariantField<V, F> {
-    /// Constructs an UncheckedVariantField.
-    ///
-    /// # Safety
-    ///
-    /// This must only be passed to an accessor method of an enum with the `V` variant,
-    /// eg:you can only soundly pass `UncheckedVariantField::<TS!(A),TS!(b)>::new()`
-    /// for an enum whose current variant is `A`.
-    ///
-    /// One example correspondance:
-    /// `GetFieldImpl< FP!(::Foo.bar), UncheckedVariantField<TS!(Foo),TS!(bar)> >`
-    /// corresponds to the
-    /// `GetVariantFieldImpl<TS!(Foo),TS!(bar)>` unsafe marker trait.
-    ///
-    /// A `GetVariantFieldImpl` impl guarantees
-    /// that the corresponding impl of the `GetFieldImpl` trait does what's expected.
-    ///
-    pub const unsafe fn new() -> Self {
-        UncheckedVariantField(PhantomData)
-    }
-}
-
-impl_cmp_traits! {
-    impl[V,F] UncheckedVariantField<V,F>
-    where[]
-}

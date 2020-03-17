@@ -3,63 +3,68 @@ Accessor and extension traits for fields.
 
 # GetFieldExt
 
-The [GetFieldExt] trait,which is the way you're expected to call accessor methods.
+The [GetFieldExt](./trait.GetFieldExt.html) trait,
+which is the way you're expected to call accessor methods.
 
-# Implementable Traits
-
-These traits are intended to only be implemented.
+# Traits
 
 ### For structs and enums
 
-The [FieldType],[GetFieldImpl],[GetFieldMutImpl],[IntoFieldImpl] accessor traits,
-that define how a field is accessed.
-
-### For enums
-
-The [GetVariantFieldImpl], [GetVariantFieldMutImpl], [IntoVariantFieldImpl] marker traits.
-
-# Traits for bounds
-
-These traits can be used as bound aliases(they can't be directly implemented).
+The [FieldType](./trait.FieldType.html) trait,for querying the type of a field,
 
 ### For structs
 
-The [GetField],[GetFieldMut],[IntoField],[IntoFieldMut] traits,
-for accessing non-optional fields.
+The [GetField](./trait.GetField.html),
+[GetFieldMut](./trait.GetFieldMut.html),
+[IntoField](./trait.IntoField.html)
+accessor traits,that define how a field is accessed.
 
-The [OptGetField],[OptGetFieldMut],[OptIntoField],[OptIntoFieldMut] traits,
-for accessing optional fields.
+[IntoFieldMut](./trait.IntoFieldMut.html),a trait alias for `GetFieldMut` + `IntoField`.
 
 ### For enums
 
-The [GetVariantField],[GetVariantFieldMut],[IntoVariantField],
-[IntoVariantFieldMut] traits,for accessing non-optional fields.
+The [GetVariantField](./variant_field/trait.GetVariantField.html),
+[GetVariantFieldMut](./variant_field/trait.GetVariantFieldMut.html),
+[IntoVariantField](./variant_field/trait.IntoVariantField.html)
+accessor traits,that define how a variant field is accessed.
 
-The [OptGetVariantField],[OptGetVariantFieldMut],[OptIntoVariantField],
-[OptIntoVariantFieldMut] traits,for accessing optional fields.
+[IntoVariantFieldMut](./variant_field/trait.IntoVariantFieldMut.html),
+a trait alias for `GetVariantFieldMut` + `IntoVariantField`.
 
 # Rev* traits
 
 The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-in type.
 
-There are two kinds of `Rev*` traits:
+There are two kinds of `Rev*` traits,single field and multi field traits.
 
-- Single field traits:
-Which are [RevGetFieldImpl], [RevGetFieldMutImpl], and [RevIntoFieldImpl],
+The [GetFieldExt](./trait.GetFieldExt.html) trait
+uses the `Rev*` impls of the passed-in path to access the
+fields in `Self`.
+
+### Single Field traits
+
+Which are [RevGetFieldImpl](./rev_get_field/trait.RevGetFieldImpl.html),
+[RevGetFieldMutImpl](./rev_get_field/trait.RevGetFieldMutImpl.html),
+and [RevIntoFieldImpl](./rev_get_field/trait.RevIntoFieldImpl.html),
 mirroring the regular field accessor traits.
 
-- Multiple field traits:
-Which are [RevGetMultiField], and [RevGetMultiFieldMut] (no RevIntoMultiField for now),
-allowing access to multiple fields at once.
+### Multiple field traits
 
-The [GetFieldExt] trait uses the `Rev*` impls of the passed-in path to access the
-fields in `Self`.
+For bounds to access multiple fields at once,
+there's [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
+and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
+(no RevIntoMultiField for now).
+
+For implementing a new way to access multiple fields,
+there's [RevGetMultiFieldImpl](./multi_fields/trait.RevGetMultiFieldImpl.html),
+and [RevGetMultiFieldMutImpl](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
+(no RevIntoMultiFieldImpl for now).
 
 # Additional items
 
 ### Array Traits
 
-This module re-exports these traits from [for_arrays],with:
+This module re-exports these traits from [for_arrays](./for_arrays/index.html),with:
 
 - The `Array*` structural aliases to use any type with accessors from 0
 until the size of the array,in which all the field types are the same,
@@ -69,7 +74,7 @@ until the size of the array,in which all the field types are the same.
 
 ### Tuple Traits
 
-This module re-exports these traits from [for_tuples],with:
+This module re-exports these traits from [for_tuples](./for_tuples/index.html),with:
 
 - The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
 until the size of the tuple,in which all field types can be different,
@@ -79,34 +84,44 @@ until the size of the tuple,in which all field types can be different.
 
 ### type aliases
 
-The [GetFieldErr] type alias allows querying the `GetFieldImpl::Err` associated type,
-useful when delegating the `*Impl` accessor traits.
 
-The [GetFieldType], [GetFieldType2], [GetFieldType3], [GetFieldType4]
+The [GetFieldType](./type.GetFieldType.html),
+[GetFieldType2](./type.GetFieldType2.html),
+[GetFieldType3](./type.GetFieldType3.html),
+[GetFieldType4](./type.GetFieldType4.html)
 type aliases allow querying the type of a field up to 4 levels of nesting.
 
-The [RevGetFieldType] type alias gets the type of a nested field
+The [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
+for querying the type of an enum variant field,
+most useful when the name of the variant and the field are passed separately.
+
+The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
+type alias gets the type of a nested field
 (which one is determined by the field path).
+
+The [RevGetFieldErr](./rev_get_field/type.RevGetFieldErr.html)
+type alias allows querying the `RevGetField::Err` associated type,
+useful when delegating the `Rev*Impl` traits.
 
 ### Errors
 
-The [errors](self::errors) module contains the error-related items used in accessor trait impls.
+The [errors](./errors/index.html)
+module contains the error-related items used in `Rev*` trait impls.
 
 ### Normalize Fields
 
-[NormalizeFields] transforms the `Result<T,_>`s in a type into either an
+[NormalizeFields](./trait.NormalizeFields.html)
+transforms the `Result<T,_>`s from inside a type returned by `Rev` traits into either an
 `Option<T>` or a `T` depending on its error type.
 
-[NormalizeFieldsOut] The type that `Foo` is converted into when calling
+[NormalizeFieldsOut](./type.NormalizeFieldsOut.html)
+The type that `Foo` is converted into when calling
 `Foo::normalize_fields( foo )`.
 
 
 */
 
-use crate::{
-    field_path::{FieldPath, FieldPathSet},
-    Structural,
-};
+use crate::Structural;
 
 mod enum_impls;
 pub mod errors;
@@ -117,16 +132,20 @@ mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
 pub mod rev_get_field;
-mod slice_impls;
 mod tuple_impls;
 pub mod variant_field;
 
 pub use self::{
-    errors::{CombinedErrs, CombinedErrsOut, IntoFieldErr, IsFieldErr, NonOptField, OptionalField},
+    errors::{
+        CombinedErrs, CombinedErrsOut, FailedAccess, InfallibleAccess, IntoFieldErr, IsFieldErr,
+    },
     for_arrays::array_traits::*,
     for_tuples::*,
     get_field_ext::GetFieldExt,
-    multi_fields::{RevGetMultiField, RevGetMultiFieldMut},
+    multi_fields::{
+        RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
+        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
+    },
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
         OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
@@ -134,15 +153,19 @@ pub use self::{
         RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
     variant_field::{
-        GetVariantField, GetVariantFieldImpl, GetVariantFieldMut, GetVariantFieldMutImpl,
-        GetVariantFieldType, IntoVariantField, IntoVariantFieldImpl, IntoVariantFieldMut,
-        OptGetVariantField, OptGetVariantFieldMut, OptIntoVariantField, OptIntoVariantFieldMut,
+        GetVFieldRawMutFn, GetVariantField, GetVariantFieldMut, GetVariantFieldType,
+        IntoVariantField, IntoVariantFieldMut,
     },
 };
+
+pub use self::variant_field::SpecGetVariantFieldMut;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /// For querying the type of the `FieldName` field.
+///
+/// Structs generally implement this with a `TStr` parameter,
+/// while enums implement this with a `VariantField` parameter
 pub trait FieldType<FieldName> {
     /// The type of the `FieldName` field.
     type Ty;
@@ -150,27 +173,9 @@ pub trait FieldType<FieldName> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-macro_rules! declare_accessor_trait_alias {
-    (
-        $(#[$attr:meta])*
-        $vis:vis trait $trait_name:ident<$name:ident>=
-        $($supertraits:tt)*
-    ) => (
-        $(#[$attr])*
-        $vis trait $trait_name< $name >:$($supertraits)* {}
-
-        impl<This,$name> $trait_name< $name > for This
-        where
-            This:?Sized+$($supertraits)*
-        {}
-    )
-}
-
-/// Allows accessing the `FieldName` field.
+/// Provides shared access to the `FieldName` field.
 ///
-/// `FieldName` represents the name of the field on the type level,
-/// It is a type because a `FIELD_NAME:&'static str` const parameter
-/// was neither stable nor worked in nightly at the time this was defined.
+/// `FieldName` is expected to be a [TStr](../struct.TStr.html).
 ///
 /// # Safety
 ///
@@ -181,7 +186,21 @@ macro_rules! declare_accessor_trait_alias {
 ///
 /// # Usage as Bound Example
 ///
-/// If you want a bound for this trait you can use [OptGetField] or [GetField]
+/// ```
+/// use structural::{GetFieldExt,GetField,FP,fp};
+///
+/// fn example(this:impl GetField<FP!(0), Ty=u32> + GetField<FP!(1), Ty=&'static str>){
+///     assert_eq!( this.field_(fp!(0)), &99 );
+///     assert_eq!( this.field_(fp!(1)), &"world" );
+///
+///     assert_eq!( this.fields(fp!(0,1)), (&99, &"world") );
+///     assert_eq!( this.cloned_fields(fp!(0,1)), (99, "world") );
+/// }
+///
+/// example((99,"world",));
+/// example((99,"world",100,101,102,));
+///
+/// ```
 ///
 /// # Manual Implementation Example
 ///
@@ -189,120 +208,44 @@ macro_rules! declare_accessor_trait_alias {
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{
-///     FieldType,GetFieldImpl,Structural,FP,TList,
-///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
-/// };
+/// use structural::{FieldType,GetField,Structural,FP};
 ///
 /// struct Huh<T>{
 ///     value:T,
 /// }
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
-/// }
+/// impl<T> Structural for Huh<T>{}
 ///
 ///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Err=NonOptField;
-///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
-///         Ok(&self.value)
+/// impl<T> GetField<FP!(value)> for Huh<T>{
+///     fn get_field_(&self,_:FP!(value))->&Self::Ty{
+///         &self.value
 ///     }
 /// }
 ///
-///
 /// ```
 ///
-pub trait GetFieldImpl<FieldName, P = ()>: FieldType<FieldName> {
-    /// The error type returned by the accessor methods.
-    type Err: IsFieldErr;
-
+pub trait GetField<FieldName>: FieldType<FieldName> {
     /// Accesses the `FieldName` field by reference.
-    fn get_field_(&self, field_name: FieldName, param: P) -> Result<&Self::Ty, Self::Err>;
-}
-
-declare_accessor_trait_alias! {
-    /// A bound for shared access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` receivers.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,GetField,FP,fp};
-    ///
-    /// fn example(this:impl GetField<FP!(0), Ty=u32>){
-    ///     assert_eq!( this.field_(fp!(0)), &99_u32 );
-    /// }
-    ///
-    /// example((99,));
-    /// example((99,100,101,102,));
-    ///
-    /// ```
-    pub trait GetField<FieldName>=
-        GetFieldImpl<FieldName, Err = NonOptField>
-}
-
-declare_accessor_trait_alias! {
-    /// A bound for optional and shared access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` receivers.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,OptGetField,FP,fp};
-    /// use structural::for_examples::{Tuple1,Tuple2,Tuple3};
-    ///
-    /// fn example(
-    ///     with_some:&dyn OptGetField<FP!(0), Ty=u32>,
-    ///     with_none:&dyn OptGetField<FP!(0), Ty=u32>,
-    /// ){
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be a `&Some(99_u32)` instead of `Some(&99_u32)`.
-    ///     assert_eq!( with_some.field_(fp!(0)), Some(&99_u32) );
-    ///
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be a `&None` instead of `None`.
-    ///     assert_eq!( with_none.field_(fp!(0)), None );
-    /// }
-    ///
-    /// example(&Tuple1(Some(99)), &Tuple1(None));
-    /// example(&Tuple2(Some(99),100), &Tuple2(None,100));
-    /// example(&Tuple3(Some(99),100,101), &Tuple3(None,100,101));
-    ///
-    /// ```
-    pub trait OptGetField<FieldName>=
-        GetFieldImpl<FieldName, Err = OptionalField>
+    fn get_field_(&self, field_name: FieldName) -> &Self::Ty;
 }
 
 /// Queries the type of a field.
 ///
 /// # Example
 ///
-/// Here is one way you can get the type of a field.
+/// Here is one way you can get the type of a `struct` field.
 ///
 /// ```
 /// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(n a m e)>
+/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(name)>
 /// where
-///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:GetField<FP!(n a m e)>
+///     T:GetField<FP!(name)>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -329,8 +272,7 @@ declare_accessor_trait_alias! {
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
-///     // `FP!(n a m e)` can be written as `FP!(name)` from 1.40 onwards
-///     T:GetField<FP!(n a m e), Ty=O>
+///     T:GetField<FP!(name), Ty=O>
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -339,34 +281,72 @@ declare_accessor_trait_alias! {
 /// makes it less ergonomic to specify the type of `T` while ignoring the field type,
 /// since one has to write it as `get_name::<Foo,_>(&foo)`.
 ///
+/// # Example
 ///
+/// Here's an example of accessing an `enum` field,using `GetFieldType` to get the field type.
+///
+/// This also demonstrates a way to write extension traits.
+///
+/// ```
+/// use structural::{FP, GetFieldExt, GetFieldType, GetVariantField, Structural, TS, fp};
+/// use structural::for_examples::EnumOptA;
+///
+/// let foo= EnumOptA::Limbs{legs:Some(9), hands:None};
+/// assert_eq!( foo.get_limbs(), Some((&Some(9), &None)) );
+///
+/// let array=[0,1,2,3];
+/// let baz=EnumGround::Limbs{legs:"many", hands:&array};
+/// assert_eq!( baz.get_limbs(), Some((&"many", &&array[..])) );
+///
+/// trait GetLimbs:
+///     GetVariantField<TS!(Limbs),TS!(legs)> +
+///     GetVariantField<TS!(Limbs),TS!(hands)>
+/// {
+///     fn get_limbs(&self)-> Option<(
+///         &GetFieldType<Self, FP!(::Limbs.legs)>,
+///         &GetFieldType<Self, FP!(::Limbs.hands)>,
+///     )> {
+///         self.fields(fp!(::Limbs=>legs,hands))
+///     }
+/// }
+///
+/// impl<T> GetLimbs for T
+/// where
+///     T: ?Sized +
+///        GetVariantField<TS!(Limbs),TS!(legs)> +
+///        GetVariantField<TS!(Limbs),TS!(hands)>
+/// {}
+///
+///
+/// #[derive(Structural, Copy, Clone, Debug, PartialEq)]
+/// #[struc(no_trait)]
+/// pub enum EnumGround<'a> {
+///     Limbs {
+///         legs: &'static str,
+///         hands: &'a [u8],
+///     },
+/// }
+///
+/// ```
 pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
-
-pub type GetFieldErr<This, FieldName, P = ()> = <This as GetFieldImpl<FieldName, P>>::Err;
 
 /// Queries the type of a double nested field (eg:`.a.b`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType2<T,FP!(f o o),FP!(b a r)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType2<T,FP!(foo),FP!(bar)>`
 pub type GetFieldType2<This, FieldName, FieldName2> =
     GetFieldType<GetFieldType<This, FieldName>, FieldName2>;
 
 /// Queries the type of a triple nested field (eg:`.a.b.c`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType3<T,FP!(f o o),FP!(b a r),FP!(b a z)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType3<T,FP!(foo),FP!(bar),FP!(baz)>`
 pub type GetFieldType3<This, FieldName, FieldName2, FieldName3> =
     GetFieldType<GetFieldType2<This, FieldName, FieldName2>, FieldName3>;
 
 /// Queries the type of a quadruple nested field (eg:`.a.b.c.d`).
 ///
-/// Example usage(before Rust 1.40.0):
-/// `GetFieldType4<T,FP!(f o o),FP!(b a r),FP!(b a z),FP!(b o o m)>`<br>
-/// Example usage(since  Rust 1.40.0):
+/// Example usage:
 /// `GetFieldType4<T,FP!(foo),FP!(bar),FP!(baz),FP!(boom)>`
 pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
     GetFieldType2<GetFieldType2<This, FieldName, FieldName2>, FieldName3, FieldName4>;
@@ -385,201 +365,131 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///
 /// ### Implementing `get_field_raw_mut`
 ///
-/// Your implementation of `GetFieldMutImpl::get_field_raw_mut` must ensure these properties:
+/// Your implementation of `GetFieldMut::get_field_raw_mut` must ensure these properties:
 /// <span id="raw_mut_properties"></span>
 ///
 /// - It must be side-effect free,
 ///
-/// - The field you borrow must always be the same one.
+/// - The method must return a pointer to a fully initialized field,
+///
+/// - The field you access must always be the same one.
 ///
 /// - That no implementation returns a pointer to a field that other ones also return,
 ///
-/// The `this` parameter is a double pointer to support dynamically sized types.
-///
-/// You can unerase the pointer by casting it to `*mut *mut Self`
+/// You can unerase the pointer by casting it to `*mut  Self`
 /// (you can also use any type that's compatible with `Self`).
 ///
-/// If `Self: !Sized` then you must panic/abort inside `get_field_raw_mut`,
-/// and return a function pointer from `get_field_raw_mut_func`
-/// to a function that does what `get_field_raw_mut` is required to do for `Sized` types.
-///
-/// Your implementation of the `get_field_raw_mut_func` method must only return a
+/// Your implementation of the `get_field_raw_mut_fn` method must only return a
 /// function pointer to a function that ensures the properties listed
 /// [here](#raw_mut_properties).
 ///
 ///
-/// # Usage as Bound Example
+/// # Example: Usage as Bound
 ///
-/// If you want a bound for this trait you can use [OptGetFieldMut] or [GetFieldMut]
+/// ```
+/// use structural::{GetFieldExt,GetFieldMut,FP,fp};
+/// use structural::for_examples::{Struct2,Struct3};
 ///
-/// # Implementation Example
+/// fn example<T>(this:&mut T)
+/// where
+///     T: GetFieldMut<FP!(foo), Ty=Option<u32>> + GetFieldMut<FP!(bar), Ty=&'static str>
+/// {
+///     assert_eq!( this.field_(fp!(foo)), &Some(21) );
+///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+///     assert_eq!( this.fields(fp!(foo,bar)), (&Some(21), &"oh boy") );
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (Some(21), "oh boy") );
+///
+///     assert_eq!( this.field_mut(fp!(foo)), &mut Some(21) );
+///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(21), &mut "oh boy") );
+/// }
+///
+/// example(&mut Struct2{ foo:Some(21), bar: "oh boy" });
+/// example(&mut Struct3{ foo:Some(21), bar: "oh boy", baz:5 });
+///
+/// ```
+///
+/// <span id="manual-implementation-example"></span>
+/// # Example: Manual implementation
 ///
 /// While this trait is intended to be implemented using the `Structural` derive macro,
 /// you can also implement it like this:
 ///
 /// ```rust
-/// use structural::{
-///     FieldType,GetFieldImpl,GetFieldMutImpl,Structural,FP,TList,
-///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
-/// };
+/// use structural::{FieldType,GetField,GetFieldMut,Structural,FP};
 ///
 /// struct Huh<T>{
 ///     value:T,
 /// }
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
+/// impl<T> Structural for Huh<T>{}
 ///
-/// }
-///
-/// // This could also be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Err=NonOptField;
-///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
-///         Ok(&self.value)
+/// impl<T> GetField<FP!(value)> for Huh<T>{
+///     fn get_field_(&self,_:FP!(value))->&Self::Ty{
+///         &self.value
 ///     }
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// unsafe impl<T> GetFieldMutImpl<FP!(v a l u e)> for Huh<T>{
-///     fn get_field_mut_(&mut self,_:FP!(v a l u e),_:())->Result<&mut Self::Ty,Self::Err>{
-///         Ok(&mut self.value)
+/// unsafe impl<T> GetFieldMut<FP!(value)> for Huh<T>{
+///     fn get_field_mut_(&mut self,_:FP!(value))->&mut Self::Ty{
+///         &mut self.value
 ///     }
 ///     structural::z_unsafe_impl_get_field_raw_mut_method!{
 ///         Self,
-///         field_name=value,
-///         name_generic=FP!(v a l u e),
-///         optionality=nonopt,
+///         field_tstr=value,
+///         name_generic=FP!(value),
 ///     }
 /// }
 ///
 /// ```
 ///
-pub unsafe trait GetFieldMutImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
+pub unsafe trait GetFieldMut<FieldName>: GetField<FieldName> {
     /// Accesses the `FieldName` field by mutable reference.
-    fn get_field_mut_(
-        &mut self,
-        field_name: FieldName,
-        param: P,
-    ) -> Result<&mut Self::Ty, Self::Err>;
+    fn get_field_mut_(&mut self, field_name: FieldName) -> &mut Self::Ty;
 
     /// Gets a mutable pointer for the field.
     ///
     /// # Safety
     ///
-    /// You must pass a pointer casted from `*mut *mut Self` to `*mut *mut ()`.
-    unsafe fn get_field_raw_mut(
-        ptr: *mut *mut (),
-        field_name: FieldName,
-        param: P,
-    ) -> Result<*mut Self::Ty, Self::Err>
+    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
+    /// pointing to a fully initialized instance of the type.
+    unsafe fn get_field_raw_mut(ptr: *mut (), field_name: FieldName) -> *mut Self::Ty
     where
         Self: Sized;
 
     /// Gets the `get_field_raw_mut` associated function as a function pointer.
-    fn get_field_raw_mut_func(&self) -> GetFieldRawMutFn<FieldName, P, Self::Ty, Self::Err>;
+    fn get_field_raw_mut_fn(&self) -> GetFieldRawMutFn<FieldName, Self::Ty>;
 }
 
-/// A `GetFieldMutImpl` specifically used for specialization internally.
+/// A `GetFieldMut` specifically used for specialization internally.
 ///
 /// Moving the specialization to a separate impl somehow improves the error messages
 /// when calling `GetFieldExt::{field_mut,fields_mut}` methods.
 ///
 /// # Safety
 ///
-/// This trait has the same safety requirements as `GetFieldMutImpl`.
+/// This trait has the same safety requirements as `GetFieldMut`.
 #[doc(hidden)]
-pub unsafe trait SpecGetFieldMut<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
-    unsafe fn get_field_raw_mut_inner(
-        ptr: *mut *mut (),
-        field_name: FieldName,
-        param: P,
-    ) -> Result<*mut Self::Ty, Self::Err>
+pub unsafe trait SpecGetFieldMut<FieldName>: GetField<FieldName> {
+    /// Gets a mutable pointer for the field.
+    ///
+    /// # Safety
+    ///
+    /// You must pass a pointer casted from `*mut  Self` to `*mut  ()`,
+    /// pointing to a fully initialized instance of the type.
+    unsafe fn get_field_raw_mut_inner(ptr: *mut (), field_name: FieldName) -> *mut Self::Ty
     where
         Self: Sized;
 }
 
-declare_accessor_trait_alias! {
-    /// A bound for shared and mutable access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` or `&mut self` receivers.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,GetFieldMut,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    /// fn example(this:&mut dyn GetFieldMut<FP!(b a r), Ty=&'static str>){
-    ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
-    ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
-    /// }
-    ///
-    /// example(&mut Struct2{ foo:Some(21), bar: "oh boy" });
-    /// example(&mut Struct3{ foo:Some(21), bar: "oh boy", baz:5 });
-    ///
-    /// ```
-    pub trait GetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = NonOptField>
-}
-
-declare_accessor_trait_alias! {
-    /// A bound for optional, shared and mutable access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` or `&mut self` receivers.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,OptGetFieldMut,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// fn example(
-    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
-    ///     with_some:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
-    ///     with_none:&mut impl OptGetFieldMut<FP!(f o o), Ty=u128>,
-    /// ){
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&Some(5)` and `&mut Some(5)` instead of
-    ///     // `Some(&5)` and `Some(&mut 5)`.
-    ///     assert_eq!( with_some.field_(fp!(foo)), Some(&5) );
-    ///     assert_eq!( with_some.field_mut(fp!(foo)), Some(&mut 5) );
-    ///
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&None` and `&mut None` instead of None for both.
-    ///     assert_eq!( with_none.field_(fp!(foo)), None );
-    ///     assert_eq!( with_none.field_mut(fp!(foo)), None );
-    /// }
-    ///
-    /// example(
-    ///     &mut Struct2{ foo:Some(5), bar: () },
-    ///     &mut Struct3{ foo:None, bar: (), baz:() },
-    /// );
-    ///
-    /// ```
-    pub trait OptGetFieldMut<FieldName>=
-        GetFieldMutImpl<FieldName, Err = OptionalField>
-}
-
 /////////////////////////////////////////////////
 
-/// The type of `GetFieldMutImpl::get_field_raw_mut`
-pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
-    unsafe fn(*mut *mut (), FieldName, P) -> Result<*mut FieldTy, E>;
+/// The type of `GetFieldMut::get_field_raw_mut`
+pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) -> *mut FieldTy;
 
 /////////////////////////////////////////////////
 
@@ -594,7 +504,30 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 ///
 /// # Usage as Bound Example
 ///
-/// If you want a bound for this trait you can use [OptIntoField] or [IntoField]
+/// ```
+/// use structural::{GetFieldExt,IntoField,FP,fp};
+/// use structural::for_examples::{Struct2,Struct3};
+///
+/// fn example<T>(this: T)
+/// where
+///     T: Copy + IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
+/// {
+///     assert_eq!( this.field_(fp!(foo)), &None );
+///     assert_eq!( this.field_(fp!(bar)), &"great" );
+///     assert_eq!( this.fields(fp!(foo,bar)), (&None, &"great") );
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (None, "great") );
+///
+///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
+///     // assert_eq!( this.field_mut(fp!(bar)), &mut "great" );
+///
+///     assert_eq!( this.into_field(fp!(foo)), None );
+///     assert_eq!( this.into_field(fp!(bar)), "great" );
+/// }
+///
+/// example(Struct2{ foo:None, bar: "great" });
+/// example(Struct3{ foo:None, bar: "great", baz:5 });
+///
+/// ```
 ///
 /// # Manual Implementation Example
 ///
@@ -602,262 +535,94 @@ pub type GetFieldRawMutFn<FieldName, P, FieldTy, E> =
 /// you can manually implement it like this:
 ///
 /// ```rust
-/// use structural::{
-///     FieldType,GetFieldImpl,IntoFieldImpl,Structural,FP,TList,
-///     field_traits::NonOptField,
-///     structural_trait::{FieldInfo,FieldInfos},
-/// };
+/// use structural::{FieldType,GetField,IntoField,Structural,FP};
 ///
 /// struct Huh<T>{
 ///     value:T,
 /// }
 ///
 ///
-/// impl<T> Structural for Huh<T>{
-///     const FIELDS:&'static FieldInfos=&FieldInfos::Struct(&[
-///         FieldInfo::not_renamed("value")
-///     ]);
-/// }
+/// impl<T> Structural for Huh<T>{}
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> FieldType<FP!(v a l u e)> for Huh<T>{
+/// impl<T> FieldType<FP!(value)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> GetFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     type Err=NonOptField;
-///
-///     fn get_field_(&self,_:FP!(v a l u e),_:())->Result<&Self::Ty,Self::Err>{
-///         Ok(&self.value)
+/// impl<T> GetField<FP!(value)> for Huh<T>{
+///     fn get_field_(&self,_:FP!(value))->&Self::Ty{
+///         &self.value
 ///     }
 /// }
 ///
-/// // `FP!(v a l u e)` can be written as `FP!(value)` from 1.40 onwards
-/// impl<T> IntoFieldImpl<FP!(v a l u e)> for Huh<T>{
-///     fn into_field_(self,_:FP!(v a l u e),_:())->Result<Self::Ty,Self::Err>{
-///         Ok(self.value)
+/// impl<T> IntoField<FP!(value)> for Huh<T>{
+///     fn into_field_(self,_:FP!(value))->Self::Ty{
+///         self.value
 ///     }
 ///
-///     structural::z_impl_box_into_field_method!{FP!(v a l u e)}
+///     structural::z_impl_box_into_field_method!{field_tstr=FP!(value)}
 /// }
 ///
 /// ```
 ///
-pub trait IntoFieldImpl<FieldName, P = ()>: GetFieldImpl<FieldName, P> {
+pub trait IntoField<FieldName>: GetField<FieldName> {
     /// Converts self into the field.
-    fn into_field_(self, field_name: FieldName, param: P) -> Result<Self::Ty, Self::Err>
+    fn into_field_(self, field_name: FieldName) -> Self::Ty
     where
         Self: Sized;
 
     /// Converts a boxed self into the field.
     #[cfg(feature = "alloc")]
-    fn box_into_field_(
-        self: crate::alloc::boxed::Box<Self>,
-        field_name: FieldName,
-        param: P,
-    ) -> Result<Self::Ty, Self::Err>;
+    fn box_into_field_(self: crate::pmr::Box<Self>, field_name: FieldName) -> Self::Ty;
 }
 
-declare_accessor_trait_alias! {
-    /// A bound for shared and by-value access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` or `self` receivers.
-    ///
-    /// The `FieldName` type parameter is usually a [TStr](crate::TStr)
-    /// for the name of a field.<br>
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,IntoField,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// fn example<T>(this: T)
-    /// where
-    ///     // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    ///     T: IntoField<FP!(b a r), Ty=&'static str>
-    /// {
-    ///     assert_eq!( this.field_(fp!(bar)), &"what" );
-    ///
-    ///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
-    ///     // assert_eq!( this.field_mut(fp!(bar)), &mut "what" );
-    ///
-    ///     assert_eq!( this.into_field(fp!(bar)), "what" );
-    /// }
-    ///
-    /// example(Struct2{ foo:Some(0), bar: "what" });
-    /// example(Struct3{ foo:Some(0), bar: "what", baz:5 });
-    ///
-    /// ```
-    pub trait IntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = NonOptField>
-}
+/// A bound for shared, mutable,and by-value access to the `FieldName` field.
+///
+/// This is only usable as a bound,
+/// to access the field you can use any [GetFieldExt](./trait.GetFieldExt.html) method.
+///
+/// # Example
+///
+///
+/// ```
+/// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
+/// use structural::for_examples::{Struct2,Struct3};
+///
+///
+/// fn example(mut this:Box<dyn Bounds>){
+///     assert_eq!( this.field_(fp!(foo)), &Some(false) );
+///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
+///
+///     assert_eq!( this.fields(fp!(foo,bar)), (&Some(false), &"oh boy") );
+///
+///     assert_eq!( this.cloned_fields(fp!(foo,bar)), (Some(false), "oh boy") );
+///
+///     assert_eq!( this.field_mut(fp!(foo)), &mut Some(false) );
+///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
+///
+///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(false), &mut "oh boy") );
+///
+///     // You need to use `box_into_field` to unwrap a `Box<dyn Trait>`.
+///     assert_eq!( this.box_into_field(fp!(bar)), "oh boy" );
+/// }
+///
+/// example(Box::new(Struct2{ foo:Some(false), bar: "oh boy" }));
+/// example(Box::new(Struct3{ foo:Some(false), bar: "oh boy", baz:5 }));
+///
+///
+/// // This trait and impl block is what the `structural_alias` macro expands to.
+/// trait Bounds:
+///     IntoFieldMut<FP!(foo), Ty=Option<bool>> +
+///     IntoFieldMut<FP!(bar), Ty=&'static str>
+/// {}
+///
+/// impl<This> Bounds for This
+/// where
+///     This:?Sized +
+///         IntoFieldMut<FP!(foo), Ty=Option<bool>> +
+///         IntoFieldMut<FP!(bar), Ty=&'static str>
+/// {}
+///
+/// ```
+pub trait IntoFieldMut<F>: IntoField<F> + GetFieldMut<F> {}
 
-declare_accessor_trait_alias! {
-    /// A bound for optional, shared and by-value access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use the [GetFieldExt] methods
-    /// with `&self` or `self` receivers.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,OptIntoField,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// fn example<T>(this: T)
-    /// where
-    ///     // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
-    ///     T: OptIntoField<FP!(f o o), Ty=i8>
-    /// {
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be a `&Some(51)` instead.
-    ///     assert_eq!( this.field_(fp!(foo)), Some(&51) );
-    ///
-    ///     // This can't be called with `OptIntoField` you need `OptIntoFieldMut` for that.
-    ///     // assert_eq!( this.field_mut(fp!(foo)), Some(&mut 51) );
-    ///
-    ///     assert_eq!( this.into_field(fp!(foo)), Some(51) );
-    /// }
-    ///
-    /// example(Struct2{ foo:Some(51), bar: "huh?" });
-    /// example(Struct3{ foo:Some(51), bar: "huh?", baz:5 });
-    ///
-    /// ```
-    pub trait OptIntoField<FieldName>=
-        IntoFieldImpl<FieldName, Err = OptionalField>
-}
-
-declare_accessor_trait_alias! {
-    /// A bound for shared, mutable,and by-value access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use any [GetFieldExt] method.
-    ///
-    /// # Example
-    ///
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// // You can write `FP!(bar)` instead of `FP!(b a r)` since Rust 1.40 .
-    /// fn example(mut this:Box<dyn IntoFieldMut<FP!(b a r), Ty=&'static str>>){
-    ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
-    ///     assert_eq!( this.field_mut(fp!(bar)), &mut "oh boy" );
-    ///
-    ///     // You need to use `box_into_field` to unwrap a `Box<dyn Trait>`.
-    ///     assert_eq!( this.box_into_field(fp!(bar)), "oh boy" );
-    /// }
-    ///
-    /// example(Box::new(Struct2{ foo:Some(21), bar: "oh boy" }));
-    /// example(Box::new(Struct3{ foo:Some(21), bar: "oh boy", baz:5 }));
-    ///
-    /// ```
-    pub trait IntoFieldMut<FieldName>=
-        IntoFieldImpl<FieldName, Err = NonOptField> +
-        GetFieldMutImpl<FieldName, Err = NonOptField>
-}
-
-declare_accessor_trait_alias! {
-    /// A bound for optional, shared, mutable,and by-value access to the `FieldName` field.
-    ///
-    /// This is only usable as a bound,
-    /// to access the field you can use any [GetFieldExt] method.
-    ///
-    /// # Example
-    ///
-    ///
-    /// ```
-    /// use structural::{GetFieldExt,OptIntoFieldMut,FP,fp};
-    /// use structural::for_examples::{Struct2,Struct3};
-    ///
-    /// // You can write `FP!(foo)` instead of `FP!(f o o)` since Rust 1.40 .
-    /// fn example(
-    ///     mut some: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
-    ///     mut none: Box<impl OptIntoFieldMut<FP!(f o o), Ty=char>>,
-    /// ){
-    ///     // If this was just an Option field,without the `#[struc(optional)]` attribute,
-    ///     // it would be `&Some('g')` and `&mut Some('g')` instead of
-    ///     // `Some(&'g')` and `Some(&mut 'g')`.
-    ///     assert_eq!( some.field_(fp!(foo)), Some(&'g') );
-    ///     assert_eq!( some.field_mut(fp!(foo)), Some(&mut 'g') );
-    ///     assert_eq!( some.into_field(fp!(foo)), Some('g') );
-    ///
-    ///     assert_eq!( none.field_(fp!(foo)), None );
-    ///     assert_eq!( none.field_mut(fp!(foo)), None );
-    ///     assert_eq!( none.into_field(fp!(foo)), None );
-    /// }
-    ///
-    /// example(
-    ///     Box::new(Struct2{ foo:Some('g'), bar: "oh boy" }),
-    ///     Box::new(Struct2{ foo:None, bar: "oh boy" }),
-    /// );
-    /// example(
-    ///     Box::new(Struct3{ foo:Some('g'), bar: "oh boy", baz:5 }),
-    ///     Box::new(Struct3{ foo:None, bar: "oh boy", baz:5 }),
-    /// );
-    ///
-    /// ```
-    pub trait OptIntoFieldMut<FieldName>=
-        IntoFieldImpl<FieldName, Err = OptionalField> +
-        GetFieldMutImpl<FieldName, Err = OptionalField>
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(feature = "alloc")]
-mod alloc_impls {
-    use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
-
-    macro_rules! impl_shared_ptr_accessors {
-        ( $this:ident ) => {
-            unsafe_delegate_structural_with! {
-                impl[T,] $this<T>
-                where[T:?Sized,]
-
-                self_ident=this;
-                delegating_to_type=T;
-                field_name_param=( field_name : FieldName );
-
-                GetFieldImpl {
-                    &*this
-                }
-            }
-        };
-    }
-    impl_shared_ptr_accessors! {Arc}
-    impl_shared_ptr_accessors! {Rc}
-
-    unsafe_delegate_structural_with! {
-        impl[T,] Box<T>
-        where[T:?Sized,]
-
-        self_ident=this;
-        specialization_params(specialize_cfg(feature="specialization"));
-        delegating_to_type=T;
-        field_name_param=( field_name : FieldName );
-
-        GetFieldImpl {
-            &*this
-        }
-
-        unsafe GetFieldMutImpl{
-            &mut **this
-        }
-        as_delegating_raw{
-            *(this as *mut Box<T> as *mut *mut T)
-        }
-
-
-        IntoFieldImpl{
-            *this
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
+impl<This, F> IntoFieldMut<F> for This where This: ?Sized + IntoField<F> + GetFieldMut<F> {}

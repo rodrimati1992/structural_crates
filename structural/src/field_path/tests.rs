@@ -1,5 +1,5 @@
 use crate::field_path::{AliasedPaths, UniquePaths};
-use crate::{FieldPath, FieldPathSet, NestedFieldPathSet, VariantField, VariantName};
+use crate::{FieldPathSet, NestedFieldPath, NestedFieldPathSet, VariantField, VariantName};
 
 use core_extensions::ConstDefault;
 
@@ -14,7 +14,7 @@ tstr_aliases! {
 fn to_path_to_set() {
     {
         let this: N99 = fp!(99);
-        let _: FieldPath<(N99,)> = this.into_path();
+        let _: NestedFieldPath<(N99,)> = this.into_path();
         let _: N99 = this.into_path().into_component();
         let _: FieldPathSet<(N99,), UniquePaths> = this.into_set();
         let _: N99 = this.into_set().into_path();
@@ -22,7 +22,7 @@ fn to_path_to_set() {
     }
     {
         let this: VariantName<N99> = fp!(::99);
-        let _: FieldPath<(VariantName<N99>,)> = this.into_path();
+        let _: NestedFieldPath<(VariantName<N99>,)> = this.into_path();
         let _: VariantName<N99> = this.into_path().into_component();
         let _: FieldPathSet<(VariantName<N99>,), UniquePaths> = this.into_set();
         let _: VariantName<N99> = this.into_set().into_path();
@@ -30,20 +30,21 @@ fn to_path_to_set() {
     }
     {
         let this: VariantField<Foo, N99> = fp!(::Foo.99);
-        let _: FieldPath<(VariantField<Foo, N99>,)> = this.into_path();
+        let _: NestedFieldPath<(VariantField<Foo, N99>,)> = this.into_path();
         let _: VariantField<Foo, N99> = this.into_path().into_component();
         let _: FieldPathSet<(VariantField<Foo, N99>,), UniquePaths> = this.into_set();
         let _: VariantField<Foo, N99> = this.into_set().into_path();
         let _: (VariantField<Foo, N99>,) = this.into_set().into_paths();
     }
     {
-        let this: FieldPath<(bar, baz)> = fp!(bar.baz);
-        let _: FieldPathSet<(FieldPath<(bar, baz)>,), UniquePaths> = this.into_set();
-        let _: FieldPath<(bar, baz)> = this.into_set().into_path();
-        let _: (FieldPath<(bar, baz)>,) = this.into_set().into_paths();
+        let this: NestedFieldPath<(bar, baz)> = fp!(bar.baz);
+        let _: FieldPathSet<(NestedFieldPath<(bar, baz)>,), UniquePaths> = this.into_set();
+        let _: NestedFieldPath<(bar, baz)> = this.into_set().into_path();
+        let _: (NestedFieldPath<(bar, baz)>,) = this.into_set().into_paths();
     }
 }
 
+#[test]
 fn uniqueness_methods() {
     unsafe {
         let this: FieldPathSet<(bar, baz), AliasedPaths> = FieldPathSet::many((bar, baz));
@@ -68,7 +69,7 @@ fn assoc_constants() {
     let _: N99 = N99::NEW;
     let _: VariantField<N99, bar> = <VariantField<N99, bar>>::NEW;
     let _: VariantName<N99> = <VariantName<N99>>::NEW;
-    let _: FieldPath<(N99,)> = FieldPath::<(N99,)>::NEW;
+    let _: NestedFieldPath<(N99,)> = NestedFieldPath::<(N99,)>::NEW;
 
     let _: FieldPathSet<(N99,), AliasedPaths> = FieldPathSet::<(N99,), AliasedPaths>::NEW;
     let _: FieldPathSet<(N99,), AliasedPaths> = FieldPathSet::<(N99,), AliasedPaths>::NEW_ALIASED;
@@ -92,19 +93,19 @@ fn fieldpath_push_append() {
         C: ConstDefault + Copy,
         D: ConstDefault + Copy,
     {
-        let fp0 = FieldPath::<(A,)>::NEW;
-        let fp1 = FieldPath::<(B,)>::NEW;
-        let fp2 = FieldPath::<(C,)>::NEW;
-        let fp3 = FieldPath::<(D,)>::NEW;
+        let fp0 = NestedFieldPath::<(A,)>::NEW;
+        let fp1 = NestedFieldPath::<(B,)>::NEW;
+        let fp2 = NestedFieldPath::<(C,)>::NEW;
+        let fp3 = NestedFieldPath::<(D,)>::NEW;
 
-        let a: FieldPath<(A, B)> = fp0.push(fp1.list.0);
-        let _: FieldPath<(A, B)> = fp0.append(fp1);
+        let a: NestedFieldPath<(A, B)> = fp0.push(fp1.list.0);
+        let _: NestedFieldPath<(A, B)> = fp0.append(fp1);
 
-        let b: FieldPath<(A, B, C)> = a.push(fp2.list.0);
-        let _: FieldPath<(A, B, C)> = a.append(fp2);
+        let b: NestedFieldPath<(A, B, C)> = a.push(fp2.list.0);
+        let _: NestedFieldPath<(A, B, C)> = a.append(fp2);
 
-        let _: FieldPath<(A, B, C, D)> = b.push(fp3.list.0);
-        let _: FieldPath<(A, B, C, D)> = b.append(fp3);
+        let _: NestedFieldPath<(A, B, C, D)> = b.push(fp3.list.0);
+        let _: NestedFieldPath<(A, B, C, D)> = b.append(fp3);
     }
 }
 
@@ -118,7 +119,7 @@ fn fieldpaths_push_append() {
         C: ConstDefault + Copy,
         D: ConstDefault + Copy,
     {
-        type Fp<T> = FieldPath<(T,)>;
+        type Fp<T> = NestedFieldPath<(T,)>;
         let fp1 = Fp::<B>::NEW;
         let fp2 = Fp::<C>::NEW;
         let fp3 = Fp::<D>::NEW;

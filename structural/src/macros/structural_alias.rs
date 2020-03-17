@@ -79,16 +79,16 @@ The methods and constants turn into defaulted methods and defaulted constants in
     allowing shared,mutable,and by value access to the field.
 
 - `ref  b:T`:
-    Corresponds to the `GetFieldImpl<FP!(b),Ty=T>` shared reference
+    Corresponds to the `GetField<FP!(b),Ty=T>` shared reference
     field accessor trait.
 
 - `mut  c:i64`:
-    Corresponds to the `GetFieldMutImpl<FP!(c),Ty=i64>` mutable reference
-    field accessor trait (which`itself implies `GetFieldImpl`).
+    Corresponds to the `GetFieldMut<FP!(c),Ty=i64>` mutable reference
+    field accessor trait (which`itself implies `GetField`).
 
 - `move d:String`:
-    Corresponds to the `IntoFieldImpl<FP!(d),Ty=String>` by value
-    field accessor trait (which itself implies `GetFieldImpl`).
+    Corresponds to the `IntoField<FP!(d),Ty=String>` by value
+    field accessor trait (which itself implies `GetField`).
 
 - `mut move e:String`:
     Corresponds to the `IntoFieldMut<FP!(e),Ty=String>` trait,
@@ -104,7 +104,10 @@ The methods and constants turn into defaulted methods and defaulted constants in
 
 Variants follow the same pattern as fields regarding access
 (`<none>`/`ref`/`mut`/`move`/`mut move`).
-```ignore
+```rust
+# use structural::structural_alias;
+# structural_alias!{
+# trait Bar {
 // The `mut` here defines the default access for fields of the variant,
 // if none had been specified it would be equivalent to `mut move`.
 mut Foo{
@@ -116,6 +119,9 @@ mut Foo{
     // Corresponds to `IntoVariantFieldMut<TS!(Foo),TS!(baz),Ty= Vec<u32>>`
     mut move baz:Vec<u32>,
 },
+# }
+# }
+# fn main(){}
 
 ```
 
@@ -135,6 +141,12 @@ These are attributes for each individual trait declared using this macro.
 ### `#[struc(debug_print)]`
 
 Causes a compiletime error,printing the generated code for a trait.
+
+### `#[struc(no_docs)]`
+
+Removes the docs for the generated trait(s).
+
+The documentation describes variants and fields accessor traits that this trait aliases.
 
 ### `#[struc(exhaustive_enum)]`
 
@@ -271,8 +283,8 @@ Using `impl Trait` fields makes a `Foo` structural alias unusable as a `dyn Foo`
 This demonstrates using impl trait fields.
 
 */
-#[cfg_attr(not(feature = "nightly_impl_fields"), doc = "```ignore")]
-#[cfg_attr(feature = "nightly_impl_fields", doc = "```rust")]
+#[cfg_attr(not(feature = "impl_fields"), doc = "```ignore")]
+#[cfg_attr(feature = "impl_fields", doc = "```rust")]
 /**
 // Remove this if associated type bounds (eg: `T: Iterator<Item: Debug>`)
 // work without it.

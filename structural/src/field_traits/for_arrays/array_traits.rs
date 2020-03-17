@@ -64,6 +64,7 @@ fn main() {
 macro_rules! declare_array_traits {
     (
         $((
+            $(#[$meta:meta])*
             $trait_name:ident
             [$($super_trait:ident)*]
             [$($field:ident)*]
@@ -71,6 +72,7 @@ macro_rules! declare_array_traits {
     ) => (
         $(
             /// A structural alias for an array of this size
+            $(#[$meta])*
             pub trait $trait_name<T>:
                 $($super_trait<T>+)*
                 $(IntoFieldMut<$field,Ty=T> +)*
@@ -88,9 +90,9 @@ macro_rules! declare_array_traits {
 }
 
 declare_array_traits! {
-    (Array_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
-    (Array_8_16 [Array_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
-    (Array_16_24 [Array_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )
+    (#[doc(hidden)] Array_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
+    (#[doc(hidden)] Array_8_16 [Array_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
+    (#[doc(hidden)] Array_16_24 [Array_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )
     (Array0 [] [] )
     (Array1 [] [I0 ] )
     (Array2 [] [I0 I1 ] )
@@ -130,18 +132,22 @@ declare_array_traits! {
 macro_rules! declare_array_traits {
     (
         $((
+            $(#[$meta:meta])*
             $variant_trait_name:ident
             [$($super_trait:ident)*]
             [$($field:ident)*]
         ))*
     ) => (
         $(
-            /// A structural alias for an array newtype variant
+            /// A structural alias for a tuple variant that's homogeneous
+            /// up to the size of the array).
             ///
             /// The `V` generic parameter is the name of the variant.
-            /// Example of the `V` parameter for a variant named `Foo`:
-            /// - (since Rust 1.40): `TS!(Foo)`  <br>
-            /// - (before Rust 1.40):`TS!(F o o)`<br>
+            /// Examples of the `V` parameter for a variant named `Foo`:
+            /// - `TS!(Foo)`<br>
+            /// - `TS!(Bar)`<br>
+            /// - `TS!(0)`<br>
+            $(#[$meta])*
             pub trait $variant_trait_name<T,V>:
                 $($super_trait<T,V>+)*
                 $(IntoVariantFieldMut<V,$field,Ty=T> +)*
@@ -159,9 +165,9 @@ macro_rules! declare_array_traits {
 }
 
 declare_array_traits! {
-    (ArrayVariant_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
-    (ArrayVariant_8_16 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
-    (ArrayVariant_16_24 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )
+    (#[doc(hidden)] ArrayVariant_0_8 [] [I0 I1 I2 I3 I4 I5 I6 I7 ] )
+    (#[doc(hidden)] ArrayVariant_8_16 [ArrayVariant_0_8 ] [I8 I9 I10 I11 I12 I13 I14 I15 ] )
+    (#[doc(hidden)] ArrayVariant_16_24 [ArrayVariant_8_16 ] [I16 I17 I18 I19 I20 I21 I22 I23 ] )
     (Array0Variant [] [] )
     (Array1Variant [] [I0 ] )
     (Array2Variant [] [I0 I1 ] )
@@ -225,7 +231,7 @@ mod tests {
     }
     fn with_array_32_variant<A>(this: A)
     where
-        A: Array32Variant<u32, TS!(F o o)> + Clone,
+        A: Array32Variant<u32, TS!(Foo)> + Clone,
     {
         with_array_32(this.into_field(fp!(::Foo)).unwrap());
     }

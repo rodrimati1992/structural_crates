@@ -1,7 +1,4 @@
-use crate::{
-    field_paths::{FieldPath, FieldPaths},
-    tokenizers::FullPathForChars,
-};
+use crate::field_paths::{FieldPaths, NestedFieldPath};
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
@@ -19,8 +16,6 @@ use syn::{
 pub(crate) fn impl_(parsed: NameAliases) -> Result<TokenStream2, syn::Error> {
     // This uses the full path to each character to allow aliases
     // with the same name as the characters themselves.
-    let char_verbosity = FullPathForChars::Yes;
-
     let mut doc_fp_inner = String::new();
 
     parsed
@@ -31,7 +26,7 @@ pub(crate) fn impl_(parsed: NameAliases) -> Result<TokenStream2, syn::Error> {
             alias.value.write_fp_inside(&mut doc_fp_inner);
 
             let alias_name = &alias.name;
-            let field_name = alias.value.type_tokens(char_verbosity);
+            let field_name = alias.value.type_tokens();
             let value = alias.value.inferred_expression_tokens();
 
             Ok(quote_spanned!(alias_name.span()=>
@@ -80,7 +75,9 @@ impl Parse for NameAlias {
                 let _ = syn::parenthesized!(content in input);
                 content.parse::<FieldPaths>()?
             } else {
-                input.parse::<FieldPath>()?.piped(FieldPaths::from_path)
+                input
+                    .parse::<NestedFieldPath>()?
+                    .piped(FieldPaths::from_path)
             }
         } else {
             FieldPaths::from_ident(name.clone())
