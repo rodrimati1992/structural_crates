@@ -125,9 +125,6 @@ where
     };
 }
 
-/// A NestedFieldPath for the `F` field inside the `V` variant.
-pub type VariantFieldPath<V, F> = VariantField<V, F>;
-
 impl_cmp_traits! {
     impl[V,F] VariantField<V,F>
     where[]

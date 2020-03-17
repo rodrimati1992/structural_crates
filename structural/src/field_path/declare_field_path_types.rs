@@ -7,12 +7,14 @@
 ///
 /// # Semver concerns
 /// 
-/// `TStr` is parameterized by a private type.
+/// The private `TS` type appears as a type argument of `TStr`
+/// in the output of macros from this crate,
+/// the `TS` type must not be used by name outside of the `structural` and `structural_derive`
+/// crates.
 ///
-/// Manually expanding the macros used to get a `TStr` type is not supported,
-/// since it could break whenever any other crate uses the "use_const_str" cargo feature,
-/// which changes the private `TS` type that's used as the parameter to TStr
-/// to use const generics to improve error messages.
+/// Direct use of the `TS` type will cause compilation errors
+/// whenever any other crate uses the "use_const_str" cargo feature,
+/// which changes `TS` to use const generics to improve error messages.
 ///
 /// # TStr type
 /// 
@@ -48,13 +50,13 @@
 ///
 /// `TStr<_>` can be constructed with:
 ///
-/// - the `ts` macro,which takes a string literal/ident/integer as an input.
+/// - the [`ts`] macro,which takes a string literal/ident/integer as an input.
 ///
-/// - the `fp` macro,when a single string literal/ident/integer in passed,
+/// - the [`fp`] macro,when a single string literal/ident/integer in passed,
 /// prefer using `ts` if you want a `TStr` to always be constructed,
-/// since `fp` can produce other types depending on the arguments.
+/// since [`fp`] can produce other types depending on the arguments.
 ///
-/// - the `NEW` inherent associated constant,
+/// - the [`NEW`] inherent associated constant.
 ///
 /// - The `<TStr<_> as ConstDefault>::DEFAULT` associated constant.
 ///
@@ -62,15 +64,11 @@
 ///
 /// - `ts!(foo)`: TStr equivalent of "foo"
 ///
-/// - `ts!(f o o)`: TStr equivalent of "foo"
-///
 /// - `ts!("bar")`: TStr equivalent of "bar"
 ///
 /// - `ts!(1)`: TStr equivalent of "1"
 ///
 /// - `ts!(100)`: TStr equivalent of "100"
-///
-/// - `ts!(1 0 0)`: TStr equivalent of "100"
 ///
 /// - `fp!(foo)`: TStr equivalent of "foo"
 ///
@@ -78,11 +76,7 @@
 ///
 /// - `fp!(100)`: TStr equivalent of "100"
 ///
-/// - `<TS!(w o r l d)>::NEW`: TStr equivalent of "world"
-///
 /// - `<TS!(0)>::NEW`: TStr equivalent of "0"
-///
-/// - `<TS!(1 0 0)>::NEW`: TStr equivalent of "100"
 ///
 /// - `<TS!(0)>::DEFAULT`: TStr equivalent of "0"
 /// (requires importing the `ConstDefault` trait)
@@ -99,9 +93,13 @@
 /// 
 /// # Example
 /// 
-/// For an example of constructing `TStr` using the [ts](./macro.ts.html) macro,
+/// For an example of constructing `TStr` using the [`ts`] macro,
 /// and constructing other field paths with it,
-/// you can look in the docs for the [ts](./macro.ts.html) macro.
+/// you can look in the docs for the [`ts`] macro.
+/// 
+/// [`ts`]: ./macro.ts.html
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
 /// 
 pub struct TStr<T>(pub(crate) PhantomData<T>);
 
@@ -110,19 +108,19 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 /// This is the type that `fp!(::Foo.bar)` constructs.
 ///
-/// Both the `V` and `F` type parameters are [TStr](./struct.TStr.html),
+/// Both the `V` and `F` type parameters are [TStr](./struct.TStr.html).
 ///
 /// # Construction
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp](./macro.fp.html) macro,with `fp!(::Foo.bar)`
+/// - The [`fp`] macro, with `fp!(::Foo.bar)`
 ///
 /// - The `VariantField{variant,field}` struct literal
 ///
-/// - The `new` constructor.
+/// - The [`new`] constructor.
 ///
-/// - The `NEW` associated constant,if both `V` and `F` implement 
+/// - The [`NEW`] associated constant,if both `V` and `F` implement 
 /// `core_extensions::ConstDefault`
 /// (reexported in `structural::reexports::ConstDefault`).
 ///
@@ -159,6 +157,10 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 /// ```
 ///
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
+/// [`new`]: #method.new
+///
 #[derive(Copy, Clone)]
 pub struct VariantField<V, F> {
     pub variant: V,
@@ -177,13 +179,13 @@ pub struct VariantField<V, F> {
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp](./macro.fp.html) macro,with `fp!(::Foo)`
+/// - [`fp`] macro,with `fp!(::Foo)`
 ///
 /// - The `VariantName{name}` struct literal
 ///
-/// - The `new` constructor.
+/// - The [`new`] constructor.
 ///
-/// - The `NEW` associated constant,if `V` implements 
+/// - The [`NEW`] associated constant,if `V` implements 
 /// `core_extensions::ConstDefault`
 /// (reexported in `structural::reexports::ConstDefault`)
 ///
@@ -229,6 +231,10 @@ pub struct VariantField<V, F> {
 ///
 /// ```
 ///
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
+/// [`new`]: #method.new
+///
 #[derive(Default, Copy, Clone)]
 pub struct VariantName<V> {
     pub name: V,
@@ -239,24 +245,37 @@ pub struct VariantName<V> {
 
 /// A type-level representation of a chain of field accesses,like `.a.b.c.d`.
 ///
+/// This is the type that `fp!(a.b)` and `fp!(::Foo.bar.baz)` construct.<br>
+/// Note: `fp!(::Foo.bar)` constructs a [`VariantField`].
+///
+/// [`VariantField`]: ./struct.VariantField.html
+///
 /// # Construction
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp](./macro.fp.html) macro,when you access a nested field
+/// - [`fp`] macro,when you access a nested field
 ///
 /// - The `NestedFieldPath{list}` struct literal
 ///
-/// - The `one` or `many` constructors.
+/// - The [`one`] or [`many`] constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements 
+/// - The [`NEW`] associated constant,if `T` implements 
 /// `core_extensions::ConstDefault`
 /// (reexported in `structural::reexports::ConstDefault`)
 ///
 /// # Examples
 /// 
 /// You can look for examples of using this in the single-field 
-/// [GetFieldExt](./trait.GetFieldExt.html) methods.
+/// [GetFieldExt](./trait.GetFieldExt.html) methods,
+/// like [`field_`] and [`field_mut`].
+///
+/// [`field_`]: ./trait.GetFieldExt.html#method.field_
+/// [`field_mut`]: ./trait.GetFieldExt.html#method.field_mut
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
+/// [`one`]: #method.one
+/// [`many`]: #method.many
 #[repr(transparent)]
 #[derive(Default, Copy, Clone)]
 pub struct NestedFieldPath<T> {
@@ -264,26 +283,32 @@ pub struct NestedFieldPath<T> {
 }
 
 
-/// A list of field paths to access multiple fields,whose uniqueness is determined by `U`.
+/// A list of field paths to access multiple fields,
+/// whose uniqueness is determined by the `U` type parameter.
+///
+/// This is the type that `fp!(a, b.c, ::D.e, ::F)` constructs.
 ///
 /// # Construction
 ///
 /// You can construct this using (not an exhaustive list):
 ///
-/// - [fp](./macro.fp.html) macro,when you access multiple field (without using `=>`).
+/// - [`fp`] macro,when you access multiple fields
+/// (using `=>` constructs a [`NestedFieldPathSet`] instead).
 ///
-/// - The `one` or `many` constructors.
+/// - The [`one`] or [`many`] constructors.
 ///
-/// - The `NEW` associated constant,if `T` implements 
+/// - The [`NEW`] associated constant,if `T` implements 
 /// `core_extensions::ConstDefault`
 /// (reexported in `structural::reexports::ConstDefault`)
 ///
 /// # Uniqueness
 ///
-/// If `U` is a `UniquePaths` then all the field paths are unique,
+/// If the `U` type parameter is a:
+///
+/// - [`UniquePaths`]: all the field paths are unique,
 /// and this can be passed to `GetFieldExt::fields_mut`.
 ///
-/// If `U` is a `AliasedPaths` then there might be repeated field paths,
+/// - [`AliasedPaths`]: there might be repeated field paths,
 /// and this cannot be passed to `GetFieldExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
 ///
@@ -298,7 +323,18 @@ pub struct NestedFieldPath<T> {
 /// 
 /// You can look for examples of using this in the multi-field 
 /// [GetFieldExt](./trait.GetFieldExt.html)
-/// methods.
+/// methods, like [`fields`] and [`fields_mut`].
+///
+/// [`fields`]: ./trait.GetFieldExt.html#method.fields
+/// [`fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
+/// [`one`]: #method.one
+/// [`many`]: #method.many
+/// [`NestedFieldPathSet`]: ./struct.NestedFieldPathSet.html
+/// [`UniquePaths`]: ./field_path/struct.UniquePaths.html
+/// [`AliasedPaths`]: ./field_path/struct.AliasedPaths.html
+///
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
 pub struct FieldPathSet<T, U> {
@@ -310,14 +346,18 @@ pub struct FieldPathSet<T, U> {
 
 /// Allows accessing multiple fields inside of some nested field.
 ///
-/// This is useful for accessing multiple fields inside of a (nested) enum.
+/// This is most useful for accessing multiple fields inside of a (nested) enum.
+///
+/// This is the type that `fp!(a.b => b, c, d)` and `fp!(::Foo => bar, baz, qux)` construct.
 ///
 /// # Uniqueness
 ///
-/// If `U` is a `UniquePaths` then all the field paths are unique,
+/// If the `U` type parameter is a:
+///
+/// - [`UniquePaths`]: all the field paths are unique,
 /// and this can be passed to `GetFieldExt::fields_mut`.
 ///
-/// If `U` is a `AliasedPaths` then there might be repeated field paths,
+/// - [`AliasedPaths`]: there might be repeated field paths,
 /// and this cannot be passed to `GetFieldExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
 ///
@@ -325,7 +365,7 @@ pub struct FieldPathSet<T, U> {
 ///
 /// NestedFieldPathSet can be constructed in these ways:
 ///
-/// - Using `fp!`.<br>
+/// - Using the [`fp`] macro.<br>
 /// Example:
 /// `fp!(::Foo=>a,b)`,
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.<br>
@@ -333,7 +373,7 @@ pub struct FieldPathSet<T, U> {
 /// `fp!(a.b=>uh,what)`,
 /// this gets the `uh`,and `what` fields from inside the `a.b` field.<br>
 ///
-/// - Constructing it from a NestedFieldPath and a FieldPathSet.<br>
+/// - Constructing it from a [`NestedFieldPath`] and a [`FieldPathSet`].<br>
 /// Example:
 /// `NestedFieldPathSet::new( fp!(a.b.c), fp!(foo,bar,baz) )`,
 /// this gets the `foo`,`bar`,and `baz` fields from inside the `a.b.c` field.<br>
@@ -341,7 +381,7 @@ pub struct FieldPathSet<T, U> {
 /// `NestedFieldPathSet::new( fp!(::Foo), fp!(a,b) )`,
 /// this gets the `a`,and `b` fields from inside the `Foo` variant.
 ///
-/// - Using the `NEW` associated constant,
+/// - Using the [`NEW`] associated constant,
 /// if `F` and `S` implements 
 /// `core_extensions::ConstDefault`
 /// (reexported in `structural::reexports::ConstDefault`)
@@ -359,7 +399,16 @@ pub struct FieldPathSet<T, U> {
 /// 
 /// You can look for examples of using this in the multi-field 
 /// [GetFieldExt](./trait.GetFieldExt.html) 
-/// methods (look for the enum examples).
+/// methods, like [`fields`] and [`fields_mut`] (look for the enum examples).
+///
+/// [`fields`]: ./trait.GetFieldExt.html#method.fields
+/// [`fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+/// [`fp`]: ./macro.fp.html
+/// [`NEW`]: #associatedconstant.NEW
+/// [`NestedFieldPath`]: ./struct.NestedFieldPath.html
+/// [`FieldPathSet`]: ./struct.FieldPathSet.html
+/// [`UniquePaths`]: ./field_path/struct.UniquePaths.html
+/// [`AliasedPaths`]: ./field_path/struct.AliasedPaths.html
 /// 
 #[derive(Debug, Clone, Copy)]
 pub struct NestedFieldPathSet<F, S, U> {

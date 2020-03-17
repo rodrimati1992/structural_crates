@@ -102,7 +102,7 @@ where
         // No `_=>{4}` branch is necessary,because this is an exhaustive enum.
         //
         // This would be necessary if the `Enum_SI` trait was used instead of `Enum_ESI`,
-        // with the advantage that enums with more variants than `Enum` would be supported..
+        // with the advantage that enums with more variants than `Enum` would be supported.
     }
 }
 

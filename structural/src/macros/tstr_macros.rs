@@ -152,8 +152,7 @@ type parameter with the `*VariantField*` traits,to access a variant field.
 
 ```rust
 use structural::{GetFieldExt,FP,Structural,TS};
-use structural::field_traits::{GetFieldType,GetVariantFieldType,IntoVariantFieldMut};
-use structural::field_path::VariantFieldPath;
+use structural::{GetFieldType, GetVariantFieldType, IntoVariantFieldMut, VariantField};
 
 // `GetFieldType<This,FP!(::Ok.0)>` can also be written as
 // `GetVariantFieldType<This,TS!(Ok),TS!(0)>`.
@@ -165,7 +164,7 @@ where
     This: IntoVariantFieldMut<TS!(Ok),TS!(0)>
 {
     // Equivalent to: `this.into_field(fp!(::Ok.0))`
-    this.into_field(VariantFieldPath::<TS!("Ok"),TS!("0")>::NEW)
+    this.into_field(VariantField::<TS!("Ok"),TS!("0")>::NEW)
 }
 
 #[derive(Structural)]
@@ -341,7 +340,7 @@ macro_rules! _TStr_from_ident {
 /**
 Constructs a
 [`TStr`](./struct.TStr.html)
-value,a type-level string used for identifiers in field paths..
+value,a type-level string used for identifiers in field paths.
 
 # Input
 

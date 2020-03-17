@@ -1,5 +1,5 @@
 /*!
-Type-level representatins of access to one or multiple fields.
+Types used to refer to the field(s) that one is accessing.
 
 The re-exported items are all field-path related.
 */
@@ -125,17 +125,7 @@ where
 }
 
 impl<T> NestedFieldPath<(T,)> {
-    /// Construcst a field path from a single path component.
-    ///
-    /// Example: `NestedFieldPath::one(ts!(a))` is equivalent to `fp!(a)`
-    ///
-    /// Example:
-    /// `NestedFieldPath::one(VariantField::new(ts!(a),ts!(b)))`
-    /// is equivalent to `fp!(::a.b)`
-    ///
-    /// Example:
-    /// `NestedFieldPath::one(VariantName::new(ts!(Left)))`
-    /// is equivalent to `fp!(::Left)`
+    /// Construcst a `NestedFieldPath` from a single path component.
     #[inline(always)]
     pub const fn one(value: T) -> Self {
         Self { list: (value,) }
@@ -143,7 +133,7 @@ impl<T> NestedFieldPath<(T,)> {
 }
 
 impl<T> NestedFieldPath<T> {
-    /// Constructs a field path for a nested field.
+    /// Constructs a `NestedFieldPath` for a nested field.
     ///
     /// Example:
     /// `NestedFieldPath::many(( ts!(a), ts!(b) ))`
@@ -195,7 +185,7 @@ where
 impl<T> NestedFieldPath<T> {
     /// Constructs a new NestedFieldPath with `_other` appended at the end.
     ///
-    /// Example arguments:`fp!(a)`/`fp!(foo)`/`fp!(bar)`
+    /// Example arguments:`fp!(a)`/`fp!(::Foo.bar)`/`fp!(::Foo)`
     #[inline(always)]
     pub fn push<U, V>(self, _other: U) -> NestedFieldPath<V>
     where
@@ -206,6 +196,8 @@ impl<T> NestedFieldPath<T> {
     }
 
     /// Constructs a new NestedFieldPath with `_other` appended at the end.
+    ///
+    /// Example arguments:`fp!(a,b)`/`fp!(::Foo.bar.baz)`
     #[inline(always)]
     pub fn append<U>(self, _other: NestedFieldPath<U>) -> NestedFieldPath<AppendOut<T, U>>
     where
@@ -259,8 +251,8 @@ impl_cmp_traits! {
 pub struct UniquePaths;
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
-/// may not contain unique field paths,
-/// which means that its **not** possible to pass a `FieldPathSet<__,AliasedPaths>` to
+/// might not contain unique field paths.
+/// Its not possible to pass a `FieldPathSet<_,AliasedPaths>` to
 /// `GetFieldExt::fields_mut`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
@@ -312,11 +304,11 @@ impl<T> FieldPathSet<(T,), UniquePaths> {
 impl<T> FieldPathSet<T, AliasedPaths> {
     /// Constructs a FieldPathSet from a tuple of field paths.
     ///
-    /// Note that this doesn't enforce that its input is in fact a tuple of NestedFieldPath,
-    /// so you can use type inference for the arguments to this function.
+    /// Note that this doesn't enforce that its input is in fact a tuple of field paths
+    /// (because `const fn` can't have bounds yet).
     ///
     /// To be able to access multiple fields mutably at the same time,
-    /// must call the unsafe `.upgrade()` method.
+    /// you must call the unsafe `.upgrade()` method.
     pub const fn many(paths: T) -> Self {
         FieldPathSet {
             paths: ManuallyDrop::new(paths),
@@ -332,7 +324,7 @@ where
     /// Constructs a `FieldPathSet`.
     ///
     /// This can also be used to construct a `FieldPathSet<T, UniquePaths>`
-    /// in a const context where `T` can be inferred,
+    /// in a context where `T` can be inferred,
     /// by doing `unsafe{ FieldPathSet::NEW.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW: Self = Self::DEFAULT;
@@ -343,7 +335,7 @@ where
     T: ConstDefault,
 {
     /// This can be used to construct a `FieldPathSet<T, UniquePaths>`
-    /// from a type alias in a const context,
+    /// from a type alias,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: FieldPathSet<T, AliasedPaths> = FieldPathSet::NEW;
@@ -480,7 +472,7 @@ where
     S: ConstDefault,
 {
     /// This can be used to construct a `NestedFieldPathSet<T, UniquePaths>`
-    /// from a type alias in a const context,
+    /// from a type alias,
     /// by doing `unsafe{ FOO::NEW_ALIASED.upgrade_unchecked() }`
     /// (read the docs for `upgrade_unchecked` first).
     pub const NEW_ALIASED: NestedFieldPathSet<F, S, AliasedPaths> = NestedFieldPathSet::NEW;
