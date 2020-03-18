@@ -104,7 +104,7 @@
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
 /// This can be passed to the `GetFieldExt::*fields*` methods.<br>
-/// `GetFieldExt::field_mut` requires the field paths to be for disjoint fields.
+/// [`GetFieldExt::fields_mut`] requires the field paths to be for disjoint fields.
 ///
 /// ### Nested Multiple fields
 ///
@@ -118,7 +118,15 @@
 /// `this.field_(fp!(::Foo)).map(|v| v.fields(fp!(0,1,2)) )`.
 ///
 /// This can be passed to the `GetFieldExt::*fields*` methods.<br>
-/// `GetFieldExt::field_mut` requires the field paths to be for disjoint fields.
+/// [`GetFieldExt::fields_mut`] requires the field paths to be for disjoint fields.
+///
+/// [`GetFieldExt::fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+///
+/// # Aliasing
+///
+/// For the purpose of detecting aliasing field paths,
+/// `fp!(::foo)` and `fp!(foo)` are considered to be the same path,
+/// which means that you can't pass `fp!(::foo, foo)` to [`GetFieldExt::fields_mut`].
 ///
 /// # Example:Multiple fields
 ///

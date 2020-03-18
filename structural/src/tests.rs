@@ -1,7 +1,8 @@
 mod delegation;
 mod enum_derive;
+mod field_paths;
 mod impl_struct;
-mod macro_tests;
+mod make_struct;
 mod multi_fields;
 mod multi_nested_fields;
 mod optional_fields;

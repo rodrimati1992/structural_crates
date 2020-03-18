@@ -45,6 +45,8 @@ mod for_string_tests {
     cond_tstr_alias!(S_foo = ((chars::_f, chars::_o, chars::_o), "foo"));
     cond_tstr_alias!(S_bar = ((chars::_b, chars::_a, chars::_r), "bar"));
     cond_tstr_alias!(S_baz = ((chars::_b, chars::_a, chars::_z), "baz"));
+    cond_tstr_alias!(S_qux = ((chars::_q, chars::_u, chars::_x), "qux"));
+    cond_tstr_alias!(S_Some = ((chars::_S, chars::_o, chars::_m, chars::_e), "Some"));
     cond_tstr_alias!(S_a = ((chars::_a,), "a"));
     cond_tstr_alias!(S_b = ((chars::_b,), "b"));
     cond_tstr_alias!(S_c = ((chars::_c,), "c"));
@@ -62,19 +64,29 @@ mod for_string_tests {
     }
 
     macro_rules! path_assertion {
-        (fp!( $($fp_params:tt)* ),$ty:ty $(,)?) => (
-            assert_ty::<
-                $ty,
-                FP!($($fp_params)*),
-            >(fp!($($fp_params)*));
-        )
+        (
+            fp!$fp_params_tt:tt,
+            fp!$fp_params_rhs:tt
+            $(,$($rest:tt)*)?
+        )=>{
+            assert_ty::< FP!$fp_params_tt, FP!$fp_params_rhs >(fp!$fp_params_tt);
+            let _:FP!$fp_params_rhs=fp!$fp_params_rhs;
+
+            $( path_assertion!{fp!$fp_params_tt,  $($rest)*} )?
+        };
+        ( fp!$fp_params_tt:tt ,$ty:ty $(,$($rest:tt)*)? )=>{
+            assert_ty::<$ty,FP!$fp_params_tt>(fp!$fp_params_tt);
+
+            $( path_assertion!{fp!$fp_params_tt,  $($rest)*} )?
+        };
+        (fp! $fp_params_tt:tt $(,)* )=>{};
     }
 }
 
-/// Tests that the fp and FP macros are correct
+/// Tests that the fp and FP macros produce the correct TStr and NestedFieldPath types
 #[allow(non_camel_case_types)]
 #[test]
-fn identifier_macros_equality() {
+fn field_path_nested() {
     use self::for_string_tests::*;
     use crate::field_path::NestedFieldPath;
     #[allow(unused_imports)]
@@ -84,23 +96,36 @@ fn identifier_macros_equality() {
     cond_tstr_alias!(S_21 = ((chars::_2, chars::_1), "21"));
     cond_tstr_alias!(S_ab0 = ((chars::_a, chars::_b, chars::_0), "ab0"));
 
-    path_assertion!(fp!(abcd), S_abcd);
-    path_assertion!(fp!(0), S_0);
-    path_assertion!(fp!(21), S_21);
-    path_assertion!(fp!(ab0), S_ab0);
-    path_assertion!(fp!(0.1), NestedFieldPath<(S_0, S_1)>);
-    path_assertion!(fp!(0.1.2), NestedFieldPath<(S_0, S_1, S_2)>);
+    path_assertion!(fp!(abcd), S_abcd, fp!("abcd"));
+    path_assertion!(fp!(0), S_0, fp!("0"));
+    path_assertion!(fp!(21), S_21, fp!("21"));
+    path_assertion!(fp!(ab0), S_ab0, fp!("ab0"));
+    path_assertion!(fp!(0.1), NestedFieldPath<(S_0, S_1)>, fp!("0"."1"));
+    path_assertion!(
+        fp!(0.1.2),
+        NestedFieldPath<(S_0, S_1, S_2)>,
+        fp!("0"."1"."2")
+    );
     path_assertion!(fp!(0.1.2.3), NestedFieldPath<(S_0, S_1, S_2, S_3)>);
     path_assertion!(fp!(0.1.2.3.4), NestedFieldPath<(S_0, S_1, S_2, S_3, S_4)>);
-    path_assertion!(fp!(0.foo), NestedFieldPath<(S_0, S_foo)>);
-    path_assertion!(fp!(0.foo.1), NestedFieldPath<(S_0, S_foo, S_1)>);
-    path_assertion!(fp!(0.foo.1.bar), NestedFieldPath<(S_0, S_foo, S_1, S_bar)>);
+    path_assertion!(fp!(0.foo), NestedFieldPath<(S_0, S_foo)>, fp!("0"."foo"));
+    path_assertion!(
+        fp!(0.foo.1),
+        NestedFieldPath<(S_0, S_foo, S_1)>,
+        fp!("0"."foo"."1")
+    );
+    path_assertion!(
+        fp!(0.foo.1.bar),
+        NestedFieldPath<(S_0, S_foo, S_1, S_bar)>,
+        fp!("0"."foo"."1"."bar"),
+    );
 }
 
 #[allow(non_camel_case_types)]
 #[test]
-fn field_paths_equality() {
-    use crate::field_path::{FieldPathSet, NestedFieldPath, UniquePaths};
+fn field_paths_more() {
+    use crate::field_path::{AliasedPaths, UniquePaths};
+    use crate::{FieldPathSet, NestedFieldPath, VariantField, VariantName};
 
     use self::for_string_tests::*;
 
@@ -141,51 +166,133 @@ fn field_paths_equality() {
         FieldPathSet<(NestedFieldPath<(S_0,S_1,S_2,S_3,S_4)>,S_foo),UniquePaths>,
     }
 
-    /*
-    path_assertion!{
-        fp!((FP!(a.b)).(FP!(c.d)),0),
-        FieldPathSet<(NestedFieldPath<(S_a,S_b,S_c,S_d)>,NestedFieldPath<(S_0,)>,),AliasedPaths>,
-    }
-    */
-}
-
-mod make_struct_tests {
-    use crate::{field_path::TStr, GetFieldExt};
-
-    crate::structural_alias! {
-        trait Hi<T>{
-            mut move a:u32,
-            mut move b:Option<&'static str>,
-            mut move c:T,
-        }
+    path_assertion! {
+        fp!(0,::0),
+        FieldPathSet<(S_0, VariantName<S_0>),AliasedPaths>,
     }
 
-    fn returns_hi() -> impl Hi<&'static str> {
-        make_struct! {
-            a:0,
-            b:"hello".into(),
-            c:Default::default(),
+    path_assertion! {
+        fp!(0.1, ::0.1),
+        FieldPathSet<(NestedFieldPath<(S_0,S_1)>, VariantField<S_0,S_1>),AliasedPaths>,
+    }
+    path_assertion! {
+        fp!(::0.1, 0.1),
+        FieldPathSet<(VariantField<S_0,S_1>, NestedFieldPath<(S_0,S_1)>),AliasedPaths>,
+    }
+
+    {
+        type NFP_0_1 = NestedFieldPath<(S_0, S_1)>;
+        type NFP_0_1_2 = NestedFieldPath<(S_0, S_1, S_2)>;
+        type NFP_0_1_2_3 = NestedFieldPath<(S_0, S_1, S_2, S_3)>;
+        type VF_0_1_2 = NestedFieldPath<(VariantField<S_0, S_1>, S_2)>;
+
+        path_assertion! { fp!(::0.1.2, 0.1), FieldPathSet<(VF_0_1_2, NFP_0_1), AliasedPaths> }
+        path_assertion! { fp!(0.1, ::0.1.2), FieldPathSet<(NFP_0_1, VF_0_1_2), AliasedPaths> }
+        path_assertion! {
+            fp!(0.1.2, ::0.1.2),
+            FieldPathSet<(NFP_0_1_2, VF_0_1_2), AliasedPaths>
+        }
+        path_assertion! {
+            fp!(0.1.2.3, ::0.1.2),
+            FieldPathSet<(NFP_0_1_2_3, VF_0_1_2), AliasedPaths>
+        }
+    }
+    type VF_foo_bar = VariantField<S_foo, S_bar>;
+    type VF_foo_bar_baz = NestedFieldPath<(VariantField<S_foo, S_bar>, S_baz)>;
+
+    type NFP_foo_qux = NestedFieldPath<(S_foo, S_qux)>;
+    type NFP_foo_bar = NestedFieldPath<(S_foo, S_bar)>;
+    type NFP_foo_bar_baz = NestedFieldPath<(S_foo, S_bar, S_baz)>;
+    type NFP_foo_bar_baz_qux = NestedFieldPath<(S_foo, S_bar, S_baz, S_qux)>;
+    // pairs of single-field field paths
+    {
+        // FieldPathSet<_,UniquePaths> go here
+        path_assertion! {
+            fp!(foo.qux, ::foo.bar),
+            FieldPathSet<(NFP_foo_qux, VF_foo_bar), UniquePaths>,
+        }
+
+        // FieldPathSet<_,AliasedPaths> go here
+        path_assertion! {
+            fp!(foo, ::foo),
+            fp!(foo, ::"foo"),
+            fp!("foo", ::foo),
+            FieldPathSet<(S_foo, VariantName<S_foo>), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(::foo, foo),
+            fp!(::foo, "foo"),
+            fp!(::"foo", foo),
+            FieldPathSet<(VariantName<S_foo>, S_foo), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(::foo.bar, foo),
+            fp!(::foo.bar, "foo"),
+            fp!(::"foo".bar, foo),
+            FieldPathSet<(VF_foo_bar, S_foo), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(foo, ::foo.bar),
+            fp!(foo, ::"foo".bar),
+            fp!("foo", ::foo.bar),
+            FieldPathSet<(S_foo, VF_foo_bar), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(foo.bar, ::foo.bar),
+            FieldPathSet<(NFP_foo_bar, VF_foo_bar), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(::foo.bar, foo.bar),
+            FieldPathSet<(VF_foo_bar, NFP_foo_bar), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(::foo.bar.baz, foo.bar),
+            FieldPathSet<(VF_foo_bar_baz, NFP_foo_bar), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(foo.bar, ::foo.bar.baz),
+            FieldPathSet<(NFP_foo_bar, VF_foo_bar_baz), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(foo.bar.baz, ::foo.bar.baz),
+            FieldPathSet<(NFP_foo_bar_baz, VF_foo_bar_baz), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(foo.bar.baz.qux, ::foo.bar.baz),
+            FieldPathSet<(NFP_foo_bar_baz_qux, VF_foo_bar_baz), AliasedPaths>,
+        }
+    }
+    {
+        path_assertion! {
+            fp!(::foo, foo, ::foo.bar),
+            fp!(::foo, foo, ::"foo".bar),
+            fp!(::foo, "foo", ::foo.bar),
+            fp!(::"foo", foo, ::foo.bar),
+            FieldPathSet<(VariantName<S_foo>, S_foo, VF_foo_bar), AliasedPaths>,
+        }
+        path_assertion! {
+            fp!(::foo.bar, ::foo, foo),
+            FieldPathSet<(VF_foo_bar, VariantName<S_foo>, S_foo), AliasedPaths>,
+        }
+    }
+    {
+        type VF_Some_0 = VariantField<S_Some, S_0>;
+        type FP_a_Some_0 = NestedFieldPath<(S_a, VariantField<S_Some, S_0>)>;
+
+        path_assertion! {
+            fp!(::Some.0, ?),
+            FieldPathSet<(VF_Some_0, VF_Some_0), AliasedPaths>,
+        }
+
+        path_assertion! {
+            fp!(::Some.0, a?),
+            FieldPathSet<(VF_Some_0, FP_a_Some_0), UniquePaths>,
         }
     }
 
-    #[test]
-    fn make_struct_test() {
-        {
-            let hi = returns_hi();
-
-            // I had to write it like this due to a rustc bug.
-            // https://github.com/rust-lang/rust/issues/66057
-            assert_eq!(hi.field_::<FP!(a)>(TStr::NEW), &0);
-            assert_eq!(hi.field_::<FP!(b)>(TStr::NEW).unwrap(), "hello");
-            assert_eq!(hi.field_::<FP!(c)>(TStr::NEW), &"");
-        }
-
-        {
-            let hi: &dyn Hi<&'static str> = &returns_hi();
-            assert_eq!(hi.field_(fp!(a)), &0);
-            assert_eq!(hi.field_(fp!(b)).unwrap(), "hello");
-            assert_eq!(hi.field_(fp!(c)), &"");
-        }
+    path_assertion! {
+        fp!(0.1,::0.2),
+        FieldPathSet<(NestedFieldPath<(S_0,S_1)>, VariantField<S_0,S_2>),UniquePaths>,
     }
 }
 

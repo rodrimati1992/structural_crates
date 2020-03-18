@@ -42,10 +42,12 @@ impl FieldPaths {
     }
 
     pub(crate) fn contains_aliased_paths(paths: &[NestedFieldPath]) -> bool {
-        paths
-            .iter()
-            .enumerate()
-            .any(|(i, path)| paths[..i].iter().any(|p| p.is_prefix_of(path)))
+        paths.iter().enumerate().any(|(i, path)| {
+            paths[..i]
+                .iter()
+                .chain(&paths[i + 1..])
+                .any(|p| path.is_prefix_of(p))
+        })
     }
 
     pub(crate) fn from_iter<I>(mut paths: I) -> Self
@@ -188,11 +190,13 @@ impl Parse for FieldPaths {
 #[derive(Debug, PartialEq)]
 pub(crate) struct NestedFieldPath {
     list: Vec<FieldPathComponent>,
+    normalized: Vec<String>,
 }
 
 impl Parse for NestedFieldPath {
     fn parse(input: ParseStream) -> parse::Result<Self> {
         let mut list = Vec::<FieldPathComponent>::new();
+
         let mut is_first = true;
         while !is_field_path_terminator(input) {
             let (fpc, second) = FieldPathComponent::parse(input, IsFirst::new(is_first))?;
@@ -203,15 +207,22 @@ impl Parse for NestedFieldPath {
             is_first = false;
         }
 
-        Ok(NestedFieldPath { list })
+        Ok(Self::from_components(list))
     }
 }
 
 impl NestedFieldPath {
-    pub(crate) fn from_ident(ident: Ident) -> Self {
-        Self {
-            list: vec![FieldPathComponent::from_ident(ident)],
+    pub(crate) fn from_components(list: Vec<FieldPathComponent>) -> Self {
+        let mut normalized = Vec::new();
+
+        for component in &list {
+            component.write_normalized(&mut normalized);
         }
+
+        NestedFieldPath { list, normalized }
+    }
+    pub(crate) fn from_ident(ident: Ident) -> Self {
+        Self::from_components(vec![FieldPathComponent::from_ident(ident)])
     }
     pub(crate) fn write_str(&self, buff: &mut String) {
         for fpc in &self.list {
@@ -220,9 +231,12 @@ impl NestedFieldPath {
     }
 
     pub(crate) fn is_prefix_of(&self, other: &Self) -> bool {
-        let len = self.list.len();
+        let min_len = self.normalized.len().min(other.normalized.len());
 
-        len <= other.list.len() && Iterator::eq(self.list.iter(), &other.list[..len])
+        self.normalized
+            .iter()
+            .take(min_len)
+            .eq(other.normalized.iter().take(min_len))
     }
 
     pub(crate) fn to_token_stream(&self) -> TokenStream2 {
@@ -260,6 +274,21 @@ impl FieldPathComponent {
     pub(crate) fn from_ident(ident: Ident) -> Self {
         let x = IdentOrIndex::Ident(ident);
         FieldPathComponent::Ident(x)
+    }
+    fn write_normalized(&self, normalized: &mut Vec<String>) {
+        use self::FieldPathComponent as FPC;
+        match self {
+            FPC::Ident(ident) => {
+                normalized.push(ident.to_string());
+            }
+            FPC::VariantField { variant, field } => {
+                normalized.push(variant.to_string());
+                normalized.push(field.to_string());
+            }
+            FPC::VariantName { variant } => {
+                normalized.push(variant.to_string());
+            }
+        }
     }
     pub(crate) fn write_str(&self, buff: &mut String) {
         use self::FieldPathComponent as FPC;
