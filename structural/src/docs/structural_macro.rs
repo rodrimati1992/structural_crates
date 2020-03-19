@@ -58,6 +58,22 @@ Removes the docs for the generated traits,and impl of `Structural`.
 
 The documentation describes variants and fields that the accessor trait impls represent.
 
+### `#[struc(non_exhaustive)]`
+
+This is only usable on enums.
+
+Marks the enum as having non-exhaustive variants,
+meaning that:
+
+- You will not be able to exhaustively match on it with the `switch` macro
+
+- It will not implement the `VariantCount` trait.
+
+- It will not have a `*_ESI` trait generated for it.
+
+- Using the `#[struc(variant_count_alias)]` attribute will cause an error.
+
+
 ### `#[struc(variant_count_alias)]`
 
 This is only usable on enums.

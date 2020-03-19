@@ -478,3 +478,17 @@ mod without_variant_count_attr {
         let _: Enum_VC = ();
     }
 }
+
+mod nonexhaustive_enum {
+    #[non_exhaustive]
+    #[derive(Structural)]
+    pub enum NonExhaustiveEnum {
+        A,
+        B,
+    }
+
+    trait NonExhaustiveEnum_ESI {}
+    fn impls_trait_assertion(ne: NonExhaustiveEnum) -> impl NonExhaustiveEnum_SI {
+        ne
+    }
+}

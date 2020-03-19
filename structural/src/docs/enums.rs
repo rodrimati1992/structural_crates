@@ -21,23 +21,31 @@ with documentation describing all the accessor trait impls for the type.
 [IntoVariantField](../../field_traits/variant_field/trait.IntoVariantField.html
 ) for variant fields (accessed with `fp!(::VariantName.field)`).
 
-- IsVariant impls for every variant,
+- [`IsVariant`] impls for every variant,
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
+
+- [`VariantCount`] impl for the enum,with the amount of variants in it.<br>
+This isn't generated if the `#[struc(non_exhaustive)]` attribute was used on the enum.<br>
+(for some reason the built-in `#[non_exhaustive]` attribute can't be seen by derives)
 
 - Enums with the `#[struc(variant_count_alias)]` attribute
 have the `<DerivingType>_VC` type alias,
-a `TStr` with the amount of variants in the enum,
-which can be used in `VariantCount<Count= _ >` bounds.
+a [`TStr`] with the amount of variants in the enum,
+which can be used in [`VariantCount`]`<Count= _ >` bounds.
 
 - A `<DerivingType>_SI` trait,aliasing the traits implemented by the enum,
 this allows using other enums that have a similar structure
 (they can have more variants or more fields in the variants).
 If you match on a type bounded by this trait inside the `switch` macro,
-you'll be required to have a default branch (eg:`_=>{}`).
+you'll be required to have a default branch (eg:`_=>{}`).<br>
+This isn't generated if the `#[struc(no_trait)]` attribute was used on the enum.
 
 - A `<DerivingType>_ESI` trait,aliasing the traits implemented by the enum,
 also requiring that the variant name and count match exactly with `<DerivingType>`.
-This is useful for doing exhaustive matching inside the `switch` macro.
+This is useful for doing exhaustive matching inside the `switch` macro.<br>
+This isn't generated if either the `#[struc(no_trait)]` or `#[struc(non_exhaustive)]`
+attributes were used on the enum.<br>
+(for some reason the built-in `#[non_exhaustive]` attribute can't be seen by derives)
 
 # Things to keep in mind
 
@@ -91,12 +99,16 @@ Regarding what bounds are generated for the variant in the
 
 - A regular variant will alias the `*VariantField*` trait bounds for each variant field.
 
-- `#[struc(newtype)]` variants only get the `IsVariant<_>` bound(like every variant).
+- `#[struc(newtype)]` variants only get the [`IsVariant`] bound(like every variant).
 
 - `#[struc(newtype(bounds="Foo_VSI<'a,T,@variant>"))]` variants
 will get `Foo_VSI<'a,T,TS!(NameOfTheVariant)>` as the bound for the variant.<br>
 
-Every variant also gets a [`IsVariant<_>`](../../enums/trait.IsVariant.html) bound.
+Every variant also gets a [`IsVariant`] bound.
+
+[`IsVariant`]: ../../enums/trait.IsVariant.html
+[`VariantCount`]: ../../enums/trait.VariantCount.html
+[`TStr`]: ../../struct.TStr.html
 
 # Examples
 

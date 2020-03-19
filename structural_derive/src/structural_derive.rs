@@ -143,6 +143,7 @@ fn deriving_structural<'a>(
     let StructuralOptions {
         fields: config_fields,
         with_trait_alias,
+        non_exhaustive_attr,
         ..
     } = options;
 
@@ -239,11 +240,12 @@ fn deriving_structural<'a>(
 
         let exhaustive_ident = Ident::new(&format!("{}_ESI", tyname), Span::call_site());
 
-        let enum_exhaustiveness = match struct_or_enum {
-            StructOrEnum::Struct => Exhaustiveness::Nonexhaustive,
-            StructOrEnum::Enum => Exhaustiveness::AndExhaustive {
+        let enum_exhaustiveness = match (struct_or_enum, non_exhaustive_attr) {
+            (StructOrEnum::Struct, _) => Exhaustiveness::Nonexhaustive,
+            (StructOrEnum::Enum, false) => Exhaustiveness::AndExhaustive {
                 name: &exhaustive_ident,
             },
+            (StructOrEnum::Enum, true) => Exhaustiveness::Nonexhaustive,
         };
 
         Ident::new(&format!("{}_SI", tyname), Span::call_site());
@@ -411,12 +413,18 @@ fn deriving_structural<'a>(
                     quote!()
                 };
 
+                let variant_count_param = if *non_exhaustive_attr {
+                    quote!(variant_count=#variant_count,)
+                } else {
+                    quote!()
+                };
+
                 (
                     quote!(_private_impl_getters_for_derive_enum),
                     variant_count_tokens,
                     quote! {
                         enum=#enum_
-                        variant_count=#variant_count,
+                        #variant_count_param
                         #((#variants))*
                     },
                 )

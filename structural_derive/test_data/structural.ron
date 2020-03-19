@@ -218,7 +218,43 @@
           error_count: 0,
         ),
       ],
-    )
+    ),
+    (
+      name:"no_docs",
+      code:r##"
+        #[derive(Structural)]
+        #[struc(#A)]
+        pub enum NonExhaustiveEnum {
+            A,
+            B,
+        }
+      "##,
+      subcase: [
+        (
+          replacements: { "#A":"" },
+          find_all:[
+            regex("pub *trait *NonExhaustiveEnum_ESI"),
+            regex("pub *trait *NonExhaustiveEnum_SI"),
+          ],
+          error_count: 0,
+        ),
+        (
+          replacements: { "#A":"non_exhaustive" },
+          find_all:[
+            not(str("NonExhaustiveEnum_ESI")),
+            regex("pub *trait *NonExhaustiveEnum_SI"),
+          ],
+          error_count: 0,
+        ),
+        (
+          replacements: { "#A":"non_exhaustive,variant_count_alias" },
+          find_all:[
+            regex("attribute.*on.*non_exhaustive"),
+          ],
+          error_count: 1,
+        ),
+      ],
+    ),
     
   ]
 )

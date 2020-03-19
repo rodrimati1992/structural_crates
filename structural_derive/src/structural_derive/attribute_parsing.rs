@@ -37,6 +37,7 @@ pub(crate) struct StructuralOptions<'a> {
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
     pub(crate) generate_docs: bool,
+    pub(crate) non_exhaustive_attr: bool,
     pub(crate) delegate_to: Option<DelegateTo<'a>>,
 
     _marker: PhantomData<&'a ()>,
@@ -52,10 +53,20 @@ impl<'a> StructuralOptions<'a> {
             debug_print,
             with_trait_alias,
             generate_docs,
+            non_exhaustive_attr,
             delegate_to,
             errors: _,
             _marker,
         } = this;
+
+        let make_variant_count_alias = match (make_variant_count_alias, non_exhaustive_attr) {
+            (Some(span), true) => return_syn_err!(
+                span,
+                "Cannot use the `#[struc(variant_count_alias)]` attribute on a \
+                     `#[non_exhaustive]` enum."
+            ),
+            (x, _) => x.is_some(),
+        };
 
         Ok(Self {
             variants,
@@ -65,6 +76,7 @@ impl<'a> StructuralOptions<'a> {
             debug_print,
             with_trait_alias,
             generate_docs,
+            non_exhaustive_attr,
             delegate_to,
             _marker,
         })
@@ -107,12 +119,16 @@ pub(crate) struct FieldConfig {
 struct StructuralAttrs<'a> {
     variants: Vec<VariantConfig>,
     fields: FieldMap<FieldConfig>,
-    make_variant_count_alias: bool,
+    make_variant_count_alias: Option<Span>,
     bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
     debug_print: bool,
     with_trait_alias: bool,
     generate_docs: bool,
+
+    /// Whether the built-in `#[non_exhaustive]` attribute was used.
+    non_exhaustive_attr: bool,
+
     delegate_to: Option<DelegateTo<'a>>,
 
     errors: LinearResult<()>,
@@ -212,7 +228,13 @@ fn parse_attr_list<'a>(
             parse_sabi_attr(this, pctx, attr).combine_into_err(&mut this.errors);
             Ok(())
         })?;
+    // Hopefully this will work some day.
+    } else if list.path.is_ident("non_exhaustive") {
+        this.non_exhaustive_attr = true;
+    } else {
+        println!("Tokens:\n{}\n", list.to_token_stream());
     }
+
     Ok(())
 }
 
@@ -337,6 +359,8 @@ fn parse_sabi_attr<'a>(
                 this.with_trait_alias = false;
             } else if path.is_ident("no_docs") {
                 this.generate_docs = false;
+            } else if path.is_ident("non_exhaustive") {
+                this.non_exhaustive_attr = true;
             } else if path.is_ident("public") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;
@@ -348,7 +372,7 @@ fn parse_sabi_attr<'a>(
                         "Can only use `#[struc(variant_count_alias)]` on enums"
                     }
                 }
-                this.make_variant_count_alias = true;
+                this.make_variant_count_alias = Some(path.span());
             } else if path.is_ident("not_public") || path.is_ident("private") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = false;

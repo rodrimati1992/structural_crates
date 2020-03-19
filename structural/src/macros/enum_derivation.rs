@@ -493,7 +493,7 @@ macro_rules! _private_impl_getters_for_derive_enum{
         where $where_preds:tt
         {
             enum=$enum_:ident
-            variant_count=$variant_count:ty,
+            $(variant_count=$variant_count:ty,)?
             $((
                 $variant:ident,
                 $variant_tstr:ty,
@@ -540,13 +540,15 @@ macro_rules! _private_impl_getters_for_derive_enum{
             }
         )*
 
-        $crate::_private_impl_getters_for_derive_enum!{
-            @inner
-            impl $typarams $self_
-            where $where_preds
+        $(
+            $crate::_private_impl_getters_for_derive_enum!{
+                @inner
+                impl $typarams $self_
+                where $where_preds
 
-            variant_count=$variant_count,
-        }
+                variant_count=$variant_count,
+            }
+        )?
     };
     (@inner
         impl[$($typarams:tt)*] $self_:ty

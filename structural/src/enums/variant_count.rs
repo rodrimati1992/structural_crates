@@ -10,8 +10,8 @@ use std_::marker::PhantomData;
 /// with the amount of enum variants written in decimal.
 /// For example:`TS!(9)` would be used for an enum with 9 variants.
 ///
-/// Specifying fewer variants than the enum actually has may result in undefined behavior
-/// when the enum is matched in the `switch` macro.
+/// Implementors who specify fewer variants than the enum actually has
+/// may result in undefined behavior when the enum is matched in the `switch` macro.
 ///
 /// # Example
 ///
