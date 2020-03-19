@@ -6,27 +6,6 @@ use std_::marker::PhantomData;
 
 /////////////////////////////////////////////////////////
 
-mod opsealed {
-    pub trait Sealed {}
-}
-
-impl<T> self::opsealed::Sealed for Option<T> {}
-
-/// Gets the type parameter `T` out of an `Option<T>`
-pub trait OptionParam: self::opsealed::Sealed {
-    /// The `T` of an `Option<T>`
-    type Param;
-}
-
-/// Gets the `T` out of an `Option<T>`
-pub type OptionParamOut<This> = <This as OptionParam>::Param;
-
-impl<T> OptionParam for Option<T> {
-    type Param = T;
-}
-
-/////////////////////////////////////////////////////////
-
 /// Defined this function just in case that `unreachable_unchecked`
 /// doesn't optimize as expected.
 #[inline(always)]

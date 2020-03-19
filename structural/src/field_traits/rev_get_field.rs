@@ -67,10 +67,6 @@ mod nested_field_path;
 /// ```
 pub type RevGetFieldType<FieldPath, This> = <FieldPath as RevFieldType<This>>::Ty;
 
-/// Queries the `T` type in the `Result<T,_>` returned by `RevIntoFieldImpl::rev_box_into_field`.
-pub type RevIntoBoxedFieldType<'a, FieldPath, This> =
-    <FieldPath as RevIntoFieldImpl<'a, This>>::BoxedTy;
-
 /// Queries the error type returned by `Rev*Field` methods.
 pub type RevGetFieldErr<'a, FieldPath, This> = <FieldPath as RevGetFieldImpl<'a, This>>::Err;
 
@@ -306,7 +302,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,fp};
 ///
-/// use std::mem;
+/// use core::mem;
 ///
 /// let mut tup=(3,5,8,13);
 ///
@@ -354,8 +350,6 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 ///     P: RevIntoFieldImpl<'a,T>,
 ///     P::Ty: Sized,
 /// {
-///     type BoxedTy = Newtype<P::BoxedTy>;
-///
 ///     fn rev_into_field(self, this: T) -> Result<Self::Ty, Self::Err>
 ///     where
 ///         Self::Ty: Sized
@@ -363,29 +357,14 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 ///         self.0.rev_into_field(this)
 ///             .map(Newtype)
 ///     }
-///     
-///     fn rev_box_into_field(self, this: Box<T>) -> Result<Self::BoxedTy, Self::Err>{
-///         self.0.rev_box_into_field(this)
-///             .map(Newtype)
-///     }
 /// }
 /// ```
 pub trait RevIntoFieldImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
-    /// The type returned by `rev_box_into_field`,often the same as `Self::Tỳ`.
-    ///
-    /// The only type from `structural` where `Self::Ty` isn't the same as `Self::BoxedTy`
-    /// is `VariantName`.
-    type BoxedTy;
-
     /// Accesses the field that `self` represents inside of `this`,by value.
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err>
     where
         This: Sized,
         Self::Ty: Sized;
-
-    /// Accesses the field that `self` represents inside of `this`,by value.
-    #[cfg(feature = "alloc")]
-    fn rev_box_into_field(self, this: Box<This>) -> Result<Self::BoxedTy, Self::Err>;
 }
 
 /////////////////////////////////////////////////////////////////////////////

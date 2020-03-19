@@ -100,7 +100,6 @@ pub enum EnumOptA {
 }
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
-#[struc(access = "mut")]
 pub enum EnumOptFlying {
     Limbs {
         legs: Option<usize>,

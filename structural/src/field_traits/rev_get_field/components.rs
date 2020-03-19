@@ -101,20 +101,12 @@ where
     This: ?Sized + 'a + IntoField<Self>,
     This::Ty: 'a,
 {
-    type BoxedTy = This::Ty;
-
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<This::Ty, InfallibleAccess>
     where
         This: Sized,
     {
         Ok(this.into_field_(self))
-    }
-
-    #[cfg(feature = "alloc")]
-    #[inline(always)]
-    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, InfallibleAccess> {
-        Ok(this.box_into_field_(self))
     }
 }
 
@@ -211,20 +203,12 @@ where
     This: ?Sized + 'a + IntoVariantField<_V, _F>,
     This::Ty: 'a,
 {
-    type BoxedTy = This::Ty;
-
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<This::Ty, FailedAccess>
     where
         This: Sized,
     {
         ok_or_of!(this.into_vfield_(self.variant, self.field))
-    }
-
-    #[cfg(feature = "alloc")]
-    #[inline(always)]
-    fn rev_box_into_field(self, this: crate::pmr::Box<This>) -> Result<This::Ty, FailedAccess> {
-        ok_or_of!(this.box_into_vfield_(self.variant, self.field))
     }
 }
 
@@ -283,26 +267,11 @@ where
     This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
-    #[cfg(feature = "alloc")]
-    type BoxedTy = VariantProxy<crate::pmr::Box<This>, TStr<S>>;
-
-    #[cfg(not(feature = "alloc"))]
-    type BoxedTy = VariantProxy<This, TStr<S>>;
-
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<VariantProxy<This, TStr<S>>, FailedAccess>
     where
         This: Sized,
     {
         map_of!(this.into_variant(self.name))
-    }
-
-    #[cfg(feature = "alloc")]
-    #[inline(always)]
-    fn rev_box_into_field(
-        self,
-        this: crate::pmr::Box<This>,
-    ) -> Result<VariantProxy<crate::pmr::Box<This>, TStr<S>>, FailedAccess> {
-        map_of!(this.box_into_variant(self.name))
     }
 }

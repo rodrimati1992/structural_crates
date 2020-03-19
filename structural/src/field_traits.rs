@@ -150,7 +150,7 @@ pub use self::{
     rev_get_field::{
         OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
         RevGetField, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
-        RevIntoBoxedFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
     variant_field::{
         GetVFieldRawMutFn, GetVariantField, GetVariantFieldMut, GetVariantFieldType,
@@ -360,7 +360,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 /// Implementors ought not mutate fields inside their accessor trait impls,
 /// or the accessor trait impls of other fields.
 ///
-/// It is recommended that you use the `z_unsafe_impl_get_field_raw_mut_method` macro
+/// It is recommended that you use the `z_unsafe_impl_get_field_raw_mut` macro
 /// if you only borrow a field of the type.
 ///
 /// ### Implementing `get_field_raw_mut`
@@ -438,7 +438,7 @@ pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
 ///     fn get_field_mut_(&mut self,_:FP!(value))->&mut Self::Ty{
 ///         &mut self.value
 ///     }
-///     structural::z_unsafe_impl_get_field_raw_mut_method!{
+///     structural::z_unsafe_impl_get_field_raw_mut!{
 ///         Self,
 ///         field_tstr=value,
 ///         name_generic=FP!(value),
@@ -502,6 +502,18 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// Mutating fields is only advisable if those fields don't have field accessor impls.
 ///
+/// <span id="features-section"></span>
+/// # Features
+///
+/// If you disable the default feature,and don't enable the "alloc" feature,
+/// you must implement the [`box_into_field_`] method using the
+/// [`z_impl_box_into_field_method`] macro,
+/// this trait's [manual implementation example](#manual-impl-example)
+/// shows how you can use the macro.
+///
+/// [`box_into_field_`]: #tymethod.box_into_field_
+/// [`z_impl_box_into_field_method`]: ../macro.z_impl_box_into_field_method.html
+///
 /// # Usage as Bound Example
 ///
 /// ```
@@ -529,6 +541,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// ```
 ///
+/// <span id="manual-impl-example"></span>
 /// # Manual Implementation Example
 ///
 /// While this trait is intended to be implemented using the `Structural` derive macro,
@@ -559,6 +572,9 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///         self.value
 ///     }
 ///
+///     // You must use this, even in crates that don't enable the "alloc" feature
+///     // (the "alloc" feature is enabled by default),
+///     // since other crates that depend on structural might enable the feature.
 ///     structural::z_impl_box_into_field_method!{field_tstr=FP!(value)}
 /// }
 ///
@@ -571,6 +587,11 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
         Self: Sized;
 
     /// Converts a boxed self into the field.
+    ///
+    /// # Features
+    ///
+    /// This method is defined conditional on the "alloc" feature,
+    /// read [here](#features-section) for more details.
     #[cfg(feature = "alloc")]
     fn box_into_field_(self: crate::pmr::Box<Self>, field_name: FieldName) -> Self::Ty;
 }
@@ -582,8 +603,11 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 ///
 /// # Example
 ///
+/// This particular example only works with the "alloc" feature enabled
+/// (it's enabled by default),because it uses `Box`.
 ///
-/// ```
+#[cfg_attr(not(feature = "alloc"), doc = "```ignore")]
+#[cfg_attr(feature = "alloc", doc = "```rust")]
 /// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
@@ -601,8 +625,7 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 ///
 ///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(false), &mut "oh boy") );
 ///
-///     // You need to use `box_into_field` to unwrap a `Box<dyn Trait>`.
-///     assert_eq!( this.box_into_field(fp!(bar)), "oh boy" );
+///     assert_eq!( this.into_field(fp!(bar)), "oh boy" );
 /// }
 ///
 /// example(Box::new(Struct2{ foo:Some(false), bar: "oh boy" }));

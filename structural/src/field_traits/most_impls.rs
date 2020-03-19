@@ -148,6 +148,7 @@ fn delegated_pin() {
 #[cfg(feature = "alloc")]
 mod alloc_impls {
     use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
+    use crate::{IntoField, IntoVariantField, TStr};
 
     macro_rules! impl_shared_ptr_accessors {
         ( $this:ident ) => {
@@ -185,10 +186,31 @@ mod alloc_impls {
         as_delegating_raw{
             *(this as *mut Box<T> as *mut *mut T)
         }
+    }
 
+    impl<T, P> IntoField<P> for Box<T>
+    where
+        T: ?Sized + IntoField<P>,
+    {
+        #[inline(always)]
+        fn into_field_(self, path: P) -> Self::Ty {
+            <T as IntoField<P>>::box_into_field_(self, path)
+        }
+        crate::z_impl_box_into_field_method! {field_tstr=P}
+    }
 
-        IntoField{
-            *this
+    unsafe impl<T, V, F, Ty> IntoVariantField<TStr<V>, F> for Box<T>
+    where
+        T: ?Sized + IntoVariantField<TStr<V>, F, Ty = Ty>,
+    {
+        #[inline(always)]
+        fn into_vfield_(self, vname: TStr<V>, fname: F) -> Option<Ty> {
+            <T as IntoVariantField<TStr<V>, F>>::box_into_vfield_(self, vname, fname)
+        }
+        crate::z_impl_box_into_variant_field_method! {
+            variant_tstr= TStr<V>,
+            field_tstr=F,
+            field_type=Ty,
         }
     }
 }

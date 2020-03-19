@@ -72,7 +72,7 @@ macro_rules! _private_impl_getter{
                 &mut self.$field_name
             }
 
-            $crate::z_unsafe_impl_get_field_raw_mut_method!{
+            $crate::z_unsafe_impl_get_field_raw_mut!{
                 Self,
                 field_tstr=$field_name,
                 name_generic=$name_param,
@@ -170,7 +170,7 @@ macro_rules! default_if {
 /// [manual implementation example of the GetFieldMut trait
 /// ](./field_traits/trait.GetFieldMut.html#manual-implementation-example)
 #[macro_export]
-macro_rules! z_unsafe_impl_get_field_raw_mut_method {
+macro_rules! z_unsafe_impl_get_field_raw_mut {
     (
         $Self:ident,
         field_tstr=$field_name:tt,
@@ -268,45 +268,54 @@ macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
     };
 }
 
-/// For use in manual implementations of the IntoField trait.
+/// For use in manual implementations of the [`IntoField`] trait.
 ///
 /// Implements the [`IntoField::box_into_field_`] method
-/// by delegatign to the [`IntoField::into_field_`] method,
-/// automatically handling conditional `#![no_std]` support in `structural`.
+/// by delegating to the [`IntoField::into_field_`] method.
+///
+/// # Features
+///
+/// If you disable the default feature,and don't enable the "alloc" feature,
+/// you must implement the [`IntoField::box_into_field_`] method using this macro,
+/// since any other crate that enables structural's "alloc" feature
+/// would then require every impl of [`IntoField`] to define the [`box_into_field_`] method.
 ///
 /// # Example
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoField
+/// [implementation example for IntoField
 /// ](./field_traits/trait.IntoField.html#manual-implementation-example)
 ///
+/// [`IntoField`]: ./field_traits/trait.IntoField.html
 /// [`IntoField::box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
+/// [`box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
 /// [`IntoField::into_field_`]: ./field_traits/trait.IntoField.html#tymethod.into_field_
 #[macro_export]
-#[cfg(not(feature = "alloc"))]
 macro_rules! z_impl_box_into_field_method {
+    (
+        field_tstr= $field_name:ty
+        $( , field_type= $field_ty:ty )? $(,)*
+    ) => {
+        $crate::z_impl_box_into_field_method_inner!{
+            field_tstr= $field_name
+            $( , field_type= $field_ty )?
+        }
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "alloc"))]
+macro_rules! z_impl_box_into_field_method_inner {
     ($($anything:tt)*) => {};
 }
 
-/// For use in manual implementations of the IntoField trait.
-///
-/// Implements the [`IntoField::box_into_field_`] method
-/// by delegatign to the [`IntoField::into_field_`] method,
-/// automatically handling conditional `#![no_std]` support in `structural`.
-///
-/// # Example
-///
-/// For an example of using this macro look at
-/// [the documentation for IntoField
-/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
-///
-/// [`IntoField::box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
-/// [`IntoField::into_field_`]: ./field_traits/trait.IntoField.html#tymethod.into_field_
 #[macro_export]
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
-macro_rules! z_impl_box_into_field_method {
+macro_rules! z_impl_box_into_field_method_inner {
     (field_tstr= $field_name:ty) => {
-        $crate::z_impl_box_into_field_method! {
+        $crate::z_impl_box_into_field_method_inner! {
             field_tstr= $field_name,
             field_type= $crate::GetFieldType<Self,$field_name>,
         }
@@ -319,31 +328,58 @@ macro_rules! z_impl_box_into_field_method {
     };
 }
 
-#[macro_export]
-#[cfg(not(feature = "alloc"))]
-macro_rules! z_impl_box_into_variant_field_method {
-    ($($anything:tt)*) => {};
-}
-
-/// For use in manual implementations of the IntoVariantField trait.
+/// For use in manual implementations of the [`IntoVariantField`] trait.
 ///
 /// Implements the [`IntoVariantField::box_into_vfield_`] method
-/// by delegatign to the [`IntoVariantField::into_vfield_`] method,
-/// automatically handling conditional `#![no_std]` support in `structural`.
+/// by delegating to the [`IntoVariantField::into_vfield_`] method.
+///
+/// # Features
+///
+/// If you disable the default feature,and don't enable the "alloc" feature,
+/// you must implement the [`IntoVariantField::box_into_vfield_`] method using this macro,
+/// since if other crates enable the "alloc" feature,
+/// every `IntoVariantField` impl will be required to define the `box_ìnto_vfield_` method,
 ///
 /// # Example
 ///
 /// For an example of using this macro look at
-/// [the documentation for IntoVariantField
+/// [the implementation example for IntoVariantField
 /// ](./field_traits/variant_field/trait.IntoVariantField.html#manual-impl-example)
 ///
-/// [`IntoField::box_into_vfield_`]:
+/// [`IntoVariantField`]:
+/// ./field_traits/variant_field/trait.IntoVariantField.html
+///
+/// [`IntoVariantField::box_into_vfield_`]:
 /// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.box_into_vfield_
-/// [`IntoField::into_vfield_`]:
+///
+/// [`IntoVariantField::into_vfield_`]:
 /// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.into_vfield_
 #[macro_export]
-#[cfg(feature = "alloc")]
 macro_rules! z_impl_box_into_variant_field_method {
+    (
+        variant_tstr= $variant_name:ty,
+        field_tstr= $field_name:ty,
+        field_type=$field_ty:ty $(,)*
+    ) => {
+        $crate::z_impl_box_into_variant_field_method_inner! {
+            variant_tstr= $variant_name,
+            field_tstr= $field_name,
+            field_type=$field_ty
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "alloc"))]
+macro_rules! z_impl_box_into_variant_field_method_inner {
+    ($($anything:tt)*) => {};
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "alloc")]
+macro_rules! z_impl_box_into_variant_field_method_inner {
     (
         variant_tstr= $variant_name:ty,
         field_tstr= $field_name:ty,
@@ -353,7 +389,7 @@ macro_rules! z_impl_box_into_variant_field_method {
             self: $crate::alloc::boxed::Box<Self>,
             vname: $variant_name,
             fname: $field_name,
-        ) -> Option<Self::Ty> {
+        ) -> Option<$field_ty> {
             <Self as $crate::IntoVariantField<$variant_name, $field_name>>::into_vfield_(
                 *self, vname, fname,
             )

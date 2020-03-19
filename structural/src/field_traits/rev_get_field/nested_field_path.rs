@@ -95,7 +95,7 @@ macro_rules! impl_get_nested_field_inner {
         }
 
 
-        impl<'a,$($fname_a, $fty_a:'a, $ferr_a,)* This,BoxedTy0:'a,CombErr>
+        impl<'a,$($fname_a, $fty_a:'a, $ferr_a,)* This ,CombErr>
             RevIntoFieldImpl<'a,This>
         for NestedFieldPath<($($fname_a,)*)>
         where
@@ -103,14 +103,7 @@ macro_rules! impl_get_nested_field_inner {
             CombErr:IsFieldErr,
 
             This:?Sized+'a,
-            $fname0: RevIntoFieldImpl<'a, This, Ty=$fty0, BoxedTy=BoxedTy0, Err=$ferr0>,
-
-            $fname1: RevIntoFieldImpl<
-                'a,
-                BoxedTy0,
-                Ty= RevGetFieldType<$fname1,$fty0>,
-                Err= RevGetFieldErr<'a,$fname1,$fty0>,
-            >,
+            $fname0: RevIntoFieldImpl< 'a, This, Ty=$fty0, Err=$ferr0>,
 
             $(
                 $fname_s: RevIntoFieldImpl<'a, $fty_m, Ty=$fty_s, Err=$ferr_s>,
@@ -118,8 +111,6 @@ macro_rules! impl_get_nested_field_inner {
 
             $( $ferr_a:IntoFieldErr< CombErr >, )*
         {
-            type BoxedTy=$fty_l;
-
             #[inline(always)]
             fn rev_into_field(self,field:This)->Result<$fty_l,CombErr>
             where
@@ -128,24 +119,6 @@ macro_rules! impl_get_nested_field_inner {
                 let ($($fname_a,)*)=self.list;
                 $(
                     let field=try_fe!( $fname_a.rev_into_field(field) );
-                )*
-                Ok(field)
-            }
-
-            #[cfg(feature="alloc")]
-            #[inline(always)]
-            fn rev_box_into_field(
-                self,
-                field:crate::pmr::Box<This>,
-            )->Result<$fty_l,CombErr>{
-                let ($($fname_a,)*)=self.list;
-                let field=try_fe!(
-                    $fname0.rev_box_into_field(field)
-                );
-                $(
-                    let field=try_fe!(
-                        $fname_s.rev_into_field(field)
-                    );
                 )*
                 Ok(field)
             }
@@ -159,7 +132,6 @@ macro_rules! impl_get_nested_field_inner {
     ) => {
         impl_get_nested_field_inner!{
             inner;
-
             receivers( This $fty0 $($fty)* )
             first ($fname0 $ferr0 $fty0)
             second (
@@ -273,15 +245,8 @@ impl<'a, This> RevIntoFieldImpl<'a, This> for NestedFieldPath<()>
 where
     This: Sized + 'a,
 {
-    type BoxedTy = This;
-
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err> {
         Ok(this)
-    }
-
-    #[cfg(feature = "alloc")]
-    fn rev_box_into_field(self, this: Box<This>) -> Result<Self::BoxedTy, Self::Err> {
-        Ok(*this)
     }
 }
 
@@ -328,18 +293,11 @@ where
     This: ?Sized + 'a,
     F0: RevIntoFieldImpl<'a, This>,
 {
-    type BoxedTy = F0::BoxedTy;
-
     fn rev_into_field(self, this: This) -> Result<F0::Ty, F0::Err>
     where
         This: Sized,
         F0::Ty: Sized,
     {
         self.list.0.rev_into_field(this)
-    }
-
-    #[cfg(feature = "alloc")]
-    fn rev_box_into_field(self, this: Box<This>) -> Result<F0::BoxedTy, F0::Err> {
-        self.list.0.rev_box_into_field(this)
     }
 }

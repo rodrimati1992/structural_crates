@@ -28,6 +28,8 @@ alloc=["core_extensions/alloc"]
 
 # An internal cargo feature,used by tests
 testing=["structural_derive/test_asserts"]
+# An internal cargo feature,used as a workaround for `cargo deadlinks`
+hide_reexports=[]
 
 specialization=[]
 nightly_specialization=["specialization"]

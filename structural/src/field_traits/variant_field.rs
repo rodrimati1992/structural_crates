@@ -498,14 +498,27 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// `IsVariant<V>` and `IntoVariantField<V, F>` must agree on what variant
 /// the enum currently is.
 /// If `IsVariant` returns true for a particular `V` variant,
-/// then `into_vfield_`,`into_vfield_unchecked`,`box_into_vfield_`,
-/// and `box_into_vfield_unchecked_` must return `Some(_)`.
+/// then `into_vfield_`,and `box_into_vfield_` must return `Some(_)`.
 ///
 /// If overriden, the `*_unchecked` methods must diverge
 /// (abort, panic, or call the equivalent of `std::hint::unreachable_unchecked`)
 /// if the enum is not currently the `V` variant,
 /// and return the same field as the checked equivalents if the enum
 /// is currently the `V` variant.
+///
+/// <span id="features-section"></span>
+/// # Features
+///
+/// If you disable the default feature,and don't enable the "alloc" feature,
+/// you must implement the [`box_into_vfield_`] method using the
+/// [`z_impl_box_into_variant_field_method`] macro,
+/// this trait's [manual implementation example](#manual-impl-example)
+/// shows how you can use the macro.
+///
+/// [`box_into_vfield_`]: #tymethod.box_into_vfield_
+///
+/// [`z_impl_box_into_variant_field_method`]:
+/// ../../macro.z_impl_box_into_variant_field_method.html
 ///
 /// # Example
 ///
@@ -610,6 +623,9 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///         }
 ///     }
 ///     
+///     // You must use this, even in crates that don't enable the "alloc" feature
+///     // (the "alloc" feature is enabled by default),
+///     // since other crates that depend on structural might enable the feature.
 ///     structural::z_impl_box_into_variant_field_method!{
 ///         variant_tstr= TS!(Bar),
 ///         field_tstr= TS!(0),
@@ -707,6 +723,11 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
     /// # Safety
     ///
     /// The enum must be the `V` variant.
+    ///
+    /// # Features
+    ///
+    /// This method is defined conditional on the "alloc" feature,
+    /// read [here](#features-section) for more details.
     #[cfg(feature = "alloc")]
     #[inline(always)]
     unsafe fn box_into_vfield_unchecked(

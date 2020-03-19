@@ -1,6 +1,8 @@
-use crate::for_examples::{EnumOptFlying, EnumOptFlying_SI};
 use crate::{
-    field_path_aliases, structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
+    field_path_aliases,
+    field_traits::Array3,
+    for_examples::{EnumOptFlying, EnumOptFlying_SI},
+    structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
 };
 
 use std_::{fmt::Debug, marker::PhantomData, mem};
@@ -19,6 +21,14 @@ structural_alias! {
         mut 1:T,
         mut 2:T,
     }
+
+    trait EnumOptFlying_Mut_SI {
+        mut Limbs {
+            legs: Option<usize>,
+            hands: Option<usize>,
+            noodles: usize,
+        },
+    }
 }
 
 fn struct_testing<T>(mut this: T)
@@ -32,9 +42,27 @@ where
     assert_eq!(c, &mut 2);
 }
 
+fn struct_val_testing<T>(mut this: T)
+where
+    T: Array3<u32> + Clone,
+{
+    assert_eq!(this.clone().into_field(fp!(0)), 2);
+    assert_eq!(this.clone().into_field(fp!(1)), 3);
+    assert_eq!(this.clone().into_field(fp!(2)), 5);
+
+    #[cfg(feature = "alloc")]
+    {
+        use crate::reexports::Box;
+        let erase = |v: &T| Box::new(v.clone()) as Box<dyn Array3<u32>>;
+        assert_eq!(erase(&this).into_field(fp!(0)), 2);
+        assert_eq!(erase(&this).into_field(fp!(1)), 3);
+        assert_eq!(erase(&this).into_field(fp!(2)), 5);
+    }
+}
+
 fn enum_testing<T>(mut this: T)
 where
-    T: EnumOptFlying_SI,
+    T: EnumOptFlying_Mut_SI,
 {
     let (a, b, c) = this.fields_mut(fp!(::Limbs=>legs,hands,noodles)).unwrap();
     assert_eq!(a, &mut Some(3));
@@ -48,9 +76,27 @@ where
     assert_eq!(c, &mut 28);
 }
 
+fn enum_val_testing<T>(mut this: T)
+where
+    T: EnumOptFlying_SI + Clone,
+{
+    assert_eq!(this.clone().into_field(fp!(::Limbs.legs?)), Some(3));
+    assert_eq!(this.clone().into_field(fp!(::Limbs.hands?)), Some(5));
+    assert_eq!(this.clone().into_field(fp!(::Limbs.noodles)), Some(8));
+
+    #[cfg(feature = "alloc")]
+    {
+        use crate::reexports::Box;
+        let erase = |v: &T| Box::new(v.clone()) as Box<dyn EnumOptFlying_SI>;
+        assert_eq!(erase(&this).into_field(fp!(::Limbs.legs?)), Some(3));
+        assert_eq!(erase(&this).into_field(fp!(::Limbs.hands?)), Some(5));
+        assert_eq!(erase(&this).into_field(fp!(::Limbs.noodles)), Some(8));
+    }
+}
+
 //////////////////////////////////////////////////
 
-#[derive(Structural)]
+#[derive(Structural, Copy, Clone)]
 #[repr(transparent)]
 struct SizedFoo<T> {
     #[struc(delegate_to)]
@@ -59,9 +105,11 @@ struct SizedFoo<T> {
 
 #[test]
 fn delegate_sized() {
-    struct_testing(SizedFoo {
+    let struct_ = SizedFoo {
         value: [2, 3, 5, 8, 13, 21, 34],
-    });
+    };
+    struct_testing(struct_);
+    struct_val_testing(struct_);
 
     let mut value = EnumOptFlying::Limbs {
         legs: Some(3),
@@ -69,6 +117,7 @@ fn delegate_sized() {
         noodles: 8,
     };
     enum_testing(SizedFoo { value });
+    enum_val_testing(SizedFoo { value });
     enum_testing(SizedFoo { value: &mut value });
 }
 

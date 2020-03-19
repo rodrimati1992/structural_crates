@@ -7,6 +7,7 @@ use crate::field_path::TStr;
 #[allow(unused_imports)]
 use crate::std_::marker::PhantomData;
 
+/// This type must not be used by name outside of `structural` macros.
 // `TStr` takes this as a type parameter so that
 // this library can start using const generics in the future by replacing the
 // `T:?Sized` parameter with `const STR:&'static str`.

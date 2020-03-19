@@ -32,6 +32,20 @@ The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
 this is useful for exhaustive pattern matching (in the [switch macro](./macro.switch.html)).
 
+# Conditional methods
+
+### `*box_*` methods
+
+Every `*Into*Field*` trait has a `*box_*` method that takes a `Box<_> parameter
+which only exists when the "alloc" feature is enabled (it is enabled by default).
+
+If you don't enable the "alloc" feature yourself (it is enabled by default),
+you must implement those methods using the macros indicated in the `Features`
+section of the documentation for each trait
+
+For an example of how to use those macros,
+you can look at the examples in the docs for each of the `*Into*Field*` traits.
+
 # Examples
 
 
@@ -596,8 +610,8 @@ pub extern crate std;
 #[doc(hidden)]
 pub extern crate core as std_;
 
-#[doc(hidden)]
 #[cfg(all(feature = "alloc"))]
+#[cfg_attr(feature = "hide_reexports", doc(hidden))]
 pub extern crate alloc;
 
 extern crate self as structural;
@@ -647,13 +661,20 @@ pub use crate::{
     structural_trait::Structural,
 };
 
-/// Reexports from the `core_extensions` crate.
+/// Reexports from other crates.
+///
+/// This reexports from `core_extensions` unconditionally,
+/// and `alloc` conditionally.
 pub mod reexports {
     #[doc(no_inline)]
     pub use core_extensions::{
         collection_traits::{Cloned, IntoArray},
         const_default, ConstDefault,
     };
+
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(feature = "hide_reexports", doc(hidden))]
+    pub use crate::alloc::boxed::Box;
 }
 
 // pmr(proc macro reexports):

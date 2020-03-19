@@ -182,11 +182,19 @@ where
     let _ = this.clone().into_field(fp!(world));
     #[cfg(feature = "alloc")]
     {
-        let _ = Box::new(this.clone()).box_into_field(fp!(a));
-        let _ = Box::new(this.clone()).box_into_field(fp!(b));
-        let _ = Box::new(this.clone()).box_into_field(fp!(e));
-        let _ = Box::new(this.clone()).box_into_field(fp!(hello));
-        let _ = Box::new(this.clone()).box_into_field(fp!(world));
+        use crate::reexports::Box;
+        let _ = Box::new(this.clone()).into_field(fp!(a));
+        let _ = Box::new(this.clone()).into_field(fp!(b));
+        let _ = Box::new(this.clone()).into_field(fp!(e));
+        let _ = Box::new(this.clone()).into_field(fp!(hello));
+        let _ = Box::new(this.clone()).into_field(fp!(world));
+
+        let erase = |v: &T| Box::new(v.clone()) as Box<dyn Privacies1_SI>;
+        let _ = erase(&this).into_field(fp!(a));
+        let _ = erase(&this).into_field(fp!(b));
+        let _ = erase(&this).into_field(fp!(e));
+        let _ = erase(&this).into_field(fp!(hello));
+        let _ = erase(&this).into_field(fp!(world));
     }
 }
 
@@ -205,8 +213,8 @@ fn generic_1_dyn(mut ctor: impl FnMut() -> Box<dyn Privacies1_SI>) {
     let _ = this.field_mut(fp!(hello));
     #[cfg(feature = "alloc")]
     {
-        let _ = ctor().box_into_field(fp!(hello));
-        let _ = ctor().box_into_field(fp!(world));
+        let _ = ctor().into_field(fp!(hello));
+        let _ = ctor().into_field(fp!(world));
     }
 }
 

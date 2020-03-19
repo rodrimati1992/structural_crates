@@ -1,6 +1,3 @@
-#[cfg(feature = "alloc")]
-use crate::alloc::boxed::Box;
-
 use crate::{
     enums::{IsVariant, VariantProxy},
     field_path::TStr,
@@ -179,57 +176,6 @@ pub trait EnumExt {
     {
         if IsVariant::is_variant_(&self, vari) {
             unsafe { Ok(VariantProxy::new(self, vari)) }
-        } else {
-            Err(self)
-        }
-    }
-
-    /// Fallibly converts a boxed enum into a VariantProxy of some variant.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{ts,TS,GetFieldExt};
-    /// use structural::for_examples::Variants;
-    /// use structural::enums::{EnumExt,VariantProxy};
-    ///
-    /// use std::cmp::Ordering;
-    ///
-    /// let this=Box::new(Variants::Boom{
-    ///     a: None,
-    ///     b: &[3,5,8,13],
-    /// });
-    ///
-    /// {
-    ///     let mut proxy: VariantProxy<Box<Variants>,TS!(Boom)>=
-    ///         this.clone().box_into_variant(ts!(Boom)).unwrap();
-    ///    
-    ///     assert_eq!( proxy.field_(ts!(a)), &None);
-    ///     assert_eq!( proxy.field_mut(ts!(a)), &mut None);
-    ///     assert_eq!( proxy.clone().into_field(ts!(a)), None);
-    ///    
-    ///     assert_eq!( proxy.field_(ts!(b)), &&[3,5,8,13]);
-    ///     assert_eq!( proxy.field_mut(ts!(b)), &mut [3,5,8,13]);
-    ///     assert_eq!( proxy.clone().into_field(ts!(b)), [3,5,8,13]);
-    /// }
-    /// {
-    ///     assert_eq!(this.clone().box_into_variant(ts!(Foo)), Err(this.clone()));
-    ///     assert_eq!(this.clone().box_into_variant(ts!(Bar)), Err(this.clone()));
-    ///     assert_eq!(this.clone().box_into_variant(ts!(Baz)), Err(this.clone()));
-    /// }
-    ///
-    /// ```
-    #[cfg(feature = "alloc")]
-    #[inline(always)]
-    fn box_into_variant<V>(
-        self: Box<Self>,
-        vari: TStr<V>,
-    ) -> Result<VariantProxy<Box<Self>, TStr<V>>, Box<Self>>
-    where
-        Self: IsVariant<TStr<V>>,
-    {
-        if IsVariant::is_variant_(&*self, vari) {
-            unsafe { Ok(VariantProxy::from_box(self, vari)) }
         } else {
             Err(self)
         }

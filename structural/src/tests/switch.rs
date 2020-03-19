@@ -7,7 +7,7 @@ use crate::{
 
 use core_extensions::SelfOps;
 
-use std::fmt::Debug;
+use std_::fmt::Debug;
 
 #[derive(Debug, Structural, Copy, Clone)]
 enum Foo {
