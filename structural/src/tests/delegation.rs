@@ -238,7 +238,7 @@ unsafe_delegate_structural_with! {
 
     GetField { &*this.value }
 
-    unsafe GetFieldMut { &mut *this.value }
+    GetFieldMut { &mut *this.value }
     as_delegating_raw{
         (*(this as *mut MaybeSizedFoo<'a,T>)).value as *mut T
     }
@@ -275,7 +275,7 @@ unsafe_delegate_structural_with! {
 
     GetField { &*this.value }
 
-    unsafe GetFieldMut { &mut *this.value }
+    GetFieldMut { &mut *this.value }
     as_delegating_raw{
         (*(this as *mut SpecializedFoo<'a,T>)).value as *mut T
     }

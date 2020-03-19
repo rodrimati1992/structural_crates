@@ -13,22 +13,10 @@ and that the delegated-to variable has a consistent value when
 methods from `structural` traits are called in a sequence
 (with no method calls from non-`structural`-traits in between).
 
-You must ensure that the variable that you delegate Get*Field to is the same as the one
-you delegate Get*FieldMut to,
-as well as ensuring that there are no other impls of the GetFieldMut trait
-borrowing from the same variable mutably.
-
-### GetFieldMut
-
-The unsafety of implementing `GetFieldMut` with this macro comes from the methods
-used to do multiple mutable borrows.
-
-### GetVariantFieldMut
-
-The unsafety of implementing `GetVariantFieldMut` with this macro comes from the methods
-used to do multiple mutable borrows,
-as well as the requirement that the IsVariant and the GetVariantFieldMut impls must
-agree on what the current variant is.
+You must ensure that the variable that you delegate `Get*Field` to is the same as the one
+you delegate `Get*FieldMut` to,
+as well as ensuring that there are no other impls of the `Get*FieldMut` trait
+borrowing from the same delegated-to variable mutably.
 
 ###  general
 
@@ -72,7 +60,7 @@ unsafe_delegate_structural_with!{
     // This means that the type is `?Sized` by default.
     // The `cfg(anything)` argument enables specialization conditionally,
     //
-    // When specialization is disables theres only a default impl for `Self:?Sized`
+    // When specialization is disabled theres only a default impl for `Self:?Sized`
     // which may be slower in debug builds,
     // because this uses a function pointer call in raw-pointer methods.
     //
@@ -86,20 +74,19 @@ unsafe_delegate_structural_with!{
     // this is required because Rust doesn't have a `typeof`/`decltype` construct.
     delegating_to_type=T;
 
-    // This block of code is used to get the reference to the delegating variable
+    // This block of code is used to get the reference to the delegated-to variable
     // in GetField.
     GetField {
         &this.value
     }
 
-    // This block of code is used to get a mutable reference to the delegating variable
+    // This block of code is used to get a mutable reference to the delegated-to variable
     // in GetFieldMut
     //
-    // This is `unsafe` because this block must always evaluate to a mutable reference
-    // for the same variable,
+    // This block must always evaluate to a mutable reference for the same variable,
     // and it must not be the same variable as other implementations of the GetFieldMut trait.
     //
-    unsafe GetFieldMut
+    GetFieldMut
     where [
         // This is an optional where clause
         // The last where predicate must have a trailing comma.
@@ -113,7 +100,7 @@ unsafe_delegate_structural_with!{
         &mut (*this).value as *mut T
     }
 
-    // This block of code is used to get the delegating variable by value in IntoField.
+    // This block of code is used to get the delegated-to variable by value in IntoField.
     IntoField
     where [
         // This is an optional where clause
@@ -168,7 +155,7 @@ unsafe_delegate_structural_with!{
         &*this.value
     }
 
-    unsafe GetFieldMut
+    GetFieldMut
     where [T:Debug,]
     {
 #       // This ensures that the `T:Clone+Debug` bounds are put on the impl block.
@@ -270,7 +257,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
         GetField $get_field_closure:block
         $(
-            unsafe GetFieldMut
+            GetFieldMut
             $( where[ $($mut_where_clause:tt)* ] )?
             $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
@@ -311,7 +298,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 specialization_params $raw_mut_impl;
                 delegating_to_type=$delegating_to_type;
 
-                unsafe GetFieldMut $unsafe_get_field_mut_closure
+                GetFieldMut $unsafe_get_field_mut_closure
                 as_delegating_raw $as_field_mutref_closure
             }
         )?
@@ -434,7 +421,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
         specialization_params($($raw_mut_impl:tt)*);
         delegating_to_type=$delegating_to_type:ty;
 
-        unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+        GetFieldMut $unsafe_get_field_mut_closure:block
         as_delegating_raw $as_field_mutref_closure:block
     )=>{
         $crate::unsafe_delegate_structural_with_inner!{
@@ -448,7 +435,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 specialization_params($($raw_mut_impl)*);
                 delegating_to_type=$delegating_to_type;
 
-                unsafe GetFieldMut $unsafe_get_field_mut_closure
+                GetFieldMut $unsafe_get_field_mut_closure
                 as_delegating_raw $as_field_mutref_closure
             )
         }
@@ -470,7 +457,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             specialization_params( $(Sized)? );
             delegating_to_type=$delegating_to_type:ty;
 
-            unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+            GetFieldMut $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
         )
 
@@ -530,7 +517,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             specialization_params( ?Sized );
             delegating_to_type=$delegating_to_type:ty;
 
-            unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+            GetFieldMut $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
         )
 
@@ -594,7 +581,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             specialization_params( specialize_cfg( $($specialize_cfg:tt)* ) );
             delegating_to_type=$delegating_to_type:ty;
 
-            unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+            GetFieldMut $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
         )
 
@@ -777,7 +764,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             specialization_params($($raw_mut_impl:tt)*);
             delegating_to_type=$delegating_to_type:ty;
 
-            unsafe GetFieldMut $unsafe_get_field_mut_closure:block
+            GetFieldMut $unsafe_get_field_mut_closure:block
             as_delegating_raw $as_field_mutref_closure:block
         )
 

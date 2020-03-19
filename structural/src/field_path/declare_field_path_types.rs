@@ -1,6 +1,6 @@
 /// Type-level string,used for identifiers in field paths.
 ///
-/// This type is zero sized.
+/// This type is always zero sized.
 ///
 /// This cannot be converted to a `&'static str` constant
 /// (if you can figure out a cheap way to do that please create an issue/pull request).
@@ -18,39 +18,14 @@
 ///
 /// # TStr type
 /// 
-/// You can get a TStr type (to use as a type argument) with the `TS` macro,
-/// which takes a string literal/ident/integer as an input.
-///
-/// Examples:
-///
-/// - `TS!(0)`: TStr equivalent of "0"
-///
-/// - `TS!(1)`: TStr equivalent of "1"
-///
-/// - `TS!(foo)`: TStr equivalent of "foo"
-///
-/// - `TS!("bar")`: TStr equivalent of "bar"
-///
-/// - `TS!(100)`: TStr equivalent of "100"
-///
-/// - `TS!(foo)`: TStr equivalent of "foo"
-///
-/// - `TS!("bar")`: TStr equivalent of "bar"
-///
-/// - `TS!(100)`: TStr equivalent of "100"
-///
-/// - `TS!("hello")`: TStr equivalent of "hello"
-///
-/// - `TS!(world)`: TStr equivalent of "world"
-///
-/// - `TS!(100)`: TStr equivalent of "100"
-///
+/// You can get a TStr type (to use as a type argument) with the [`TS`](./macro.TS.html) macro,
+/// which takes a string literal/ident/integer as input.
 ///
 /// # TStr construction
 ///
 /// `TStr<_>` can be constructed with:
 ///
-/// - the [`ts`] macro,which takes a string literal/ident/integer as an input.
+/// - the [`ts`] macro,which takes a string literal/ident/integer as input.
 ///
 /// - the [`fp`] macro,when a single string literal/ident/integer in passed,
 /// prefer using `ts` if you want a `TStr` to always be constructed,
@@ -73,6 +48,7 @@
 /// - `fp!(foo)`: TStr equivalent of "foo"
 ///
 /// - `fp!("bar")`: TStr equivalent of "bar"
+/// - `fp!("@me")`: TStr equivalent of "@me"
 ///
 /// - `fp!(100)`: TStr equivalent of "100"
 ///

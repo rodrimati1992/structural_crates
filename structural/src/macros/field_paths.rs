@@ -361,7 +361,7 @@ macro_rules! _delegate_fp_inner {
 ///
 /// type Path_0=FP!(0);
 /// type Path_huh=FP!(huh);
-/// type Path_name=FP!("name"); // Equivalent to FP!("name")
+/// type Path_name=FP!("name"); // Equivalent to FP!(name)
 ///
 /// fn greet_entity<This,S,Tup>(entity:&This, tuple:&Tup)
 /// where
@@ -429,37 +429,13 @@ use structural::field_path_aliases;
 
 field_path_aliases!{
     a,
-
     b=b,
-
-    // This has the same value as the `b` alias
-    b_str="b",
-
-    // strings allow for arbitrary identifiers.
-    at_me="@me",
-
-    c=d.e,
-
-    // field paths used to access multiple fields must be wrapped in parentheses.
-    d=(a,b,c,"#D"),
-
-    // Accesses the variant,if the enum is currently that variant
-    e=::Foo,
-
-    // Accesses the a,b,and c fields inside of the Foo variant.
-    f=(::Foo=>a,b,c),
-
-    // Accesses the a,b,and c fields inside of the `ñ` variant.
-    g=(::"ñ"=>a,b,c),
-
-    // `?` is syntactic sugar for `::Some.0`,
-    // allowing you to access the value inside an `Option`,
-    // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
-    // trait and subtraits.
-    h=d?.e,
+    c=(0,1,2),
+    d=(::Foo=>bar,baz),
 }
-# fn main(){}
 ```
+
+
 ### Module
 
 Where the aliases are declared inside a nested module.
@@ -474,34 +450,10 @@ fn hello(){
     field_path_aliases!{
         mod hello{
             a,
-
             b=b,
-
-            // This has the same value as the `b` alias
-            b_str="b",
-
-            // strings allow for arbitrary identifiers.
-            at_me="@me",
-
-            c=d.e,
-
-            // field paths used to access multiple fields must be wrapped in parentheses.
             d=(a,b,c,"#D"),
-
-            // Accesses the variant,if the enum is currently that variant
             e=::Foo,
-
-            // Accesses the a,b,and c fields inside of the Foo variant.
             f=(::Foo=>a,b,c),
-
-            // Accesses the a,b,and c fields inside of the `ñ` variant.
-            g=(::"ñ"=>a,b,c),
-
-            // `?` is syntactic sugar for `::Some.0`,
-            // allowing you to access the value inside an `Option`,
-            // or inside any other type implementing the `GetVariantField<TS!(Some),TS!(0))`
-            // trait and subtraits.
-            h=d?.e,
         }
     }
 }
@@ -514,11 +466,18 @@ use structural::{ GetField, GetFieldExt, IntoVariantFieldMut, Structural, field_
 use structural::enums::VariantProxy;
 
 field_path_aliases!{
-    // Equivalent to hello=hello
+    // Equivalent to hello = hello
     hello,
-    // Equivalent to world=world
+    // Equivalent to world = world
     world,
 
+    // `?` allows you to access the value inside an `Option`.
+    //
+    // It is syntactic sugar for `::Some.0`,
+    // making it usable with any other type implementing
+    // the `GetVariantField<TS!(Some),TS!(0))` trait and subtraits.
+    zero_a=0?.0,
+    zero_b=0?.1,
     zero=0,
     one=1,
     two=2,
@@ -534,25 +493,47 @@ field_path_aliases!{
     boom=Boom,
     path_a=a,
     path_b=b,
+
+    // Accesses the `Boom` variant,if the enum is currently that variant
     boom_variant=::Boom,
+
     boom_a=::Boom.a,
     boom_b=::Boom.b,
-    boom_both=(::Boom=>a,b),
-    boom_both_individually=(::Boom.a,::Boom.b),
 
+    // Accesses the a,and b fields inside of the `Boom` variant,
+    // roughly returning a `Option<(_,_)>`.
+    boom_both=(::Boom=>a,b),
+
+    // Accesses the a,and b fields inside of the `Boom` variant separately,
+    // roughly returning a `(Option<_>,Option<_>)`.
+    boom_both_individually=(::Boom.a,::Boom.b),
 }
 
 
+fn main(){
+    assert_fields(&(Some((8,13)),3,5));
+    assert_fields(&(Some((8,13)),3,5,8));
+    assert_fields(&(Some((8,13)),3,5,8,13));
+    assert_fields(&(Some((8,13)),3,5,8,13,21));
+
+    assert_variant(&Variants::Boom {
+        a: b"hello",
+        b: &[0,1,2,3],
+    })
+}
+
 fn assert_fields<T>(this:&T)
 where
-    T:GetField<zero,Ty=i32>+
+    T:GetField<zero,Ty=Option<(u16,u16)>>+
         GetField<one,Ty=i32>+
         GetField<two,Ty=i32>
 {
-    assert_eq!( this.field_(zero), &2 );
+    assert_eq!( this.field_(zero), &Some(8,13) );
+    assert_eq!( this.field_(zero_a), Some(&8) );
+    assert_eq!( this.field_(zero_b), Some(&13) );
     assert_eq!( this.field_(one), &3 );
     assert_eq!( this.field_(two), &5 );
-    assert_eq!( this.fields(FirstThree), (&2,&3,&5) );
+    assert_eq!( this.fields(FirstThree), (&Some(8,13),&3,&5) );
 }
 
 fn assert_variant<T>(this:&T)
@@ -581,18 +562,6 @@ where
         ( Some(&&b"hello"[..]), Some(&&[0,1,2,3][..]) )
     );
 
-}
-
-fn main(){
-    assert_fields(&(2,3,5));
-    assert_fields(&(2,3,5,8));
-    assert_fields(&(2,3,5,8,13));
-    assert_fields(&(2,3,5,8,13,21));
-
-    assert_variant(&Variants::Boom {
-        a: b"hello",
-        b: &[0,1,2,3],
-    })
 }
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
@@ -658,6 +627,26 @@ fn main(){
     });
 }
 
+```
+
+# Example
+
+This example demonstrates syntax not used in other examples
+
+```rust
+use structural::field_path_aliases;
+
+field_path_aliases!{
+    // This is a `b_str` alias with the same value as the `b` alias
+    b_str="b",
+
+    // strings allow for arbitrary identifiers.
+    at_me="@me",
+
+    // Accesses the a,b,and c fields inside of the `ñ` variant.
+    g=(::"ñ"=>a,b,c),
+}
+# fn main(){}
 ```
 
 

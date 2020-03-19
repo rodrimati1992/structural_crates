@@ -119,7 +119,7 @@ fn delegating_structural<'a>(
         GetField { &this.#the_field }
 
 
-        unsafe GetFieldMut
+        GetFieldMut
         where[ #(#mut_bounds,)* ]
         { &mut this.#the_field }
 

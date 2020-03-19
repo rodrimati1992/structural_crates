@@ -84,7 +84,7 @@ The methods and constants turn into defaulted methods and defaulted constants in
 
 - `mut  c:i64`:
     Corresponds to the `GetFieldMut<FP!(c),Ty=i64>` mutable reference
-    field accessor trait (which`itself implies `GetField`).
+    field accessor trait (which itself implies `GetField`).
 
 - `move d:String`:
     Corresponds to the `IntoField<FP!(d),Ty=String>` by value

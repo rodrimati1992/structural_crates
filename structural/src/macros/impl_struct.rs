@@ -16,11 +16,24 @@ Example: `impl_struct!{ Clone + Debug; foo:u32, bar:u64 }`
 
 # Access modifiers
 
-Fields can optionally be prefixed with `ref`,`mut`,`move`,or `mut move`
-to specify which accessor traits are required for the field.
+Fields can optionally be prefixed with these access modifiers
+to specify which accessor traits are required for the field:
 
-If none is specified,then the `IntoFieldMut` trait will be required for that field,
+-`ref`: Requires the [`GetField`] trait,with shared access.
+
+-`mut`: Requires the [`GetFieldMut`] trait,with mutable access.
+
+-`move`: Requires the [`IntoField`] trait,with shared and by-balue access.
+
+-`mut move`: Requires the [`IntoFieldMut`] trait,with mutable and by-value access.
+
+If none is specified,then the [`IntoFieldMut`] trait will be required for that field,
 with shared,mutable,and by value access to the field.
+
+[`GetField`]: ./field_traits/trait.GetField.html
+[`GetFieldMut`]: ./field_traits/trait.GetFieldMut.html
+[`IntoField`]: ./field_traits/trait.IntoField.html
+[`IntoFieldMut`]: ./field_traits/trait.IntoFieldMut.html
 
 # Example
 

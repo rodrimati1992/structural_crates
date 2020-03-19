@@ -130,7 +130,9 @@ to declare one or more aliases for type-level strings.
 
 ### Inputs
 
-You can call this macro with a a single identifier,string literal, an integer.
+This has the same syntax as the [`ts`](./macro.ts.html) macro,
+a single identifier,string literal, or integer.
+
 
 Small Example:
 
@@ -151,7 +153,7 @@ This example demonstrates how `TStr` can be used to manually bound a
 type parameter with the `*VariantField*` traits,to access a variant field.
 
 ```rust
-use structural::{GetFieldExt,FP,Structural,TS};
+use structural::{GetFieldExt,FP,Structural,TS,ts};
 use structural::{GetFieldType, GetVariantFieldType, IntoVariantFieldMut, VariantField};
 
 // `GetFieldType<This,FP!(::Ok.0)>` can also be written as
@@ -164,7 +166,7 @@ where
     This: IntoVariantFieldMut<TS!(Ok),TS!(0)>
 {
     // Equivalent to: `this.into_field(fp!(::Ok.0))`
-    this.into_field(VariantField::<TS!("Ok"),TS!("0")>::NEW)
+    this.into_field(VariantField::new(ts!("Ok"), ts!("0")))
 }
 
 #[derive(Structural)]
@@ -186,7 +188,7 @@ assert_eq!( into_ok(Result::<(),_>::Err(99)), None);
 
 # Example
 
-This example uses the TStr macro to access a single non-nested field,
+This example uses the `TS` macro to access a single non-nested field,
 instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
@@ -205,14 +207,16 @@ fn main(){
     assert_eq!( get_charge(&battery).percent, 70 );
 }
 
+type charge_TStr=TS!(charge);
+
 // An `FP!(identifier)` is the same type as `TS!(identifier)`,
 // but because it's more flexible it's used for field paths by default.
-// Eg:You can write `GetField<FP!(::Foo.bar)>` with `FP` but not with `TS`.
+// Eg:You can write `GetFieldType<FooEnum, FP!(::Foo.bar)>` with `FP` but not with `TS`.
 //
 // `TS` always produces the `TStr` type,
 // while FP produces different types depending on the input.
 fn get_charge( this:&dyn GetField<FP!(charge), Ty=Charge> )-> Charge {
-    this.field_(<TS!(charge)>::NEW).clone()
+    this.field_(charge_TStr::NEW).clone()
 }
 
 #[derive(Structural)]

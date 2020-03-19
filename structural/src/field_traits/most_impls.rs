@@ -98,7 +98,7 @@ unsafe_delegate_structural_with! {
 
     GetField { this }
 
-    unsafe GetFieldMut { this }
+    GetFieldMut { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
 
     IntoField { ManuallyDrop::into_inner(this) }
@@ -180,7 +180,7 @@ mod alloc_impls {
             &*this
         }
 
-        unsafe GetFieldMut{
+        GetFieldMut{
             &mut **this
         }
         as_delegating_raw{
@@ -238,7 +238,7 @@ unsafe_delegate_structural_with! {
 
     GetField { &**this }
 
-    unsafe GetFieldMut{
+    GetFieldMut{
         *this
     }
     as_delegating_raw{

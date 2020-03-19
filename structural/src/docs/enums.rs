@@ -63,6 +63,7 @@ struct Bar{
 
 #[derive(Structural)]
 enum Foo{
+    // The `Bar_VSI` trait was generated for teh `Bar` struct by the `Structural` derive.
     #[struc(newtype(bounds="Bar_VSI<@variant>"))]
     Bar(Bar)
 }
@@ -88,7 +89,7 @@ Example:
 Regarding what bounds are generated for the variant in the
 `<DerivingType>_SI` and `<DerivingType>_ESI` traits:
 
-- A regular variant will alias the accessor trait bounds for the variant fields.
+- A regular variant will alias the `*VariantField*` trait bounds for each variant field.
 
 - `#[struc(newtype)]` variants only get the `IsVariant<_>` bound(like every variant).
 
@@ -365,10 +366,10 @@ fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
 // `Wrapper_VSI` was generated for `Wrapper` by the `Structural` derive macro,
 // it's for enum variants with the same structure as `Wrapper`.
 //
-// The `Wrapper_VSI<'a,u32,U32_STR>` bound:
+// The `Wrapper_VSI<'a,u32,TS!(U32)>` bound:
 // is for a `U32` variant that's structurally equivalent to `Wrapper<'a,u32>`.
 //
-// The `Wrapper_VSI<'a,u64,U64_STR>` bound:
+// The `Wrapper_VSI<'a,u64,TS!(U64)>` bound:
 // is for a `u64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
 //
 // `VariantCount<Count=TS!(2)>`
@@ -377,8 +378,8 @@ fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
 // and the switch would require a `_=>` branch.
 fn with_wrapper_vsi<'a>(
     this: impl
-        Wrapper_VSI<'a,u32,U32_STR> +
-        Wrapper_VSI<'a,u64,U64_STR> +
+        Wrapper_VSI<'a,u32,TS!(U32)> +
+        Wrapper_VSI<'a,u64,TS!(U64)> +
         VariantCount<Count=TS!(2)>
 ){
     switch!{ref this;
@@ -391,12 +392,6 @@ fn with_wrapper_vsi<'a>(
             assert_eq!(**field1,13);
         }
     }
-}
-
-// Creating `TStr` aliases with the names of the `Enum` variants
-tstr_aliases!{
-    U32_STR=U32,
-    U64_STR=U64,
 }
 
 #[derive(Structural)]
