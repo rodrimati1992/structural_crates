@@ -2,9 +2,9 @@
 Documentation for proc-macros and guides.
 
 
-[GetField]: ../field_traits/trait.GetField.html
-[GetFieldMut]: ../field_traits/trait.GetFieldMut.html
-[IntoField]: ../field_traits/trait.IntoField.htm
+[GetField]: ../field/trait.GetField.html
+[GetFieldMut]: ../field/trait.GetFieldMut.html
+[IntoField]: ../field/trait.IntoField.htm
 */
 
 pub mod enums;

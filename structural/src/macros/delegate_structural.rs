@@ -799,7 +799,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             #[inline(always)]
             fn get_field_raw_mut_fn(
                 &self
-            )->$crate::field_traits::GetFieldRawMutFn<
+            )->$crate::field::GetFieldRawMutFn<
                 __F,
                 __Ty,
             >{

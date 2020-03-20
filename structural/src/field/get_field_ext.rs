@@ -1,10 +1,10 @@
 use crate::{
     enums::IsVariant,
-    field_path::IsTStr,
-    field_traits::{
+    field::{
         NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
         RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
     },
+    field_path::IsTStr,
 };
 
 use core_extensions::collection_traits::{Cloned, ClonedOut};

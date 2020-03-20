@@ -1,5 +1,5 @@
 use crate::{
-    field_traits::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
+    field::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
     structural_trait::Structural,
 };
 
@@ -262,7 +262,7 @@ impl_tuple! {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_traits::for_tuples::*;
+    use crate::field::for_tuples::*;
     use crate::{fp, GetField, GetFieldExt, Structural};
 
     fn get_field_1<T>(val: &T) -> &u64

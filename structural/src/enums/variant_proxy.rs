@@ -1,9 +1,9 @@
 use crate::{
-    field_path::{IsTStr, TStr, VariantField},
-    field_traits::{
-        variant_field::{GetVariantField, GetVariantFieldMut, IntoVariantField},
-        FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField, SpecGetFieldMut,
+    field::{
+        FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField, GetVariantFieldMut,
+        IntoField, IntoVariantField, SpecGetFieldMut,
     },
+    field_path::{IsTStr, TStr, VariantField},
 };
 
 #[cfg(feature = "alloc")]

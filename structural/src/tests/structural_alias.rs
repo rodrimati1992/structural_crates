@@ -1,5 +1,5 @@
 use crate::enums::{IsVariant, VariantCount};
-use crate::field_traits::variant_field::*;
+use crate::field::*;
 use crate::*;
 
 use std_::fmt::Debug;

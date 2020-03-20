@@ -32,12 +32,12 @@ in a newtype variant,by annotating the variant with
 
 All of these can be overriden.
 
-[`GetField`]: ../../field_traits/trait.GetField.html
-[`GetFieldMut`]: ../../field_traits/trait.GetFieldMut.html
-[`IntoField`]: ../../field_traits/trait.IntoField.html
-[`GetVariantField`]: ../../field_traits/variant_field/trait.GetVariantField.html
-[`GetVariantFieldMut`]: ../../field_traits/variant_field/trait.GetVariantFieldMut.html
-[`IntoVariantField`]: ../../field_traits/variant_field/trait.IntoVariantField.html
+[`GetField`]: ../../field/trait.GetField.html
+[`GetFieldMut`]: ../../field/trait.GetFieldMut.html
+[`IntoField`]: ../../field/trait.IntoField.html
+[`GetVariantField`]: ../../field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ../../field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ../../field/trait.IntoVariantField.html
 [`TStr`]: ../../struct.TStr.html
 
 

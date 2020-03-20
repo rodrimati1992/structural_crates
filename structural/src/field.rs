@@ -23,12 +23,12 @@ accessor traits,that define how a field is accessed.
 
 ### For enums
 
-The [GetVariantField](./variant_field/trait.GetVariantField.html),
-[GetVariantFieldMut](./variant_field/trait.GetVariantFieldMut.html),
-[IntoVariantField](./variant_field/trait.IntoVariantField.html)
+The [GetVariantField](./trait.GetVariantField.html),
+[GetVariantFieldMut](./trait.GetVariantFieldMut.html),
+[IntoVariantField](./trait.IntoVariantField.html)
 accessor traits,that define how a variant field is accessed.
 
-[IntoVariantFieldMut](./variant_field/trait.IntoVariantFieldMut.html),
+[IntoVariantFieldMut](./trait.IntoVariantFieldMut.html),
 a trait alias for `GetVariantFieldMut` + `IntoVariantField`.
 
 # Rev* traits
@@ -91,7 +91,7 @@ The [GetFieldType](./type.GetFieldType.html),
 [GetFieldType4](./type.GetFieldType4.html)
 type aliases allow querying the type of a field up to 4 levels of nesting.
 
-The [GetVariantFieldType](./variant_field/type.GetVariantFieldType.html)
+The [GetVariantFieldType](./type.GetVariantFieldType.html)
 for querying the type of an enum variant field,
 most useful when the name of the variant and the field are passed separately.
 
@@ -121,7 +121,11 @@ The type that `Foo` is converted into when calling
 
 */
 
-use crate::Structural;
+use crate::{enums::IsVariant, field_path::VariantField, Structural};
+
+use core_extensions::ConstDefault;
+
+use std_::ptr::NonNull;
 
 mod enum_impls;
 pub mod errors;
@@ -133,7 +137,10 @@ pub mod multi_fields;
 mod normalize_fields;
 pub mod rev_get_field;
 mod tuple_impls;
-pub mod variant_field;
+
+// Using this macro instead of modules because compile-time errors print the full path to the
+// traits even if the variant_field module is private.
+include! {"./field/variant_field.rs"}
 
 pub use self::{
     errors::{
@@ -152,13 +159,7 @@ pub use self::{
         RevGetField, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
         RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
-    variant_field::{
-        GetVFieldRawMutFn, GetVariantField, GetVariantFieldMut, GetVariantFieldType,
-        IntoVariantField, IntoVariantFieldMut,
-    },
 };
-
-pub use self::variant_field::SpecGetVariantFieldMut;
 
 ////////////////////////////////////////////////////////////////////////////////
 

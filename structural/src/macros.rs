@@ -148,7 +148,7 @@ macro_rules! default_if {
 }
 
 /// For semi-manual implementors of the
-/// [GetFieldMut](./field_traits/trait.GetFieldMut.html)
+/// [GetFieldMut](./field/trait.GetFieldMut.html)
 /// trait for structs.
 ///
 /// This implements the [GetFieldMut::get_field_raw_mut]
@@ -168,7 +168,7 @@ macro_rules! default_if {
 /// For an example where this macro is used,
 /// you can look at the
 /// [manual implementation example of the GetFieldMut trait
-/// ](./field_traits/trait.GetFieldMut.html#manual-implementation-example)
+/// ](./field/trait.GetFieldMut.html#manual-implementation-example)
 #[macro_export]
 macro_rules! z_unsafe_impl_get_field_raw_mut {
     (
@@ -186,11 +186,9 @@ macro_rules! z_unsafe_impl_get_field_raw_mut {
 
         fn get_field_raw_mut_fn(
             &self,
-        ) -> $crate::field_traits::GetFieldRawMutFn<
-            $name_param,
-            $crate::GetFieldType<$Self, $name_param>,
-        > {
-            <$Self as $crate::field_traits::GetFieldMut<$name_param>>::get_field_raw_mut
+        ) -> $crate::field::GetFieldRawMutFn<$name_param, $crate::GetFieldType<$Self, $name_param>>
+        {
+            <$Self as $crate::field::GetFieldMut<$name_param>>::get_field_raw_mut
         }
     };
 }
@@ -206,7 +204,7 @@ macro_rules! z_unsafe_impl_get_field_raw_mut {
 ///
 /// For an example of using this macro look at
 /// [the manual implementation example for `GetVariantFieldMut`
-/// ](./field_traits/variant_field/trait.GetVariantFieldMut.html#manual-impl-example)
+/// ](./field/trait.GetVariantFieldMut.html#manual-impl-example)
 #[macro_export]
 macro_rules! z_raw_borrow_enum_field {
     (
@@ -241,14 +239,14 @@ macro_rules! z_raw_borrow_enum_field {
 ///
 /// For an example of using this macro look at
 /// [the manual implementation example
-/// ](./field_traits/variant_field/trait.GetVariantFieldMut.html#manual-impl-example)
+/// ](./field/trait.GetVariantFieldMut.html#manual-impl-example)
 /// for [`GetVariantFieldMut`]
 ///
-/// [`GetVariantFieldMut`]: ./field_traits/variant_field/trait.GetVariantFieldMut.html
+/// [`GetVariantFieldMut`]: ./field/trait.GetVariantFieldMut.html
 /// [`get_vfield_raw_mut_fn`]:
-/// ./field_traits/variant_field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_fn
+/// ./field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_fn
 /// [`get_vfield_raw_mut_unchecked_fn`]:
-/// ./field_traits/variant_field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_unchecked_fn
+/// ./field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_unchecked_fn
 #[macro_export]
 macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
     (
@@ -291,12 +289,12 @@ macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
 ///
 /// For an example of using this macro look at
 /// [implementation example for IntoField
-/// ](./field_traits/trait.IntoField.html#manual-implementation-example)
+/// ](./field/trait.IntoField.html#manual-implementation-example)
 ///
-/// [`IntoField`]: ./field_traits/trait.IntoField.html
-/// [`IntoField::box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
-/// [`box_into_field_`]: ./field_traits/trait.IntoField.html#tymethod.box_into_field_
-/// [`IntoField::into_field_`]: ./field_traits/trait.IntoField.html#tymethod.into_field_
+/// [`IntoField`]: ./field/trait.IntoField.html
+/// [`IntoField::box_into_field_`]: ./field/trait.IntoField.html#tymethod.box_into_field_
+/// [`box_into_field_`]: ./field/trait.IntoField.html#tymethod.box_into_field_
+/// [`IntoField::into_field_`]: ./field/trait.IntoField.html#tymethod.into_field_
 #[macro_export]
 macro_rules! z_impl_box_into_field_method {
     (
@@ -351,16 +349,16 @@ macro_rules! z_impl_box_into_field_method_inner {
 ///
 /// For an example of using this macro look at
 /// [the implementation example for IntoVariantField
-/// ](./field_traits/variant_field/trait.IntoVariantField.html#manual-impl-example)
+/// ](./field/trait.IntoVariantField.html#manual-impl-example)
 ///
 /// [`IntoVariantField`]:
-/// ./field_traits/variant_field/trait.IntoVariantField.html
+/// ./field/trait.IntoVariantField.html
 ///
 /// [`IntoVariantField::box_into_vfield_`]:
-/// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.box_into_vfield_
+/// ./field/trait.IntoVariantField.html#tymethod.box_into_vfield_
 ///
 /// [`IntoVariantField::into_vfield_`]:
-/// ./field_traits/variant_field/trait.IntoVariantField.html#tymethod.into_vfield_
+/// ./field/trait.IntoVariantField.html#tymethod.into_vfield_
 #[macro_export]
 macro_rules! z_impl_box_into_variant_field_method {
     (
@@ -529,7 +527,7 @@ macro_rules! try_fe {
     ( $expr:expr ) => {
         match $expr {
             Ok(x) => x,
-            Err(e) => return Err($crate::field_traits::IntoFieldErr::into_field_err(e)),
+            Err(e) => return Err($crate::field::IntoFieldErr::into_field_err(e)),
         }
     };
 }
@@ -540,7 +538,7 @@ macro_rules! map_of {
     ( $expr:expr ) => {
         match $expr {
             Ok(x) => Ok(x),
-            Err(_) => Err($crate::field_traits::FailedAccess),
+            Err(_) => Err($crate::field::FailedAccess),
         }
     };
 }
@@ -551,7 +549,7 @@ macro_rules! ok_or_of {
     ( $expr:expr ) => {
         match $expr {
             Some(x) => Ok(x),
-            None => Err($crate::field_traits::FailedAccess),
+            None => Err($crate::field::FailedAccess),
         }
     };
 }

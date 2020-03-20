@@ -4,10 +4,8 @@ Contains traits for accessing multiple fields at once.
 #![allow(non_snake_case)]
 
 use crate::{
+    field::{IsFieldErr, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl},
     field_path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, UniquePaths},
-    field_traits::{
-        IsFieldErr, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl,
-    },
 };
 
 #[allow(unused_imports)]
@@ -70,7 +68,7 @@ pub type RevGetMultiFieldMutRaw<'a, Path, This> =
 /// pair of indices.
 ///
 /// ```rust
-/// use structural::field_traits::{FailedAccess, RevGetMultiFieldImpl};
+/// use structural::field::{FailedAccess, RevGetMultiFieldImpl};
 /// use structural::field_path::{AliasedPaths, IsMultiFieldPath};
 /// use structural::GetFieldExt;
 ///
@@ -129,7 +127,7 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 ///
 /// ```rust
 /// use structural::{GetFieldExt, FP, fp};
-/// use structural::field_traits::RevGetMultiField;
+/// use structural::field::RevGetMultiField;
 /// use structural::for_examples::{Tuple2, Tuple3};
 ///
 /// use std::cmp::Ordering;
@@ -157,7 +155,7 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 /// ```rust
 /// use structural::{GetFieldExt, FP};
 /// use structural::field_path::IntoAliasingOut;
-/// use structural::field_traits::{RevGetMultiField,RevGetMultiFieldOut};
+/// use structural::field::{RevGetMultiField,RevGetMultiFieldOut};
 /// use structural::for_examples::{Bomb, WithBoom};
 ///
 /// use std::cmp::Ordering;
@@ -254,7 +252,7 @@ where
 /// pair of indices.
 ///
 /// ```rust
-/// use structural::field_traits::{FailedAccess, RevGetMultiFieldMutImpl};
+/// use structural::field::{FailedAccess, RevGetMultiFieldMutImpl};
 /// use structural::field_path::{IsMultiFieldPath, UniquePaths};
 /// use structural::GetFieldExt;
 ///
@@ -378,7 +376,7 @@ pub unsafe trait RevGetMultiFieldMutImpl<'a, This: ?Sized + 'a>:
 ///
 /// ```rust
 /// use structural::{GetFieldExt, FP, fp};
-/// use structural::field_traits::RevGetMultiFieldMut;
+/// use structural::field::RevGetMultiFieldMut;
 /// use structural::for_examples::{Tuple2, Tuple3};
 ///
 /// use std::cmp::Ordering;
@@ -406,7 +404,7 @@ pub unsafe trait RevGetMultiFieldMutImpl<'a, This: ?Sized + 'a>:
 ///
 /// ```rust
 /// use structural::{GetFieldExt, field_path_aliases};
-/// use structural::field_traits::{RevGetMultiFieldMut,RevGetMultiFieldMutOut};
+/// use structural::field::{RevGetMultiFieldMut,RevGetMultiFieldMutOut};
 /// use structural::for_examples::{Bomb, WithBoom};
 ///
 /// use std::cmp::Ordering;

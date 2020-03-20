@@ -48,7 +48,7 @@ variant field accessor trait bounds.
 
 ```
 use structural::{
-    field_traits::variant_field::GetVariantField,
+    field::GetVariantField,
     GetFieldExt,Structural,
     tstr_aliases,fp,
 };

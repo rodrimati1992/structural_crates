@@ -1,19 +1,3 @@
-/*!
-Traits for getting a field from an enum variant.
-*/
-
-use crate::{
-    enums::IsVariant,
-    field_path::VariantField,
-    field_traits::{FieldType, GetFieldRawMutFn},
-};
-
-use core_extensions::ConstDefault;
-
-use std_::ptr::NonNull;
-
-///////////////////////////
-
 /// Provides shared access to an enum variant field.
 ///
 /// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
@@ -36,7 +20,7 @@ use std_::ptr::NonNull;
 /// # Example: Use as bound
 ///
 /// ```
-/// use structural::field_traits::GetVariantField;
+/// use structural::field::GetVariantField;
 /// use structural::for_examples::{Variants,WithBar};
 /// use structural::{GetFieldExt,TS,fp};
 ///
@@ -188,7 +172,7 @@ pub unsafe trait GetVariantField<V, F>:
 ///
 /// ```
 /// use structural::{GetFieldExt,TS,fp};
-/// use structural::field_traits::GetVariantFieldType;
+/// use structural::field::GetVariantFieldType;
 /// use structural::for_examples::Variants;
 ///
 /// let this = Variants::Foo(8,13);
@@ -237,7 +221,7 @@ pub type GetVariantFieldType<This, Variant, Field> =
 /// # Example: Use as bound.
 ///
 /// ```
-/// use structural::field_traits::GetVariantFieldMut;
+/// use structural::field::GetVariantFieldMut;
 /// use structural::for_examples::{Bomb,WithBoom};
 /// use structural::{GetFieldExt,TS,fp};
 ///
@@ -523,7 +507,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// # Example
 ///
 /// ```
-/// use structural::field_traits::IntoVariantField;
+/// use structural::field::IntoVariantField;
 /// use structural::for_examples::{Bomb,WithBoom};
 /// use structural::{GetFieldExt,TS,fp};
 ///
@@ -754,7 +738,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 /// # Example
 ///
 /// ```
-/// use structural::field_traits::IntoVariantFieldMut;
+/// use structural::field::IntoVariantFieldMut;
 /// use structural::for_examples::{Bomb,WithBoom};
 /// use structural::{GetFieldExt,TS,fp};
 ///

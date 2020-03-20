@@ -334,7 +334,7 @@ trait Vegetable_ESI {}
 
 mod struct_with_constraints {
     use super::*;
-    use crate::field_traits::IntoVariantFieldMut;
+    use crate::field::IntoVariantFieldMut;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -441,7 +441,7 @@ mod struct_delegated_with_constraints {
 
 mod enum_with_constraints {
     use super::*;
-    use crate::field_traits::IntoVariantFieldMut;
+    use crate::field::IntoVariantFieldMut;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]

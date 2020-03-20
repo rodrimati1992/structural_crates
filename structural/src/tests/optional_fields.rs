@@ -1,6 +1,6 @@
 use crate::{
     enums::IsVariant,
-    field_traits::{IntoFieldMut, IntoVariantFieldMut},
+    field::{IntoFieldMut, IntoVariantFieldMut},
     GetFieldExt, Structural,
 };
 

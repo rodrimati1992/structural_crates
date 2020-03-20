@@ -483,7 +483,7 @@ fn main(){
 
 use structural::{
     fp,structural_alias,switch,
-    field_traits::{GetVariantFieldType,IntoVariantField},
+    field::{GetVariantFieldType,IntoVariantField},
     GetFieldExt,
     Structural,
 };

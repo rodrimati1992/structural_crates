@@ -519,7 +519,34 @@ macro_rules! switch_inn{
         }
     };
     (@top
-        $($proxy_:ident)? $(= $matched:expr)? ;
+        [$def_access:ident]
+        $proxy:ident=$matched:expr=>
+        $($anything:tt)*
+    )=>{
+        compile_error!("\
+            Expected a `;` to separate the switch header from the switch body\n\
+            hint: Replace the `=>` with a `;`\n\
+        ")
+    };
+    (@top
+        [$def_access:ident]
+        $proxy:expr=>
+        $($anything:tt)*
+    )=>{
+        compile_error!("\
+            Expected a `;` to separate the switch header from the switch body\n\
+            hint: Replace the `=>` with a `;`\n\
+        ")
+    };
+    (@top
+        [$def_access:ident]
+        $proxy:expr;
+    )=>{
+        compile_error!("expected a non-empty switch")
+    };
+    (@top
+        [$def_access:ident]
+        $proxy:ident=$matched:expr;
     )=>{
         compile_error!("expected a non-empty switch")
     };

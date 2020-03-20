@@ -271,22 +271,6 @@ impl<This> Clone for ExpectedDefaultBranch<This> {
     }
 }
 
-/////////////////////////////////////
-
-/// This is a hack used to produce moderately readable error messages for the `switch` macro.
-#[allow(non_camel_case_types)]
-mod messages {
-    use super::*;
-
-    pub struct switch_that_matches_on_all_variants<Count>(PhantomData<Count>);
-
-    pub struct switch_that_does_not_match_on_all_variants<Count>(PhantomData<Count>);
-
-    pub struct switch_with_a_default_branch<T>(PhantomData<T>);
-
-    pub struct switch_without_a_default_branch<T>(PhantomData<T>);
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 pub trait GetElseValue<T>: Sized {
@@ -317,8 +301,8 @@ pub trait GetElseValue<T>: Sized {
 ///////////////////////
 
 impl<This, T, Expected> GetElseValue<T> for ExpectedVariantCount<This, Expected, Expected> {
-    type ExpectedMsg = messages::switch_that_matches_on_all_variants<Expected>;
-    type FoundMsg = messages::switch_that_matches_on_all_variants<Expected>;
+    type ExpectedMsg = crate::msg::switch_that_matches_on_all_variants<Expected>;
+    type FoundMsg = crate::msg::switch_that_matches_on_all_variants<Expected>;
 
     #[inline(always)]
     unsafe fn get_else_values(self) -> (Self::ExpectedMsg, Self::FoundMsg, T) {
@@ -327,13 +311,13 @@ impl<This, T, Expected> GetElseValue<T> for ExpectedVariantCount<This, Expected,
 }
 
 impl<This, T, Expected, Found> GetElseValue<T> for &'_ ExpectedVariantCount<This, Expected, Found> {
-    type ExpectedMsg = messages::switch_that_matches_on_all_variants<Expected>;
-    type FoundMsg = messages::switch_that_does_not_match_on_all_variants<Found>;
+    type ExpectedMsg = crate::msg::switch_that_matches_on_all_variants<Expected>;
+    type FoundMsg = crate::msg::switch_that_does_not_match_on_all_variants;
 }
 
 ///////////////////////
 
 impl<This, T> GetElseValue<T> for ExpectedDefaultBranch<This> {
-    type ExpectedMsg = messages::switch_with_a_default_branch<()>;
-    type FoundMsg = messages::switch_without_a_default_branch<()>;
+    type ExpectedMsg = crate::msg::switch_with_a_default_branch<()>;
+    type FoundMsg = crate::msg::switch_without_a_default_branch<()>;
 }

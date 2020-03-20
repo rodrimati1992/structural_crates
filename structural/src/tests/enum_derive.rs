@@ -1,5 +1,5 @@
 use crate::enums::{IsVariant, VariantCount};
-use crate::field_traits::variant_field::IntoVariantFieldMut;
+use crate::field::IntoVariantFieldMut;
 use crate::*;
 
 use std_::mem;

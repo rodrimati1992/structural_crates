@@ -7,7 +7,7 @@ use super::names::{
     I0, I1, I10, I11, I12, I13, I14, I15, I16, I17, I18, I19, I2, I20, I21, I22, I23, I24, I25,
     I26, I27, I28, I29, I3, I30, I31, I4, I5, I6, I7, I8, I9,
 };
-use crate::field_traits::{IntoFieldMut, IntoVariantFieldMut};
+use crate::field::{IntoFieldMut, IntoVariantFieldMut};
 
 /*
 
@@ -205,7 +205,7 @@ declare_array_traits! {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_traits::for_arrays::*;
+    use crate::field::for_arrays::*;
     use crate::{GetFieldExt, Structural, TS};
 
     fn with_array_32<A>(mut this: A)

@@ -104,9 +104,9 @@ Every variant also gets a [`IsVariant`] bound.
 [`IsVariant`]: ../../enums/trait.IsVariant.html
 [`VariantCount`]: ../../enums/trait.VariantCount.html
 [`TStr`]: ../../struct.TStr.html
-[`GetVariantField`]: ../../field_traits/variant_field/trait.GetVariantField.html
-[`GetVariantFieldMut`]: ../../field_traits/variant_field/trait.GetVariantFieldMut.html
-[`IntoVariantField`]: ../../field_traits/variant_field/trait.IntoVariantField.html
+[`GetVariantField`]: ../../field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ../../field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ../../field/trait.IntoVariantField.html
 
 # Examples
 
@@ -236,7 +236,7 @@ and the difference between the `*_SI`(nonexhaustive enum) and `*_ESI`(exhaustive
 ```rust
 
 use structural::{
-    field_traits::Tuple2Variant,
+    field::Tuple2Variant,
     GetFieldExt,Structural,
     fp,switch,
 };

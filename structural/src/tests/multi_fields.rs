@@ -1,5 +1,4 @@
-use crate::field_path_aliases;
-use crate::field_traits::{
+use crate::field::{
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldImplOut, RevGetMultiFieldMut,
         RevGetMultiFieldMutImpl, RevGetMultiFieldMutImplOut, RevGetMultiFieldMutImplRaw,
@@ -7,6 +6,7 @@ use crate::field_traits::{
     },
     FailedAccess, InfallibleAccess,
 };
+use crate::field_path_aliases;
 
 use core_extensions::type_asserts::AssertEq3;
 

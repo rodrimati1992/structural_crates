@@ -124,17 +124,17 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [`Structural`]:
 https://docs.rs/structural/0.3/structural/docs/structural_macro/index.html
 [`GetField`]:
-https://docs.rs/structural/0.3/structural/field_traits/trait.GetField.html
+https://docs.rs/structural/0.3/structural/field/trait.GetField.html
 [`GetFieldMut`]:
-https://docs.rs/structural/0.3/structural/field_traits/trait.GetFieldMut.html
+https://docs.rs/structural/0.3/structural/field/trait.GetFieldMut.html
 [`IntoField`]:
-https://docs.rs/structural/0.3/structural/field_traits/trait.IntoField.html
+https://docs.rs/structural/0.3/structural/field/trait.IntoField.html
 [`GetVariantField`]:
-https://docs.rs/structural/0.3/structural/field_traits/variant_field/trait.GetVariantField.html
+https://docs.rs/structural/0.3/structural/field/trait.GetVariantField.html
 [`GetVariantFieldMut`]:
-https://docs.rs/structural/0.3/structural/field_traits/variant_field/trait.GetVariantFieldMut.html
+https://docs.rs/structural/0.3/structural/field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]:
-https://docs.rs/structural/0.3/structural/field_traits/variant_field/trait.IntoVariantField.html
+https://docs.rs/structural/0.3/structural/field/trait.IntoVariantField.html
 
 [`GetFieldExt`]:
 https://docs.rs/structural/0.3/structural/trait.GetFieldExt.html

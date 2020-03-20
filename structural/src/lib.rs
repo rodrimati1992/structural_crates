@@ -587,12 +587,12 @@ struct Cents(u64);
 
 
 [`Structural`]: ./docs/structural_macro/index.html
-[`GetField`]: ./field_traits/trait.GetField.html
-[`GetFieldMut`]: ./field_traits/trait.GetFieldMut.html
-[`IntoField`]: ./field_traits/trait.IntoField.html
-[`GetVariantField`]: ./field_traits/variant_field/trait.GetVariantField.html
-[`GetVariantFieldMut`]: ./field_traits/variant_field/trait.GetVariantFieldMut.html
-[`IntoVariantField`]: ./field_traits/variant_field/trait.IntoVariantField.html
+[`GetField`]: ./field/trait.GetField.html
+[`GetFieldMut`]: ./field/trait.GetFieldMut.html
+[`IntoField`]: ./field/trait.IntoField.html
+[`GetVariantField`]: ./field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ./field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ./field/trait.IntoVariantField.html
 
 [`GetFieldExt`]: ./trait.GetFieldExt.html
 [`impl_struct`]: ./macro.impl_struct.html
@@ -643,9 +643,11 @@ mod macros;
 pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
+pub mod field;
 pub mod field_path;
-pub mod field_traits;
 pub mod for_examples;
+#[doc(hidden)]
+pub mod msg;
 mod structural_trait;
 pub mod utils;
 
@@ -661,10 +663,10 @@ pub mod type_level;
 pub mod p;
 
 #[doc(inline)]
-pub use crate::field_traits::GetFieldExt;
+pub use crate::field::GetFieldExt;
 
 pub use crate::{
-    field_traits::{
+    field::{
         FieldType, GetField, GetFieldMut, GetFieldType, GetFieldType2, GetFieldType3,
         GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
@@ -697,9 +699,8 @@ pub mod reexports {
 pub mod pmr {
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
+    pub use crate::field::*;
     pub use crate::field_path::*;
-    pub use crate::field_traits::variant_field::*;
-    pub use crate::field_traits::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
     pub use crate::utils::{_Structural_BorrowSelf, as_phantomdata};

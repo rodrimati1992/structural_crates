@@ -1,6 +1,6 @@
 use crate::{
+    field::Array3,
     field_path_aliases,
-    field_traits::Array3,
     for_examples::{EnumOptFlying, EnumOptFlying_SI},
     structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
 };

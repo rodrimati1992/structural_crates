@@ -17,7 +17,7 @@ You can pass homogeneous tuples to functions expecting `Array*` implementing typ
 
 
 ```
-use structural::field_traits::for_arrays::Array4;
+use structural::field::for_arrays::Array4;
 use structural::{GetFieldExt,fp};
 
 fn takes_array(array:impl Array4<u32>){
@@ -38,7 +38,7 @@ takes_array( (3,5,8,13,"foo",vec!["bar"]) );
 # `Array*` Example
 
 ```
-use structural::field_traits::for_arrays::Array3;
+use structural::field::for_arrays::Array3;
 use structural::{GetFieldExt,fp};
 
 use std::fmt::Debug;
@@ -67,7 +67,7 @@ print_first_3( ["baz";32] );
 Demonstrates that you can use the `Array*Variant` trait with enums.
 
 ```
-use structural::field_traits::Array2Variant;
+use structural::field::Array2Variant;
 use structural::{GetFieldExt,Structural,TS,fp};
 
 use std::fmt::Debug;
@@ -124,8 +124,8 @@ enum OtherEnum{
 */
 
 use crate::{
+    field::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
     field_path::IsSingleFieldPath,
-    field_traits::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
     structural_trait::Structural,
     type_level::{
         cmp::{Compare, TGreater},

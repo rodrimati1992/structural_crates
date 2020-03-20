@@ -2,7 +2,7 @@
 Enum related traits and types.
 
 The `*VariantField*` traits are declared in
-[the `field_traits::variant_field` module](../field_traits/variant_field/index.html),
+[the `field` module](../field/index.html),
 you can use `*VariantField*` traits as bounds,
 and then call `GetFieldExt` methods to access fields inside enum variants.
 */

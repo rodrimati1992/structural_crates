@@ -30,10 +30,10 @@ to specify which accessor traits are required for the field:
 If none is specified,then the [`IntoFieldMut`] trait will be required for that field,
 with shared,mutable,and by value access to the field.
 
-[`GetField`]: ./field_traits/trait.GetField.html
-[`GetFieldMut`]: ./field_traits/trait.GetFieldMut.html
-[`IntoField`]: ./field_traits/trait.IntoField.html
-[`IntoFieldMut`]: ./field_traits/trait.IntoFieldMut.html
+[`GetField`]: ./field/trait.GetField.html
+[`GetFieldMut`]: ./field/trait.GetFieldMut.html
+[`IntoField`]: ./field/trait.IntoField.html
+[`IntoFieldMut`]: ./field/trait.IntoFieldMut.html
 
 # Example
 

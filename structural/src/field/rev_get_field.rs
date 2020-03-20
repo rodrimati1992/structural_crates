@@ -6,11 +6,11 @@ Contains traits implemented on field paths,taking Structural types as parameters
 
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
-    field_path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
-    field_traits::{
+    field::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         FailedAccess, InfallibleAccess,
     },
+    field_path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
     FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField, GetVariantFieldMut, IntoField,
     IntoVariantField,
 };
@@ -29,7 +29,7 @@ mod nested_field_path;
 ///
 /// ```
 /// use structural::{
-///     field_traits::RevGetFieldType,
+///     field::RevGetFieldType,
 ///     GetFieldType3,GetFieldExt,Structural,
 ///     FP,fp,
 /// };
@@ -101,7 +101,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 ///
 /// ```rust
-/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl};
+/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::GetFieldExt;
 ///
@@ -183,7 +183,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// based on a runtime value.
 ///
 /// ```rust
-/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
+/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,ts};
 ///
@@ -295,7 +295,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// since the layout of `Foo` is allowed to change.
 ///
 /// ```rust
-/// use structural::field_traits::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
+/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
 /// use structural::field_path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,fp};
 ///
@@ -394,7 +394,7 @@ declare_accessor_trait_alias! {
     /// This example shows how to access a nested struct field by reference.
     ///
     /// ```rust
-    /// use structural::field_traits::RevGetField;
+    /// use structural::field::RevGetField;
     /// use structural::{GetFieldExt,FP,fp};
     ///
     ///
@@ -427,7 +427,7 @@ declare_accessor_trait_alias! {
     /// This example shows how you can access an enum field by reference.
     ///
     /// ```rust
-    /// use structural::field_traits::OptRevGetField;
+    /// use structural::field::OptRevGetField;
     /// use structural::{GetFieldExt,FP,fp};
     ///
     /// let tup1=(3,5,(8,(Some(13),21)));
@@ -460,7 +460,7 @@ declare_accessor_trait_alias! {
     /// This example shows how to access a nested struct field by mutable reference.
     ///
     /// ```rust
-    /// use structural::field_traits::RevGetFieldMut;
+    /// use structural::field::RevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
     /// use structural::{GetFieldExt,FP,fp};
     ///
@@ -500,7 +500,7 @@ declare_accessor_trait_alias! {
     /// This example shows how you can access an enum field by mutable reference.
     ///
     /// ```rust
-    /// use structural::field_traits::OptRevGetFieldMut;
+    /// use structural::field::OptRevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
     /// use structural::{GetFieldExt,FP,fp};
     ///
@@ -540,7 +540,7 @@ declare_accessor_trait_alias! {
     /// This example shows how to access a nested struct field by value.
     ///
     /// ```rust
-    /// use structural::field_traits::RevIntoField;
+    /// use structural::field::RevIntoField;
     /// use structural::for_examples::StructBar;
     /// use structural::{GetFieldExt,FP,fp};
     ///
@@ -580,7 +580,7 @@ declare_accessor_trait_alias! {
     /// This example shows how you can access an enum field by value.
     ///
     /// ```rust
-    /// use structural::field_traits::OptRevIntoField;
+    /// use structural::field::OptRevIntoField;
     /// use structural::for_examples::{StructFoo,WithBoom};
     /// use structural::{GetFieldExt,FP,fp};
     ///
@@ -619,7 +619,7 @@ declare_accessor_trait_alias! {
     /// Also,how to write extension traits with `Rev*` traits.
     ///
     /// ```rust
-    /// use structural::field_traits::{RevIntoFieldMut,RevGetFieldType};
+    /// use structural::field::{RevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::StructBar;
     /// use structural::reexports::{ConstDefault,const_default};
     /// use structural::{GetFieldExt,FP,fp};
@@ -677,7 +677,7 @@ declare_accessor_trait_alias! {
     /// Also,how to write extension traits with `Rev*` traits.
     ///
     /// ```rust
-    /// use structural::field_traits::{OptRevIntoFieldMut,RevGetFieldType};
+    /// use structural::field::{OptRevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::{StructFoo,WithBoom};
     /// use structural::{GetFieldExt,FP,fp};
     ///

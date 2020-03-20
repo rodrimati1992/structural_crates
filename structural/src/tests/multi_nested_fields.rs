@@ -120,7 +120,7 @@ field_path_aliases! {
 
 #[test]
 fn get_nested_field_types() {
-    use crate::field_traits::RevGetFieldType;
+    use crate::field::RevGetFieldType;
     use crate::{GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4};
 
     type FP0 = FP!(0);
