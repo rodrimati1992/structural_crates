@@ -205,6 +205,11 @@ where
 {
     for attr in attrs {
         match attr.parse_meta() {
+            // Handling this generically just in case that the `#[non_exhaustive]` attribute
+            // gets extended to have parameters,like `#[non_exhaustive(pub)]`
+            Ok(meta) if meta.path().is_ident("non_exhaustive") => {
+                this.non_exhaustive_attr = true;
+            }
             Ok(Meta::List(list)) => {
                 parse_attr_list(this, pctx, list).combine_into_err(&mut this.errors);
             }
@@ -228,9 +233,6 @@ fn parse_attr_list<'a>(
             parse_sabi_attr(this, pctx, attr).combine_into_err(&mut this.errors);
             Ok(())
         })?;
-    // Hopefully this will work some day.
-    } else if list.path.is_ident("non_exhaustive") {
-        this.non_exhaustive_attr = true;
     }
 
     Ok(())
@@ -357,8 +359,6 @@ fn parse_sabi_attr<'a>(
                 this.with_trait_alias = false;
             } else if path.is_ident("no_docs") {
                 this.generate_docs = false;
-            } else if path.is_ident("non_exhaustive") {
-                this.non_exhaustive_attr = true;
             } else if path.is_ident("public") {
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;

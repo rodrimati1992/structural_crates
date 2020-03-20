@@ -120,8 +120,11 @@ along with the rest of the rest of the generated code.
 
 - `#[struc(no_docs)]`: disables the docs in generated code.
 
-- `#[struc(non_exhaustive)]`: to mark an enum as having non-exhaustive variants.
-(The built-in `#[non_exhaustive]` attribute can't be seen by derive macros for some reason)
+- `#[non_exhaustive]`: 
+This built-in `#[non_exhaustive]` attribute marks an enum as having non-exhaustive variants,
+changing the generated code to not rely on the amount of variants of the enum,
+and disallowing exhaustive matching with the `switch` macro.
+
 
 Changed these attributes:
 

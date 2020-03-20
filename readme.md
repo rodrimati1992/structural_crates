@@ -1,5 +1,3 @@
-%
-
 [![Build Status](https://travis-ci.org/rodrimati1992/structural_crates.svg?branch=master)](https://travis-ci.org/rodrimati1992/structural_crates) [![Join the chat at https://gitter.im/structural_crates/community](https://badges.gitter.im/structural_crates/community.svg)](https://gitter.im/structural_crates/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![](https://img.shields.io/crates/v/structural.svg)][crates-io]
 [![](https://docs.rs/structural/badge.svg)][api-docs]
@@ -42,8 +40,8 @@ this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
 # Examples
 
-For examples you can look for
-[the documentation for the root module of the structural crate
+For examples you can look at
+[the examples section of the documentation for the root module of the structural crate
 ](https://docs.rs/structural/0.3/structural/index.html#root-mod-examples)
 
 # Changelog

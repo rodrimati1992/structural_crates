@@ -63,11 +63,12 @@ Removes the docs for the generated traits,and impl of `Structural`.
 
 The documentation describes variants and fields that the accessor trait impls represent.
 
-### `#[struc(non_exhaustive)]`
+### `#[non_exhaustive]`
 
 This is only usable on enums.
 
-Marks the enum as having non-exhaustive variants,
+The structural macro recognizes this built-in attribute,
+and marks the enum as having non-exhaustive variants,
 meaning that:
 
 - You will not be able to exhaustively match on it with the `switch` macro

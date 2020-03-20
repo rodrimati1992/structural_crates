@@ -483,7 +483,7 @@ mod nonexhaustive_enum {
     use crate::Structural;
 
     #[derive(Structural)]
-    #[struc(non_exhaustive)]
+    #[non_exhaustive]
     #[allow(dead_code)]
     pub enum NonExhaustiveEnum {
         A,

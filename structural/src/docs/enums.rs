@@ -22,8 +22,7 @@ variant field accessor traits (accessed with `fp!(::VariantName.field)`).
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - [`VariantCount`] impl for the enum,with the amount of variants in it.<br>
-This isn't generated if the `#[struc(non_exhaustive)]` attribute was used on the enum.<br>
-(for some reason the built-in `#[non_exhaustive]` attribute can't be seen by derives)
+This isn't generated if the `#[non_exhaustive]` attribute was used on the enum.<br>
 
 - Enums with the `#[struc(variant_count_alias)]` attribute
 have the `<DerivingType>_VC` type alias,
@@ -40,9 +39,8 @@ This isn't generated if the `#[struc(no_trait)]` attribute was used on the enum.
 - A `<DerivingType>_ESI` trait,aliasing the traits implemented by the enum,
 also requiring that the variant name and count match exactly with `<DerivingType>`.
 This is useful for doing exhaustive matching inside the `switch` macro.<br>
-This isn't generated if either the `#[struc(no_trait)]` or `#[struc(non_exhaustive)]`
+This isn't generated if either the `#[struc(no_trait)]` or `#[non_exhaustive]`
 attributes were used on the enum.<br>
-(for some reason the built-in `#[non_exhaustive]` attribute can't be seen by derives)
 
 # Things to keep in mind
 

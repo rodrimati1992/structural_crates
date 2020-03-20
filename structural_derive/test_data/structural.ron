@@ -223,7 +223,7 @@
       name:"no_docs",
       code:r##"
         #[derive(Structural)]
-        #[struc(#A)]
+        #A
         pub enum NonExhaustiveEnum {
             A,
             B,
@@ -239,7 +239,7 @@
           error_count: 0,
         ),
         (
-          replacements: { "#A":"non_exhaustive" },
+          replacements: { "#A":"#[non_exhaustive]" },
           find_all:[
             not(str("NonExhaustiveEnum_ESI")),
             not(str("VariantCount")),
@@ -248,7 +248,7 @@
           error_count: 0,
         ),
         (
-          replacements: { "#A":"non_exhaustive,variant_count_alias" },
+          replacements: { "#A":"#[non_exhaustive] #[struc(variant_count_alias)]" },
           find_all:[
             regex("attribute.*on.*non_exhaustive"),
           ],
