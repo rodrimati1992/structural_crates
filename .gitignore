@@ -1,3 +1,5 @@
 /target
 **/*.rs.bk
 Cargo.lock
+structural_crates.7z
+structural_crates.zip
