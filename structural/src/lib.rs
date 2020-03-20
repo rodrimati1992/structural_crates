@@ -4,21 +4,21 @@ This library provides field accessor traits,and emulation of structural types.
 
 # Features
 
-These are the features this library provides:
+These are some of the features this library provides:
 
-- [Derivation of the 3 accessor traits for every public field](./docs/structural_macro/index.html)
-(GetField/GetFieldMut/IntoField).
+- [`Structural`] derive macro to implement accessor traits for every public field:
+[`GetField`]/[`GetFieldMut`]/[`IntoField`] for structs,
+and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 
-- [Declaration of trait aliases for accessor trait bounds,using field-in-trait syntax.
-](./macro.structural_alias.html).
+- The [`GetFieldExt`] extension trait,which defines the main methods to access fields,
+so long as the type implements the accessor traits for those fields.
 
-- [The `impl_struct` macro to declare structural parameter/return types
-](./macro.impl_struct.html),
-as well as [`make_struct` to construct anonymous structs ](./macro.make_struct.html)
+- The [`structural_alias`] macro, to declare trait aliases for accessor traits,
+using field-in-trait syntax.
 
-- [The GetFieldExt extension trait,which defines the main methods to access fields,
-so long as the type implements the accessor traits to access those fields.
-](./trait.GetFieldExt.html)
+- The [`impl_struct`] macro to declare structural parameter/return types,
+as well as [`make_struct`] to construct anonymous structs
+
 
 # Clarifications
 
@@ -30,13 +30,13 @@ structs and enums can have more variants and or fields than are required.
 
 The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
-this is useful for exhaustive pattern matching (in the [switch macro](./macro.switch.html)).
+this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
 # Conditional methods
 
 ### `*box_*` methods
 
-Every `*Into*Field*` trait has a `*box_*` method that takes a `Box<_> parameter
+Every `*Into*Field*` trait has a `*box_*` method that takes a `Box<_>` parameter
 which only exists when the "alloc" feature is enabled (it is enabled by default).
 
 If you don't enable the "alloc" feature yourself (it is enabled by default),
@@ -46,15 +46,16 @@ section of the documentation for each trait
 For an example of how to use those macros,
 you can look at the examples in the docs for each of the `*Into*Field*` traits.
 
+<span id="root-mod-examples"></span>
 # Examples
 
 
 ### Structural Derive for structs
 
-This demonstrates how you can use any type with a superset of the
-fields of another one in a function.
+This demonstrates how you can use any type with a superset of the fields of
+another one in a function.
 
-For details on the [Structural derive macro look here](./docs/structural_macro/index.html).
+[`Structural`] derive macro docs for more details on derivation.
 
 ```rust
 use structural::{GetFieldExt,Structural,fp};
@@ -150,7 +151,7 @@ fn main(){
         // ExtraCommand can't be passed to `run_command` because that function requires
         // an enum with exactly the `SendEmail` and `RemoveAddress` variants.
 
-        // The `SendEmail` variant can have more fields than the one in `Command`,
+        // The `SendEmail` variant can have more fields than the one in the `Command` enum,
         // they're just ignored.
         run_command_nonexhaustive(ExtraCommand::SendEmail{
             to:"squatter@crates.io".to_string(),
@@ -258,8 +259,7 @@ pub struct UnsupportedCommand<T>(pub T);
 This demonstrates how you can define a trait aliasing field accessors,
 using a fields-in-traits syntax.
 
-For more details you can look at the docs for the
-[`structural_alias`](./macro.structural_alias.html) macro.
+For more details you can look at the docs for the [`structural_alias`] macro.
 
 ```rust
 
@@ -394,11 +394,9 @@ struct SmallHouse{
 
 This demonstrates how you can use structural aliases for enums.
 
-This shows both exhaustive and nonexhaustive enum structural aliases,
-by using the `#[struc(and_exhaustive_enum(suffix="_Ex"))]` attribute when declaring the
-trait inside of `structural_alias`.<br>
-You can also use the `#[struc(exhaustive_enum)]` attribute to make the annotated trait
-itself exhaustive instead of having two traits.
+This shows both exhaustive and nonexhaustive enum structural aliases.
+
+For more details you can look at the docs for the [`structural_alias`] macro.
 
 ```rust
 use structural::{GetFieldExt,Structural,structural_alias,switch,fp};
@@ -588,6 +586,19 @@ struct Cents(u64);
 ```
 
 
+[`Structural`]: ./docs/structural_macro/index.html
+[`GetField`]: ./field_traits/trait.GetField.html
+[`GetFieldMut`]: ./field_traits/trait.GetFieldMut.html
+[`IntoField`]: ./field_traits/trait.IntoField.html
+[`GetVariantField`]: ./field_traits/variant_field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ./field_traits/variant_field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ./field_traits/variant_field/trait.IntoVariantField.html
+
+[`GetFieldExt`]: ./trait.GetFieldExt.html
+[`impl_struct`]: ./macro.impl_struct.html
+[`make_struct`]: ./macro.make_struct.html
+[`structural_alias`]: ./macro.structural_alias.html
+[`switch`]: ./macro.switch.html
 
 */
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]

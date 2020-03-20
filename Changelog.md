@@ -3,33 +3,37 @@ This is the changelog,summarising changes in each version(some minor changes may
 # 0.3.0
 
 Added support for enums,
-defining the `GetVariantFieldImpl` `GetVariantFieldMutImpl` `IntoVariantFieldImpl`
-for enums to implement,as well as
-[`Opt`]`GetVariantField`/`GetVariantFieldMut`/`IntoVariantField`/`IntoVariantFieldMut` 
-trait aliases for them.
+defining the `GetVariantField` `GetVariantFieldMut` `IntoVariantField` traist for enums,
+the `IntoVariantFieldMut` trait alias, and `GetVariantFieldType` type alias.
 
-Moved the `GetField::Ty` to the newly created `FieldType` trait.
-
-Renamed `GetField` `GetFieldMut` and `IntoField` traits to 
-`GetFieldImpl` `GetFieldMutImpl` and `IntoFieldImpl`.
-
-Changed the accessor traits to return a Result using the `Err` associated type for the error,
-using the error type to represent the *optionality* of the accessor trait.
-
-Defined [`Opt`]`GetField`/`GetFieldMut`/`IntoField`/`IntoFieldMut` trait aliases for the
-accessor traits with different optionalities and access.
-
-Added `*_VSI` trait to the generated code for structs,
-to use it as the bound for an enum variant with compatible fields.
+Moved the `GetField::Ty` to the newly created `FieldType` trait,
+supertrait of both `GetField` and `GetVariantField`.
 
 Changed output of single "path component" (non nested field/variant/variant field access)
-`fp` or `FP` macro invocation to be an `S` instead of a `FieldPath<(S,)>`
+`fp` or `FP` macro invocation from `FieldPath<(S,)>` to `S`.
 
 Renamed `FieldPath` to `NestedFieldPath`,since they are always for nested fields.
 
 Moved `type_level::field_path` to the root module,
-moved the `TStr`,`VariantName`,`VariantField`,`NestedFieldPath`,`FieldPathSet`,`NestedFieldPathSet`
+moved the `TStr`,`NestedFieldPath`,`FieldPathSet`
 to the root module for error messages to be shorter.
+
+Declared these structs in the root module:
+- `VariantName` (what `FP!(::Variant)` desugars to),for accessing an enum variant.
+- `VariantField` (what `FP!(::Variant.field)` desugars to),for accessing a variant field.
+- `NestedFieldPathSet` (what `FP!(foo=>bar,baz)` desugars to),
+for accessing multiple fields from inside a nested field/variant.
+
+Made string literals/integers/identifiers usable as varianble and field names
+in the field path macros,
+using the string literals to implement *arbitrary identifiers*.
+
+Added `?` syntactic sugar for field path macros,to get the value of an option field.
+`?` is sugar because it's transformed into `::Some.0` as soon as it's parsed.
+
+Fixed a few parsing errors in field path macros due to `0.1` being tokenized
+as a float literal
+(tricky in combination with the rest of the syntax that those macros support)
 
 Changed representation of `NestedFieldPath`,`FieldPathSet` to store their tuple type parameter 
 as a field (the same for `VariantName`,`VariantField`,`NestedFieldPathSet`),
@@ -50,16 +54,14 @@ variant count and names must match exactly.
 
 - `*_VC`(opt-in): The amount of variants in the enum as a decimal `TStr`.
 
-
-Added the `::Variant` (for accessing an enum variant) and 
-`=>`(for accessing multiple fields inside a nested field/variant)
-syntax to the `fp` and `FP` macros.
+Added `*_VSI` trait to the generated code for structs,
+to use it as the bound for an enum variant with compatible fields.
 
 Changed the `field_path_aliases` macro to also accept a module as an argument,
 removing `field_path_aliases_module`.
 
-Exposing the `TStr` type-level string type,
-with `TS` to get the type(in a type context),and `ts` to construct it.
+Exposing the `TStr` type-level string type publically.
+Using `TS` to get the type(in a type context),and `ts` to construct it.
 
 Defined the `tstr_aliases` macro,similar to `field_path_aliases` but for 
 `TStr`(the type-level string type).
@@ -76,9 +78,7 @@ eg: `TS!(9)`,`TS!(17)`,etc.
 
 Defined the `switch` macro,to match on structural enums,either exhaustive or nonexhaustive.
 
-Updated `structural_alias` macro to also support enums,
-defaulted constants/functions,
-and optional fields(prefixing the type with `?`).
+Updated `structural_alias` macro to also support enums,and defaulted constants/functions.
 
 Added these attributes to structural aliases(usable on each trait):
 
@@ -91,24 +91,19 @@ Panics at compile-time,printing the what structural_alias outputs for the trait.
 Creates a subtrait of this structural alias for an exhaustive versioned of the aliased enum.
 
 
-Added `impl_struct` macro to get an `impl Trait` for field accessor traits.
+Added `impl_struct` macro to get an `impl Trait` for a structural struct type,
+with permutations of the `GetField` `GetFieldMut` `IntoField` `IntoFieldMut` traits.
 
 Defined example types used in documentation examples in `for_examples`.
 
-Added generated documentation for public items.
+Removed the type metadata in `Structural` trait,
+and removed `StructuralDyn` because it interacted badly with enums.
 
-Added these attributes:
+Added generated documentation for public items,and Structural trait impls.
 
-- `#[struc(implicit_optionality)]`: 
-To implicitly declare the field accessors of all `Option` fields as optional.
-
-- `#[struc(optional)]`
-Declare the field accessors of fields as optional.
+Added these attributes to the `Structural` derive:
 
 - `#[struc(bound="T:Trait")]`: to add bounds to the generated impls
-
-- `#[struc(not_optional)]`
-Declare the field accessors of fields as not optional.
 
 - `#[struc(replace_bounds="Trait<@variant>")]` attribute for enum variants,
 to replace the bound for the fields of the enum variant with the ones passed to the attribute.
@@ -125,6 +120,9 @@ along with the rest of the rest of the generated code.
 
 - `#[struc(no_docs)]`: disables the docs in generated code.
 
+- `#[struc(non_exhaustive)]`: to mark an enum as having non-exhaustive variants.
+(The built-in `#[non_exhaustive]` attribute can't be seen by derive macros for some reason)
+
 Changed these attributes:
 
 - `#[struc(delegate_to)` now accepts optional arguments for 
@@ -133,24 +131,19 @@ additional bounds on the accessor trait impls.
 - `#[struc(rename="foo")`  is now also usable on variants.
 
 
-Renamed the delegation macro to unsafe_delegate_structural_with,updated it to handle enums,
+Renamed the delegation macro to `unsafe_delegate_structural_with`,updated it to handle enums,
 added the `specialization_params` parameter to specify how specialization of 
 the raw pointer accessor method works.
 
 Added impls of accessor traits for:
 
-- `[T]`:optional accessors for all usize indices.
-
 - arrays up to 32 elements.
 
-- Option:with a newtype Some variant
+- Option:with regular Some and None variants
 
 - Result:with regular Ok and Err variants (eg:using `fp!(::Ok.0)` to access `T`)
 
 Added structural aliases for arrays and tuples (up to the implemented sizes).
-
-Made string literals/integers/identifiers usable as varianble and field names,
-using the string literals to implement *arbitrary identifiers*.
 
 Improved the docs for virtually everything,
 including by having examples for enums in everything that's for both enums and structs.
@@ -159,46 +152,55 @@ Replaced `IsFieldPath` and `IsFieldPathSet` with `IsSingleFieldPath` `IsMultiFie
 implementing them for all the types that implement the corresponding `Rev*` traits,
 making their supertraits just `Sized`.
 
-Changed `GetFieldExt` to accept any argument implementing the appropriate `Rev*` trait.
+Changed `GetFieldExt` to accept any argument implementing the appropriate `Rev*` trait,
+where before it would only `*Path*` types defined in the `structural` crate.
 
-Declared the `VariantName` (what `FP!(::Variant)` desugars to),
-`VariantField` (what `FP!(::Variant.field)` desugars to),
-and `NestedFieldPathSet` (what `FP!(foo=>bar,baz)` desugars to) structs.
+Added back the what used to be the `GetMultiField` traits as the 
+`RevGetMultiFieldImpl` and `RevGetMultiFieldMutImpl` traits.<br>
+Defined `RevGetMultiField` and `RevGetMultiField`extension traits that
+transform the `Result<_,_>` returned by `Rev*MultiField*Impl` traits
+into `T` or `Option<T>` depending on the error type.
 
-Added back the what used to be the GetMultiField traits as the 
-`RevGetMultiField` and `RevGetMultiFieldMut`.
+Removed MutRef entirely,replacing all its uses with raw pointers.
 
-Removed the type metadata in `Structural` trait,
-and removed `StructuralDyn` because it interacted badly with enums.
+Removed the `RevIntoFieldImpl::rev_box_into_field` method
 
-Removed MutRef entirely,
-replacing all its uses with double pointers to support slices and other `!Sized` types.
-
-Changing `RevGetFieldImpl`/`RevGetFieldMutImpl`/`RevIntoFieldImpl` to return a single field,
-making `RevGetFieldImpl` a supertrait of both `RevGetFieldMutImpl` and `RevIntoFieldImpl`,
-and RevGetFieldMut unsafe to implement.<br>
-These traits also have trait aliases,
-named [Opt]RevGetField/RevGetFieldMut/RevIntoField/RevIntoFieldMut.
-
-Fixed a few parsing errors in `fp` and `FP` macros due to `0.1` being tokenized as a float literal
-(tricky in combination with the rest of the syntax that those macros support)
-
-Removed support for Rust versions prior to 1.40,so that type proc macros could be used in examples.
+Renamed `RevGetField`/`RevGetFieldMut`/`RevIntoField` to
+`RevGetFieldImpl`/`RevGetFieldMutImpl`/`RevIntoFieldImpl`,
+and changed them to return a single field,<br>
+Made `RevGetFieldImpl` a supertrait of both `RevGetFieldMutImpl` and `RevIntoFieldImpl`,
+with RevGetFieldMut as an unsafe trait.<br>
+Those traits also have trait aliases,
+named [Opt]RevGetField/[Opt]RevGetFieldMut/[Opt]RevIntoField/[Opt]RevIntoFieldMut.
 
 Defined `use_const_str` and `nightly_use_const_str` features to use const generics as an
 implementation detail of `TStr`.
 
 Removed the `FieldPath1` type alias.
 
-Removed From impls for field paths.
+Removed `From` impls for field paths.
+
+Removed the `utils::coerce_slice` function.
 
 Added `NormalizeFields` trait,
 for returning both optional and non-optional fields from `GetFieldExt`,
 
-Added `IsFieldErr` marker trait for the valid error types (`OptionalField` and `NonOptField`),
+Added `IsFieldErr` marker trait for the valid error types (`FailedAccess` and `InfallibleAccess`),
 and the `CombinedErrs` trait to get the optionality of a nested field.
 
+Defined the `z_raw_borrow_enum_field` macro,for raw borrowing of enums.
+
+Defined the `z_unsafe_impl_get_vfield_raw_mut_fn` macro,
+to implement function-pointer-getter methods.
+
+Defined the `IntoAliasing` trait and `IntoAliasingOut` type alias,
+to get a field path set type which can only be used to get shared access to multiple fields.
+
+
 Dependencies:
+
+- Bumped the minimum supported Rust version to 1.40,
+so that proc macros in type position could be used in examples.
 
 - Added `generational_arena` depedency to `structural_derive` crate.
 

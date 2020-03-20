@@ -1,8 +1,8 @@
 /*!
 
-The Structural derive macro implements the Structural trait,
-as well as accessor traits
-(GetField / GetFieldMut / IntoField ) for fields.
+The Structural derive macro implements the Structural trait, as well as accessor traits:
+ [`GetField`]/[`GetFieldMut`]/[`IntoField`] for structs,
+and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 
 Every instance of `<DerivingType>` in the documentation is the name of the type.
 If have a `Money` type,`<DerivingType>_Foo` means `Money_Foo`.
@@ -19,21 +19,26 @@ By default,this derive generates:
 - Implementation of the structural trait for the deriving type,
 with documentation describing all the accessor trait impls for the type.
 
-- Implementations of the accessor traits
-([GetField](../../field_traits/trait.GetField.html)/
- [GetFieldMut](../../field_traits/trait.GetFieldMut.html)/
- [IntoField](../../field_traits/trait.IntoField.html)
-)
+- Implementations of the accessor traits ([`GetField`]/[`GetFieldMut`]/[`IntoField`])
 for pub fields.
 
 - A trait named `<DerivingType>_SI`,aliasing the accessor traits for the type,
-with a blanket implementation for all types with the same fields.
+implemented for all types with the same accessor trait impls.
 
 - A trait named `<DerivingType>_VSI`,
-for use of the struct as a newtype variant,by annotating the variant with
+to use the struct (or any other struct that implements the same accessor traits)
+in a newtype variant,by annotating the variant with
 `#[struc(newtype(bounds="<DerivingType>_VSI<@variant>"))]`.
 
 All of these can be overriden.
+
+[`GetField`]: ../../field_traits/trait.GetField.html
+[`GetFieldMut`]: ../../field_traits/trait.GetFieldMut.html
+[`IntoField`]: ../../field_traits/trait.IntoField.html
+[`GetVariantField`]: ../../field_traits/variant_field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ../../field_traits/variant_field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ../../field_traits/variant_field/trait.IntoVariantField.html
+[`TStr`]: ../../struct.TStr.html
 
 
 # Container Attributes
@@ -100,18 +105,20 @@ The name can be anything,including non-ascii identifiers.
 Replaces (in the generated trait) the bounds for this particular variant with
 the ones in the attribute.
 
-All `@variant` in the bounds will be replaced with the name of the variant,
+All `@variant` in the bounds will be replaced with a [`TStr`] containing the
+name of the variant(eg: `TS!(Foo)` for the `Foo` variant ),
 
 ### `#[struc(newtype)]`
 
 Marks a variant as a newtype variant,
 delegating access to fields in the variant to the single field of the variant.
 
-This attribute can have an optional argumen:
+This attribute can have an optional argument:
 
 - `#[struc(newtype(bounds="Baz_VSI<'a,u8,@variant>"))]`:
 
-All `@variant` in the bounds will be replaced with the name of the variant.
+All `@variant` in the bounds will be replaced with a [`TStr`] containing the
+name of the variant(eg: `TS!(Foo)` for the `Foo` variant ),
 
 Example:`#[struc(newtype(bounds = "Foo_VSI<@variant>"))]` <br>
 Example:`#[struc(newtype(bounds = "Bar_VSI<T,U,@variant>"))]` <br>
@@ -149,7 +156,7 @@ Delegates the implementation of the Structural and accessor traits to this field
 You can only delegate the implementation and Structural and accessor traits
 to a single field.
 
-Using this attribute will disable the generation traits.
+Using this attribute will disable the generation of traits.
 
 Optional arguments for `delegate_to`:
 
@@ -469,7 +476,7 @@ struct Person{
     height_nm:u64
 }
 
-
+/// `Person_SI` was generated for `Person` by the `Structural` derive macro.
 fn takes_person(this:&impl Person_SI){
     let (name,height)=this.fields(fp!(name,height_nm));
     assert_eq!( name.borrow(), "bob" );

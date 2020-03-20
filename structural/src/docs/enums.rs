@@ -15,11 +15,8 @@ The Structural derive macro generates these items+impls for enums:
 - Implementation of the `Structural` trait for the deriving type,
 with documentation describing all the accessor trait impls for the type.
 
-- Impls of the accessor traits (
-[GetVariantField](../../field_traits/variant_field/trait.GetVariantField.html)/
-[GetVariantFieldMut](../../field_traits/variant_field/trait.GetVariantFieldMut.html)/
-[IntoVariantField](../../field_traits/variant_field/trait.IntoVariantField.html
-) for variant fields (accessed with `fp!(::VariantName.field)`).
+- Impls of the [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`]
+variant field accessor traits (accessed with `fp!(::VariantName.field)`).
 
 - [`IsVariant`] impls for every variant,
 to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
@@ -109,6 +106,9 @@ Every variant also gets a [`IsVariant`] bound.
 [`IsVariant`]: ../../enums/trait.IsVariant.html
 [`VariantCount`]: ../../enums/trait.VariantCount.html
 [`TStr`]: ../../struct.TStr.html
+[`GetVariantField`]: ../../field_traits/variant_field/trait.GetVariantField.html
+[`GetVariantFieldMut`]: ../../field_traits/variant_field/trait.GetVariantFieldMut.html
+[`IntoVariantField`]: ../../field_traits/variant_field/trait.IntoVariantField.html
 
 # Examples
 

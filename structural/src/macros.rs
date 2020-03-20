@@ -195,7 +195,7 @@ macro_rules! z_unsafe_impl_get_field_raw_mut {
     };
 }
 
-/// For borrowing an enum field as either `Some(NonNull<_>)` or `None`.
+/// For creating a raw pointer of an enum field,as either `Some(NonNull<_>)` or `None`.
 ///
 /// # Safety
 ///
@@ -230,8 +230,8 @@ macro_rules! z_raw_borrow_enum_field {
     }};
 }
 
-/// Implements the `get_vfield_raw_mut_fn` and `get_vfield_raw_mut_unchecked_fn`
-/// methods from the `GetVariantFieldMut` trait.
+/// Implements the [`get_vfield_raw_mut_fn`] and [`get_vfield_raw_mut_unchecked_fn`]
+/// methods from the [`GetVariantFieldMut`] trait.
 ///
 /// # Safety
 ///
@@ -240,8 +240,15 @@ macro_rules! z_raw_borrow_enum_field {
 /// # Example
 ///
 /// For an example of using this macro look at
-/// [the manual implementation example for `GetVariantFieldMut`
+/// [the manual implementation example
 /// ](./field_traits/variant_field/trait.GetVariantFieldMut.html#manual-impl-example)
+/// for [`GetVariantFieldMut`]
+///
+/// [`GetVariantFieldMut`]: ./field_traits/variant_field/trait.GetVariantFieldMut.html
+/// [`get_vfield_raw_mut_fn`]:
+/// ./field_traits/variant_field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_fn
+/// [`get_vfield_raw_mut_unchecked_fn`]:
+/// ./field_traits/variant_field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_unchecked_fn
 #[macro_export]
 macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
     (

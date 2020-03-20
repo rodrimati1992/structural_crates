@@ -242,6 +242,7 @@
           replacements: { "#A":"non_exhaustive" },
           find_all:[
             not(str("NonExhaustiveEnum_ESI")),
+            not(str("VariantCount")),
             regex("pub *trait *NonExhaustiveEnum_SI"),
           ],
           error_count: 0,

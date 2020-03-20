@@ -29,6 +29,7 @@ The `switch` macro considers enums it knows implement `VariantCount`
 (a supertrait of `*_ESI` traits) to be exhaustive,
 otherwise they're considered non-exhaustive.
 
+<span id="syntax-example-section"></span>
 # Syntax Examples
 
 These examples demonstrates all the syntax of the `switch` macro.
@@ -273,12 +274,11 @@ enum GenericDirection4<T>{
 For more examples you can look at the ones
 [in the docs for enums](./docs/enums/index.html)
 
-
 # Syntax
 
 This uses a macro_rules-like syntax to describe the input to this macro.
 If you want to see a example that uses all the syntax,go to the
-[Syntax Example](#syntax-example) section.
+[syntax Example](#syntax-example-section) section.
 
 ```text
 switch!{
@@ -296,6 +296,8 @@ switch!{
 
 <br/>
 
+### `switch_header`
+
 The `switch_header` allows passing the matched expression,
 declaring the default access mode for all variants,
 and the name of the proxy for accessing fields of a variant.
@@ -308,11 +310,11 @@ Syntax(in the order in which the syntax is matched):
 
 - ` $($default_access:access_mode)? $matched_value:expression` ;
 
+<br>
 
-
-$default_access determins the default access mode for branches that don't specify it.
+`$default_access` determines the default access mode for branches that don't specify it.
 When it's not specified in the switch header,it is `move`.
-
+<br>
 If no `$matched_value` is passed,and `$proxy` is specified,
 the identifier of the matched enum will be reused for `$proxy`.
 
@@ -321,7 +323,7 @@ it'll be stored into an anonymous proxy variable,inaccessible inside the switch 
 
 If `$matched_value` *is* passed,and `$proxy` is specified,
 it is stored in the `$proxy` variable by value before any pattern matching happens.
-
+<br>
 In switch arms that match on the variant of the enum,
 `$proxy` is a `VariantProxy<TypeOfMatchedEnum, TS!(NameOfVariant)>`,
 which allows accessing variant fields as struct fields.
@@ -329,7 +331,7 @@ which allows accessing variant fields as struct fields.
 In switch arms that don't match on the variant of the enum,
 `$proxy` is the type of the matched enum.
 
-<br>
+### `access_mode`
 
 `access_mode` is the way that variant fields are accessed.
 
@@ -345,7 +347,7 @@ it's currently only allowed in branches that don't list fields for the variant
 You can manually convert the variant into a single field by doing
 `name_of_proxy.into_field(fp!(field_name))` inside the branch.
 
-<br>
+### `switch_branch`
 
 A `switch_branch` is any of:
 
@@ -363,9 +365,7 @@ A regular if let expression,
 where `$branch_expr` is run if `$value` matches the `$pattern` pattern,
 with access to the variables declared inside the pattern.
 
-
-
-<br>
+### `fields`
 
 `fields` can be any of:
 
@@ -387,7 +387,7 @@ with access to the variables declared inside the pattern.
     The fields of the variants (if any) can access through the `$proxy`
     (if it was declared in the switch header).
 
-
+### `named_field_destructure`
 `named_field_destructure` can be any of:
 
 - `$field_name:identifier`:
@@ -412,8 +412,7 @@ Copies the field from a variant accessed by `ref mut`.<br>
     Example: `ref mut Foo{x: (a,b) }`
     destructures the x field into a pair of mutable references,`a` and `b`<br>
 
-<br>
-<br>
+### `branch_expr`
 
 A `branch_expr` can be either:
 
