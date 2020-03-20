@@ -182,7 +182,6 @@ where
     let _ = this.clone().into_field(fp!(world));
     #[cfg(feature = "alloc")]
     {
-        use crate::reexports::Box;
         let _ = Box::new(this.clone()).into_field(fp!(a));
         let _ = Box::new(this.clone()).into_field(fp!(b));
         let _ = Box::new(this.clone()).into_field(fp!(e));

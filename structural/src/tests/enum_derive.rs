@@ -466,8 +466,8 @@ mod without_variant_count_attr {
     use crate::Structural;
 
     #[derive(Structural)]
+    #[allow(dead_code)]
     enum Enum {
-        #[allow(dead_code)]
         A,
     }
 
@@ -480,8 +480,11 @@ mod without_variant_count_attr {
 }
 
 mod nonexhaustive_enum {
-    #[non_exhaustive]
+    use crate::Structural;
+
     #[derive(Structural)]
+    #[struc(non_exhaustive)]
+    #[allow(dead_code)]
     pub enum NonExhaustiveEnum {
         A,
         B,
@@ -490,5 +493,10 @@ mod nonexhaustive_enum {
     trait NonExhaustiveEnum_ESI {}
     fn impls_trait_assertion(ne: NonExhaustiveEnum) -> impl NonExhaustiveEnum_SI {
         ne
+    }
+
+    #[test]
+    fn nonexhaustive_impls_trait() {
+        impls_trait_assertion(NonExhaustiveEnum::A);
     }
 }

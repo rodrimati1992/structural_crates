@@ -15,9 +15,6 @@ use crate::{
     IntoVariantField,
 };
 
-#[cfg(feature = "alloc")]
-use crate::pmr::Box;
-
 /////////////////////////////////////////////////////////////////////////////
 
 mod components;

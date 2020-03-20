@@ -414,9 +414,9 @@ fn deriving_structural<'a>(
                 };
 
                 let variant_count_param = if *non_exhaustive_attr {
-                    quote!(variant_count=#variant_count,)
-                } else {
                     quote!()
+                } else {
+                    quote!(variant_count=#variant_count,)
                 };
 
                 (

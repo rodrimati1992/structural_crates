@@ -231,8 +231,6 @@ fn parse_attr_list<'a>(
     // Hopefully this will work some day.
     } else if list.path.is_ident("non_exhaustive") {
         this.non_exhaustive_attr = true;
-    } else {
-        println!("Tokens:\n{}\n", list.to_token_stream());
     }
 
     Ok(())

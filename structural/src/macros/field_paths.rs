@@ -433,6 +433,8 @@ field_path_aliases!{
     c=(0,1,2),
     d=(::Foo=>bar,baz),
 }
+
+# fn main(){}
 ```
 
 
@@ -528,12 +530,12 @@ where
         GetField<one,Ty=i32>+
         GetField<two,Ty=i32>
 {
-    assert_eq!( this.field_(zero), &Some(8,13) );
+    assert_eq!( this.field_(zero), &Some((8,13)) );
     assert_eq!( this.field_(zero_a), Some(&8) );
     assert_eq!( this.field_(zero_b), Some(&13) );
     assert_eq!( this.field_(one), &3 );
     assert_eq!( this.field_(two), &5 );
-    assert_eq!( this.fields(FirstThree), (&Some(8,13),&3,&5) );
+    assert_eq!( this.fields(FirstThree), (&Some((8,13)),&3,&5) );
 }
 
 fn assert_variant<T>(this:&T)

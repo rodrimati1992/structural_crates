@@ -42,7 +42,7 @@ where
     assert_eq!(c, &mut 2);
 }
 
-fn struct_val_testing<T>(mut this: T)
+fn struct_val_testing<T>(this: T)
 where
     T: Array3<u32> + Clone,
 {
@@ -76,7 +76,7 @@ where
     assert_eq!(c, &mut 28);
 }
 
-fn enum_val_testing<T>(mut this: T)
+fn enum_val_testing<T>(this: T)
 where
     T: EnumOptFlying_SI + Clone,
 {
