@@ -1,4 +1,4 @@
-use crate::field_path::IsTStr;
+use crate::path::IsTStr;
 
 use std_::marker::PhantomData;
 

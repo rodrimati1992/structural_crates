@@ -10,7 +10,7 @@ use crate::{
         errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
         FailedAccess, InfallibleAccess,
     },
-    field_path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
+    path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
     FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField, GetVariantFieldMut, IntoField,
     IntoVariantField,
 };
@@ -102,7 +102,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl};
-/// use structural::field_path::IsSingleFieldPath;
+/// use structural::path::IsSingleFieldPath;
 /// use structural::GetFieldExt;
 ///
 /// struct FromEnd(usize);
@@ -184,7 +184,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
-/// use structural::field_path::IsSingleFieldPath;
+/// use structural::path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,ts};
 ///
 /// let mut tup=(3,5,8,13);
@@ -296,7 +296,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 ///
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
-/// use structural::field_path::IsSingleFieldPath;
+/// use structural::path::IsSingleFieldPath;
 /// use structural::{GetFieldExt,fp};
 ///
 /// use core::mem;

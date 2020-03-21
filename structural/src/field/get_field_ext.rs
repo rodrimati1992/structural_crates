@@ -4,7 +4,7 @@ use crate::{
         NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
         RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
     },
-    field_path::IsTStr,
+    path::IsTStr,
 };
 
 use core_extensions::collection_traits::{Cloned, ClonedOut};

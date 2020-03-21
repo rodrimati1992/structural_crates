@@ -18,7 +18,7 @@ pub use self::{
     variant_proxy::VariantProxy,
 };
 
-use crate::field_path::AssertTStrParam;
+use crate::path::AssertTStrParam;
 
 /// Queries whether an enum is some variant (the `V` type parameter)
 ///

@@ -286,7 +286,7 @@ Changes to `z_delegate_structural_with`:
 
     - Renamed `field_ty` argument to `delegating_to_type`
 
-    - Added `field_name_param=( field_name : FieldName );` argument.
+    - Added `field_name_param=( field_name : FieldPath );` argument.
 
     - Added `as_delegating_raw{ ..... }` argument,
       to get a raw pointer to the delegated to variable.

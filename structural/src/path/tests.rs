@@ -1,4 +1,4 @@
-use crate::field_path::{AliasedPaths, UniquePaths};
+use crate::path::{AliasedPaths, UniquePaths};
 use crate::{FieldPathSet, NestedFieldPath, NestedFieldPathSet, VariantField, VariantName};
 
 use core_extensions::ConstDefault;

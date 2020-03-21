@@ -249,37 +249,37 @@ struct Charge{
 #[macro_export]
 macro_rules! TS {
     (0) => {
-        $crate::field_path::string_aliases::str_0
+        $crate::path::string_aliases::str_0
     };
     (1) => {
-        $crate::field_path::string_aliases::str_1
+        $crate::path::string_aliases::str_1
     };
     (2) => {
-        $crate::field_path::string_aliases::str_2
+        $crate::path::string_aliases::str_2
     };
     (3) => {
-        $crate::field_path::string_aliases::str_3
+        $crate::path::string_aliases::str_3
     };
     (4) => {
-        $crate::field_path::string_aliases::str_4
+        $crate::path::string_aliases::str_4
     };
     (5) => {
-        $crate::field_path::string_aliases::str_5
+        $crate::path::string_aliases::str_5
     };
     (6) => {
-        $crate::field_path::string_aliases::str_6
+        $crate::path::string_aliases::str_6
     };
     (7) => {
-        $crate::field_path::string_aliases::str_7
+        $crate::path::string_aliases::str_7
     };
     (8) => {
-        $crate::field_path::string_aliases::str_8
+        $crate::path::string_aliases::str_8
     };
     (9) => {
-        $crate::field_path::string_aliases::str_9
+        $crate::path::string_aliases::str_9
     };
     (_) => {
-        $crate::field_path::string_aliases::str_underscore
+        $crate::path::string_aliases::str_underscore
     };
     ( $literal:literal ) => {
         $crate::_TStr_from_literal!($literal)
@@ -296,14 +296,14 @@ macro_rules! TS {
 #[cfg(feature = "use_const_str")]
 macro_rules! _TStr_from_literal {
     ( $literal:literal )=>{
-        $crate::TStr<$crate::p::TS<{
+        $crate::TStr<$crate::__TS<{
             $crate::const_generic_utils::StrFromLiteral::new($literal,stringify!($literal))
                 .str_from_lit()
         }>>
     };
     // Using `:expr` because `:literal` doesn't accept `stringify!(foo)` as a parameter
     (@str $literal:expr ) => {
-        $crate::TStr<$crate::p::TS<$literal>>
+        $crate::TStr<$crate::__TS<$literal>>
     };
 }
 
@@ -364,7 +364,7 @@ they are paired up with the `fp` macro for comparison.
 ```
 use structural::{GetFieldExt, Structural, ts, fp, field_path_aliases};
 use structural::enums::VariantProxy;
-use structural::field_path::{
+use structural::path::{
     VariantField, VariantName, NestedFieldPath, FieldPathSet, NestedFieldPathSet,
 };
 

@@ -1,4 +1,4 @@
-use crate::p::TStrPriv;
+use crate::__TStrPriv;
 use crate::type_level::to_value_traits::ToUsize;
 use crate::NestedFieldPath;
 
@@ -9,7 +9,7 @@ macro_rules! declare_const_impls {
     () => {
         use crate::const_generic_utils::str_to_usize;
 
-        impl<const S: &'static str> ToUsize for TStrPriv<S> {
+        impl<const S: &'static str> ToUsize for __TStrPriv<S> {
             const USIZE: usize = str_to_usize(S);
         }
     };
@@ -27,7 +27,7 @@ mod tstr_type_param {
     macro_rules! impl_to_usize {
         ( $($typ:ident)* ) => (
 
-            impl<$($typ,)*> ToUsize for TStrPriv<($($typ,)*)>
+            impl<$($typ,)*> ToUsize for __TStrPriv<($($typ,)*)>
             where
                 $($typ:ToDigit,)*
             {

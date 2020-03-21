@@ -644,10 +644,10 @@ pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
 pub mod field;
-pub mod field_path;
 pub mod for_examples;
 #[doc(hidden)]
 pub mod msg;
+pub mod path;
 mod structural_trait;
 pub mod utils;
 
@@ -659,8 +659,7 @@ pub mod tests;
 
 pub mod type_level;
 
-#[doc(hidden)]
-pub mod p;
+include! {"p.rs"}
 
 #[doc(inline)]
 pub use crate::field::GetFieldExt;
@@ -700,7 +699,7 @@ pub mod pmr {
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
     pub use crate::field::*;
-    pub use crate::field_path::*;
+    pub use crate::path::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
     pub use crate::utils::{_Structural_BorrowSelf, as_phantomdata};
@@ -726,4 +725,4 @@ compile_error! { "tests must be run with the \"testing\" feature" }
 use std_::marker::PhantomData;
 use std_::mem::ManuallyDrop;
 
-include! {"field_path/declare_field_path_types.rs"}
+include! {"path/declare_field_path_types.rs"}

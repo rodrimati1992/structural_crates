@@ -12,7 +12,7 @@ where
 {
     let string = string.as_ref();
 
-    quote!( ::structural::TStr<::structural::p::TS<#string>> )
+    quote!( ::structural::TStr<::structural::__TS<#string>> )
 }
 
 #[cfg(not(feature = "use_const_str"))]
@@ -29,13 +29,13 @@ where
         buffer.clear();
         let c = b as char;
         let _ = if (c.is_alphanumeric() || c == '_') && b < 128 {
-            write!(buffer, "_{}", c)
+            write!(buffer, "__{}", c)
         } else {
-            write!(buffer, "B{}", b)
+            write!(buffer, "__0x{:02X}", b)
         };
         syn::Ident::new(&buffer, Span::call_site())
     });
-    quote!( ::structural::TStr<::structural::p::TS<( #( ::structural::p:: #bytes,)* )>> )
+    quote!( ::structural::TStr<::structural::__TS<( #( ::structural::#bytes,)* )>> )
 }
 
 pub(crate) fn variant_field_tokens<S0, S1>(variant: S0, field: S1) -> TokenStream2

@@ -3,7 +3,7 @@ use crate::{
         FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField, GetVariantFieldMut,
         IntoField, IntoVariantField, SpecGetFieldMut,
     },
-    field_path::{IsTStr, TStr, VariantField},
+    path::{IsTStr, TStr, VariantField},
 };
 
 #[cfg(feature = "alloc")]

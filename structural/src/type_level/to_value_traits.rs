@@ -33,14 +33,14 @@ macro_rules! impl_to_digit {
 }
 
 impl_to_digit! {
-    crate::p::_0=0,
-    crate::p::_1=1,
-    crate::p::_2=2,
-    crate::p::_3=3,
-    crate::p::_4=4,
-    crate::p::_5=5,
-    crate::p::_6=6,
-    crate::p::_7=7,
-    crate::p::_8=8,
-    crate::p::_9=9,
+    crate::__0=0,
+    crate::__1=1,
+    crate::__2=2,
+    crate::__3=3,
+    crate::__4=4,
+    crate::__5=5,
+    crate::__6=6,
+    crate::__7=7,
+    crate::__8=8,
+    crate::__9=9,
 }

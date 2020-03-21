@@ -7,14 +7,14 @@
 ///
 /// # Semver concerns
 /// 
-/// The private `TS` type appears as a type argument of `TStr`
+/// The private `__TS` type appears as a type argument of `TStr`
 /// in the output of macros from this crate,
-/// the `TS` type must not be used by name outside of the `structural` and `structural_derive`
+/// the `__TS` type must not be used by name outside of the `structural` and `structural_derive`
 /// crates.
 ///
-/// Direct use of the `TS` type will cause compilation errors
+/// Direct use of the `__TS` type will cause compilation errors
 /// whenever any other crate uses the "use_const_str" cargo feature,
-/// which changes `TS` to use const generics to improve error messages.
+/// which changes `__TS` to use const generics to improve error messages.
 ///
 /// # TStr type
 /// 
@@ -105,7 +105,7 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 /// ```rust
 /// use structural::{GetFieldExt, fp, ts};
 /// use structural::for_examples::Variants;
-/// use structural::field_path::VariantField;
+/// use structural::path::VariantField;
 ///
 /// let mut foo=Variants::Foo(3,5);
 ///
@@ -170,7 +170,7 @@ pub struct VariantField<V, F> {
 /// ```rust
 /// use structural::{GetFieldExt, fp, ts};
 /// use structural::for_examples::Variants;
-/// use structural::field_path::VariantName;
+/// use structural::path::VariantName;
 ///
 /// let mut foo=Variants::Foo(3,5);
 ///
@@ -308,8 +308,8 @@ pub struct NestedFieldPath<T> {
 /// [`one`]: #method.one
 /// [`many`]: #method.many
 /// [`NestedFieldPathSet`]: ./struct.NestedFieldPathSet.html
-/// [`UniquePaths`]: ./field_path/struct.UniquePaths.html
-/// [`AliasedPaths`]: ./field_path/struct.AliasedPaths.html
+/// [`UniquePaths`]: ./path/struct.UniquePaths.html
+/// [`AliasedPaths`]: ./path/struct.AliasedPaths.html
 ///
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
@@ -383,8 +383,8 @@ pub struct FieldPathSet<T, U> {
 /// [`NEW`]: #associatedconstant.NEW
 /// [`NestedFieldPath`]: ./struct.NestedFieldPath.html
 /// [`FieldPathSet`]: ./struct.FieldPathSet.html
-/// [`UniquePaths`]: ./field_path/struct.UniquePaths.html
-/// [`AliasedPaths`]: ./field_path/struct.AliasedPaths.html
+/// [`UniquePaths`]: ./path/struct.UniquePaths.html
+/// [`AliasedPaths`]: ./path/struct.AliasedPaths.html
 /// 
 #[derive(Debug, Clone, Copy)]
 pub struct NestedFieldPathSet<F, S, U> {

@@ -100,7 +100,7 @@ impl_to_path_to_set! {
 impl<V, F> VariantField<V, F> {
     /// Constructs a VariantField from the name of the variant,and field.
     ///
-    /// Both `name` and `field` is expected to be a [::structural::field_path::TStr].
+    /// Both `name` and `field` is expected to be a [::structural::path::TStr].
     pub const fn new(variant: V, field: F) -> Self {
         Self { variant, field }
     }
@@ -147,7 +147,7 @@ impl_to_path_to_set! {
 impl<V> VariantName<V> {
     /// Constructs a VariantName from `name`.
     ///
-    /// `name` is expected to be a [::structural::field_path::TStr].
+    /// `name` is expected to be a [::structural::path::TStr].
     pub fn new(name: V) -> Self {
         Self { name }
     }

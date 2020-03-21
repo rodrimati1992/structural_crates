@@ -27,7 +27,7 @@ mod tests;
 
 mod to_usize;
 
-include! { "./field_path/path_components.rs" }
+include! { "./path/path_components.rs" }
 
 pub use crate::{
     FieldPathSet, NestedFieldPath, NestedFieldPathSet, TStr, VariantField, VariantName,
@@ -93,10 +93,10 @@ pub trait IsMultiFieldPath: Sized {
     ///
     /// This is expected to be either:
     ///
-    /// - `structural::field_path::AliasedPaths`:
+    /// - `structural::path::AliasedPaths`:
     /// for a field path that might refer to the same field multiple times.
     ///
-    /// - `structural::field_path::UniquePaths`:
+    /// - `structural::path::UniquePaths`:
     /// for a field path that doesn't refer to a field more than once.
     ///
     type PathUniqueness;

@@ -1,4 +1,4 @@
-use crate::{field_path::TStr, GetFieldExt};
+use crate::{path::TStr, GetFieldExt};
 
 crate::structural_alias! {
     trait Hi<T>{

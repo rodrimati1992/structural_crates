@@ -5,7 +5,7 @@ Contains traits for accessing multiple fields at once.
 
 use crate::{
     field::{IsFieldErr, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl},
-    field_path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, UniquePaths},
+    path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, UniquePaths},
 };
 
 #[allow(unused_imports)]
@@ -69,7 +69,7 @@ pub type RevGetMultiFieldMutRaw<'a, Path, This> =
 ///
 /// ```rust
 /// use structural::field::{FailedAccess, RevGetMultiFieldImpl};
-/// use structural::field_path::{AliasedPaths, IsMultiFieldPath};
+/// use structural::path::{AliasedPaths, IsMultiFieldPath};
 /// use structural::GetFieldExt;
 ///
 /// struct Pair(usize,usize);
@@ -154,7 +154,7 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 ///
 /// ```rust
 /// use structural::{GetFieldExt, FP};
-/// use structural::field_path::IntoAliasingOut;
+/// use structural::path::IntoAliasingOut;
 /// use structural::field::{RevGetMultiField,RevGetMultiFieldOut};
 /// use structural::for_examples::{Bomb, WithBoom};
 ///
@@ -253,7 +253,7 @@ where
 ///
 /// ```rust
 /// use structural::field::{FailedAccess, RevGetMultiFieldMutImpl};
-/// use structural::field_path::{IsMultiFieldPath, UniquePaths};
+/// use structural::path::{IsMultiFieldPath, UniquePaths};
 /// use structural::GetFieldExt;
 ///
 /// let mut arr=[2,3,5,8,13,21,34,55,89];

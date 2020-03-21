@@ -121,7 +121,7 @@ The type that `Foo` is converted into when calling
 
 */
 
-use crate::{enums::IsVariant, field_path::VariantField, Structural};
+use crate::{enums::IsVariant, path::VariantField, Structural};
 
 use core_extensions::ConstDefault;
 
@@ -163,12 +163,12 @@ pub use self::{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// For querying the type of the `FieldName` field.
+/// For querying the type of the `FieldPath` field.
 ///
 /// Structs generally implement this with a `TStr` parameter,
 /// while enums implement this with a `VariantField` parameter
-pub trait FieldType<FieldName> {
-    /// The type of the `FieldName` field.
+pub trait FieldType<FieldPath> {
+    /// The type of the `FieldPath` field.
     type Ty;
 }
 
@@ -329,28 +329,28 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 /// }
 ///
 /// ```
-pub type GetFieldType<This, FieldName> = <This as FieldType<FieldName>>::Ty;
+pub type GetFieldType<This, FieldPath> = <This as FieldType<FieldPath>>::Ty;
 
 /// Queries the type of a double nested field (eg:`.a.b`).
 ///
 /// Example usage:
 /// `GetFieldType2<T,FP!(foo),FP!(bar)>`
-pub type GetFieldType2<This, FieldName, FieldName2> =
-    GetFieldType<GetFieldType<This, FieldName>, FieldName2>;
+pub type GetFieldType2<This, FieldPath, FieldPath2> =
+    GetFieldType<GetFieldType<This, FieldPath>, FieldPath2>;
 
 /// Queries the type of a triple nested field (eg:`.a.b.c`).
 ///
 /// Example usage:
 /// `GetFieldType3<T,FP!(foo),FP!(bar),FP!(baz)>`
-pub type GetFieldType3<This, FieldName, FieldName2, FieldName3> =
-    GetFieldType<GetFieldType2<This, FieldName, FieldName2>, FieldName3>;
+pub type GetFieldType3<This, FieldPath, FieldPath2, FieldPath3> =
+    GetFieldType<GetFieldType2<This, FieldPath, FieldPath2>, FieldPath3>;
 
 /// Queries the type of a quadruple nested field (eg:`.a.b.c.d`).
 ///
 /// Example usage:
 /// `GetFieldType4<T,FP!(foo),FP!(bar),FP!(baz),FP!(boom)>`
-pub type GetFieldType4<This, FieldName, FieldName2, FieldName3, FieldName4> =
-    GetFieldType2<GetFieldType2<This, FieldName, FieldName2>, FieldName3, FieldName4>;
+pub type GetFieldType4<This, FieldPath, FieldPath2, FieldPath3, FieldPath4> =
+    GetFieldType2<GetFieldType2<This, FieldPath, FieldPath2>, FieldPath3, FieldPath4>;
 
 /// Allows accessing the `FieldName` field mutably.
 ///

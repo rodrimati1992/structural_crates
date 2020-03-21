@@ -125,7 +125,7 @@ enum OtherEnum{
 
 use crate::{
     field::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
-    field_path::IsSingleFieldPath,
+    path::IsSingleFieldPath,
     structural_trait::Structural,
     type_level::{
         cmp::{Compare, TGreater},

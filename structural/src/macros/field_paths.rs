@@ -280,15 +280,15 @@ macro_rules! fp {
     ($ident:ident) => (
         <$crate::_TStr_from_ident!{$ident}>::NEW
     );
-    (0)=>{ $crate::field_path::aliases::index_0 };
-    (1)=>{ $crate::field_path::aliases::index_1 };
-    (2)=>{ $crate::field_path::aliases::index_2 };
-    (3)=>{ $crate::field_path::aliases::index_3 };
-    (4)=>{ $crate::field_path::aliases::index_4 };
-    (5)=>{ $crate::field_path::aliases::index_5 };
-    (6)=>{ $crate::field_path::aliases::index_6 };
-    (7)=>{ $crate::field_path::aliases::index_7 };
-    (8)=>{ $crate::field_path::aliases::index_8 };
+    (0)=>{ $crate::path::aliases::index_0 };
+    (1)=>{ $crate::path::aliases::index_1 };
+    (2)=>{ $crate::path::aliases::index_2 };
+    (3)=>{ $crate::path::aliases::index_3 };
+    (4)=>{ $crate::path::aliases::index_4 };
+    (5)=>{ $crate::path::aliases::index_5 };
+    (6)=>{ $crate::path::aliases::index_6 };
+    (7)=>{ $crate::path::aliases::index_7 };
+    (8)=>{ $crate::path::aliases::index_8 };
     ($lit:literal) => (
         <$crate::_FP_literal_!($lit)>::NEW
     );
@@ -388,17 +388,17 @@ macro_rules! FP {
     ($ident:ident) => {
         $crate::_TStr_from_ident!($ident)
     };
-    (0)=>{ $crate::field_path::string_aliases::str_0 };
-    (1)=>{ $crate::field_path::string_aliases::str_1 };
-    (2)=>{ $crate::field_path::string_aliases::str_2 };
-    (3)=>{ $crate::field_path::string_aliases::str_3 };
-    (4)=>{ $crate::field_path::string_aliases::str_4 };
-    (5)=>{ $crate::field_path::string_aliases::str_5 };
-    (6)=>{ $crate::field_path::string_aliases::str_6 };
-    (7)=>{ $crate::field_path::string_aliases::str_7 };
-    (8)=>{ $crate::field_path::string_aliases::str_8 };
-    (9)=>{ $crate::field_path::string_aliases::str_9 };
-    (_)=>{ $crate::field_path::string_aliases::str_underscore };
+    (0)=>{ $crate::path::string_aliases::str_0 };
+    (1)=>{ $crate::path::string_aliases::str_1 };
+    (2)=>{ $crate::path::string_aliases::str_2 };
+    (3)=>{ $crate::path::string_aliases::str_3 };
+    (4)=>{ $crate::path::string_aliases::str_4 };
+    (5)=>{ $crate::path::string_aliases::str_5 };
+    (6)=>{ $crate::path::string_aliases::str_6 };
+    (7)=>{ $crate::path::string_aliases::str_7 };
+    (8)=>{ $crate::path::string_aliases::str_8 };
+    (9)=>{ $crate::path::string_aliases::str_9 };
+    (_)=>{ $crate::path::string_aliases::str_underscore };
     ($lit:literal)=>{
         $crate::_FP_literal_!($lit)
     };

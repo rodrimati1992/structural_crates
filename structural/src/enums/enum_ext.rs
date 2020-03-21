@@ -1,6 +1,6 @@
 use crate::{
     enums::{IsVariant, VariantProxy},
-    field_path::TStr,
+    path::TStr,
 };
 
 /// Extension trait for enums.

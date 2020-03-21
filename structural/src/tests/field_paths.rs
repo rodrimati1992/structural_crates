@@ -1,16 +1,13 @@
-#[allow(unused_imports)]
-use crate::p as chars;
-
 #[cfg(feature = "use_const_str")]
 macro_rules! cond_tstr_alias {
     ( $name:ident=($with_type:ty, $with_const:literal) ) => {
-        pub type $name = crate::p::TStrPriv<$with_const>;
+        pub type $name = crate::__TStrPriv<$with_const>;
     };
 }
 #[cfg(not(feature = "use_const_str"))]
 macro_rules! cond_tstr_alias {
     ( $name:ident=($with_type:ty, $with_const:literal) ) => {
-        pub type $name = crate::p::TStrPriv<$with_type>;
+        pub type $name = crate::__TStrPriv<$with_type>;
     };
 }
 
@@ -19,7 +16,7 @@ macro_rules! tstr_asserts{
     ( $(($with_type:ty, $with_const:literal)=($($found:expr),*);)* ) => {
         $(
             $(
-                let _: crate::p::TStrPriv<$with_const> = $found;
+                let _: crate::__TStrPriv<$with_const> = $found;
             )*
         )*
     };
@@ -29,7 +26,7 @@ macro_rules! tstr_asserts{
     ( $(($with_type:ty, $with_const:literal)=($($found:expr),*);)* ) => {
         $(
             $(
-                let _: crate::p::TStrPriv<$with_type> = $found;
+                let _: crate::__TStrPriv<$with_type> = $found;
             )*
         )*
     };
@@ -39,23 +36,22 @@ macro_rules! tstr_asserts{
 #[allow(dead_code)]
 #[macro_use]
 mod for_string_tests {
-    #[allow(unused_imports)]
-    use crate::{p as chars, p::TStrPriv};
+    use crate::*;
 
-    cond_tstr_alias!(S_foo = ((chars::_f, chars::_o, chars::_o), "foo"));
-    cond_tstr_alias!(S_bar = ((chars::_b, chars::_a, chars::_r), "bar"));
-    cond_tstr_alias!(S_baz = ((chars::_b, chars::_a, chars::_z), "baz"));
-    cond_tstr_alias!(S_qux = ((chars::_q, chars::_u, chars::_x), "qux"));
-    cond_tstr_alias!(S_Some = ((chars::_S, chars::_o, chars::_m, chars::_e), "Some"));
-    cond_tstr_alias!(S_a = ((chars::_a,), "a"));
-    cond_tstr_alias!(S_b = ((chars::_b,), "b"));
-    cond_tstr_alias!(S_c = ((chars::_c,), "c"));
-    cond_tstr_alias!(S_d = ((chars::_d,), "d"));
-    cond_tstr_alias!(S_0 = ((chars::_0,), "0"));
-    cond_tstr_alias!(S_1 = ((chars::_1,), "1"));
-    cond_tstr_alias!(S_2 = ((chars::_2,), "2"));
-    cond_tstr_alias!(S_3 = ((chars::_3,), "3"));
-    cond_tstr_alias!(S_4 = ((chars::_4,), "4"));
+    cond_tstr_alias!(S_foo = ((__f, __o, __o), "foo"));
+    cond_tstr_alias!(S_bar = ((__b, __a, __r), "bar"));
+    cond_tstr_alias!(S_baz = ((__b, __a, __z), "baz"));
+    cond_tstr_alias!(S_qux = ((__q, __u, __x), "qux"));
+    cond_tstr_alias!(S_Some = ((__S, __o, __m, __e), "Some"));
+    cond_tstr_alias!(S_a = ((__a,), "a"));
+    cond_tstr_alias!(S_b = ((__b,), "b"));
+    cond_tstr_alias!(S_c = ((__c,), "c"));
+    cond_tstr_alias!(S_d = ((__d,), "d"));
+    cond_tstr_alias!(S_0 = ((__0,), "0"));
+    cond_tstr_alias!(S_1 = ((__1,), "1"));
+    cond_tstr_alias!(S_2 = ((__2,), "2"));
+    cond_tstr_alias!(S_3 = ((__3,), "3"));
+    cond_tstr_alias!(S_4 = ((__4,), "4"));
 
     pub fn assert_ty<T, U>(_ident: U)
     where
@@ -88,13 +84,11 @@ mod for_string_tests {
 #[test]
 fn field_path_nested() {
     use self::for_string_tests::*;
-    use crate::field_path::NestedFieldPath;
-    #[allow(unused_imports)]
-    use crate::p::TStrPriv;
+    use crate::*;
 
-    cond_tstr_alias!(S_abcd = ((chars::_a, chars::_b, chars::_c, chars::_d), "abcd"));
-    cond_tstr_alias!(S_21 = ((chars::_2, chars::_1), "21"));
-    cond_tstr_alias!(S_ab0 = ((chars::_a, chars::_b, chars::_0), "ab0"));
+    cond_tstr_alias!(S_abcd = ((__a, __b, __c, __d), "abcd"));
+    cond_tstr_alias!(S_21 = ((__2, __1), "21"));
+    cond_tstr_alias!(S_ab0 = ((__a, __b, __0), "ab0"));
 
     path_assertion!(fp!(abcd), S_abcd, fp!("abcd"));
     path_assertion!(fp!(0), S_0, fp!("0"));
@@ -124,7 +118,7 @@ fn field_path_nested() {
 #[allow(non_camel_case_types)]
 #[test]
 fn field_paths_more() {
-    use crate::field_path::{AliasedPaths, UniquePaths};
+    use crate::path::{AliasedPaths, UniquePaths};
     use crate::{FieldPathSet, NestedFieldPath, VariantField, VariantName};
 
     use self::for_string_tests::*;
@@ -358,8 +352,7 @@ mod names_module_tests {
 }
 
 mod tstr_aliases_tests {
-    #[allow(unused_imports)]
-    use crate::{p as chars, p::TStrPriv};
+    use crate::*;
 
     #[test]
     fn just_aliases() {
@@ -377,15 +370,15 @@ mod tstr_aliases_tests {
         }
 
         tstr_asserts! {
-            ((chars::_a,),"a") = (strs::a::NEW,ts!("a"),ts!(a));
-            ((chars::_b,),"b") = (strs::b::NEW,ts!("b"),ts!(b));
-            ((chars::_w, chars::_o, chars::_r, chars::_d),"word") =
+            ((__a,),"a") = (strs::a::NEW,ts!("a"),ts!(a));
+            ((__b,),"b") = (strs::b::NEW,ts!("b"),ts!(b));
+            ((__w, __o, __r, __d),"word") =
                 (strs::word::NEW,ts!("word"),ts!(word));
-            ((chars::_d, chars::_d),"dd") = (strs::d::NEW,ts!("dd"),ts!(dd));
-            ((chars::_c, chars::_c),"cc") = (strs::c::NEW,ts!("cc"),ts!(cc));
-            ((chars::_0,),"0") = (strs::p0::NEW,ts!("0"),ts!(0));
-            ((chars::_1, chars::_0),"10") = (strs::p10::NEW,ts!("10"),ts!(10));
-            ((chars::_1, chars::_0, chars::_0),"100") = (strs::p100::NEW,ts!("100"),ts!(100));
+            ((__d, __d),"dd") = (strs::d::NEW,ts!("dd"),ts!(dd));
+            ((__c, __c),"cc") = (strs::c::NEW,ts!("cc"),ts!(cc));
+            ((__0,),"0") = (strs::p0::NEW,ts!("0"),ts!(0));
+            ((__1, __0),"10") = (strs::p10::NEW,ts!("10"),ts!(10));
+            ((__1, __0, __0),"100") = (strs::p100::NEW,ts!("100"),ts!(100));
         }
     }
 
@@ -393,7 +386,7 @@ mod tstr_aliases_tests {
     fn escaped() {
         tstr_asserts! {
             (
-                (chars::B0,chars::B92,chars::B240, chars::B159, chars::B153, chars::B130),
+                (__0x00, __0x5C, __0xF0, __0x9F, __0x99, __0x82),
                 "\0\\🙂"
             ) = (ts!("\0\\🙂"));
         }
@@ -429,25 +422,28 @@ mod tstr_aliases_tests {
         }
 
         tstr_asserts! {
-            ((chars::_0,),"0") = (strs::m0::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
+            ((__0,),"0") = (strs::m0::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
 
-            ((chars::_1, chars::_0),"10") = (strs::a0::NEW,ts!("10"),ts!(10));
+            ((__1, __0),"10") = (strs::a0::NEW,ts!("10"),ts!(10));
 
-            ((chars::_2,),"2") = (strs::m1::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
-            ((chars::_1, chars::_1),"11") = (strs::m1::a0::NEW,ts!("11"),ts!(11));
-            ((chars::_a, chars::_1),"a1") = (strs::m1::a1::NEW,ts!("a1"),ts!(a1));
+            ((__2,),"2") = (strs::m1::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
+            ((__1, __1),"11") = (strs::m1::a0::NEW,ts!("11"),ts!(11));
+            ((__a, __1),"a1") = (strs::m1::a1::NEW,ts!("a1"),ts!(a1));
 
-            ((chars::_a, chars::_1),"a1") = (strs::a1::NEW,ts!("a1"),ts!(a1));
+            ((__a, __1),"a1") = (strs::a1::NEW,ts!("a1"),ts!(a1));
 
-            ((chars::_f, chars::_o, chars::_o),"foo") = (strs::m2::foo::NEW,ts!("foo"),ts!(foo));
-            ((chars::_0,),"0") = (strs::m2::bar::NEW,ts!("0"),ts!(0));
-            ((chars::_b, chars::_a, chars::_a, chars::_a, chars::_a),"baaaa") =
+            ((__f, __o, __o),"foo") = (strs::m2::foo::NEW,ts!("foo"),ts!(foo));
+            ((__0,),"0") = (strs::m2::bar::NEW,ts!("0"),ts!(0));
+            ((__b, __a, __a, __a, __a),"baaaa") =
                 (strs::m2::baz::NEW,ts!("baaaa"),ts!(baaaa));
 
-            ((chars::_0,),"0") = (strs::m3::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
-            ((chars::_2,),"2") = (strs::m3::m3m0::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
-            ((chars::_a, chars::_a, chars::_a),"aaa") = (strs::m3::m3m0::aaa::NEW,ts!("aaa"),ts!(aaa));
-            ((chars::_b, chars::_b, chars::_b),"bbb") = (strs::m3::m3m0::bbb::NEW,ts!("bbb"),ts!(bbb));
+            ((__0,),"0") = (strs::m3::__TString_Aliases_Count::NEW,ts!("0"),ts!(0));
+            ((__2,),"2") = (strs::m3::m3m0::__TString_Aliases_Count::NEW,ts!("2"),ts!(2));
+            ((__a, __a, __a),"aaa") =
+                (strs::m3::m3m0::aaa::NEW,ts!("aaa"),ts!(aaa));
+
+            ((__b, __b, __b),"bbb") =
+                (strs::m3::m3m0::bbb::NEW,ts!("bbb"),ts!(bbb));
         }
     }
 }
