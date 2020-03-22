@@ -260,6 +260,8 @@ pub struct UniquePaths;
 #[derive(Debug, Copy, Clone)]
 pub struct AliasedPaths;
 
+impl<T, U> IsSingleFieldPath for FieldPathSet<(T,), U> {}
+
 impl<T, U> IsMultiFieldPath for FieldPathSet<T, U> {
     type PathUniqueness = U;
 }
@@ -555,6 +557,8 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
         }
     }
 }
+
+impl<F, S, U> IsSingleFieldPath for NestedFieldPathSet<F, (S,), U> {}
 
 impl<F, S, U> IsMultiFieldPath for NestedFieldPathSet<F, S, U> {
     type PathUniqueness = U;

@@ -6,6 +6,7 @@ mod make_struct;
 mod multi_fields;
 mod multi_nested_fields;
 mod optional_fields;
+mod rev_field_traits;
 mod structural_alias;
 mod structural_derive;
 mod switch;

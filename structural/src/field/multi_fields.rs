@@ -11,6 +11,8 @@ use crate::{
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
+mod components;
+
 /// Queries the type returned by the
 /// `RevGetMultiFieldImpl::rev_get_multi_field_impl` method.
 /// This is some collection of references.

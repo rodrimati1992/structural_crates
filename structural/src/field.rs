@@ -156,8 +156,8 @@ pub use self::{
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     rev_get_field::{
         OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
-        RevGetField, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl, RevGetFieldType,
-        RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        RevGetField, RevGetFieldErr, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl,
+        RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
     },
 };
 

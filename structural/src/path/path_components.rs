@@ -62,6 +62,10 @@ impl_to_path_to_set! {
 
 impl<T> IsSingleFieldPath for TStr<T> {}
 
+impl<T> IsMultiFieldPath for TStr<T> {
+    type PathUniqueness=UniquePaths;
+}
+
 impl<T> Copy for TStr<T> {}
 impl<T> Clone for TStr<T> {
     #[inline(always)]
@@ -107,6 +111,10 @@ impl<V, F> VariantField<V, F> {
 }
 
 impl<V, F> IsSingleFieldPath for VariantField<V, F> {}
+
+impl<V, F> IsMultiFieldPath for VariantField<V, F> {
+    type PathUniqueness=UniquePaths;
+}
 
 impl<T, U> Debug for VariantField<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -154,6 +162,10 @@ impl<V> VariantName<V> {
 }
 
 impl<V> IsSingleFieldPath for VariantName<V> {}
+
+impl<T> IsMultiFieldPath for VariantName<T> {
+    type PathUniqueness=UniquePaths;
+}
 
 impl<T> Debug for VariantName<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
