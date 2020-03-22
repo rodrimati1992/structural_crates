@@ -121,7 +121,7 @@ The type that `Foo` is converted into when calling
 
 */
 
-use crate::{enums::IsVariant, path::VariantField, Structural};
+use crate::{enums::IsVariant, path::VariantField};
 
 use core_extensions::ConstDefault;
 

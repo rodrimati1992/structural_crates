@@ -1,6 +1,6 @@
 use crate::enums::{IsVariant, VariantCount};
 use crate::field::IntoVariantFieldMut;
-use crate::*;
+use crate::{GetFieldExt, GetVariantField, GetVariantFieldMut, IntoVariantField, Structural};
 
 use std_::mem;
 
@@ -50,7 +50,7 @@ tstr_aliases! {
     }
 }
 
-_private_impl_getters_for_derive_enum! {
+crate::_private_impl_getters_for_derive_enum! {
     impl[T,U,] Pair<T,U>
     where[]
     {
@@ -377,19 +377,19 @@ fn test_replace_bounds_trait_object() {
 #[allow(dead_code)]
 enum Accesses {
     #[struc(access = "ref")]
-    RefVar(u8),
+    Ref(u8),
 
     #[struc(access = "mut")]
-    MutVar(u16),
+    Mut(u16),
 
     #[struc(access = "move")]
-    MoveVar(u32),
+    Move(u32),
 
     #[struc(access = "mut move")]
-    MutMoveVar(u64),
+    MutMove(u64),
 
     #[struc(access = "ref")]
-    MixedVar(
+    Mixed(
         (),
         #[struc(access = "ref")] i8,
         #[struc(access = "mut")] i16,
@@ -402,15 +402,15 @@ assert_equal_bounds! {
     trait AssertA[],
     (Accesses_ESI),
     (
-        GetVariantField<TS!(RefVar), TS!(0), Ty = u8> +
-        GetVariantFieldMut<TS!(MutVar), TS!(0), Ty = u16> +
-        IntoVariantField<TS!(MoveVar), TS!(0), Ty = u32> +
-        IntoVariantFieldMut<TS!(MutMoveVar), TS!(0), Ty = u64> +
-        GetVariantField<TS!(MixedVar), TS!(0), Ty = ()> +
-        GetVariantField<TS!(MixedVar), TS!(1), Ty = i8> +
-        GetVariantFieldMut<TS!(MixedVar), TS!(2), Ty = i16> +
-        IntoVariantField<TS!(MixedVar), TS!(3), Ty = i32> +
-        IntoVariantFieldMut<TS!(MixedVar), TS!(4), Ty = i64> +
+        GetVariantField<TS!(Ref), TS!(0), Ty = u8> +
+        GetVariantFieldMut<TS!(Mut), TS!(0), Ty = u16> +
+        IntoVariantField<TS!(Move), TS!(0), Ty = u32> +
+        IntoVariantFieldMut<TS!(MutMove), TS!(0), Ty = u64> +
+        GetVariantField<TS!(Mixed), TS!(0), Ty = ()> +
+        GetVariantField<TS!(Mixed), TS!(1), Ty = i8> +
+        GetVariantFieldMut<TS!(Mixed), TS!(2), Ty = i16> +
+        IntoVariantField<TS!(Mixed), TS!(3), Ty = i32> +
+        IntoVariantFieldMut<TS!(Mixed), TS!(4), Ty = i64> +
         VariantCount<Count = TS!(5)>
     ),
 }

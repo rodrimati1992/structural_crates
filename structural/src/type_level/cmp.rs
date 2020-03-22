@@ -43,7 +43,7 @@ impl ReverseOrdering_ for TGreater {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{ReverseOrdering, TEqual, TGreater, TLess};
     use core_extensions::type_asserts::AssertEq;
 
     #[test]

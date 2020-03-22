@@ -1,4 +1,12 @@
-use super::*;
+use crate::{
+    enums::{EnumExt, IsVariant, VariantProxy},
+    field::{
+        FailedAccess, FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField,
+        GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField, RevFieldType,
+        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
+    },
+    TStr, VariantField, VariantName,
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ////                    TStr

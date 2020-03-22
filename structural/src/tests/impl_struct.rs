@@ -1,7 +1,5 @@
-use crate::GetFieldExt;
-
 mod param_ret {
-    use super::*;
+    use crate::GetFieldExt;
 
     fn hi(blah: impl_struct! {a:u32,b:u32}) -> impl_struct! {a:u32,b:u64} {
         make_struct! {
@@ -18,7 +16,7 @@ mod param_ret {
 }
 
 mod mutabilities {
-    use super::*;
+    use crate::GetFieldExt;
 
     #[derive(crate::Structural, Clone)]
     struct Mutabilities0 {

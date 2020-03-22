@@ -1,4 +1,10 @@
-use super::*;
+use crate::{
+    field::{
+        CombinedErrs, InfallibleAccess, IntoFieldErr, IsFieldErr, RevFieldType, RevGetFieldImpl,
+        RevGetFieldMutImpl, RevIntoFieldImpl,
+    },
+    NestedFieldPath,
+};
 
 macro_rules! impl_get_nested_field_inner {
     (inner;

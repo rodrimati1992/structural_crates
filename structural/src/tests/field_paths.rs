@@ -32,11 +32,13 @@ macro_rules! tstr_asserts{
     };
 }
 
+#[allow(clippy::wildcard_imports)]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 #[macro_use]
 mod for_string_tests {
-    use crate::*;
+    #[cfg(not(feature = "use_const_str"))]
+    use crate::chars::*;
 
     cond_tstr_alias!(S_foo = ((__f, __o, __o), "foo"));
     cond_tstr_alias!(S_bar = ((__b, __a, __r), "bar"));
@@ -80,11 +82,14 @@ mod for_string_tests {
 }
 
 /// Tests that the fp and FP macros produce the correct TStr and NestedFieldPath types
+#[allow(clippy::wildcard_imports)]
 #[allow(non_camel_case_types)]
 #[test]
 fn field_path_nested() {
-    use self::for_string_tests::*;
-    use crate::*;
+    use self::for_string_tests::{assert_ty, S_bar, S_foo, S_0, S_1, S_2, S_3, S_4};
+    #[cfg(not(feature = "use_const_str"))]
+    use crate::chars::*;
+    use crate::NestedFieldPath;
 
     cond_tstr_alias!(S_abcd = ((__a, __b, __c, __d), "abcd"));
     cond_tstr_alias!(S_21 = ((__2, __1), "21"));
@@ -121,7 +126,9 @@ fn field_paths_more() {
     use crate::path::{AliasedPaths, UniquePaths};
     use crate::{FieldPathSet, NestedFieldPath, VariantField, VariantName};
 
-    use self::for_string_tests::*;
+    use self::for_string_tests::{
+        assert_ty, S_Some, S_a, S_b, S_bar, S_baz, S_foo, S_qux, S_0, S_1, S_2, S_3, S_4,
+    };
 
     path_assertion! {
         fp!(foo,bar),
@@ -291,7 +298,7 @@ fn field_paths_more() {
 }
 
 mod names_module_tests {
-    use core_extensions::type_asserts::*;
+    use core_extensions::type_asserts::AssertEq3;
 
     field_path_aliases! {
         mod names_a{
@@ -351,8 +358,10 @@ mod names_module_tests {
     }
 }
 
+#[allow(clippy::wildcard_imports)]
 mod tstr_aliases_tests {
-    use crate::*;
+    #[cfg(not(feature = "use_const_str"))]
+    use crate::chars::*;
 
     #[test]
     fn just_aliases() {

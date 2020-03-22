@@ -298,6 +298,8 @@ fn access_types() {
     }
 }
 
+// I know that these have redundant pattern matches
+#[allow(clippy::redundant_pattern_matching)]
 #[test]
 fn extra_branch_types() {
     {

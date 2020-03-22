@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use super::*;
+use crate::{FieldType, GetField, IntoField, Structural};
 
 #[allow(unused_imports)]
 use crate::GetFieldExt;

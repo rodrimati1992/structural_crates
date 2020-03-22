@@ -613,7 +613,14 @@ struct Cents(u64);
 // so they can't be translated to `const fn`.
 // Also,the constants don't use cell types,they're just generic.
 #![allow(clippy::declare_interior_mutable_const)]
+// This triggers for types that represent values, like `NestedFieldPath<(TS!(0), TS!(1))>`,
+// so it's mostly noise in this crate.
+#![allow(clippy::type_complexity)]
+// This lint is silly
+#![allow(clippy::blacklisted_name)]
 #![deny(clippy::missing_safety_doc)]
+#![deny(clippy::shadow_unrelated)]
+#![deny(clippy::wildcard_imports)]
 
 #[cfg(feature = "std")]
 pub extern crate std;

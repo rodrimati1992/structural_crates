@@ -129,7 +129,10 @@ use crate::{
     structural_trait::Structural,
     type_level::{
         cmp::{Compare, TGreater},
-        integer::*,
+        integer::{
+            IsUnsigned, U0, U1, U10, U11, U12, U13, U14, U15, U16, U17, U18, U19, U2, U20, U21,
+            U22, U23, U24, U25, U26, U27, U28, U29, U3, U30, U31, U32, U4, U5, U6, U7, U8, U9,
+        },
     },
 };
 
@@ -458,8 +461,13 @@ declare_array_paths! {
 struct Foo0;
 
 #[cfg(test)]
+#[allow(clippy::redundant_clone)]
 mod tests {
-    use super::*;
+    use super::{
+        Array1, Array15, Array16, Array17, Array23, Array24, Array30, Array31, Array32, Array7,
+        Array8, Array9, I0, I1, I14, I15, I16, I2, I22, I23, I29, I3, I30, I31, I4, I5, I6, I7, I8,
+        I9,
+    };
 
     use crate::GetFieldExt;
 
@@ -567,6 +575,8 @@ mod tests {
     }
 
     #[test]
+    // Every statement after the array initialization is unrelated to every other statement.
+    #[allow(clippy::cognitive_complexity)]
     fn structural_aliases() {
         let mut array = [0i32; 32];
         (0..=31).for_each(|x| array[x as usize] = 100 + x);

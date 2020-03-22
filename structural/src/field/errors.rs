@@ -76,7 +76,7 @@ impl IsFieldErr for InfallibleAccess {}
 
 #[cfg(feature = "std")]
 mod std_impls {
-    use super::*;
+    use super::{FailedAccess, InfallibleAccess};
 
     use std::error::Error;
 
@@ -166,7 +166,9 @@ pub trait CombinedErrs {
 pub type CombinedErrsOut<This> = <This as CombinedErrs>::Combined;
 
 mod impl_combine_errs {
-    use super::{FailedAccess as OF, InfallibleAccess as IF, *};
+    use super::{
+        CombinedErrs, CombinedErrsOut, FailedAccess as OF, InfallibleAccess as IF, IsFieldErr,
+    };
 
     macro_rules! combined_err_impls {
         (small=>

@@ -204,8 +204,9 @@ declare_array_traits! {
 }
 
 #[cfg(test)]
+#[allow(clippy::redundant_clone)]
 mod tests {
-    use crate::field::for_arrays::*;
+    use crate::field::for_arrays::{Array32, Array32Variant};
     use crate::{GetFieldExt, Structural, TS};
 
     fn with_array_32<A>(mut this: A)

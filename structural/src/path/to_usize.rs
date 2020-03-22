@@ -1,4 +1,3 @@
-use crate::__TStrPriv;
 use crate::type_level::to_value_traits::ToUsize;
 use crate::NestedFieldPath;
 
@@ -9,7 +8,7 @@ macro_rules! declare_const_impls {
     () => {
         use crate::const_generic_utils::str_to_usize;
 
-        impl<const S: &'static str> ToUsize for __TStrPriv<S> {
+        impl<const S: &'static str> ToUsize for crate::__TStrPriv<S> {
             const USIZE: usize = str_to_usize(S);
         }
     };
@@ -20,9 +19,8 @@ declare_const_impls! {}
 
 #[cfg(not(feature = "use_const_str"))]
 mod tstr_type_param {
-    use super::*;
-
-    use crate::type_level::to_value_traits::ToDigit;
+    use crate::__TStrPriv;
+    use crate::type_level::to_value_traits::{ToDigit, ToUsize};
 
     macro_rules! impl_to_usize {
         ( $($typ:ident)* ) => (

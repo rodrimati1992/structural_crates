@@ -73,21 +73,24 @@ fn main() {
 */
 
 macro_rules! create_unit_struct {
-    (inner; ($struct_:ident ,$alias:ident ) )=>{
-        #[doc(hidden)]
-        pub struct $struct_;
-
-        #[doc(hidden)]
-        pub type $alias=$struct_;
-    };
-    (inner; ($struct_:ident) )=>{
-        #[doc(hidden)]
-        pub struct $struct_;
-    };
-    ($( $param:tt ),* $(,)*) => {
+    ($( ($struct_:ident $(,$alias:ident)? ) ),* $(,)*) => {
         $(
-            create_unit_struct!(inner; $param );
+            #[doc(hidden)]
+            pub struct $struct_;
+
+            $(
+                #[doc(hidden)]
+                pub type $alias=$struct_;
+            )?
         )*
+
+        #[cfg(test)]
+        pub(crate) mod chars{
+            #[allow(unused_imports)]
+            pub(crate) use super::{
+                $($struct_, $($alias,)? )*
+            };
+        }
     }
 }
 

@@ -5,14 +5,8 @@ Contains traits implemented on field paths,taking Structural types as parameters
 #![allow(non_snake_case)]
 
 use crate::{
-    enums::{EnumExt, IsVariant, VariantProxy},
-    field::{
-        errors::{CombinedErrs, IntoFieldErr, IsFieldErr},
-        FailedAccess, InfallibleAccess,
-    },
-    path::{IsSingleFieldPath, NestedFieldPath, TStr, VariantField, VariantName},
-    FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField, GetVariantFieldMut, IntoField,
-    IntoVariantField,
+    field::{errors::IsFieldErr, FailedAccess, InfallibleAccess},
+    path::IsSingleFieldPath,
 };
 
 /////////////////////////////////////////////////////////////////////////////
