@@ -603,9 +603,18 @@ struct Cents(u64);
 */
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]
 #![cfg_attr(feature = "nightly_specialization", feature(specialization))]
-#![cfg_attr(feature = "nightly_use_const_str", feature(const_if_match))]
-#![cfg_attr(feature = "nightly_use_const_str", feature(const_generics))]
-#![cfg_attr(feature = "nightly_use_const_str", allow(incomplete_features))]
+#![cfg_attr(
+    all(feature = "nightly_use_const_str", not(feature = "disable_const_str")),
+    feature(const_if_match)
+)]
+#![cfg_attr(
+    all(feature = "nightly_use_const_str", not(feature = "disable_const_str")),
+    feature(const_generics)
+)]
+#![cfg_attr(
+    all(feature = "nightly_use_const_str", not(feature = "disable_const_str")),
+    allow(incomplete_features)
+)]
 #![deny(rust_2018_idioms)]
 #![allow(non_camel_case_types)]
 #![no_std]
@@ -646,7 +655,7 @@ pub use structural_derive::{
 mod macros;
 
 #[doc(hidden)]
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
@@ -666,6 +675,8 @@ pub mod tests;
 
 pub mod type_level;
 
+// mod wrapper;
+
 include! {"p.rs"}
 
 #[doc(inline)]
@@ -678,6 +689,7 @@ pub use crate::{
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
     structural_trait::Structural,
+    // wrapper::StrucType,
 };
 
 /// Reexports from other crates.

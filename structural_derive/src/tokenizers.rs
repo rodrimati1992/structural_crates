@@ -5,7 +5,7 @@ use quote::{quote, ToTokens};
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 pub(crate) fn tident_tokens<S>(string: S) -> TokenStream2
 where
     S: AsRef<str>,
@@ -15,7 +15,7 @@ where
     quote!( ::structural::TStr<::structural::__TS<#string>> )
 }
 
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 /// Tokenizes a `TStr<>` in which each character is written as a type.
 pub(crate) fn tident_tokens<S>(string: S) -> TokenStream2
 where

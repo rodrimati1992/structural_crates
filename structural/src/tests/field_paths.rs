@@ -1,17 +1,17 @@
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 macro_rules! cond_tstr_alias {
     ( $name:ident=($with_type:ty, $with_const:literal) ) => {
         pub type $name = crate::__TStrPriv<$with_const>;
     };
 }
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 macro_rules! cond_tstr_alias {
     ( $name:ident=($with_type:ty, $with_const:literal) ) => {
         pub type $name = crate::__TStrPriv<$with_type>;
     };
 }
 
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 macro_rules! tstr_asserts{
     ( $(($with_type:ty, $with_const:literal)=($($found:expr),*);)* ) => {
         $(
@@ -21,7 +21,7 @@ macro_rules! tstr_asserts{
         )*
     };
 }
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 macro_rules! tstr_asserts{
     ( $(($with_type:ty, $with_const:literal)=($($found:expr),*);)* ) => {
         $(
@@ -37,7 +37,7 @@ macro_rules! tstr_asserts{
 #[allow(dead_code)]
 #[macro_use]
 mod for_string_tests {
-    #[cfg(not(feature = "use_const_str"))]
+    #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
     use crate::chars::*;
 
     cond_tstr_alias!(S_foo = ((__f, __o, __o), "foo"));
@@ -87,7 +87,7 @@ mod for_string_tests {
 #[test]
 fn field_path_nested() {
     use self::for_string_tests::{assert_ty, S_bar, S_foo, S_0, S_1, S_2, S_3, S_4};
-    #[cfg(not(feature = "use_const_str"))]
+    #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
     use crate::chars::*;
     use crate::NestedFieldPath;
 
@@ -360,7 +360,7 @@ mod names_module_tests {
 
 #[allow(clippy::wildcard_imports)]
 mod tstr_aliases_tests {
-    #[cfg(not(feature = "use_const_str"))]
+    #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
     use crate::chars::*;
 
     #[test]

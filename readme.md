@@ -101,7 +101,9 @@ These are the cargo features in structural:
     Equivalent to the `impl_fields` feature,
     which also enables the nightly Rust features required for const generics as of 2020-03-21.
 
-
+- `disable_const_str`:
+    Disables const generics,
+    useful if other crates enabling const generics causes internal errors in this Rust version.
 
 Specialization is used inside `structural` for performance reasons.
 There are no benchmarks comparing when specialization is enabled and disabled yet.

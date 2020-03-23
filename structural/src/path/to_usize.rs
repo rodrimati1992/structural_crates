@@ -3,7 +3,7 @@ use crate::NestedFieldPath;
 
 // macros can contain arbitrary syntax,
 // which allows this to be defined in this file even if Rust stops parsing `const IDENT:Foo`
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 macro_rules! declare_const_impls {
     () => {
         use crate::const_generic_utils::str_to_usize;
@@ -14,10 +14,10 @@ macro_rules! declare_const_impls {
     };
 }
 
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 declare_const_impls! {}
 
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 mod tstr_type_param {
     use crate::__TStrPriv;
     use crate::type_level::to_value_traits::{ToDigit, ToUsize};

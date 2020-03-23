@@ -25,7 +25,6 @@ pub struct Struct2<A, B> {
 }
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
-#[struc(no_trait)]
 pub struct Struct3<A, B, C> {
     pub foo: Option<A>,
     pub bar: B,

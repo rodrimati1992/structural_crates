@@ -6,9 +6,6 @@ use crate::{
     path::{IsTStr, TStr, VariantField},
 };
 
-#[cfg(feature = "alloc")]
-use crate::alloc::boxed::Box;
-
 use std_::{
     fmt::{self, Debug},
     marker::PhantomData,
@@ -239,39 +236,6 @@ impl<T: ?Sized, V> VariantProxy<T, TStr<V>> {
             value,
             _marker: PhantomData,
         }
-    }
-
-    /// Constructs this VariantProxy from a boxed enum.
-    ///
-    /// # Safety
-    ///
-    /// `V` must be the name of the wrapped enum variant.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use structural::{fp,ts,TS,GetFieldExt,Structural};
-    /// use structural::enums::VariantProxy;
-    ///
-    /// #[derive(Debug,PartialEq,Structural)]
-    /// #[struc(no_trait)]
-    /// enum Foo{
-    ///     Bar(u32),
-    ///     Baz(&'static str),
-    /// }
-    ///
-    /// let this=Box::new(Foo::Baz("hello"));
-    /// let proxy: VariantProxy<Box<Foo>, TS!(Baz)>= unsafe{
-    ///     VariantProxy::from_box(this, ts!(Baz))
-    /// };
-    ///
-    /// assert_eq!( proxy.into_field(fp!(0)), "hello" );
-    ///
-    /// ```
-    #[inline(always)]
-    #[cfg(feature = "alloc")]
-    pub unsafe fn from_box(value: Box<T>, vari: TStr<V>) -> VariantProxy<Box<T>, TStr<V>> {
-        VariantProxy::new(value, vari)
     }
 
     /// Constructs this VariantProxy from a reference to an enum.

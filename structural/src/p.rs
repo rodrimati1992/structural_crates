@@ -6,33 +6,31 @@
 // this library can start using const generics in the future by replacing the
 // `T:?Sized` parameter with `const STR:&'static str`.
 #[doc(hidden)]
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"),feature="disable_const_str"))]
 pub struct __TS<T: ?Sized>(std_::marker::PhantomData<T>);
 
 // Used inside structural in tests and impls.
 #[doc(hidden)]
-#[cfg(not(feature = "use_const_str"))]
+#[cfg(any(not(feature = "use_const_str"),feature="disable_const_str"))]
 pub(crate) type __TStrPriv<T> = TStr<__TS<T>>;
 
 // macros can contain arbitrary syntax,
 // which allows this to be defined in this file even if Rust stops parsing `const IDENT:Foo`
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str",not(feature="disable_const_str")))]
 macro_rules! declare_const_items {
     () => {
         #[doc(hidden)]
-        #[cfg(feature = "use_const_str")]
         pub(crate) type __TStrPriv<const S: &'static str> = TStr<__TS<S>>;
 
         // `TStr` takes this as a type parameter so that
         // this library can start using const generics in the future by replacing the
         // `T:?Sized` parameter with `const STR:&'static str`.
         #[doc(hidden)]
-        #[cfg(feature = "use_const_str")]
         pub struct __TS<const S: &'static str>;
     };
 }
 
-#[cfg(feature = "use_const_str")]
+#[cfg(all(feature = "use_const_str",not(feature="disable_const_str")))]
 declare_const_items! {}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,6 +70,7 @@ fn main() {
 
 */
 
+#[cfg(any(not(feature = "use_const_str"),feature="disable_const_str"))]
 macro_rules! create_unit_struct {
     ($( ($struct_:ident $(,$alias:ident)? ) ),* $(,)*) => {
         $(
@@ -94,6 +93,7 @@ macro_rules! create_unit_struct {
     }
 }
 
+#[cfg(any(not(feature = "use_const_str"),feature="disable_const_str"))]
 create_unit_struct! {
     (__0x00),(__0x01),(__0x02),(__0x03),(__0x04),(__0x05),
     (__0x06),(__0x07),(__0x08),(__0x09),(__0x0A),(__0x0B),

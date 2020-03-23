@@ -28,7 +28,8 @@ alloc=["core_extensions/alloc"]
 
 # An internal cargo feature,used by tests
 testing=["structural_derive/test_asserts"]
-# An internal cargo feature,used as a workaround for `cargo deadlinks`
+# Used as a workaround for `cargo deadlinks`,
+# hides the re-exports from standard library crates.
 hide_reexports=[]
 
 specialization=[]
@@ -38,8 +39,19 @@ nightly_specialization=["specialization"]
 use_const_str=["structural_derive/use_const_str"]
 nightly_use_const_str=["use_const_str"]
 
+disable_const_str=["structural_derive/disable_const_str"]
+
 impl_fields=["structural_derive/impl_fields"]
 nightly_impl_fields=["impl_fields"]
+
+test_all=["all","testing"]
+all=[
+    "std",
+    "hide_reexports",
+    "nightly_specialization",
+    "nightly_use_const_str",
+    "nightly_impl_fields",
+]
 
 
 [dependencies]

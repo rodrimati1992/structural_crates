@@ -21,6 +21,7 @@ pub trait ToDigit: Sealed {
     const DIGIT: u8;
 }
 
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 macro_rules! impl_to_digit {
     ( $($self:ty=$value:literal,)* ) => (
         $(
@@ -32,6 +33,7 @@ macro_rules! impl_to_digit {
     )
 }
 
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 impl_to_digit! {
     crate::__0=0,
     crate::__1=1,
