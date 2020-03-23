@@ -33,7 +33,7 @@ impl IdentOrIndex {
 }
 
 impl Parse for IdentOrIndex {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+    fn parse(input: ParseStream<'_>) -> Result<Self, syn::Error> {
         let lookahead = input.lookahead1();
         if lookahead.peek(syn::Ident) {
             Ok(IdentOrIndex::Ident(input.parse()?))
@@ -53,12 +53,12 @@ impl Parse for IdentOrIndex {
 
 impl IdentOrIndex {
     #[allow(dead_code)]
-    pub(crate) fn peek(input: ParseStream) -> bool {
+    pub(crate) fn peek(input: ParseStream<'_>) -> bool {
         input.peek(syn::Ident) || input.peek(syn::LitInt) || input.peek(syn::LitStr)
     }
 
     #[allow(dead_code)]
-    pub(crate) fn peek_parse(input: ParseStream) -> Result<Option<Self>, syn::Error> {
+    pub(crate) fn peek_parse(input: ParseStream<'_>) -> Result<Option<Self>, syn::Error> {
         let lookahead = input.lookahead1();
         let ret = if lookahead.peek(syn::Ident) {
             IdentOrIndex::Ident(input.parse()?)
@@ -77,7 +77,7 @@ impl IdentOrIndex {
     }
 
     pub(crate) fn tstr_tokens(&self) -> TokenStream2 {
-        use crate::tokenizers::tident_tokens;
+        use crate::tokenizers::tstr_tokens;
         let owned: String;
         let borrowed = match self {
             IdentOrIndex::Ident(x) => {
@@ -90,7 +90,7 @@ impl IdentOrIndex {
             }
             IdentOrIndex::Str { str, .. } => str,
         };
-        tident_tokens(borrowed)
+        tstr_tokens(borrowed)
     }
 }
 
@@ -165,7 +165,7 @@ impl<'a> From<&'_ FieldIdent<'a>> for IdentOrIndexRef<'a> {
 }
 
 impl<'a> IdentOrIndexRef<'a> {
-    pub(crate) fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
+    pub(crate) fn parse(arenas: &'a Arenas, input: ParseStream<'_>) -> Result<Self, syn::Error> {
         IdentOrIndex::parse(input).map(|ioi| match ioi {
             IdentOrIndex::Ident(x) => IdentOrIndexRef::Ident(arenas.alloc(x)),
             IdentOrIndex::Index(x) => x.into(),
@@ -186,7 +186,7 @@ impl<'a> IdentOrIndexRef<'a> {
     }
 
     pub(crate) fn tstr_tokens(self) -> TokenStream2 {
-        use crate::tokenizers::tident_tokens;
+        use crate::tokenizers::tstr_tokens;
         let owned: String;
         let borrowed = match self {
             IdentOrIndexRef::Ident(x) => {
@@ -199,7 +199,7 @@ impl<'a> IdentOrIndexRef<'a> {
             }
             IdentOrIndexRef::Str { str, .. } => str,
         };
-        tident_tokens(borrowed)
+        tstr_tokens(borrowed)
     }
 }
 

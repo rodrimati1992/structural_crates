@@ -52,7 +52,7 @@ impl Access {
         }
     }
 
-    pub(crate) fn parse_optional(input: ParseStream) -> Result<Option<Self>, syn::Error> {
+    pub(crate) fn parse_optional(input: ParseStream<'_>) -> Result<Option<Self>, syn::Error> {
         if input.peek_parse(Token![ref])?.is_some() {
             if input.peek_parse(Token![move])?.is_some() {
                 Ok(Some(Access::Value))
@@ -84,7 +84,7 @@ impl Default for Access {
 }
 
 impl Parse for Access {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+    fn parse(input: ParseStream<'_>) -> Result<Self, syn::Error> {
         Self::parse_optional(input).map(|x| x.unwrap_or(Access::MutValue))
     }
 }

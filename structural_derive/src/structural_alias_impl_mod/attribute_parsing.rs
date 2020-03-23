@@ -120,7 +120,7 @@ fn parse_sabi_attr<'a>(
                 let name = NEIdent::Exhaustive.apply(ident, arenas);
                 this.enum_exhaustiveness = Exhaustiveness::AndExhaustive { name };
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (ParseContext::Trait { ident }, Meta::List(MetaList { path, nested, .. })) => {
@@ -128,7 +128,7 @@ fn parse_sabi_attr<'a>(
                 let name = parse_neident(path.span(), nested)?.apply(ident, arenas);
                 this.enum_exhaustiveness = Exhaustiveness::AndExhaustive { name };
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (_, x) => return Err(make_err(&x)),
@@ -152,12 +152,13 @@ impl NEIdent {
             NEIdent::Ident(ident) => return arenas.alloc(ident),
         };
 
-        let ident = Ident::new(&new_ident, span.unwrap_or(trait_ident.span()));
+        let trait_ident_span = trait_ident.span();
+        let ident = Ident::new(&new_ident, span.unwrap_or(trait_ident_span));
         arenas.alloc(ident)
     }
 }
 
-fn parse_neident<'a>(
+fn parse_neident(
     _path_span: Span,
     list: Punctuated<NestedMeta, syn::Token![,]>,
 ) -> Result<NEIdent, syn::Error> {

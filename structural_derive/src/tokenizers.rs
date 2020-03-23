@@ -6,7 +6,7 @@ use quote::{quote, ToTokens};
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
-pub(crate) fn tident_tokens<S>(string: S) -> TokenStream2
+pub(crate) fn tstr_tokens<S>(string: S) -> TokenStream2
 where
     S: AsRef<str>,
 {
@@ -17,7 +17,7 @@ where
 
 #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 /// Tokenizes a `TStr<>` in which each character is written as a type.
-pub(crate) fn tident_tokens<S>(string: S) -> TokenStream2
+pub(crate) fn tstr_tokens<S>(string: S) -> TokenStream2
 where
     S: AsRef<str>,
 {
@@ -43,8 +43,8 @@ where
     S0: AsRef<str>,
     S1: AsRef<str>,
 {
-    let variant_tokens = tident_tokens(variant.as_ref());
-    let field_tokens = tident_tokens(field.as_ref());
+    let variant_tokens = tstr_tokens(variant.as_ref());
+    let field_tokens = tstr_tokens(field.as_ref());
     quote!(
         ::structural::pmr::VariantField<
             #variant_tokens,
@@ -57,7 +57,7 @@ pub(crate) fn variant_name_tokens<S0>(variant: S0) -> TokenStream2
 where
     S0: AsRef<str>,
 {
-    let variant_tokens = tident_tokens(variant.as_ref());
+    let variant_tokens = tstr_tokens(variant.as_ref());
     quote!(
         ::structural::pmr::VariantName< #variant_tokens >
     )

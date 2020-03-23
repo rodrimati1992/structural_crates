@@ -20,6 +20,21 @@ macro_rules! impl_to_path_to_set {
                 FieldPathSet::one(self)
             }
         }
+
+        // Defined for the `fp` macro
+        impl< $($impl_params)* > $self
+        where
+            Self: ConstDefault,
+            $($($where_clause)*)?
+        {
+            #[doc(hidden)]
+            pub const NEW_ALIASED:Self=Self::DEFAULT;
+
+            #[doc(hidden)]
+            pub const unsafe fn upgrade_unchecked(self)->Self{
+                self
+            }
+        }
     )
 }
 

@@ -292,21 +292,15 @@ macro_rules! fp {
     ($lit:literal) => (
         <$crate::_FP_literal_!($lit)>::NEW
     );
-    ($($everything:tt)*) => (
-        $crate::_delegate_fp_inner!{$($everything)*}
-    );
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! _delegate_fp_inner {
+    // This branch of the macro is defined like this to not leak implementation details,
+    // users should not be able to see the macro definition.
     ($($everything:tt)*) => ({
-        mod dummy{
-            $crate::low_fp_impl_!{$($everything)*}
-        }
+        type Path=$crate::FP!($($everything)*);
 
-        dummy::VALUE
-    })
+        const VALUE:Path=unsafe{ <Path>::NEW_ALIASED.upgrade_unchecked() };
+
+        VALUE
+    });
 }
 
 /// Constructs a field path type for use as a generic parameter.

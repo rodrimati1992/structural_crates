@@ -124,6 +124,20 @@ where
     pub const NEW: Self = Self::DEFAULT;
 }
 
+// Defined for the `fp` macro
+impl<T> NestedFieldPath<T>
+where
+    Self: ConstDefault,
+{
+    #[doc(hidden)]
+    pub const NEW_ALIASED: Self = Self::DEFAULT;
+
+    #[doc(hidden)]
+    pub const unsafe fn upgrade_unchecked(self) -> Self {
+        self
+    }
+}
+
 impl<T> NestedFieldPath<(T,)> {
     /// Construcst a `NestedFieldPath` from a single path component.
     #[inline(always)]

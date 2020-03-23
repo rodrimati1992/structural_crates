@@ -1,4 +1,4 @@
-use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tident_tokens};
+use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tstr_tokens};
 
 use as_derive_utils::return_spanned_err;
 
@@ -44,7 +44,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     }
 
     if config.include_count {
-        let alias_count_str = tident_tokens(alias_count.to_string());
+        let alias_count_str = tstr_tokens(alias_count.to_string());
         tokens.append_all(quote!(
             #[allow(non_camel_case_types,dead_code)]
             /// The amount of strings aliased in this module.
@@ -83,7 +83,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
                     string,
                 );
 
-                let string = tident_tokens(string);
+                let string = tstr_tokens(string);
 
                 Ok(quote_spanned!(span=>
                     #[doc=#doc_fp_inner]
@@ -146,13 +146,13 @@ mod keywords {
 }
 
 impl Parse for StrAliases {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         Self::parse_(input, StrAliasCfg::default())
     }
 }
 
 impl StrAliases {
-    fn parse_(input: ParseStream, mut config: StrAliasCfg) -> parse::Result<Self> {
+    fn parse_(input: ParseStream<'_>, mut config: StrAliasCfg) -> parse::Result<Self> {
         while let Some(_) = input.peek_parse(Token!(@))? {
             if input.peek_parse(keywords::count)?.is_some() {
                 config.include_count = true;
@@ -181,7 +181,7 @@ impl StrAliases {
 }
 
 impl StrModule {
-    fn parse_(input: ParseStream, config: StrAliasCfg) -> parse::Result<Self> {
+    fn parse_(input: ParseStream<'_>, config: StrAliasCfg) -> parse::Result<Self> {
         let _: Token!(mod) = input.parse()?;
         let name = input.parse::<Ident>()?;
 
@@ -196,7 +196,7 @@ impl StrModule {
 }
 
 impl Parse for StrAlias {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let alias_name = input.parse::<Ident>()?;
         let string = if let Some(_) = input.peek_parse(Token!(=))? {
             input.parse::<TString>()?.0
@@ -211,7 +211,7 @@ impl Parse for StrAlias {
 }
 
 impl Parse for TString {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let s: String = match input.peek_parse(LitStr)? {
             Some(x) => x.value(),
             None => input.parse::<IdentOrIndex>()?.to_string(),

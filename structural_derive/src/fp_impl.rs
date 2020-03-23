@@ -7,10 +7,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use syn::{
-    parse::{self, ParseStream},
-    Ident,
-};
+use syn::parse::{self, ParseStream};
 
 #[allow(non_snake_case)]
 pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2, syn::Error> {
@@ -29,26 +26,6 @@ fn test_FP_macro() {
     use as_derive_utils::test_framework::Tests;
 
     Tests::load("field_paths").run_test(FP_from_str);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-pub(crate) fn low_fp_impl(LowFpParams { paths }: LowFpParams) -> Result<TokenStream2, syn::Error> {
-    let const_name = Ident::new("VALUE", proc_macro2::Span::call_site());
-
-    Ok(paths.constant_named(&const_name))
-}
-
-pub(crate) struct LowFpParams {
-    paths: FieldPaths,
-}
-
-impl parse::Parse for LowFpParams {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
-        input
-            .parse::<FieldPaths>()
-            .map(|paths| LowFpParams { paths })
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,7 +51,7 @@ pub(crate) struct FpLitParams {
 }
 
 impl parse::Parse for FpLitParams {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let (first, second) = parse_field(input)?;
         Ok(FpLitParams { first, second })
     }

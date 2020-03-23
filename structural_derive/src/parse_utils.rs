@@ -12,7 +12,7 @@ where
     T: parse::Parse,
     P: parse::Parse,
 {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         Ok(Self {
             list: Punctuated::parse_terminated(input)?,
         })
@@ -29,7 +29,7 @@ impl<T> parse::Parse for ParseVec<T>
 where
     T: parse::Parse,
 {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let mut list = Vec::new();
         while !input.is_empty() {
             list.push(input.parse::<T>()?);

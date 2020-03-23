@@ -1,4 +1,4 @@
-use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tident_tokens};
+use crate::{ident_or_index::IdentOrIndex, parse_utils::ParseBufferExt, tokenizers::tstr_tokens};
 
 use as_derive_utils::{datastructure::StructKind, return_syn_err};
 
@@ -23,7 +23,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
 
         let span = vari.name.span();
         let vari_name = &vari.name;
-        let field_name = vari.fields.iter().map(|fname| tident_tokens(fname));
+        let field_name = vari.fields.iter().map(tstr_tokens);
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -43,7 +43,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
     let variant_names = parsed.variants.iter().map(|vari| {
         let span = vari.name.span();
         let alias_name = &vari.name;
-        let variant_name = tident_tokens(alias_name.to_string());
+        let variant_name = tstr_tokens(alias_name.to_string());
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -51,7 +51,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         }
     });
 
-    let variant_count_str = tident_tokens(parsed.variants.len().to_string());
+    let variant_count_str = tstr_tokens(parsed.variants.len().to_string());
 
     Ok(quote! {
         #[allow(non_camel_case_types,dead_code)]
@@ -79,7 +79,7 @@ struct SwitchVariant {
 }
 
 impl Parse for SwitchStrAliases {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let mut variants = Vec::new();
         while !input.is_empty() {
             variants.push(SwitchVariant::parse(input)?);
@@ -89,7 +89,7 @@ impl Parse for SwitchStrAliases {
 }
 
 impl Parse for SwitchVariant {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let name = input.parse::<Ident>()?;
 
         let content;
@@ -108,7 +108,7 @@ impl Parse for SwitchVariant {
 }
 
 impl SwitchVariant {
-    fn parse_fields(input: ParseStream, vkind: StructKind) -> parse::Result<Vec<String>> {
+    fn parse_fields(input: ParseStream<'_>, vkind: StructKind) -> parse::Result<Vec<String>> {
         let mut fields = Vec::<String>::new();
         let mut index = 0;
         while !input.is_empty() {
@@ -131,7 +131,7 @@ impl SwitchVariant {
 }
 
 fn parse_field(
-    input: ParseStream,
+    input: ParseStream<'_>,
     index: usize,
     vkind: StructKind,
 ) -> parse::Result<Option<(Span, String)>> {
@@ -159,7 +159,7 @@ fn parse_field(
     }
 }
 
-fn skip_ref(input: ParseStream) -> parse::Result<()> {
+fn skip_ref(input: ParseStream<'_>) -> parse::Result<()> {
     if let None = input.peek_parse(Token!(&))? {
         return Ok(());
     }
@@ -172,7 +172,7 @@ fn skip_ref(input: ParseStream) -> parse::Result<()> {
     Ok(())
 }
 
-fn skip_rest_of_field(input: ParseStream) -> parse::Result<()> {
+fn skip_rest_of_field(input: ParseStream<'_>) -> parse::Result<()> {
     while !(input.is_empty() || input.peek(Token!(,))) {
         let _ = input.parse::<TokenTree2>()?;
     }

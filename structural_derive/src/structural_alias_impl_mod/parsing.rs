@@ -24,8 +24,8 @@ use std::collections::HashSet;
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<'a> StructuralAliases<'a> {
-    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
-        let mut list = Vec::<StructuralAlias>::new();
+    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream<'_>) -> Result<Self, syn::Error> {
+        let mut list = Vec::<StructuralAlias<'_>>::new();
         while !input.is_empty() {
             list.push(StructuralAlias::parse(arenas, input)?);
         }
@@ -34,7 +34,7 @@ impl<'a> StructuralAliases<'a> {
 }
 
 impl<'a> StructuralAlias<'a> {
-    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
+    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream<'_>) -> Result<Self, syn::Error> {
         let mut extra_items = Vec::<TraitItem>::new();
         let mut attrs = input.call(Attribute::parse_outer)?;
         let vis: Visibility = input.parse()?;
@@ -96,7 +96,7 @@ impl<'a> StructuralDataType<'a> {
     pub(super) fn parse(
         extra_items: &mut Vec<TraitItem>,
         arenas: &'a Arenas,
-        input: ParseStream,
+        input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
         let mut variants = Vec::new();
         let mut fields = Vec::new();
@@ -117,7 +117,7 @@ impl<'a> StructuralDataType<'a> {
                 let ident = arenas.alloc(input.parse::<Ident>()?);
 
                 let variant_kind: StructKind = enum_token.into();
-                let mut push_variant = |content: ParseStream| -> Result<(), syn::Error> {
+                let mut push_variant = |content: ParseStream<'_>| -> Result<(), syn::Error> {
                     variants.push(StructuralVariant::parse(
                         access,
                         ident,
@@ -175,7 +175,7 @@ impl<'a> StructuralVariant<'a> {
         name: &'a Ident,
         variant_kind: StructKind,
         arenas: &'a Arenas,
-        input: ParseStream,
+        input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
         let mut fields = Vec::<StructuralField<'a>>::new();
 
@@ -219,7 +219,7 @@ impl<'a> TinyStructuralField<'a> {
     pub(crate) fn parse(
         access: Access,
         arenas: &'a Arenas,
-        input: ParseStream,
+        input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
         let ident = IdentOrIndexRef::parse(arenas, input)?;
         let _: Token![:] = input.parse()?;
@@ -233,7 +233,7 @@ impl<'a> StructuralField<'a> {
     pub(super) fn parse_braced_field(
         access: Access,
         arenas: &'a Arenas,
-        input: ParseStream,
+        input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
         let TinyStructuralField {
             access: _,
@@ -257,7 +257,7 @@ impl<'a> StructuralField<'a> {
         access: Access,
         index: u32,
         arenas: &'a Arenas,
-        input: ParseStream,
+        input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
         let span = input.cursor().span();
         let ty = FieldType::parse(arenas, input)?;
@@ -289,7 +289,7 @@ enum VariantToken {
 }
 
 impl VariantToken {
-    pub(super) fn peek_from(input: ParseStream) -> Option<Self> {
+    pub(super) fn peek_from(input: ParseStream<'_>) -> Option<Self> {
         if !input.peek(syn::Ident) {
             return None;
         }
@@ -328,7 +328,7 @@ fn check_no_repeated_field(fields: &[StructuralField<'_>]) -> Result<(), syn::Er
 }
 
 impl<'a> FieldType<'a> {
-    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
+    pub(super) fn parse(arenas: &'a Arenas, input: ParseStream<'_>) -> Result<Self, syn::Error> {
         const ASSOC_TY_BOUNDS: bool = cfg!(feature = "impl_fields");
 
         use syn::Type;

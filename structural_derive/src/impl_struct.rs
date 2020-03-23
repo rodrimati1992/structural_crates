@@ -25,7 +25,7 @@ pub(crate) struct ImplStruct<'a> {
 }
 
 impl<'a> Parse for ImplStructHack {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+    fn parse(input: ParseStream<'_>) -> Result<Self, syn::Error> {
         let arenas = Arenas::default();
 
         let impl_struct = ImplStruct::parse(&arenas, input)?;
@@ -36,7 +36,7 @@ impl<'a> Parse for ImplStructHack {
 }
 
 impl<'a> ImplStruct<'a> {
-    fn parse(arenas: &'a Arenas, input: ParseStream) -> Result<Self, syn::Error> {
+    fn parse(arenas: &'a Arenas, input: ParseStream<'_>) -> Result<Self, syn::Error> {
         let forked = input.fork();
         let mut bounds = TypeParamBounds::parse_separated_nonempty_with(&forked, Parse::parse).ok();
         let _ = forked.peek_parse(syn::Token!(+));

@@ -2,7 +2,7 @@ use crate::{
     ident_or_index::IdentOrIndex,
     ignored_wrapper::Ignored,
     parse_utils::ParseBufferExt,
-    tokenizers::{tident_tokens, variant_field_tokens, variant_name_tokens},
+    tokenizers::{tstr_tokens, variant_field_tokens, variant_name_tokens},
 };
 
 // use as_derive_utils::spanned_err;
@@ -11,7 +11,7 @@ use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{quote, ToTokens};
 
 use syn::{
     parse::{self, Parse, ParseStream},
@@ -128,19 +128,6 @@ impl FieldPaths {
         }
     }
 
-    /// Gets a const item with the type-level identifier.
-    pub(crate) fn constant_named(&self, name: &syn::Ident) -> TokenStream2 {
-        let type_ = self.type_tokens();
-        let mut ret = quote!(pub const #name:#type_=);
-        ret.append_all(match (&self.prefix, self.is_set()) {
-            (None, false) => quote!(structural::pmr::ConstDefault::DEFAULT),
-            (None, true) => quote!(unsafe { structural::FieldPathSet::NEW.set_uniqueness() }),
-            (Some(_), _) => quote!(unsafe { structural::NestedFieldPathSet::NEW.set_uniqueness() }),
-        });
-        <Token!(;)>::default().to_tokens(&mut ret);
-        ret
-    }
-
     /// Gets a tokenizer that outputs a type-level NestedFieldPath(Set) value.
     pub(crate) fn inferred_expression_tokens(&self) -> TokenStream2 {
         if self.is_set() {
@@ -156,7 +143,7 @@ impl FieldPaths {
 }
 
 impl Parse for FieldPaths {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let mut prefix = None::<NestedFieldPath>;
         let mut paths = Vec::<NestedFieldPath>::new();
         while !input.is_empty() {
@@ -194,7 +181,7 @@ pub(crate) struct NestedFieldPath {
 }
 
 impl Parse for NestedFieldPath {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let mut list = Vec::<FieldPathComponent>::new();
 
         let mut is_first = true;
@@ -313,7 +300,7 @@ impl FieldPathComponent {
     }
 
     pub(crate) fn parse(
-        input: ParseStream,
+        input: ParseStream<'_>,
         is_first: IsFirst,
     ) -> parse::Result<(Self, Option<Self>)> {
         let fork = input.fork();
@@ -359,9 +346,7 @@ impl FieldPathComponent {
             } else if is_field_path_terminator(input) {
                 Ok((FieldPathComponent::VariantName { variant }, None))
             } else {
-                return Err(
-                    input.error("Expected either a `.field_name`,the end of the field path.")
-                );
+                Err(input.error("Expected either a `.field_name`,the end of the field path."))
             }
         } else {
             let (first, second) = parse_field(input)?;
@@ -379,7 +364,7 @@ impl FieldPathComponent {
         use self::FieldPathComponent as FPC;
 
         match self {
-            FPC::Ident(ident) => tident_tokens(ident.to_string()),
+            FPC::Ident(ident) => tstr_tokens(ident.to_string()),
             FPC::VariantField { variant, field } => {
                 variant_field_tokens(variant.to_string(), field.to_string())
             }
@@ -388,7 +373,7 @@ impl FieldPathComponent {
     }
 }
 
-fn is_field_path_terminator(input: ParseStream) -> bool {
+fn is_field_path_terminator(input: ParseStream<'_>) -> bool {
     input.is_empty() || input.peek(Token!(,)) || input.peek(Token!(=>))
 }
 
@@ -404,7 +389,7 @@ fn make_ident_or_index(digits: &str) -> syn::Result<Option<IdentOrIndex>> {
 /// This function returns a second `IdentOrIndex` if the first token is
 /// a floating point number.
 pub(crate) fn parse_field(
-    input: ParseStream,
+    input: ParseStream<'_>,
 ) -> parse::Result<(IdentOrIndex, Option<IdentOrIndex>)> {
     if input.peek(syn::LitFloat) {
         let f = input.parse::<syn::LitFloat>()?;

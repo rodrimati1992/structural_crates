@@ -58,7 +58,7 @@ pub(crate) struct NameAlias {
 }
 
 impl Parse for NameAliases {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         Ok(NameAliases {
             aliases: input.parse_terminated(Parse::parse)?,
         })
@@ -66,7 +66,7 @@ impl Parse for NameAliases {
 }
 
 impl Parse for NameAlias {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let name = input.parse::<Ident>()?;
         let value = if input.peek(Token!(=)) {
             input.parse::<Token![=]>()?;

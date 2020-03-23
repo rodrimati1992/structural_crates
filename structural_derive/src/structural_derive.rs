@@ -6,7 +6,7 @@ use crate::{
         Exhaustiveness, FieldType, StructuralAliasParams, StructuralDataType, StructuralField,
         StructuralVariant, VariantIdent,
     },
-    tokenizers::tident_tokens,
+    tokenizers::tstr_tokens,
     write_docs::{self, DocsFor},
 };
 
@@ -389,7 +389,7 @@ fn deriving_structural<'a>(
                         });
 
                 let enum_ = ds.name;
-                let variant_count = tident_tokens(ds.variants.len().to_string());
+                let variant_count = tstr_tokens(ds.variants.len().to_string());
 
                 let variant_count_tokens = if options.make_variant_count_alias {
                     let variant_count_ident_str = format!("{}_VC", ds.name);

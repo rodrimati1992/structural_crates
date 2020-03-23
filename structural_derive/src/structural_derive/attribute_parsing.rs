@@ -279,7 +279,7 @@ fn parse_sabi_attr<'a>(
                 let bounds: TypeParamBounds = value.parse::<ParsePunctuated<_, _>>()?.list;
                 this.fields[field].is_impl = Some(bounds)
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (ParseContext::Field { field, .. }, Meta::Path(path)) => {
@@ -290,14 +290,14 @@ fn parse_sabi_attr<'a>(
             } else if path.is_ident("delegate_to") {
                 parse_delegate_to(this, Default::default(), path.span(), field)?;
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (ParseContext::Field { field, .. }, Meta::List(MetaList { path, nested, .. })) => {
             if path.is_ident("delegate_to") {
                 parse_delegate_to(this, nested, path.span(), field)?;
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (
@@ -325,14 +325,14 @@ fn parse_sabi_attr<'a>(
             } else if path.is_ident("rename") {
                 this.variants[index].renamed = Some(IdentOrIndex::from(unparsed_lit));
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (ParseContext::Variant { index, .. }, Meta::Path(ref path)) => {
             if path.is_ident("newtype") {
                 this.variants[index].is_newtype = true;
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (ParseContext::Variant { index, .. }, Meta::List(list)) => {
@@ -344,7 +344,7 @@ fn parse_sabi_attr<'a>(
                 variant_c.is_newtype = true;
                 parse_is_newtype(variant_c, list.nested)?;
             } else {
-                return Err(make_err(&list.path))?;
+                return Err(make_err(&list.path));
             }
         }
         (
@@ -376,7 +376,7 @@ fn parse_sabi_attr<'a>(
                     field.is_pub = false;
                 }
             } else {
-                return Err(make_err(&path))?;
+                return Err(make_err(&path));
             }
         }
         (
@@ -461,7 +461,7 @@ fn parse_delegate_to<'a>(
     Ok(())
 }
 
-fn parse_is_newtype<'a>(
+fn parse_is_newtype(
     this: &mut VariantConfig,
     list: Punctuated<NestedMeta, syn::Token![,]>,
 ) -> Result<(), syn::Error> {

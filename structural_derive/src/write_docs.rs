@@ -204,9 +204,9 @@ fn write_field_docs(
     Ok(())
 }
 
-const SPACES_X8: &'static str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+const SPACES_X8: &str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-const GENERIC_VARIANT_NAME_DOCS: &'static str = "
+const GENERIC_VARIANT_NAME_DOCS: &str = "
 # Generic Variant Names
 
 For a `Bar<T,Foo>` trait,
