@@ -18,7 +18,7 @@ satisfying the [IntoFieldMut trait](crate::field::IntoFieldMut)
 
 ```
 use structural::field::for_tuples::Tuple4;
-use structural::{GetFieldExt,Structural, fp};
+use structural::{StructuralExt,Structural, fp};
 
 fn sum_tuple_4(tuple: impl Tuple4<u8, u16, u32, u64>) -> u64 {
     let (a, b, c, d) = tuple.fields(fp!(0, 1, 2, 3));
@@ -54,7 +54,7 @@ satisfying the ([IntoVariantFieldMut trait](../trait.IntoVariantFieldMut.html))
 
 ```
 use structural::field::Tuple2Variant;
-use structural::{GetFieldExt,Structural,TS,fp};
+use structural::{StructuralExt,Structural,TS,fp};
 
 use std::cmp::{Ordering,PartialEq};
 use std::fmt::Debug;

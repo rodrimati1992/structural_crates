@@ -1,7 +1,7 @@
 use crate::{
     enums::IsVariant,
     field::{IntoFieldMut, IntoVariantFieldMut},
-    GetFieldExt, Structural,
+    Structural, StructuralExt,
 };
 
 field_path_aliases! {

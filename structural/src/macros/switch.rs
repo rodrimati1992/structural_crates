@@ -38,7 +38,7 @@ These examples demonstrates all the syntax of the `switch` macro.
 
 This demonstrates variant access modes:
 ```
-use structural::{GetFieldExt,Structural,fp,switch};
+use structural::{StructuralExt,Structural,fp,switch};
 
 #[derive(Debug,Copy,Clone,Structural)]
 enum Enum{
@@ -112,7 +112,7 @@ where
 This demonstates that you can use access modes in the switch header,
 and how you can copy Copy fields in with different access modes:
 ```rust
-use structural::{GetFieldExt,Structural,fp,switch};
+use structural::{StructuralExt,Structural,fp,switch};
 
 # #[derive(Debug,Copy,Clone,Structural)]
 # #[struc(no_trait)]
@@ -153,7 +153,7 @@ This demonstrates `if`,`if let`,and `_=>` branches,
 as well as using the variant proxy after the matches fields(in the `Bam` branch).
 
 ```rust
-use structural::{GetFieldExt,Structural,fp,switch};
+use structural::{StructuralExt,Structural,fp,switch};
 
 # #[derive(Debug,Copy,Clone,Structural)]
 # #[struc(no_trait)]
@@ -855,7 +855,7 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
         ()
     )=>{
         let ($($variable_pats)*)={
-            use $crate::GetFieldExt;
+            use $crate::StructuralExt;
             $crate::switch_inn!{@call_field_method $access $variant _struc_proxy_ }
         };
     };
@@ -866,7 +866,7 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
         ()
     )=>{
         let ($($variable_pats)*)={
-            use $crate::GetFieldExt;
+            use $crate::StructuralExt;
             $crate::switch_inn!{@call_field_method $access $variant $proxy_ }
         };
     };

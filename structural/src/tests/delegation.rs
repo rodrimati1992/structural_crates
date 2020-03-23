@@ -2,7 +2,7 @@ use crate::{
     field::Array3,
     field_path_aliases,
     for_examples::{EnumOptFlying, EnumOptFlying_SI},
-    structural_alias, GetField, GetFieldExt, GetFieldMut, IntoField, Structural,
+    structural_alias, GetField, GetFieldMut, IntoField, Structural, StructuralExt,
 };
 
 use std_::{fmt::Debug, marker::PhantomData, mem};

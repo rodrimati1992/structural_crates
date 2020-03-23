@@ -1,4 +1,4 @@
-use crate::{GetField, GetFieldExt, GetFieldMut, IntoField, IntoFieldMut, Structural};
+use crate::{GetField, GetFieldMut, IntoField, IntoFieldMut, Structural, StructuralExt};
 
 #[cfg(feature = "alloc")]
 use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
@@ -155,7 +155,7 @@ fn privacies() {
     let _ = generic_1::<Privacies1>;
 }
 
-// This tests that boxed trait objects can still call GetFieldExt methods.
+// This tests that boxed trait objects can still call StructuralExt methods.
 #[cfg(feature = "alloc")]
 #[test]
 fn ptr_dyn_methods() {

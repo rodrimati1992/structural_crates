@@ -1,6 +1,6 @@
 use crate::{
-    for_examples::Variants, fp, path::UniquePaths, FieldPathSet, GetFieldExt, NestedFieldPath,
-    NestedFieldPathSet, TS,
+    for_examples::Variants, fp, path::UniquePaths, FieldPathSet, NestedFieldPath,
+    NestedFieldPathSet, StructuralExt, TS,
 };
 
 #[test]

@@ -8,7 +8,7 @@ use crate::{
 /// This trait has these methods:
 ///
 /// - `*_variant`: For fallibly converting an enum to a VariantProxy of a passed variant.
-/// As opposed to calling GetFieldExt methods with a `fp!(::Foo)` argument,
+/// As opposed to calling StructuralExt methods with a `fp!(::Foo)` argument,
 /// this allows recovering the enum when it's not the passed variant.
 ///
 pub trait EnumExt {
@@ -18,7 +18,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{ts,TS,GetFieldExt};
+    /// use structural::{ts,TS,StructuralExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -52,7 +52,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{ts,TS,GetFieldExt};
+    /// use structural::{ts,TS,StructuralExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -93,7 +93,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{ts,TS,GetFieldExt};
+    /// use structural::{ts,TS,StructuralExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///
@@ -146,7 +146,7 @@ pub trait EnumExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{ts,TS,GetFieldExt};
+    /// use structural::{ts,TS,StructuralExt};
     /// use structural::for_examples::Variants;
     /// use structural::enums::{EnumExt,VariantProxy};
     ///

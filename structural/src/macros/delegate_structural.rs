@@ -122,7 +122,7 @@ use std::{
     mem::ManuallyDrop,
 };
 
-use structural::{GetFieldExt,GetFieldMut,unsafe_delegate_structural_with,make_struct,fp};
+use structural::{StructuralExt,GetFieldMut,unsafe_delegate_structural_with,make_struct,fp};
 
 struct Bar<T>{
     value:ManuallyDrop<T>

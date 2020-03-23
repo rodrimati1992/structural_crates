@@ -185,7 +185,7 @@ The defaulted methods in `MyTrait` could move to `Fields` if MyTrait had a blank
 or because the defaulted methods are not supposed to be overriden.
 
 ```
-use structural::{GetFieldExt,structural_alias,fp};
+use structural::{StructuralExt,structural_alias,fp};
 
 structural_alias!{
     trait Fields{
@@ -290,7 +290,7 @@ This demonstrates using impl trait fields.
 // work without it.
 #![feature(associated_type_bounds)]
 
-use structural::{structural_alias,fp,make_struct,GetFieldExt};
+use structural::{structural_alias,fp,make_struct,StructuralExt};
 
 structural_alias!{
     trait Foo{
@@ -333,7 +333,7 @@ fn main(){
 ### Defining a Point trait alias
 
 ```rust
-use structural::{structural_alias,fp,GetFieldExt,Structural};
+use structural::{structural_alias,fp,StructuralExt,Structural};
 
 use core::{
     cmp::PartialEq,
@@ -406,7 +406,7 @@ struct Entity{
 use structural::{
     structural_alias,
     fp,
-    GetFieldExt,
+    StructuralExt,
 };
 
 structural_alias!{
@@ -484,7 +484,7 @@ fn main(){
 use structural::{
     fp,structural_alias,switch,
     field::{GetVariantFieldType,IntoVariantField},
-    GetFieldExt,
+    StructuralExt,
     Structural,
 };
 

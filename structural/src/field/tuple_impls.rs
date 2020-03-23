@@ -264,7 +264,7 @@ impl_tuple! {
 #[allow(clippy::redundant_clone)]
 mod tests {
     use crate::field::for_tuples::{Tuple4, Tuple4Variant};
-    use crate::{fp, GetField, GetFieldExt, Structural};
+    use crate::{fp, GetField, Structural, StructuralExt};
 
     fn get_field_1<T>(val: &T) -> &u64
     where

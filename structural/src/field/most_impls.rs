@@ -3,7 +3,7 @@
 use crate::{FieldType, GetField, IntoField, Structural};
 
 #[allow(unused_imports)]
-use crate::GetFieldExt;
+use crate::StructuralExt;
 
 use core::{
     //marker::Unpin,

@@ -1,6 +1,6 @@
 use crate::enums::{IsVariant, VariantCount};
 use crate::field::IntoVariantFieldMut;
-use crate::{GetFieldExt, GetVariantField, GetVariantFieldMut, IntoVariantField, Structural};
+use crate::{GetVariantField, GetVariantFieldMut, IntoVariantField, Structural, StructuralExt};
 
 use std_::mem;
 

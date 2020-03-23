@@ -2,7 +2,7 @@ use crate::{
     enums::VariantProxy,
     field_path_aliases,
     test_utils::{GetRefKind, RefKind},
-    GetFieldExt, Structural,
+    Structural, StructuralExt,
 };
 
 use core_extensions::SelfOps;

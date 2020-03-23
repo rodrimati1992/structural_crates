@@ -214,7 +214,7 @@ Marks the fields as private,not generating the accessor traits for the field.
 This example shows many of the ways that fields can be accessed.
 
 ```
-use structural::{GetFieldExt,Structural,fp};
+use structural::{StructuralExt,Structural,fp};
 
 fn main(){
     with_struct(Foo{
@@ -321,7 +321,7 @@ struct Bar{
 ### Basic example
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,fp};
+use structural::{Structural,StructuralExt,structural_alias,fp};
 
 
 fn reads_pair<O>(pair:&O)
@@ -365,7 +365,7 @@ fn main(){
 ### Mutating fields
 
 ```rust
-use structural::{Structural,GetFieldExt,structural_alias,fp};
+use structural::{Structural,StructuralExt,structural_alias,fp};
 
 
 structural_alias!{
@@ -421,7 +421,7 @@ This example demonstrates how one disables the generation of the
 `<DerivingType>_SI` trait to declare it manually.
 
 ```rust
-use structural::{Structural,IntoFieldMut,GetFieldExt,FP};
+use structural::{Structural,IntoFieldMut,StructuralExt,FP};
 
 #[derive(Debug,Structural,PartialEq,Eq)]
 #[struc(no_trait)]
@@ -464,7 +464,7 @@ This requires the `nightly_impl_fields` cargo feature
 
 use std::borrow::Borrow;
 
-use structural::{Structural,fp,make_struct,GetFieldExt};
+use structural::{Structural,fp,make_struct,StructuralExt};
 
 
 #[derive(Structural)]
@@ -507,7 +507,7 @@ takes_person(&Person{
 This is an example of using the `#[struc(delegate_to)]` attribute.
 
 ```
-use structural::{fp,make_struct,GetFieldExt,Structural};
+use structural::{fp,make_struct,StructuralExt,Structural};
 
 
 #[derive(Structural,Clone)]
@@ -580,7 +580,7 @@ This is an example of using the `#[struc(delegate_to())]` attribute with
 extra bounds in the accessor trait impls.
 
 ```
-use structural::{fp,make_struct,GetFieldExt,Structural};
+use structural::{fp,make_struct,StructuralExt,Structural};
 
 use std::{
     fmt::Debug,
@@ -670,7 +670,7 @@ Unfortunately,without enabling the "use_const_str" feature to use const generics
 compile-time errors are significantly less readable than with ascii identifiers.
 
 ```rust
-use structural::{fp,make_struct,GetFieldExt,Structural};
+use structural::{fp,make_struct,StructuralExt,Structural};
 
 ////////////////////////////////////////////////////
 //                    structs

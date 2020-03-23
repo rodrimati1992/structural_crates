@@ -1,4 +1,4 @@
-use crate::GetFieldExt;
+use crate::StructuralExt;
 
 #[cfg(feature = "alloc")]
 use crate::pmr::Box;

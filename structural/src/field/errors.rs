@@ -34,7 +34,7 @@ pub trait IsFieldErr: Sealed + 'static + Copy + Cloned {}
 ///
 /// This is used as the `Err` associated type for `Rev*Field*` implementors,
 /// which return a `Result<_,InfallibleAccess>`,
-/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// then [StructuralExt](../trait.StructuralExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `foo` (which can be safely done,since this type can't be constructed).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -44,7 +44,7 @@ pub enum InfallibleAccess {}
 ///
 /// This is used as the `Err` associated type for `Rev*Field*` implementors,
 /// which return a `Result<_,FailedAccess>`,
-/// then [GetFieldExt](../trait.GetFieldExt.html) methods use
+/// then [StructuralExt](../trait.StructuralExt.html) methods use
 /// [NormalizeFields](../trait.NormalizeFields.html) to turn
 /// `Ok(foo)` into `Some(foo)`,and `Err(FailedAccess)` into `None`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

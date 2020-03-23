@@ -72,7 +72,7 @@ pub type RevGetMultiFieldMutRaw<'a, Path, This> =
 /// ```rust
 /// use structural::field::{FailedAccess, RevGetMultiFieldImpl};
 /// use structural::path::{AliasedPaths, IsMultiFieldPath};
-/// use structural::GetFieldExt;
+/// use structural::StructuralExt;
 ///
 /// struct Pair(usize,usize);
 ///
@@ -116,8 +116,8 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 /// implementing that trait is necessary to be able to use this trait.
 ///
 /// This is used by the
-/// [`GetFieldExt::fields`](../../trait.GetFieldExt.html#method.fields),
-/// and [`GetFieldExt::cloned_fields`](../../trait.GetFieldExt.html#method.cloned_fields)
+/// [`StructuralExt::fields`](../../trait.StructuralExt.html#method.fields),
+/// and [`StructuralExt::cloned_fields`](../../trait.StructuralExt.html#method.cloned_fields)
 /// methods.
 ///
 /// There's also the [`RevGetMultiFieldOut`] type alias to get this trait's
@@ -128,7 +128,7 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 /// This demonstrates how you can use `RevGetMultiField` with structs.
 ///
 /// ```rust
-/// use structural::{GetFieldExt, FP, fp};
+/// use structural::{StructuralExt, FP, fp};
 /// use structural::field::RevGetMultiField;
 /// use structural::for_examples::{Tuple2, Tuple3};
 ///
@@ -155,7 +155,7 @@ pub trait RevGetMultiFieldImpl<'a, This: ?Sized + 'a>: IsMultiFieldPath + Sized 
 /// This demonstrates how you can use `RevGetMultiField` with enums.
 ///
 /// ```rust
-/// use structural::{GetFieldExt, FP};
+/// use structural::{StructuralExt, FP};
 /// use structural::path::IntoAliasingOut;
 /// use structural::field::{RevGetMultiField,RevGetMultiFieldOut};
 /// use structural::for_examples::{Bomb, WithBoom};
@@ -256,7 +256,7 @@ where
 /// ```rust
 /// use structural::field::{FailedAccess, RevGetMultiFieldMutImpl};
 /// use structural::path::{IsMultiFieldPath, UniquePaths};
-/// use structural::GetFieldExt;
+/// use structural::StructuralExt;
 ///
 /// let mut arr=[2,3,5,8,13,21,34,55,89];
 ///
@@ -366,7 +366,7 @@ pub unsafe trait RevGetMultiFieldMutImpl<'a, This: ?Sized + 'a>:
 /// implementing that trait is necessary to be able to use this trait.
 ///
 /// This is used by the
-/// [`GetFieldExt::fields_mut`](../../trait.GetFieldExt.html#method.fields_mut)
+/// [`StructuralExt::fields_mut`](../../trait.StructuralExt.html#method.fields_mut)
 /// method.
 ///
 /// There's also the [`RevGetMultiFieldMutOut`] type alias to get this trait's
@@ -377,7 +377,7 @@ pub unsafe trait RevGetMultiFieldMutImpl<'a, This: ?Sized + 'a>:
 /// This demonstrates using `RevGetMultiFieldMut` with structs.
 ///
 /// ```rust
-/// use structural::{GetFieldExt, FP, fp};
+/// use structural::{StructuralExt, FP, fp};
 /// use structural::field::RevGetMultiFieldMut;
 /// use structural::for_examples::{Tuple2, Tuple3};
 ///
@@ -405,7 +405,7 @@ pub unsafe trait RevGetMultiFieldMutImpl<'a, This: ?Sized + 'a>:
 /// This demonstrates how you can use `RevGetMultiFieldMut` with enums.
 ///
 /// ```rust
-/// use structural::{GetFieldExt, field_path_aliases};
+/// use structural::{StructuralExt, field_path_aliases};
 /// use structural::field::{RevGetMultiFieldMut,RevGetMultiFieldMutOut};
 /// use structural::for_examples::{Bomb, WithBoom};
 ///

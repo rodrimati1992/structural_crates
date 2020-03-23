@@ -16,7 +16,7 @@ These are some of the features this library provides:
 [`GetField`]/[`GetFieldMut`]/[`IntoField`] for structs,
 and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 
-- The [`GetFieldExt`] extension trait,which defines the main methods to access fields,
+- The [`StructuralExt`] extension trait,which defines the main methods to access fields,
 so long as the type implements the accessor traits for those fields.
 
 - The [`structural_alias`] macro, to declare trait aliases for accessor traits,
@@ -138,8 +138,8 @@ https://docs.rs/structural/0.3/structural/field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]:
 https://docs.rs/structural/0.3/structural/field/trait.IntoVariantField.html
 
-[`GetFieldExt`]:
-https://docs.rs/structural/0.3/structural/trait.GetFieldExt.html
+[`StructuralExt`]:
+https://docs.rs/structural/0.3/structural/trait.StructuralExt.html
 [`impl_struct`]:
 https://docs.rs/structural/0.3/structural/macro.impl_struct.html
 [`make_struct`]:

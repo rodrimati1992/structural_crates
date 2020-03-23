@@ -49,7 +49,7 @@ variant field accessor trait bounds.
 ```
 use structural::{
     field::GetVariantField,
-    GetFieldExt,Structural,
+    StructuralExt,Structural,
     tstr_aliases,fp,
 };
 
@@ -153,7 +153,7 @@ This example demonstrates how `TStr` can be used to manually bound a
 type parameter with the `*VariantField*` traits,to access a variant field.
 
 ```rust
-use structural::{GetFieldExt,FP,Structural,TS,ts};
+use structural::{StructuralExt,FP,Structural,TS,ts};
 use structural::{GetFieldType, GetVariantFieldType, IntoVariantFieldMut, VariantField};
 
 // `GetFieldType<This,FP!(::Ok.0)>` can also be written as
@@ -192,7 +192,7 @@ This example uses the `TS` macro to access a single non-nested field,
 instead of the [`FP`](./macro.FP.html) or [`fp`](./macro.fp.html) macros.
 
 ```rust
-use structural::{GetField,GetFieldExt,Structural,FP,TS};
+use structural::{GetField,StructuralExt,Structural,FP,TS};
 
 fn main(){
     let phone=CellPhone{
@@ -362,7 +362,7 @@ Here are examples of constructing field paths using this macro,
 they are paired up with the `fp` macro for comparison.
 
 ```
-use structural::{GetFieldExt, Structural, ts, fp, field_path_aliases};
+use structural::{StructuralExt, Structural, ts, fp, field_path_aliases};
 use structural::enums::VariantProxy;
 use structural::path::{
     VariantField, VariantName, NestedFieldPath, FieldPathSet, NestedFieldPathSet,

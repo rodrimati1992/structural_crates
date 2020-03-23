@@ -3,8 +3,8 @@
 
 use crate::enums::{IsVariant, VariantCount};
 use crate::field::{
-    FieldType, GetField, GetFieldExt, GetFieldMut, GetVariantField, GetVariantFieldMut, IntoField,
-    IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
+    FieldType, GetField, GetFieldMut, GetVariantField, GetVariantFieldMut, IntoField, IntoFieldMut,
+    IntoVariantField, IntoVariantFieldMut, StructuralExt,
 };
 use crate::Structural;
 

@@ -226,7 +226,7 @@ impl<T> NestedFieldPath<T> {
     /// # Example
     ///
     /// ```rust
-    /// use structural::{GetFieldExt, fp};
+    /// use structural::{StructuralExt, fp};
     ///
     /// let tup=(3,(5,8),(13,21));
     ///
@@ -257,7 +257,7 @@ impl_cmp_traits! {
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`] contains unique field paths,
 /// in which no path is a prefix of any other path in the set,
-/// this is required to call `GetFieldExt::fields_mut`.
+/// this is required to call `StructuralExt::fields_mut`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html
@@ -267,7 +267,7 @@ pub struct UniquePaths;
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
 /// might not contain unique field paths.
 /// Its not possible to pass a `FieldPathSet<_,AliasedPaths>` to
-/// `GetFieldExt::fields_mut`.
+/// `StructuralExt::fields_mut`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html

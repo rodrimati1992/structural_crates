@@ -1,9 +1,9 @@
 /*!
 Accessor and extension traits for fields.
 
-# GetFieldExt
+# StructuralExt
 
-The [GetFieldExt](./trait.GetFieldExt.html) trait,
+The [StructuralExt](./trait.StructuralExt.html) trait,
 which is the way you're expected to call accessor methods.
 
 # Traits
@@ -37,7 +37,7 @@ The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-
 
 There are two kinds of `Rev*` traits,single field and multi field traits.
 
-The [GetFieldExt](./trait.GetFieldExt.html) trait
+The [StructuralExt](./trait.StructuralExt.html) trait
 uses the `Rev*` impls of the passed-in path to access the
 fields in `Self`.
 
@@ -148,7 +148,7 @@ pub use self::{
     },
     for_arrays::array_traits::*,
     for_tuples::*,
-    get_field_ext::GetFieldExt,
+    get_field_ext::StructuralExt,
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
         RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
@@ -188,7 +188,7 @@ pub trait FieldType<FieldPath> {
 /// # Usage as Bound Example
 ///
 /// ```
-/// use structural::{GetFieldExt,GetField,FP,fp};
+/// use structural::{StructuralExt,GetField,FP,fp};
 ///
 /// fn example(this:impl GetField<FP!(0), Ty=u32> + GetField<FP!(1), Ty=&'static str>){
 ///     assert_eq!( this.field_(fp!(0)), &99 );
@@ -242,7 +242,7 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 /// Here is one way you can get the type of a `struct` field.
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
+/// use structural::{GetField,StructuralExt,GetFieldType,FP,fp};
 ///
 /// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(name)>
 /// where
@@ -269,7 +269,7 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 /// Another way `get_name` could have been written is like this:
 ///
 /// ```
-/// use structural::{GetField,GetFieldExt,GetFieldType,FP,fp};
+/// use structural::{GetField,StructuralExt,GetFieldType,FP,fp};
 ///
 /// fn get_name<T,O>(this:&T)->&O
 /// where
@@ -289,7 +289,7 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 /// This also demonstrates a way to write extension traits.
 ///
 /// ```
-/// use structural::{FP, GetFieldExt, GetFieldType, GetVariantField, Structural, TS, fp};
+/// use structural::{FP, StructuralExt, GetFieldType, GetVariantField, Structural, TS, fp};
 /// use structural::for_examples::EnumOptA;
 ///
 /// let foo= EnumOptA::Limbs{legs:Some(9), hands:None};
@@ -388,7 +388,7 @@ pub type GetFieldType4<This, FieldPath, FieldPath2, FieldPath3, FieldPath4> =
 /// # Example: Usage as Bound
 ///
 /// ```
-/// use structural::{GetFieldExt,GetFieldMut,FP,fp};
+/// use structural::{StructuralExt,GetFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
 /// fn example<T>(this:&mut T)
@@ -469,7 +469,7 @@ pub unsafe trait GetFieldMut<FieldName>: GetField<FieldName> {
 /// A `GetFieldMut` specifically used for specialization internally.
 ///
 /// Moving the specialization to a separate impl somehow improves the error messages
-/// when calling `GetFieldExt::{field_mut,fields_mut}` methods.
+/// when calling `StructuralExt::{field_mut,fields_mut}` methods.
 ///
 /// # Safety
 ///
@@ -518,7 +518,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 /// # Usage as Bound Example
 ///
 /// ```
-/// use structural::{GetFieldExt,IntoField,FP,fp};
+/// use structural::{StructuralExt,IntoField,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
 /// fn example<T>(this: T)
@@ -600,7 +600,7 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 /// A bound for shared, mutable,and by-value access to the `FieldName` field.
 ///
 /// This is only usable as a bound,
-/// to access the field you can use any [GetFieldExt](./trait.GetFieldExt.html) method.
+/// to access the field you can use any [StructuralExt](./trait.StructuralExt.html) method.
 ///
 /// # Example
 ///
@@ -609,7 +609,7 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 ///
 #[cfg_attr(not(feature = "alloc"), doc = "```ignore")]
 #[cfg_attr(feature = "alloc", doc = "```rust")]
-/// use structural::{GetFieldExt,IntoFieldMut,FP,fp};
+/// use structural::{StructuralExt,IntoFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
 ///

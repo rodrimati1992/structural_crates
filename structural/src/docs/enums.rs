@@ -55,7 +55,7 @@ For example,
 you can transition from a `Bar{x:u32,y:u64}` variant to a `Bar` struct,
 like it's done in this example:
 ```rust
-use structural::{GetFieldExt,Structural,fp};
+use structural::{StructuralExt,Structural,fp};
 
 #[derive(Structural)]
 #[struc(public)]
@@ -117,7 +117,7 @@ This example shows many of the ways that fields can be accessed.
 ```
 use structural::{
     enums::VariantProxy,
-    TS,GetFieldExt,Structural,
+    TS,StructuralExt,Structural,
     fp,switch,
 };
 
@@ -237,7 +237,7 @@ and the difference between the `*_SI`(nonexhaustive enum) and `*_ESI`(exhaustive
 
 use structural::{
     field::Tuple2Variant,
-    GetFieldExt,Structural,
+    StructuralExt,Structural,
     fp,switch,
 };
 

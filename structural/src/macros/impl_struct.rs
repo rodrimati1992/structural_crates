@@ -41,7 +41,7 @@ This demonstrates `impl_struct` with non-accessor bounds.
 
 ```rust
 
-use structural::{fp,impl_struct,make_struct,GetFieldExt};
+use structural::{fp,impl_struct,make_struct,StructuralExt};
 
 fn into_hi_ho_fields(
     this: impl_struct!{ Clone; hi:u32, ho:String }
@@ -73,7 +73,7 @@ In this case the fields are read only.
 
 ```rust
 
-use structural::{fp,impl_struct,make_struct,GetFieldExt};
+use structural::{fp,impl_struct,make_struct,StructuralExt};
 
 fn into_colors(
     mut this: u32,

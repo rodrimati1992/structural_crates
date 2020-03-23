@@ -27,7 +27,7 @@
 /// # Example
 ///
 /// ```rust
-/// use structural::{GetFieldExt,make_struct,structural_alias,fp};
+/// use structural::{StructuralExt,make_struct,structural_alias,fp};
 ///
 /// use std::fmt::Debug;
 ///

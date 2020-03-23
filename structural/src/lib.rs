@@ -10,7 +10,7 @@ These are some of the features this library provides:
 [`GetField`]/[`GetFieldMut`]/[`IntoField`] for structs,
 and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 
-- The [`GetFieldExt`] extension trait,which defines the main methods to access fields,
+- The [`StructuralExt`] extension trait,which defines the main methods to access fields,
 so long as the type implements the accessor traits for those fields.
 
 - The [`structural_alias`] macro, to declare trait aliases for accessor traits,
@@ -58,7 +58,7 @@ another one in a function.
 [`Structural`] derive macro docs for more details on derivation.
 
 ```rust
-use structural::{GetFieldExt,Structural,fp};
+use structural::{StructuralExt,Structural,fp};
 
 
 fn reads_point4<S>(point:&S)
@@ -133,7 +133,7 @@ This demonstrates how you can use structural enums.
 For details on [enums look here](./docs/enums/index.html).
 
 ```rust
-use structural::{GetFieldExt,Structural,fp,switch};
+use structural::{StructuralExt,Structural,fp,switch};
 
 fn main(){
     {
@@ -263,7 +263,7 @@ For more details you can look at the docs for the [`structural_alias`] macro.
 
 ```rust
 
-use structural::{GetFieldExt,Structural,structural_alias,fp};
+use structural::{StructuralExt,Structural,structural_alias,fp};
 
 use std::borrow::Borrow;
 
@@ -399,7 +399,7 @@ This shows both exhaustive and nonexhaustive enum structural aliases.
 For more details you can look at the docs for the [`structural_alias`] macro.
 
 ```rust
-use structural::{GetFieldExt,Structural,structural_alias,switch,fp};
+use structural::{StructuralExt,Structural,structural_alias,switch,fp};
 use std::fmt::Debug;
 
 # fn main(){
@@ -505,7 +505,7 @@ Docs for the [`impl_struct` macro](./macro.impl_struct.html) macro.
 
 ```rust
 
-use structural::{GetFieldExt,fp,impl_struct,make_struct,structural_alias};
+use structural::{StructuralExt,fp,impl_struct,make_struct,structural_alias};
 
 structural_alias!{
     trait Person<T>{
@@ -594,7 +594,7 @@ struct Cents(u64);
 [`GetVariantFieldMut`]: ./field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]: ./field/trait.IntoVariantField.html
 
-[`GetFieldExt`]: ./trait.GetFieldExt.html
+[`StructuralExt`]: ./trait.StructuralExt.html
 [`impl_struct`]: ./macro.impl_struct.html
 [`make_struct`]: ./macro.make_struct.html
 [`structural_alias`]: ./macro.structural_alias.html
@@ -680,7 +680,7 @@ pub mod type_level;
 include! {"p.rs"}
 
 #[doc(inline)]
-pub use crate::field::GetFieldExt;
+pub use crate::field::StructuralExt;
 
 pub use crate::{
     field::{

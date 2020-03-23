@@ -22,7 +22,7 @@
 /// ```
 /// use structural::field::GetVariantField;
 /// use structural::for_examples::{Variants,WithBar};
-/// use structural::{GetFieldExt,TS,fp};
+/// use structural::{StructuralExt,TS,fp};
 ///
 /// fn example(this: impl GetVariantField<TS!(Bar),TS!(0),Ty= &'static str>){
 ///     assert_eq!( this.field_(fp!(::Bar.0)), Some(&"why?") );
@@ -50,7 +50,7 @@
 /// ```rust
 /// use structural::{
 ///     FieldType, GetVariantField, FP, TS,
-///     GetFieldExt,fp,structural_alias,
+///     StructuralExt,fp,structural_alias,
 /// };
 /// use structural::enums::{IsVariant, VariantCount};
 ///
@@ -171,7 +171,7 @@ pub unsafe trait GetVariantField<V, F>:
 /// # Example
 ///
 /// ```
-/// use structural::{GetFieldExt,TS,fp};
+/// use structural::{StructuralExt,TS,fp};
 /// use structural::field::GetVariantFieldType;
 /// use structural::for_examples::Variants;
 ///
@@ -223,7 +223,7 @@ pub type GetVariantFieldType<This, Variant, Field> =
 /// ```
 /// use structural::field::GetVariantFieldMut;
 /// use structural::for_examples::{Bomb,WithBoom};
-/// use structural::{GetFieldExt,TS,fp};
+/// use structural::{StructuralExt,TS,fp};
 ///
 /// fn example<T>(this: &mut T)
 /// where
@@ -262,7 +262,7 @@ pub type GetVariantFieldType<This, Variant, Field> =
 /// ```rust
 /// use structural::{
 ///     FieldType, GetVariantField, GetVariantFieldMut, FP, TS,
-///     GetFieldExt,fp,structural_alias,
+///     StructuralExt,fp,structural_alias,
 /// };
 /// use structural::enums::{IsVariant, VariantCount};
 ///
@@ -509,7 +509,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// ```
 /// use structural::field::IntoVariantField;
 /// use structural::for_examples::{Bomb,WithBoom};
-/// use structural::{GetFieldExt,TS,fp};
+/// use structural::{StructuralExt,TS,fp};
 ///
 /// fn example<T>(mut this: T)
 /// where
@@ -542,7 +542,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// ```rust
 /// use structural::{
 ///     FieldType, GetVariantField, IntoVariantField, FP, TS,
-///     GetFieldExt,fp,structural_alias,
+///     StructuralExt,fp,structural_alias,
 /// };
 /// use structural::enums::{IsVariant, VariantCount};
 ///
@@ -740,7 +740,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 /// ```
 /// use structural::field::IntoVariantFieldMut;
 /// use structural::for_examples::{Bomb,WithBoom};
-/// use structural::{GetFieldExt,TS,fp};
+/// use structural::{StructuralExt,TS,fp};
 ///
 /// fn example<T>(mut this: T)
 /// where

@@ -103,7 +103,7 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 /// # Example
 ///
 /// ```rust
-/// use structural::{GetFieldExt, fp, ts};
+/// use structural::{StructuralExt, fp, ts};
 /// use structural::for_examples::Variants;
 /// use structural::path::VariantField;
 ///
@@ -168,7 +168,7 @@ pub struct VariantField<V, F> {
 /// # Example
 ///
 /// ```rust
-/// use structural::{GetFieldExt, fp, ts};
+/// use structural::{StructuralExt, fp, ts};
 /// use structural::for_examples::Variants;
 /// use structural::path::VariantName;
 ///
@@ -243,11 +243,11 @@ pub struct VariantName<V> {
 /// # Examples
 /// 
 /// You can look for examples of using this in the single-field 
-/// [GetFieldExt](./trait.GetFieldExt.html) methods,
+/// [StructuralExt](./trait.StructuralExt.html) methods,
 /// like [`field_`] and [`field_mut`].
 ///
-/// [`field_`]: ./trait.GetFieldExt.html#method.field_
-/// [`field_mut`]: ./trait.GetFieldExt.html#method.field_mut
+/// [`field_`]: ./trait.StructuralExt.html#method.field_
+/// [`field_mut`]: ./trait.StructuralExt.html#method.field_mut
 /// [`fp`]: ./macro.fp.html
 /// [`NEW`]: #associatedconstant.NEW
 /// [`one`]: #method.one
@@ -282,10 +282,10 @@ pub struct NestedFieldPath<T> {
 /// If the `U` type parameter is a:
 ///
 /// - [`UniquePaths`]: all the field paths are unique,
-/// and this can be passed to `GetFieldExt::fields_mut`.
+/// and this can be passed to `StructuralExt::fields_mut`.
 ///
 /// - [`AliasedPaths`]: there might be repeated field paths,
-/// and this cannot be passed to `GetFieldExt::fields_mut`,
+/// and this cannot be passed to `StructuralExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
 ///
 /// # Drop Types
@@ -298,11 +298,11 @@ pub struct NestedFieldPath<T> {
 /// # Examples
 /// 
 /// You can look for examples of using this in the multi-field 
-/// [GetFieldExt](./trait.GetFieldExt.html)
+/// [StructuralExt](./trait.StructuralExt.html)
 /// methods, like [`fields`] and [`fields_mut`].
 ///
-/// [`fields`]: ./trait.GetFieldExt.html#method.fields
-/// [`fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+/// [`fields`]: ./trait.StructuralExt.html#method.fields
+/// [`fields_mut`]: ./trait.StructuralExt.html#method.fields_mut
 /// [`fp`]: ./macro.fp.html
 /// [`NEW`]: #associatedconstant.NEW
 /// [`one`]: #method.one
@@ -331,10 +331,10 @@ pub struct FieldPathSet<T, U> {
 /// If the `U` type parameter is a:
 ///
 /// - [`UniquePaths`]: all the field paths are unique,
-/// and this can be passed to `GetFieldExt::fields_mut`.
+/// and this can be passed to `StructuralExt::fields_mut`.
 ///
 /// - [`AliasedPaths`]: there might be repeated field paths,
-/// and this cannot be passed to `GetFieldExt::fields_mut`,
+/// and this cannot be passed to `StructuralExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
 ///
 /// # Construction
@@ -374,11 +374,11 @@ pub struct FieldPathSet<T, U> {
 /// # Examples
 /// 
 /// You can look for examples of using this in the multi-field 
-/// [GetFieldExt](./trait.GetFieldExt.html) 
+/// [StructuralExt](./trait.StructuralExt.html) 
 /// methods, like [`fields`] and [`fields_mut`] (look for the enum examples).
 ///
-/// [`fields`]: ./trait.GetFieldExt.html#method.fields
-/// [`fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+/// [`fields`]: ./trait.StructuralExt.html#method.fields
+/// [`fields_mut`]: ./trait.StructuralExt.html#method.fields_mut
 /// [`fp`]: ./macro.fp.html
 /// [`NEW`]: #associatedconstant.NEW
 /// [`NestedFieldPath`]: ./struct.NestedFieldPath.html

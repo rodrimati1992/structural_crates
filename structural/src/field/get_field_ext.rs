@@ -10,7 +10,7 @@ use crate::{
 use core_extensions::collection_traits::{Cloned, ClonedOut};
 
 /// A trait defining the primary way to call methods from structural traits.
-pub trait GetFieldExt {
+pub trait StructuralExt {
     /// Gets a reference to a field,determined by `path`.
     ///
     /// This is named `field_` instead of `field`
@@ -19,7 +19,7 @@ pub trait GetFieldExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp,structural_alias};
+    /// use structural::{StructuralExt,fp,structural_alias};
     ///
     /// structural_alias!{
     ///     trait EvenFields<A,B,C>{
@@ -50,7 +50,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_circle( &Shape::Circle{ x:3, y:5, radius:8 } );
     /// with_circle( &MoreShapes::Circle{ x:3, y:5, radius:8 } );
@@ -105,7 +105,7 @@ pub trait GetFieldExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp,structural_alias};
+    /// use structural::{StructuralExt,fp,structural_alias};
     ///
     /// structural_alias!{
     ///     trait OddFields<A,B,C>{
@@ -131,7 +131,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_car( &Vehicle::Car{ name:"initial-c", km:9001 } );
     /// with_car( &MoreVehicles::Car{ name:"initial-c", km:9001 } );
@@ -194,7 +194,7 @@ pub trait GetFieldExt {
     /// in this case it's used to iterate over the fields.
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp,make_struct};
+    /// use structural::{StructuralExt,Structural,fp,make_struct};
     /// use structural::reexports::IntoArray;
     ///
     /// // The `Fruits_SI` trait was declared by the `Structural` derive on `Fruits`.
@@ -243,7 +243,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_pc( &Device::Pc{ manufacturer:"dawn", year:2038 } );
     /// with_pc( &MoreDevices::Pc{ manufacturer:"dawn", year:2038 } );
@@ -302,7 +302,7 @@ pub trait GetFieldExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,fp,make_struct,Structural};
+    /// use structural::{StructuralExt,fp,make_struct,Structural};
     ///
     /// #[derive(Structural)]
     /// struct Human{
@@ -348,7 +348,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_soda( &mut Beverage::Soda{ ml:600, cents:400 } );
     /// with_soda( &mut MoreBeverages::Soda{ ml:600, cents:400 } );
@@ -399,7 +399,7 @@ pub trait GetFieldExt {
     ///
     /// ```
     /// use structural::{
-    ///     GetFieldExt,GetFieldMut,GetFieldType,Structural,
+    ///     StructuralExt,GetFieldMut,GetFieldType,Structural,
     ///     fp,field_path_aliases,
     /// };
     ///
@@ -453,7 +453,7 @@ pub trait GetFieldExt {
     /// of the same field.
     ///
     /// ```compile_fail
-    /// use structural::{GetFieldExt,fp};
+    /// use structural::{StructuralExt,fp};
     ///
     /// let mut tup=(1,1,2,3,5,8);
     ///
@@ -464,7 +464,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_book( &mut Medium::Book{ pages:500, title:"Dracular" } );
     /// with_book( &mut MoreMedia::Book{ pages:500, title:"Dracular" } );
@@ -525,7 +525,7 @@ pub trait GetFieldExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     ///
     /// #[derive(Structural,Clone)]
@@ -565,7 +565,7 @@ pub trait GetFieldExt {
     /// # Enum Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// with_table( &Furniture::Table{ height_cm:101, width_cm:333 } );
     /// with_table( &MoreFurniture::Table{ height_cm:101, width_cm:333 } );
@@ -617,7 +617,7 @@ pub trait GetFieldExt {
     /// # Example
     ///
     /// ```
-    /// use structural::{GetFieldExt,Structural,fp};
+    /// use structural::{StructuralExt,Structural,fp};
     ///
     /// check_colors( &Color::Red, &Color::Blue, &Color::Green );
     /// check_colors( &ColorPlus::Red, &ColorPlus::Blue, &ColorPlus::Green );
@@ -671,4 +671,4 @@ pub trait GetFieldExt {
     }
 }
 
-impl<T: ?Sized> GetFieldExt for T {}
+impl<T: ?Sized> StructuralExt for T {}

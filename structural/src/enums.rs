@@ -4,7 +4,7 @@ Enum related traits and types.
 The `*VariantField*` traits are declared in
 [the `field` module](../field/index.html),
 you can use `*VariantField*` traits as bounds,
-and then call `GetFieldExt` methods to access fields inside enum variants.
+and then call `StructuralExt` methods to access fields inside enum variants.
 */
 
 mod enum_ext;

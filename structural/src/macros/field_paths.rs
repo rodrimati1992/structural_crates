@@ -1,5 +1,5 @@
 /// Constructs a field path value,
-/// which determines the field(s) accessed in [GetFieldExt](./trait.GetFieldExt.html) methods.
+/// which determines the field(s) accessed in [StructuralExt](./trait.StructuralExt.html) methods.
 ///
 /// ### Type
 ///
@@ -69,7 +69,7 @@
 /// Examples: `fp!(foo?.bar)`, `fp!(::Quax.foo?.0)`
 ///
 /// These can be passed to the
-/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
+/// `StructuralExt::{field_,field_mut,into_field,box_into_field}` methods
 /// to access a single non-nested field.
 ///
 /// More Examples:
@@ -94,7 +94,7 @@
 /// (except that it can also be done in a generic context).
 ///
 /// This can be passed to the
-/// `GetFieldExt::{field_,field_mut,into_field,box_into_field}` methods
+/// `StructuralExt::{field_,field_mut,into_field,box_into_field}` methods
 /// to access a nested field.
 ///
 /// ### Multiple fields
@@ -103,8 +103,8 @@
 /// where doing `this.fields_mut(fp!(a,b,c))`
 /// is equivalent to `(&mut this.a,&mut this.b,&mut this.c)`
 ///
-/// This can be passed to the `GetFieldExt::*fields*` methods.<br>
-/// [`GetFieldExt::fields_mut`] requires the field paths to be for disjoint fields.
+/// This can be passed to the `StructuralExt::*fields*` methods.<br>
+/// [`StructuralExt::fields_mut`] requires the field paths to be for disjoint fields.
 ///
 /// ### Nested Multiple fields
 ///
@@ -117,21 +117,21 @@
 /// `this.fields(fp!(::Foo=>0,1,2))` is equivalent to
 /// `this.field_(fp!(::Foo)).map(|v| v.fields(fp!(0,1,2)) )`.
 ///
-/// This can be passed to the `GetFieldExt::*fields*` methods.<br>
-/// [`GetFieldExt::fields_mut`] requires the field paths to be for disjoint fields.
+/// This can be passed to the `StructuralExt::*fields*` methods.<br>
+/// [`StructuralExt::fields_mut`] requires the field paths to be for disjoint fields.
 ///
-/// [`GetFieldExt::fields_mut`]: ./trait.GetFieldExt.html#method.fields_mut
+/// [`StructuralExt::fields_mut`]: ./trait.StructuralExt.html#method.fields_mut
 ///
 /// # Aliasing
 ///
 /// For the purpose of detecting aliasing field paths,
 /// `fp!(::foo)` and `fp!(foo)` are considered to be the same path,
-/// which means that you can't pass `fp!(::foo, foo)` to [`GetFieldExt::fields_mut`].
+/// which means that you can't pass `fp!(::foo, foo)` to [`StructuralExt::fields_mut`].
 ///
 /// # Example:Multiple fields
 ///
 /// ```
-/// use structural::{GetFieldExt,fp,structural_alias};
+/// use structural::{StructuralExt,fp,structural_alias};
 ///
 /// structural_alias!{
 ///     trait Tuple3<A,B,C>{
@@ -161,7 +161,7 @@
 /// # Example:Nested Fields
 ///
 /// ```
-/// use structural::{GetFieldExt,Structural,fp,make_struct};
+/// use structural::{StructuralExt,Structural,fp,make_struct};
 ///
 /// #[derive(Structural)]
 /// #[struc(public)]
@@ -224,7 +224,7 @@
 /// # Example:Multiple fields insde a nested field
 ///
 /// ```rust
-/// use structural::{GetFieldExt,Structural,fp};
+/// use structural::{StructuralExt,Structural,fp};
 ///
 /// // `EnumA_SI` was declared by the `Structural` derive on `EnumA`
 /// fn with_foo(foo:&mut impl EnumA_SI){
@@ -317,7 +317,7 @@ macro_rules! fp {
 /// This demonstrates how one can bound types by the accessor traits in a where clause.
 ///
 /// ```rust
-/// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
+/// use structural::{GetField,StructuralExt,FP,fp,make_struct};
 ///
 /// greet_entity(&make_struct!{ name: "Bob" });
 ///
@@ -344,7 +344,7 @@ macro_rules! fp {
 ///
 /// ```rust
 ///
-/// use structural::{GetField,GetFieldExt,FP,fp,make_struct};
+/// use structural::{GetField,StructuralExt,FP,fp,make_struct};
 ///
 /// let struc=make_struct!{
 ///     name: "Bob",
@@ -458,7 +458,7 @@ fn hello(){
 # Example
 
 ```rust
-use structural::{ GetField, GetFieldExt, IntoVariantFieldMut, Structural, field_path_aliases };
+use structural::{ GetField, StructuralExt, IntoVariantFieldMut, Structural, field_path_aliases };
 use structural::enums::VariantProxy;
 
 field_path_aliases!{
@@ -576,7 +576,7 @@ pub enum Variants {
 This demonstrates defining aliases inside a module.
 
 ```rust
-use structural::{field_path_aliases,make_struct,structural_alias,GetFieldExt};
+use structural::{field_path_aliases,make_struct,structural_alias,StructuralExt};
 
 field_path_aliases!{
     pub mod names{

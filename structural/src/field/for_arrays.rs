@@ -18,7 +18,7 @@ You can pass homogeneous tuples to functions expecting `Array*` implementing typ
 
 ```
 use structural::field::for_arrays::Array4;
-use structural::{GetFieldExt,fp};
+use structural::{StructuralExt,fp};
 
 fn takes_array(array:impl Array4<u32>){
     assert_eq!( array.field_(fp!(0)), &3 );
@@ -39,7 +39,7 @@ takes_array( (3,5,8,13,"foo",vec!["bar"]) );
 
 ```
 use structural::field::for_arrays::Array3;
-use structural::{GetFieldExt,fp};
+use structural::{StructuralExt,fp};
 
 use std::fmt::Debug;
 
@@ -68,7 +68,7 @@ Demonstrates that you can use the `Array*Variant` trait with enums.
 
 ```
 use structural::field::Array2Variant;
-use structural::{GetFieldExt,Structural,TS,fp};
+use structural::{StructuralExt,Structural,TS,fp};
 
 use std::fmt::Debug;
 
@@ -443,14 +443,14 @@ declare_array_paths! {
 ///
 ///
 /// ```compile_fail
-/// use structural::{GetFieldExt,fp};
+/// use structural::{StructuralExt,fp};
 ///
 /// let _=[0;31].field_(fp!(31));
 ///
 /// ```
 ///
 /// ```rust
-/// use structural::{GetFieldExt,fp};
+/// use structural::{StructuralExt,fp};
 ///
 /// let _=[0;31].field_(fp!(30));
 ///
@@ -469,7 +469,7 @@ mod tests {
         I9,
     };
 
-    use crate::GetFieldExt;
+    use crate::StructuralExt;
 
     use std_::convert::TryFrom;
     use std_::mem;

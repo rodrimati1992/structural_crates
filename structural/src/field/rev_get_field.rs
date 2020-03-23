@@ -25,7 +25,7 @@ mod path_set_types;
 /// ```
 /// use structural::{
 ///     field::RevGetFieldType,
-///     GetFieldType3,GetFieldExt,Structural,
+///     GetFieldType3,StructuralExt,Structural,
 ///     FP,fp,
 /// };
 ///
@@ -77,7 +77,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
-/// This is used by the [`GetFieldExt::field_`](../../trait.GetFieldExt.html#method.field_)
+/// This is used by the [`StructuralExt::field_`](../../trait.StructuralExt.html#method.field_)
 /// method.
 ///
 /// # Use as bound
@@ -98,7 +98,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl};
 /// use structural::path::IsSingleFieldPath;
-/// use structural::GetFieldExt;
+/// use structural::StructuralExt;
 ///
 /// struct FromEnd(usize);
 ///
@@ -154,7 +154,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
-/// This is used by the [`GetFieldExt::field_mut`](../../trait.GetFieldExt.html#method.field_mut)
+/// This is used by the [`StructuralExt::field_mut`](../../trait.StructuralExt.html#method.field_mut)
 /// method.
 ///
 /// # Safety
@@ -180,7 +180,7 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
 /// use structural::path::IsSingleFieldPath;
-/// use structural::{GetFieldExt,ts};
+/// use structural::{StructuralExt,ts};
 ///
 /// let mut tup=(3,5,8,13);
 ///
@@ -264,8 +264,8 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
 /// This is used by the
-/// [`GetFieldExt::into_field`](../../trait.GetFieldExt.html#method.into_field)
-/// and [`GetFieldExt::box_into_field`](../../trait.GetFieldExt.html#method.box_into_field)
+/// [`StructuralExt::into_field`](../../trait.StructuralExt.html#method.into_field)
+/// and [`StructuralExt::box_into_field`](../../trait.StructuralExt.html#method.box_into_field)
 /// method.
 ///
 /// # Use as bound
@@ -292,7 +292,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// ```rust
 /// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
 /// use structural::path::IsSingleFieldPath;
-/// use structural::{GetFieldExt,fp};
+/// use structural::{StructuralExt,fp};
 ///
 /// use core::mem;
 ///
@@ -390,7 +390,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field::RevGetField;
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     ///
     /// # fn main(){
@@ -423,7 +423,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```rust
     /// use structural::field::OptRevGetField;
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let tup1=(3,5,(8,(Some(13),21)));
     /// let tup2=(3,5,(8,(None,21)));
@@ -457,7 +457,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::RevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -497,7 +497,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::OptRevGetFieldMut;
     /// use structural::for_examples::{StructFoo, StructBar, Struct3};
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let mut struct_=Struct3{
     ///     foo: Some(0),
@@ -537,7 +537,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::RevIntoField;
     /// use structural::for_examples::StructBar;
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// use std::cmp::Ordering;
     ///
@@ -577,7 +577,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::OptRevIntoField;
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let nope=StructFoo{ foo: WithBoom::Nope };
     /// let boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
@@ -617,7 +617,7 @@ declare_accessor_trait_alias! {
     /// use structural::field::{RevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::StructBar;
     /// use structural::reexports::{ConstDefault,const_default};
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let mut foo=StructBar{
     ///     bar: ([(0,3),(5,8)], [(40,50,60)]),
@@ -674,7 +674,7 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::{OptRevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::{StructFoo,WithBoom};
-    /// use structural::{GetFieldExt,FP,fp};
+    /// use structural::{StructuralExt,FP,fp};
     ///
     /// let mut nope=StructFoo{ foo: WithBoom::Nope };
     /// let mut boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
