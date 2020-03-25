@@ -668,8 +668,11 @@ pub mod for_examples;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
+mod structural_ext;
 mod structural_trait;
+pub mod type_level;
 pub mod utils;
+mod wrapper;
 
 #[cfg(test)]
 pub mod test_utils;
@@ -677,14 +680,7 @@ pub mod test_utils;
 #[cfg(test)]
 pub mod tests;
 
-pub mod type_level;
-
-mod wrapper;
-
 include! {"p.rs"}
-
-#[doc(inline)]
-pub use crate::field::StructuralExt;
 
 pub use crate::{
     field::{
@@ -692,6 +688,7 @@ pub use crate::{
         GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
+    structural_ext::StructuralExt,
     structural_trait::Structural,
     wrapper::StrucWrapper,
 };
@@ -709,6 +706,7 @@ pub mod reexports {
 
     #[cfg(feature = "alloc")]
     #[cfg_attr(feature = "hide_reexports", doc(hidden))]
+    #[doc(no_inline)]
     pub use crate::alloc::boxed::Box;
 }
 

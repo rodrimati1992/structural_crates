@@ -8,7 +8,10 @@ use crate::{
     path::IsTStr,
 };
 
-use core_extensions::collection_traits::{Cloned, ClonedOut};
+use core_extensions::{
+    collection_traits::{Cloned, ClonedOut},
+    ConstDefault,
+};
 
 use std_::{
     fmt::Debug,
@@ -723,6 +726,13 @@ where
     fn index(&self, path: F) -> &T::Ty {
         self.0.get_field_(path)
     }
+}
+
+impl<T> ConstDefault for StrucWrapper<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = StrucWrapper(T::DEFAULT);
 }
 
 /// Gets a mutable reference to a non-nested struct field

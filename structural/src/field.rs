@@ -1,11 +1,6 @@
 /*!
 Accessor and extension traits for fields.
 
-# StructuralExt
-
-The [StructuralExt](./trait.StructuralExt.html) trait,
-which is the way you're expected to call accessor methods.
-
 # Traits
 
 ### For structs and enums
@@ -37,7 +32,7 @@ The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-
 
 There are two kinds of `Rev*` traits,single field and multi field traits.
 
-The [StructuralExt](./trait.StructuralExt.html) trait
+The [StructuralExt](../trait.StructuralExt.html) trait
 uses the `Rev*` impls of the passed-in path to access the
 fields in `Self`.
 
@@ -131,7 +126,6 @@ mod enum_impls;
 pub mod errors;
 pub mod for_arrays;
 pub mod for_tuples;
-mod get_field_ext;
 mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
@@ -148,7 +142,6 @@ pub use self::{
     },
     for_arrays::array_traits::*,
     for_tuples::*,
-    get_field_ext::StructuralExt,
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
         RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
@@ -600,7 +593,7 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 /// A bound for shared, mutable,and by-value access to the `FieldName` field.
 ///
 /// This is only usable as a bound,
-/// to access the field you can use any [StructuralExt](./trait.StructuralExt.html) method.
+/// to access the field you can use any [StructuralExt](../trait.StructuralExt.html) method.
 ///
 /// # Example
 ///

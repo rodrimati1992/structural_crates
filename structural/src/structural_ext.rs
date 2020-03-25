@@ -10,6 +10,11 @@ use crate::{
 use core_extensions::collection_traits::{Cloned, ClonedOut};
 
 /// A trait defining the primary way to call methods from structural traits.
+///
+/// For a wrapper type that defines inherent methods equivalent to the ones in this trait,
+/// you can use the [`StrucWrapper`] wrapper type.
+///
+/// [`StrucWrapper`]: ./struct.StrucWrapper.html
 pub trait StructuralExt {
     /// Gets a reference to a field,determined by `path`.
     ///

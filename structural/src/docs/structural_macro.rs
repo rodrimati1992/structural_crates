@@ -1,6 +1,8 @@
 /*!
 
-The Structural derive macro implements the Structural trait, as well as accessor traits:
+The Structural derive macro implements the Structural trait, as well as accessor traits.
+
+The accessor traits are
  [`GetField`]/[`GetFieldMut`]/[`IntoField`] for structs,
 and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 

@@ -1,6 +1,6 @@
 /// Provides shared access to an enum variant field.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+/// The `V` and `F` type parameters are expected to be [TStr](../struct.TStr.html).
 ///
 /// Every instance of "the `F` field"/"the `V` variant" in the docs mean
 /// "in the field/variant named by the `F`/`V` type parameter"
@@ -166,7 +166,7 @@ pub unsafe trait GetVariantField<V, F>:
 /// If you want to write the type parameter as `FP!(::Foo.bar)`,
 /// then you can use [`GetFieldType`] instead.
 ///
-/// [`GetFieldType`]: ../type.GetFieldType.html
+/// [`GetFieldType`]: ./type.GetFieldType.html
 ///
 /// # Example
 ///
@@ -185,13 +185,13 @@ pub unsafe trait GetVariantField<V, F>:
 ///
 /// ```
 ///
-/// [`TStr`]: ../../struct.TStr.html
+/// [`TStr`]: ../struct.TStr.html
 pub type GetVariantFieldType<This, Variant, Field> =
     <This as FieldType<VariantField<Variant, Field>>>::Ty;
 
 /// Provides shared and mutable access to an enum variant field.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+/// The `V` and `F` type parameters are expected to be [TStr](../struct.TStr.html).
 ///
 /// Every instance of "the `F` field"/"the `V` variant" in the docs mean
 /// "in the field/variant named by the `F`/`V` type parameter"
@@ -202,7 +202,7 @@ pub type GetVariantFieldType<This, Variant, Field> =
 /// or the accessor trait impls of other fields.
 ///
 /// The safety requirements for
-/// [`GetFielfMut::get_field_raw_mut`](../trait.GetFieldMut.html#raw_mut_properties)
+/// [`GetFielfMut::get_field_raw_mut`](./trait.GetFieldMut.html#raw_mut_properties)
 /// also apply to
 /// [`GetVariantFieldMut::get_vfield_raw_mut_`](#tymethod.get_vfield_raw_mut_).
 ///
@@ -472,7 +472,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 
 /// Provides shared and by-value access to an enum variant field.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+/// The `V` and `F` type parameters are expected to be [TStr](../struct.TStr.html).
 ///
 /// Every instance of "the `F` field"/"the `V` variant" in the docs mean
 /// "in the field/variant named by the `F`/`V` type parameter"
@@ -502,7 +502,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// [`box_into_vfield_`]: #tymethod.box_into_vfield_
 ///
 /// [`z_impl_box_into_variant_field_method`]:
-/// ../../macro.z_impl_box_into_variant_field_method.html
+/// ../macro.z_impl_box_into_variant_field_method.html
 ///
 /// # Example
 ///
@@ -730,7 +730,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 
 /// A bound for shared,mutable,and by-value access to the field `F` inside of the `V` variant.
 ///
-/// The `V` and `F` type parameters are expected to be [TStr](../../struct.TStr.html).
+/// The `V` and `F` type parameters are expected to be [TStr](../struct.TStr.html).
 ///
 /// Every instance of "the `F` field"/"the `V` variant" in the docs mean
 /// "in the field/variant named by the `F`/`V` type parameter"

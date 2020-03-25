@@ -12,11 +12,19 @@ supertrait of both `GetField` and `GetVariantField`.
 Changed output of single "path component" (non nested field/variant/variant field access)
 `fp` or `FP` macro invocation from `FieldPath<(S,)>` to `S`.
 
+Renamed `GetFieldExt` trait to `StructuralExt`.
+
 Renamed `FieldPath` to `NestedFieldPath`,since they are always for nested fields.
 
-Moved `type_level::field_path` to the root module,
+Added the `StrucWrapper` wrapper type,
+which defines inherent method equivalents of all `StructuralExt` methods,
+with shorter method names.
+
+Moved `type_level::field_path` to the root module and renamed it to `path`,
 moved the `TStr`,`NestedFieldPath`,`FieldPathSet`
 to the root module for error messages to be shorter.
+
+Moved field accessor traits to the `structural::field` module.
 
 Declared these structs in the root module:
 - `VariantName` (what `FP!(::Variant)` desugars to),for accessing an enum variant.
@@ -178,6 +186,8 @@ named [Opt]RevGetField/[Opt]RevGetFieldMut/[Opt]RevIntoField/[Opt]RevIntoFieldMu
 
 Defined `use_const_str` and `nightly_use_const_str` features to use const generics as an
 implementation detail of `TStr`.
+Also defined the `disable_const_str` feature to disable const generics if there's 
+a bug in the compiler,and other libraries also use them.
 
 Removed the `FieldPath1` type alias.
 
@@ -211,7 +221,7 @@ so that proc macros in type position could be used in examples.
 
 # 0.2.2
 
-Added `StructuralExt::cloned_fields` method.
+Added `GetFieldExt::cloned_fields` method.
 
 Fixed support of alloc crate.
 
@@ -252,7 +262,7 @@ including these:
 - `z_unsafe_impl_get_field_raw_mut_method`
 
 Added impls of accessor traits for `&` and `&mut`,
-so that the StructuralExt methods can be called on trait object references 
+so that the GetFieldExt methods can be called on trait object references 
 without dereferencing them.
 
 Removed the `Structural::Fields` associated type,since it was serving no purpose.
@@ -313,7 +323,7 @@ inside of `structural::type_level::collection_traits`.
 Declared per-field accessor traits (GetField/GetFieldMut/intoField/IntoFieldMut) and 
 implemented them for standard library types.
 
-Declared extension trait StructuralExt that uses the accessor traits,
+Declared extension trait `GetFieldExt` that uses the accessor traits,
 this is the intended way to call field accessor methods.
 
 Declared `Structural` derive macro,
@@ -322,7 +332,7 @@ to implement the accessor traits for the fields of structs.
 Declared `Structural` and `StructuralDyn` traits to describe the fields that a type has.
 
 Declared the `ti` macro to 
-instantiate field name(s) to use as a parameter to StructuralExt methods.
+instantiate field name(s) to use as a parameter to `GetFieldExt` methods.
 
 Declared the `TI` macro to pass a field name as a generic parameter.
 

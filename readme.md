@@ -19,6 +19,8 @@ and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 - The [`StructuralExt`] extension trait,which defines the main methods to access fields,
 so long as the type implements the accessor traits for those fields.
 
+- The [`StrucWrapper`] wrapper type,defined as an alternative to [`StructuralExt`].
+
 - The [`structural_alias`] macro, to declare trait aliases for accessor traits,
 using field-in-trait syntax.
 
@@ -137,6 +139,9 @@ https://docs.rs/structural/0.3/structural/field/trait.GetVariantField.html
 https://docs.rs/structural/0.3/structural/field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]:
 https://docs.rs/structural/0.3/structural/field/trait.IntoVariantField.html
+
+[`StrucWrapper`]: 
+https://docs.rs/structural/0.3/structural/struct.StrucWrapper.html
 
 [`StructuralExt`]:
 https://docs.rs/structural/0.3/structural/trait.StructuralExt.html
