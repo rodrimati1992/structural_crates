@@ -297,7 +297,7 @@ macro_rules! fp {
     ($($everything:tt)*) => ({
         type Path=$crate::FP!($($everything)*);
 
-        const VALUE:Path=unsafe{ <Path>::NEW_ALIASED.upgrade_unchecked() };
+        const VALUE:Path=unsafe{ <Path>::NEW_ALIASED.set_uniqueness() };
 
         VALUE
     });

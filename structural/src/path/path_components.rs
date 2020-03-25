@@ -31,7 +31,7 @@ macro_rules! impl_to_path_to_set {
             pub const NEW_ALIASED:Self=Self::DEFAULT;
 
             #[doc(hidden)]
-            pub const unsafe fn upgrade_unchecked(self)->Self{
+            pub const unsafe fn set_uniqueness(self)->Self{
                 self
             }
         }

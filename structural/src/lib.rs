@@ -13,6 +13,8 @@ and [`GetVariantField`]/[`GetVariantFieldMut`]/[`IntoVariantField`] for enums.
 - The [`StructuralExt`] extension trait,which defines the main methods to access fields,
 so long as the type implements the accessor traits for those fields.
 
+- The [`StrucWrapper`] wrapper type,defined as an alternative to [`StructuralExt`].
+
 - The [`structural_alias`] macro, to declare trait aliases for accessor traits,
 using field-in-trait syntax.
 
@@ -594,6 +596,8 @@ struct Cents(u64);
 [`GetVariantFieldMut`]: ./field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]: ./field/trait.IntoVariantField.html
 
+[`StrucWrapper`]: ./struct.StrucWrapper.html
+
 [`StructuralExt`]: ./trait.StructuralExt.html
 [`impl_struct`]: ./macro.impl_struct.html
 [`make_struct`]: ./macro.make_struct.html
@@ -675,7 +679,7 @@ pub mod tests;
 
 pub mod type_level;
 
-// mod wrapper;
+mod wrapper;
 
 include! {"p.rs"}
 
@@ -689,7 +693,7 @@ pub use crate::{
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
     structural_trait::Structural,
-    // wrapper::StrucType,
+    wrapper::StrucWrapper,
 };
 
 /// Reexports from other crates.

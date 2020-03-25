@@ -18,7 +18,6 @@ pub struct Tuple2<A, B>(pub Option<A>, pub B);
 pub struct Tuple3<A, B, C>(pub Option<A>, pub B, pub C);
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
-#[struc(no_trait)]
 pub struct Struct2<A, B> {
     pub foo: Option<A>,
     pub bar: B,
@@ -75,7 +74,6 @@ pub enum WithBar {
 }
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
-#[struc(no_trait)]
 pub enum WithBoom {
     Nope,
     Boom { a: &'static str, b: &'static [u16] },
@@ -121,7 +119,30 @@ pub enum Vegetable {
     },
 }
 
-#[derive(Structural)]
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+pub enum Enum2 {
+    Foo(u8, u16),
+    Bar(Ordering, Option<u64>),
+}
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+pub enum Enum3 {
+    Foo(u8, u16),
+    Bar(Ordering, Option<u64>),
+    Baz { foom: &'static str },
+}
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+pub enum Enum4 {
+    Foo(u8, u16),
+    Bar(Ordering, Option<u64>),
+    Baz { foom: &'static str },
+    Qux { uh: [u8; 4], what: (bool, bool) },
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Structural, Copy, Clone)]
 // #[struc(debug_print)]
 pub enum EnumWithNewtype<'a> {
     #[struc(newtype(bounds = "RefWrapper_VSI<'a,u32,@variant>"))]
@@ -130,10 +151,15 @@ pub enum EnumWithNewtype<'a> {
     U64(RefWrapper<'a, u64>),
 }
 
-#[derive(Structural)]
-#[struc(public)]
+#[derive(Structural, Copy, Clone)]
 #[struc(bound = "T:'a")]
-pub struct RefWrapper<'a, T>(T, &'a T);
+pub struct RefWrapper<'a, T>(pub T, pub &'a T);
+
+#[derive(Structural, Copy, Clone)]
+pub enum EnumWithoutNewtype<'a> {
+    U32(u32, &'a u32),
+    U64(u64, &'a u64),
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
