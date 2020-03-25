@@ -1,12 +1,11 @@
 // Every one of these modules is independent
 #![allow(clippy::wildcard_imports)]
 
-use crate::enums::{IsVariant, VariantCount};
-use crate::field::{
+use crate::{
+    enums::{IsVariant, VariantCount},
     FieldType, GetField, GetFieldMut, GetVariantField, GetVariantFieldMut, IntoField, IntoFieldMut,
-    IntoVariantField, IntoVariantFieldMut, StructuralExt,
+    IntoVariantField, IntoVariantFieldMut, Structural, StructuralExt,
 };
-use crate::Structural;
 
 use std_::fmt::Debug;
 
