@@ -481,3 +481,45 @@ mod with_defaulted_items {
         with_foo(&G::A);
     }
 }
+
+mod non_ident_variant_names {
+    use super::*;
+    use crate::path::string_aliases as tstrs;
+
+    structural_alias! {
+        trait NonIdentVariantNames{
+            0,
+            1(u8),
+            ref 2{"a":u16},
+            mut 3{"b":u32},
+            mut move 4{"c":u64},
+            move 5{"d":u128},
+            "ö",
+            "á"(i8),
+            ref "é"{h:i16},
+            mut "í"{i:i32},
+            mut move "ó"{j:i64},
+            move "ú"{k: i128},
+        }
+    }
+
+    assert_equal_bounds! {
+        trait Dummy0,
+        (NonIdentVariantNames),
+        (
+            IsVariant<tstrs::str_0>+
+            IntoVariantFieldMut<tstrs::str_1, TS!(0), Ty=u8>+
+            GetVariantField<tstrs::str_2, TS!(a), Ty=u16>+
+            GetVariantFieldMut<tstrs::str_3, TS!(b), Ty=u32>+
+            IntoVariantFieldMut<tstrs::str_4, TS!(c), Ty=u64>+
+            IntoVariantField<tstrs::str_5, TS!(d), Ty=u128>+
+
+            IsVariant<TS!("ö")>+
+            IntoVariantFieldMut<TS!("á"), TS!(0), Ty=i8>+
+            GetVariantField<TS!("é"), TS!(h), Ty=i16>+
+            GetVariantFieldMut<TS!("í"), TS!(i), Ty=i32>+
+            IntoVariantFieldMut<TS!("ó"), TS!(j), Ty=i64>+
+            IntoVariantField<TS!("ú"), TS!(k), Ty=i128>+
+        )
+    }
+}

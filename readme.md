@@ -42,7 +42,7 @@ this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
 # Examples
 
-For examples you can look at
+For **examples** you can look at
 [the examples section of the documentation for the root module of the structural crate
 ](https://docs.rs/structural/0.3/structural/index.html#root-mod-examples)
 
@@ -100,7 +100,7 @@ These are the cargo features in structural:
     Use this if const generics (eg:`struct Foo<const S: &'static str>;`) are usable on stable.
 
 - `nightly_use_const_str`:
-    Equivalent to the `impl_fields` feature,
+    Equivalent to the `use_const_str` feature,
     which also enables the nightly Rust features required for const generics as of 2020-03-21.
 
 - `disable_const_str`:

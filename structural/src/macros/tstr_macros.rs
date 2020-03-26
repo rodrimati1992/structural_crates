@@ -296,10 +296,14 @@ macro_rules! TS {
 #[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 macro_rules! _TStr_from_literal {
     ( $literal:literal )=>{
-        $crate::TStr<$crate::__TS<{
-            $crate::const_generic_utils::StrFromLiteral::new($literal,stringify!($literal))
-                .str_from_lit()
-        }>>
+        $crate::_TStr_lit_impl_!($literal)
+
+        // Unfortunately,this errors when used in trait bounds for some reason.
+        //
+        // $crate::TStr<$crate::__TS<{
+        //     $crate::const_generic_utils::StrFromLiteral::new($literal,stringify!($literal))
+        //         .str_from_lit()
+        // }>>
     };
     // Using `:expr` because `:literal` doesn't accept `stringify!(foo)` as a parameter
     (@str $literal:expr ) => {

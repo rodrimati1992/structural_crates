@@ -112,6 +112,39 @@ pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
 #[proc_macro]
 #[allow(non_snake_case)]
 #[doc(hidden)]
+pub fn _TStr_lit_impl_(input: TokenStream1) -> TokenStream1 {
+    use crate::{parse_utils::ParseBufferExt, tokenizers::tstr_tokens};
+
+    use proc_macro2::Span;
+    use syn::{
+        parse::{Parse, ParseStream},
+        LitStr,
+    };
+
+    pub(crate) struct TStrLit {
+        pub(crate) str: String,
+        pub(crate) span: Span,
+    }
+
+    impl Parse for TStrLit {
+        fn parse(input: ParseStream<'_>) -> Result<Self, syn::Error> {
+            let (str, span) = match input.peek_parse(LitStr)? {
+                Some(x) => (x.value(), x.span()),
+                None => {
+                    let index = input.parse::<syn::Index>()?;
+                    (index.index.to_string(), index.span)
+                }
+            };
+            Ok(TStrLit { str, span })
+        }
+    }
+
+    parse_or_compile_err(input, |s: TStrLit| Ok(tstr_tokens(s.str))).into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
 pub fn _impl_struct_impl(input: TokenStream1) -> TokenStream1 {
     parse_or_compile_err(input, impl_struct::impl_).into()
 }

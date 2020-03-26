@@ -114,7 +114,7 @@ impl<'a> StructuralDataType<'a> {
 
             let access = input.parse::<Access>()?;
             if let Some(enum_token) = VariantToken::peek_from(input) {
-                let ident = arenas.alloc(input.parse::<Ident>()?);
+                let ident = IdentOrIndexRef::parse(arenas, input)?;
 
                 let variant_kind: StructKind = enum_token.into();
                 let mut push_variant = |content: ParseStream<'_>| -> Result<(), syn::Error> {
@@ -172,7 +172,7 @@ impl<'a> StructuralDataType<'a> {
 impl<'a> StructuralVariant<'a> {
     pub(super) fn parse(
         access: Access,
-        name: &'a Ident,
+        name: IdentOrIndexRef<'a>,
         variant_kind: StructKind,
         arenas: &'a Arenas,
         input: ParseStream<'_>,
@@ -206,7 +206,7 @@ impl<'a> StructuralVariant<'a> {
             }
         }
         Ok(Self {
-            name: VariantIdent::Ident(name.into()),
+            name: VariantIdent::Ident(name),
             pub_vari_rename: None,
             fields,
             is_newtype: false,
@@ -290,10 +290,6 @@ enum VariantToken {
 
 impl VariantToken {
     pub(super) fn peek_from(input: ParseStream<'_>) -> Option<Self> {
-        if !input.peek(syn::Ident) {
-            return None;
-        }
-
         if input.peek2(token::Brace) {
             Some(VariantToken::Brace)
         } else if input.peek2(token::Paren) {
