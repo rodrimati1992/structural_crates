@@ -14,22 +14,17 @@ pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2, syn::Error> {
     parsed.type_tokens().piped(Ok)
 }
 
-#[cfg(test)]
-#[allow(non_snake_case)]
-pub(crate) fn FP_from_str(input: &str) -> Result<TokenStream2, syn::Error> {
-    syn::parse_str(input).and_then(FP_impl)
-}
-
 #[test]
 #[allow(non_snake_case)]
 fn test_FP_macro() {
     use as_derive_utils::test_framework::Tests;
 
-    Tests::load("field_paths").run_test(FP_from_str);
+    Tests::load("field_paths").run_test(|input: &str| syn::parse_str(input).and_then(FP_impl));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/// This is what the `fp` and `FP` macros call when literals are passed in.
 #[allow(non_snake_case)]
 pub(crate) fn FP_literal_impl(params: FpLitParams) -> Result<TokenStream2, syn::Error> {
     let FpLitParams { first, second } = params;

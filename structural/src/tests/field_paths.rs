@@ -379,12 +379,12 @@ mod tstr_aliases_tests {
         }
 
         tstr_asserts! {
-            ((__a,),"a") = (strs::a::NEW,ts!("a"),ts!(a));
-            ((__b,),"b") = (strs::b::NEW,ts!("b"),ts!(b));
+            ((__a,),"a") = (strs::a::NEW,ts!("a"),ts!(a),ts!(r#a));
+            ((__b,),"b") = (strs::b::NEW,ts!("b"),ts!(b),ts!(r#b));
             ((__w, __o, __r, __d),"word") =
-                (strs::word::NEW,ts!("word"),ts!(word));
-            ((__d, __d),"dd") = (strs::d::NEW,ts!("dd"),ts!(dd));
-            ((__c, __c),"cc") = (strs::c::NEW,ts!("cc"),ts!(cc));
+                (strs::word::NEW,ts!("word"),ts!(word),ts!(r#word));
+            ((__d, __d),"dd") = (strs::d::NEW,ts!("dd"),ts!(dd),ts!(r#dd));
+            ((__c, __c),"cc") = (strs::c::NEW,ts!("cc"),ts!(cc),ts!(r#cc));
             ((__0,),"0") = (strs::p0::NEW,ts!("0"),ts!(0));
             ((__1, __0),"10") = (strs::p10::NEW,ts!("10"),ts!(10));
             ((__1, __0, __0),"100") = (strs::p100::NEW,ts!("100"),ts!(100));

@@ -11,7 +11,6 @@ use quote::{quote, quote_spanned};
 
 use syn::{
     parse::{self, Parse, ParseStream},
-    spanned::Spanned,
     Ident, Token,
 };
 
@@ -23,7 +22,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
 
         let span = vari.name.span();
         let vari_name = &vari.name;
-        let field_name = vari.fields.iter().map(tstr_tokens);
+        let field_name = vari.fields.iter().map(|x| tstr_tokens(&x.str, x.span));
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -43,7 +42,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
     let variant_names = parsed.variants.iter().map(|vari| {
         let span = vari.name.span();
         let alias_name = &vari.name;
-        let variant_name = tstr_tokens(alias_name.to_string());
+        let variant_name = tstr_tokens(alias_name.to_string(), span);
 
         quote_spanned! {span=>
             #[allow(non_camel_case_types,dead_code)]
@@ -51,7 +50,7 @@ pub(crate) fn impl_(parsed: SwitchStrAliases) -> Result<TokenStream2, syn::Error
         }
     });
 
-    let variant_count_str = tstr_tokens(parsed.variants.len().to_string());
+    let variant_count_str = tstr_tokens(parsed.variants.len().to_string(), Span::call_site());
 
     Ok(quote! {
         #[allow(non_camel_case_types,dead_code)]
@@ -75,7 +74,12 @@ pub(crate) struct SwitchStrAliases {
 
 struct SwitchVariant {
     name: Ident,
-    fields: Vec<String>,
+    fields: Vec<StrSpan>,
+}
+
+struct StrSpan {
+    str: String,
+    span: Span,
 }
 
 impl Parse for SwitchStrAliases {
@@ -108,18 +112,21 @@ impl Parse for SwitchVariant {
 }
 
 impl SwitchVariant {
-    fn parse_fields(input: ParseStream<'_>, vkind: StructKind) -> parse::Result<Vec<String>> {
-        let mut fields = Vec::<String>::new();
+    fn parse_fields(input: ParseStream<'_>, vkind: StructKind) -> parse::Result<Vec<StrSpan>> {
+        let mut fields = Vec::<StrSpan>::new();
         let mut index = 0;
         while !input.is_empty() {
             if let Some((field_span, field)) = parse_field(input, index, vkind)? {
-                if fields.contains(&field) {
+                if fields.iter().any(|x| field == x.str) {
                     return_syn_err!(
                         field_span,
                         "Cannot match on the same field twice in the same pattern",
                     );
                 }
-                fields.push(field);
+                fields.push(StrSpan {
+                    str: field,
+                    span: field_span,
+                });
             }
             if !input.is_empty() {
                 let _: Token!(,) = input.parse()?;
@@ -152,8 +159,8 @@ fn parse_field(
             if input.peek_parse(Token!(_))?.is_some() {
                 Ok(None)
             } else {
-                skip_rest_of_field(input)?;
-                Ok(Some((Span::call_site(), index.to_string())))
+                let span = skip_rest_of_field(input)?;
+                Ok(Some((span, index.to_string())))
             }
         }
     }
@@ -172,9 +179,16 @@ fn skip_ref(input: ParseStream<'_>) -> parse::Result<()> {
     Ok(())
 }
 
-fn skip_rest_of_field(input: ParseStream<'_>) -> parse::Result<()> {
-    while !(input.is_empty() || input.peek(Token!(,))) {
-        let _ = input.parse::<TokenTree2>()?;
+fn skip_rest_of_field(input: ParseStream<'_>) -> parse::Result<Span> {
+    let mut span = None;
+    loop {
+        if input.is_empty() || input.peek(Token!(,)) {
+            return Ok(span.unwrap_or_else(Span::call_site));
+        }
+        let tt_span = input.parse::<TokenTree2>()?.span();
+        span = Some(match span {
+            Some(x) => x.join(tt_span).unwrap_or(x),
+            None => tt_span,
+        });
     }
-    Ok(())
 }

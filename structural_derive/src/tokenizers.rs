@@ -1,28 +1,28 @@
-use proc_macro2::TokenStream as TokenStream2;
+use crate::ident_or_index::IdentOrIndexRef;
+
+use proc_macro2::{Span, TokenStream as TokenStream2};
 
 #[allow(unused_imports)]
-use quote::{quote, ToTokens};
+use quote::{quote_spanned, ToTokens};
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
-pub(crate) fn tstr_tokens<S>(string: S) -> TokenStream2
+pub(crate) fn tstr_tokens<S>(string: S, span: Span) -> TokenStream2
 where
     S: AsRef<str>,
 {
     let string = string.as_ref();
 
-    quote!( ::structural::TStr<::structural::__TS<#string>> )
+    quote_spanned!(span=> ::structural::TStr<::structural::__TS<#string>> )
 }
 
 #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 /// Tokenizes a `TStr<>` in which each character is written as a type.
-pub(crate) fn tstr_tokens<S>(string: S) -> TokenStream2
+pub(crate) fn tstr_tokens<S>(string: S, span: Span) -> TokenStream2
 where
     S: AsRef<str>,
 {
-    use proc_macro2::Span;
-
     let mut buffer = String::with_capacity(6);
     let bytes = string.as_ref().bytes().map(move |b| {
         buffer.clear();
@@ -37,7 +37,9 @@ where
         };
         syn::Ident::new(&buffer, Span::call_site())
     });
-    quote!( ::structural::TStr<::structural::__TS<( #( ::structural::#bytes,)* )>> )
+    quote_spanned!(span=>
+        ::structural::TStr<::structural::__TS<( #( ::structural::#bytes,)* )>>
+    )
 }
 
 #[inline]
@@ -49,14 +51,14 @@ fn write_hex(mut n: u8, buffer: &mut String) {
     buffer.push((n + offset) as char);
 }
 
-pub(crate) fn variant_field_tokens<S0, S1>(variant: S0, field: S1) -> TokenStream2
-where
-    S0: AsRef<str>,
-    S1: AsRef<str>,
-{
-    let variant_tokens = tstr_tokens(variant.as_ref());
-    let field_tokens = tstr_tokens(field.as_ref());
-    quote!(
+pub(crate) fn variant_field_tokens(
+    variant: IdentOrIndexRef<'_>,
+    field: IdentOrIndexRef<'_>,
+) -> TokenStream2 {
+    let variant_tokens = variant.tstr_tokens();
+    let field_tokens = field.tstr_tokens();
+    let span = field.span();
+    quote_spanned!(span=>
         ::structural::pmr::VariantField<
             #variant_tokens,
             #field_tokens,
@@ -64,12 +66,10 @@ where
     )
 }
 
-pub(crate) fn variant_name_tokens<S0>(variant: S0) -> TokenStream2
-where
-    S0: AsRef<str>,
-{
-    let variant_tokens = tstr_tokens(variant.as_ref());
-    quote!(
+pub(crate) fn variant_name_tokens(variant: IdentOrIndexRef<'_>) -> TokenStream2 {
+    let variant_tokens = variant.tstr_tokens();
+    let span = variant.span();
+    quote_spanned!(span=>
         ::structural::pmr::VariantName< #variant_tokens >
     )
 }

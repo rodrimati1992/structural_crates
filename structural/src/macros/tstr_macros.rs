@@ -315,11 +315,8 @@ macro_rules! _TStr_from_literal {
 #[macro_export]
 #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 macro_rules! _TStr_from_literal {
-    ( $literal:literal ) => {
-        $crate::_TStr_impl_!($literal)
-    };
-    (@str $literal:expr ) => {
-        $crate::_TStr_impl_!($literal)
+    ($(@str)? $literal:literal ) => {
+        $crate::_TStr_lit_impl_!($literal)
     };
 }
 
@@ -330,7 +327,8 @@ macro_rules! _TStr_from_literal {
 #[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 macro_rules! _TStr_from_ident {
     ( $literal:ident ) => {
-        $crate::_TStr_from_literal!(@str stringify!($literal))
+        $crate::_TStr_ident_impl_!($literal)
+        // $crate::_TStr_from_literal!(@str stringify!($literal))
     };
 }
 
@@ -339,7 +337,7 @@ macro_rules! _TStr_from_ident {
 #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
 macro_rules! _TStr_from_ident {
     ( $literal:ident ) => {
-        $crate::_TStr_impl_!($literal)
+        $crate::_TStr_ident_impl_!($literal)
     };
 }
 

@@ -500,6 +500,9 @@ mod non_ident_variant_names {
             mut "í"{i:i32},
             mut move "ó"{j:i64},
             move "ú"{k: i128},
+            r#move,
+            r#async{a: Option<i8>},
+            ref r#fn{r#impl: Option<i16>},
         }
     }
 
@@ -520,6 +523,10 @@ mod non_ident_variant_names {
             GetVariantFieldMut<TS!("í"), TS!(i), Ty=i32>+
             IntoVariantFieldMut<TS!("ó"), TS!(j), Ty=i64>+
             IntoVariantField<TS!("ú"), TS!(k), Ty=i128>+
+
+            IsVariant<TS!("move")>+
+            IntoVariantFieldMut<TS!("async"), TS!(a), Ty=Option<i8>>+
+            GetVariantField<TS!("fn"), TS!("impl"), Ty=Option<i16>>+
         )
     }
 }

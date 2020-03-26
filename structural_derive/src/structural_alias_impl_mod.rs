@@ -4,6 +4,7 @@ use crate::{
     ident_or_index::IdentOrIndexRef,
     parse_utils::ParsePunctuated,
     tokenizers::tstr_tokens,
+    utils::SpanExt,
     write_docs::DocsFor,
 };
 
@@ -158,7 +159,7 @@ impl<'a> StructuralField<'a> {
 impl<'a> Display for VariantIdent<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            VariantIdent::Ident(ident) => Display::fmt(&tstr_tokens(&ident.to_string()), f),
+            VariantIdent::Ident(ident) => Display::fmt(&ident.tstr_tokens(), f),
             VariantIdent::Generic(ident) => Display::fmt(ident, f),
         }
     }
@@ -246,6 +247,15 @@ impl ReplaceBounds {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+impl<'a> FieldType<'a> {
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            FieldType::Ty(x) => syn::spanned::Spanned::span(x),
+            FieldType::Impl(x) => syn::spanned::Spanned::span(x),
+        }
+    }
+}
+
 impl<'a> ToTokens for FieldType<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         match self {
@@ -265,7 +275,7 @@ impl<'a> TinyStructuralField<'a> {
         let TinyStructuralField { ident, ty, .. } = *self;
 
         let the_trait = self.compute_trait(soe).trait_tokens();
-        let ident = tstr_tokens(ident.to_string());
+        let ident = ident.tstr_tokens();
 
         quote!(
             structural::pmr::#the_trait<
@@ -338,6 +348,8 @@ fn process_field(
 
     let soe = StructOrEnum::from(variant_ident);
 
+    let span = field.ident.span().combine_span(field.ty.span());
+
     let field_name = field.ident.tstr_tokens();
     let aaoo = field.compute_trait(soe);
     let assoc_ty = match &field.ty {
@@ -354,7 +366,7 @@ fn process_field(
                 ..aaoo
             };
 
-            field_bounds.append_all(quote!(
+            field_bounds.append_all(quote_spanned!(span=>
                 structural::pmr::#vf_trait<
                     #variant_name_param,
                     #field_name,
@@ -364,7 +376,7 @@ fn process_field(
         }
         None => {
             let trait_ = aaoo.trait_tokens();
-            field_bounds.append_all(quote!(
+            field_bounds.append_all(quote_spanned!(span=>
                 structural::#trait_<
                     #field_name,
                     #assoc_ty
@@ -513,10 +525,11 @@ where
     }
 
     for variant in &datatype.variants {
+        let span = variant.name.span();
         let variant_name = variant.name;
         let variant_ident = Some(variant.name);
 
-        field_bounds.append_all(quote!(
+        field_bounds.append_all(quote_spanned!(span=>
             structural::pmr::IsVariant<#variant_name>+
         ));
 
@@ -568,7 +581,7 @@ where
     let mut exhaustive_bound = None;
 
     if let Exhaustiveness::Exhaustive | Exhaustiveness::AndExhaustive { .. } = enum_exhaustiveness {
-        let variant_count_str = tstr_tokens(datatype.variants.len().to_string());
+        let variant_count_str = tstr_tokens(datatype.variants.len().to_string(), ident.span());
         let count_bound = quote!( ::structural::pmr::VariantCount<Count=#variant_count_str>+  );
 
         let attrs = attrs.into_iter();

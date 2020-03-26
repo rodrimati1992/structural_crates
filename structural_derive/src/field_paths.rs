@@ -2,7 +2,7 @@ use crate::{
     ident_or_index::IdentOrIndex,
     ignored_wrapper::Ignored,
     parse_utils::ParseBufferExt,
-    tokenizers::{tstr_tokens, variant_field_tokens, variant_name_tokens},
+    tokenizers::{variant_field_tokens, variant_name_tokens},
 };
 
 // use as_derive_utils::spanned_err;
@@ -364,11 +364,11 @@ impl FieldPathComponent {
         use self::FieldPathComponent as FPC;
 
         match self {
-            FPC::Ident(ident) => tstr_tokens(ident.to_string()),
+            FPC::Ident(ident) => ident.tstr_tokens(),
             FPC::VariantField { variant, field } => {
-                variant_field_tokens(variant.to_string(), field.to_string())
+                variant_field_tokens(variant.borrowed(), field.borrowed())
             }
-            FPC::VariantName { variant } => variant_name_tokens(variant.to_string()),
+            FPC::VariantName { variant } => variant_name_tokens(variant.borrowed()),
         }
     }
 }

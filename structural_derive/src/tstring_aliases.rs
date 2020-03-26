@@ -5,13 +5,13 @@ use as_derive_utils::return_spanned_err;
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Span, TokenStream as TokenStream2};
 
 use quote::{quote, quote_spanned, TokenStreamExt};
 
 use syn::{
     parse::{self, Parse, ParseStream},
-    Ident, LitStr, Token,
+    Ident, Token,
 };
 
 use std::collections::HashSet;
@@ -44,7 +44,7 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
     }
 
     if config.include_count {
-        let alias_count_str = tstr_tokens(alias_count.to_string());
+        let alias_count_str = tstr_tokens(alias_count.to_string(), Span::call_site());
         tokens.append_all(quote!(
             #[allow(non_camel_case_types,dead_code)]
             /// The amount of strings aliased in this module.
@@ -56,45 +56,51 @@ pub(crate) fn impl_(parsed: StrAliases) -> Result<TokenStream2, syn::Error> {
         parsed
             .aliases
             .iter()
-            .map(move |StrAlias { alias_name, string }| {
-                use std::fmt::Write;
+            .map(
+                move |StrAlias {
+                          alias_name,
+                          string,
+                          string_span,
+                      }| {
+                    use std::fmt::Write;
 
-                doc_fp_inner.clear();
-                doc_fpc_inner.clear();
+                    doc_fp_inner.clear();
+                    doc_fpc_inner.clear();
 
-                let span = alias_name.span();
+                    let span = alias_name.span();
 
-                if ident_set.replace(alias_name).is_some() {
-                    return_spanned_err! {
-                        alias_name,
-                        "Cannot have multiple aliases named {}",
-                        alias_name,
+                    if ident_set.replace(alias_name).is_some() {
+                        return_spanned_err! {
+                            alias_name,
+                            "Cannot have multiple aliases named {}",
+                            alias_name,
+                        }
                     }
-                }
 
-                let _ = writeln!(
-                    doc_fp_inner,
-                    "The `structural::TStr` equivalent of {:?}",
-                    string
-                );
-                let _ = writeln!(
-                    doc_fpc_inner,
-                    "An instance of the `structural::TStr` equivalent of {:?}.",
-                    string,
-                );
+                    let _ = writeln!(
+                        doc_fp_inner,
+                        "The `structural::TStr` equivalent of {:?}",
+                        string
+                    );
+                    let _ = writeln!(
+                        doc_fpc_inner,
+                        "An instance of the `structural::TStr` equivalent of {:?}.",
+                        string,
+                    );
 
-                let string = tstr_tokens(string);
+                    let string = tstr_tokens(string, *string_span);
 
-                Ok(quote_spanned!(span=>
-                    #[doc=#doc_fp_inner]
-                    #[allow(non_camel_case_types,dead_code)]
-                    pub type #alias_name=#string;
+                    Ok(quote_spanned!(span=>
+                        #[doc=#doc_fp_inner]
+                        #[allow(non_camel_case_types,dead_code)]
+                        pub type #alias_name=#string;
 
-                    #[doc=#doc_fpc_inner]
-                    #[allow(non_upper_case_globals,dead_code)]
-                    pub const #alias_name:#alias_name=#alias_name::NEW;
-                ))
-            })
+                        #[doc=#doc_fpc_inner]
+                        #[allow(non_upper_case_globals,dead_code)]
+                        pub const #alias_name:#alias_name=#alias_name::NEW;
+                    ))
+                },
+            )
             .collect::<Result<TokenStream2, syn::Error>>()?,
     );
 
@@ -137,9 +143,13 @@ pub struct StrModule {
 pub struct StrAlias {
     alias_name: Ident,
     string: String,
+    string_span: Span,
 }
 
-pub(crate) struct TString(pub(crate) String);
+pub(crate) struct TString {
+    pub(crate) str: String,
+    pub(crate) span: Span,
+}
 
 mod keywords {
     syn::custom_keyword!(count);
@@ -198,24 +208,26 @@ impl StrModule {
 impl Parse for StrAlias {
     fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
         let alias_name = input.parse::<Ident>()?;
-        let string = if let Some(_) = input.peek_parse(Token!(=))? {
-            input.parse::<TString>()?.0
+        let (string, string_span) = if let Some(_) = input.peek_parse(Token!(=))? {
+            let tstr = input.parse::<TString>()?;
+            (tstr.str, tstr.span)
         } else {
-            alias_name.to_string()
+            (alias_name.to_string(), alias_name.span())
         };
         if !input.is_empty() {
             let _: Token!(,) = input.parse()?;
         }
-        Ok(Self { alias_name, string })
+        Ok(Self {
+            alias_name,
+            string,
+            string_span,
+        })
     }
 }
 
 impl Parse for TString {
     fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
-        let s: String = match input.peek_parse(LitStr)? {
-            Some(x) => x.value(),
-            None => input.parse::<IdentOrIndex>()?.to_string(),
-        };
-        Ok(TString(s))
+        let (str, span) = input.parse::<IdentOrIndex>()?.string_and_span();
+        Ok(TString { str, span })
     }
 }

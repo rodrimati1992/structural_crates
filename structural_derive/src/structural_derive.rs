@@ -389,7 +389,7 @@ fn deriving_structural<'a>(
                         });
 
                 let enum_ = ds.name;
-                let variant_count = tstr_tokens(ds.variants.len().to_string());
+                let variant_count = tstr_tokens(ds.variants.len().to_string(), tyname.span());
 
                 let variant_count_tokens = if options.make_variant_count_alias {
                     let variant_count_ident_str = format!("{}_VC", ds.name);

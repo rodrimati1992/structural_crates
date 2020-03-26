@@ -106,7 +106,7 @@ pub fn _TStr_impl_(input: TokenStream1) -> TokenStream1 {
     use crate::tokenizers::tstr_tokens;
     use crate::tstring_aliases::TString;
 
-    parse_or_compile_err(input, |s: TString| Ok(tstr_tokens(s.0))).into()
+    parse_or_compile_err(input, |s: TString| Ok(tstr_tokens(s.str, s.span))).into()
 }
 
 #[proc_macro]
@@ -139,7 +139,20 @@ pub fn _TStr_lit_impl_(input: TokenStream1) -> TokenStream1 {
         }
     }
 
-    parse_or_compile_err(input, |s: TStrLit| Ok(tstr_tokens(s.str))).into()
+    parse_or_compile_err(input, |s: TStrLit| Ok(tstr_tokens(s.str, s.span))).into()
+}
+
+#[proc_macro]
+#[allow(non_snake_case)]
+#[doc(hidden)]
+pub fn _TStr_ident_impl_(input: TokenStream1) -> TokenStream1 {
+    use crate::tokenizers::tstr_tokens;
+
+    parse_or_compile_err(input, |ident: syn::Ident| {
+        let s = crate::utils::remove_raw_prefix(ident.to_string());
+        Ok(tstr_tokens(s, ident.span()))
+    })
+    .into()
 }
 
 #[proc_macro]

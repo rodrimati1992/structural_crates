@@ -651,8 +651,9 @@ pub use structural_derive::Structural;
 
 #[doc(hidden)]
 pub use structural_derive::{
-    _FP_impl_, _FP_literal_, _TStr_impl_, _TStr_lit_impl_, _field_path_aliases_impl,
-    _impl_struct_impl, _switch_tstring_aliases, _tstring_aliases_impl, structural_alias_impl,
+    _FP_impl_, _FP_literal_, _TStr_ident_impl_, _TStr_impl_, _TStr_lit_impl_,
+    _field_path_aliases_impl, _impl_struct_impl, _switch_tstring_aliases, _tstring_aliases_impl,
+    structural_alias_impl,
 };
 
 #[macro_use]

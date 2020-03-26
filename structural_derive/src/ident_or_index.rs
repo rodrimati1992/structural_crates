@@ -1,4 +1,4 @@
-use crate::{arenas::Arenas, ignored_wrapper::Ignored};
+use crate::{arenas::Arenas, ignored_wrapper::Ignored, utils::remove_raw_prefix};
 
 use std::fmt::{self, Display};
 
@@ -76,21 +76,29 @@ impl IdentOrIndex {
         Ok(Some(ret))
     }
 
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            IdentOrIndex::Ident(x) => x.span(),
+            IdentOrIndex::Index(x) => x.span,
+            IdentOrIndex::Str { span, .. } => span.value,
+        }
+    }
+
     pub(crate) fn tstr_tokens(&self) -> TokenStream2 {
         use crate::tokenizers::tstr_tokens;
-        let owned: String;
-        let borrowed = match self {
-            IdentOrIndex::Ident(x) => {
-                owned = x.to_string();
-                owned.as_str()
-            }
-            IdentOrIndex::Index(x) => {
-                owned = x.index.to_string();
-                owned.as_str()
-            }
-            IdentOrIndex::Str { str, .. } => str,
-        };
-        tstr_tokens(borrowed)
+        let (string, span) = self.string_and_span();
+        tstr_tokens(string, span)
+    }
+
+    pub(crate) fn string_and_span(&self) -> (String, Span) {
+        match self {
+            IdentOrIndex::Ident(x) => (remove_raw_prefix(x.to_string()), x.span()),
+            IdentOrIndex::Index(x) => (x.index.to_string(), x.span),
+            IdentOrIndex::Str { str, span } => (str.into(), span.value),
+        }
+    }
+    pub(crate) fn to_string(&self) -> String {
+        self.string_and_span().0
     }
 }
 
@@ -103,7 +111,7 @@ impl ToTokens for IdentOrIndex {
 impl Display for IdentOrIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IdentOrIndex::Ident(x) => Display::fmt(x, f),
+            IdentOrIndex::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
             IdentOrIndex::Index(x) => Display::fmt(&x.index, f),
             IdentOrIndex::Str { str, .. } => f.write_str(str),
         }
@@ -176,7 +184,6 @@ impl<'a> IdentOrIndexRef<'a> {
         })
     }
 
-    #[allow(dead_code)]
     pub(crate) fn span(&self) -> Span {
         match self {
             IdentOrIndexRef::Ident(x) => x.span(),
@@ -187,19 +194,20 @@ impl<'a> IdentOrIndexRef<'a> {
 
     pub(crate) fn tstr_tokens(self) -> TokenStream2 {
         use crate::tokenizers::tstr_tokens;
-        let owned: String;
-        let borrowed = match self {
-            IdentOrIndexRef::Ident(x) => {
-                owned = x.to_string();
-                owned.as_str()
-            }
-            IdentOrIndexRef::Index { index, .. } => {
-                owned = index.to_string();
-                owned.as_str()
-            }
-            IdentOrIndexRef::Str { str, .. } => str,
-        };
-        tstr_tokens(borrowed)
+        let (borrowed, span) = self.string_and_span();
+        tstr_tokens(borrowed, span)
+    }
+
+    pub(crate) fn string_and_span(self) -> (String, Span) {
+        match self {
+            IdentOrIndexRef::Ident(x) => (remove_raw_prefix(x.to_string()), x.span()),
+            IdentOrIndexRef::Index { index, span } => (index.to_string(), span.value),
+            IdentOrIndexRef::Str { str, span } => (str.into(), span.value),
+        }
+    }
+
+    pub(crate) fn to_string(&self) -> String {
+        self.string_and_span().0
     }
 }
 
@@ -224,7 +232,7 @@ impl ToTokens for IdentOrIndexRef<'_> {
 impl Display for IdentOrIndexRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IdentOrIndexRef::Ident(x) => Display::fmt(x, f),
+            IdentOrIndexRef::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
             IdentOrIndexRef::Index { index, .. } => Display::fmt(index, f),
             IdentOrIndexRef::Str { str, .. } => f.write_str(str),
         }
