@@ -33,7 +33,7 @@ matrix:
         - cargo test --no-default-features --features testing --features alloc nightly_impl_fields
         - cargo test --no-default-features --features testing --features std   nightly_impl_fields
         
-        - cargo test --all-features
+        - cargo test --features test_all
         
         - cargo clean
 

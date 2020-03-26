@@ -1,8 +1,3 @@
-//! Structural-deriving types used in examples,
-//!
-//! These are in the docs purely so that documentation examples only use
-//! types that are documented.
-
 use crate::Structural;
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]

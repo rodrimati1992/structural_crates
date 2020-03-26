@@ -44,10 +44,13 @@ disable_const_str=["structural_derive/disable_const_str"]
 impl_fields=["structural_derive/impl_fields"]
 nightly_impl_fields=["impl_fields"]
 
+for_examples=[]
+
 test_all=["all","testing"]
 all=[
     "std",
     "hide_reexports",
+    "for_examples",
     "nightly_specialization",
     "nightly_use_const_str",
     "nightly_impl_fields",

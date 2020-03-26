@@ -664,7 +664,6 @@ pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
 pub mod field;
-pub mod for_examples;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
@@ -738,6 +737,21 @@ pub mod pmr {
     pub use crate::alloc::boxed::Box;
 }
 
+/// Structural-deriving types used in examples,
+///
+/// These are in the docs purely so that documentation examples only use
+/// types that are documented.
+///
+/// You can only use items from this module when the "for_examples" feature is enabled.
+#[cfg(any(feature = "for_examples", all(rust_1_41, doc)))]
+pub mod for_examples;
+
+/// Structural-deriving types used in examples,
+///
+/// You can only use items from this module when the "for_examples" feature is enabled.
+#[cfg(all(not(feature = "for_examples"), not(all(rust_1_41, doc))))]
+pub mod for_examples {}
+
 #[cfg(all(test, not(feature = "testing")))]
 compile_error! { "tests must be run with the \"testing\" feature" }
 
@@ -747,3 +761,7 @@ use std_::marker::PhantomData;
 use std_::mem::ManuallyDrop;
 
 include! {"path/declare_field_path_types.rs"}
+
+fn foaosdasd() {
+    use crate::for_examples::Struct3;
+}
