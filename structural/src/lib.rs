@@ -761,7 +761,3 @@ use std_::marker::PhantomData;
 use std_::mem::ManuallyDrop;
 
 include! {"path/declare_field_path_types.rs"}
-
-fn foaosdasd() {
-    use crate::for_examples::Struct3;
-}

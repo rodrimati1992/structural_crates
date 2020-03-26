@@ -27,7 +27,7 @@ std=["alloc"]
 alloc=["core_extensions/alloc"]
 
 # An internal cargo feature,used by tests
-testing=["structural_derive/test_asserts"]
+testing=["structural_derive/test_asserts","for_examples"]
 # Used as a workaround for `cargo deadlinks`,
 # hides the re-exports from standard library crates.
 hide_reexports=[]
