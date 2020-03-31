@@ -1,10 +1,10 @@
 [package]
 name = "structural"
-version = "0.3.0-alpha"
+version = "0.3.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
-description="Abstractions over fields."
+description="Field accessor traits,and emulation of structural types."
 documentation = "https://docs.rs/structural/"
 readme="../readme.md"
 keywords = ["data-structures"]
@@ -24,6 +24,9 @@ travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 [features]
 default = ["std"]
 std=["alloc"]
+# Enabling the feature in core_extension so that the impls that use 
+# types or traits from the alloc crate are enabled.
+# One example is the Cloned trait.
 alloc=["core_extensions/alloc"]
 
 # An internal cargo feature,used by tests
@@ -58,7 +61,7 @@ all=[
 
 
 [dependencies]
-structural_derive={version="0.3.0-alpha",path="../structural_derive"}
+structural_derive={version="=0.3.0-alpha",path="../structural_derive"}
 
 [dependencies.core_extensions]
 version="0.1.15"

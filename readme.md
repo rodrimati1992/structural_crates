@@ -28,6 +28,12 @@ using field-in-trait syntax.
 as well as [`make_struct`] to construct anonymous structs
 
 
+# Examples
+
+For **examples** you can look at
+[the examples section of the documentation for the root module of the structural crate
+](https://docs.rs/structural/0.3/structural/index.html#root-mod-examples)
+
 # Clarifications
 
 The way that this library emulates structural types is by using traits as bounds
@@ -40,11 +46,10 @@ The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
 this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
-# Examples
+### Required macros
 
-For **examples** you can look at
-[the examples section of the documentation for the root module of the structural crate
-](https://docs.rs/structural/0.3/structural/index.html#root-mod-examples)
+The only macros that are required to use this crate are the ones for [`TStr`],
+every other macro expands to code that can be written manually.
 
 # Changelog
 
@@ -153,6 +158,8 @@ https://docs.rs/structural/0.3/structural/macro.make_struct.html
 https://docs.rs/structural/0.3/structural/macro.structural_alias.html
 [`switch`]:
 https://docs.rs/structural/0.3/structural/macro.switch.html
+[`TStr`]:
+https://docs.rs/structural/0.3/structural/struct.TStr.html
 [`TS`]:
 https://docs.rs/structural/0.3/structural/macro.TS.html
 [`FP`]:

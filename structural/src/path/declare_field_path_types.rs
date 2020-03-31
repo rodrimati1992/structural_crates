@@ -16,6 +16,11 @@
 /// whenever any other crate uses the "use_const_str" cargo feature,
 /// which changes `__TS` to use const generics to improve error messages.
 ///
+/// Also,using the "use_const_str" feature to use the `__TS` type by name wouldn't 
+/// protect from breakage,
+/// since other crates can use the "disable_const_str" feature to disable 
+/// const generics (this feature is useful to work around bugs in const generics).
+///
 /// # TStr type
 /// 
 /// You can get a TStr type (to use as a type argument) with the [`TS`](./macro.TS.html) macro,

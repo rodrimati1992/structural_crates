@@ -209,11 +209,9 @@ const SPACES_X8: &str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 const GENERIC_VARIANT_NAME_DOCS: &str = "
 # Generic Variant Names
 
-For a `Bar<T,Foo>` trait,
+In the general case,
 `<Foo>` as the name of a variant in the generated documentation means that the 
-name of the variant is determined by the `Foo` type parameter.
-
-Example: `Bar<T,TS!(Woop)>` requires a variant called `Woop`.<br>
-Example: `Bar<T,TS!(Frog)>` requires a variant called `Frog`.<br>
+name of the variant is determined by the `Foo` type parameter.<br>
+If `TS!(Bar)` is passed as the `Foo` type argument,then the variant is named `Bar`.
 
 ";

@@ -34,6 +34,11 @@ The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
 this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
+### Required macros
+
+The only macros that are required to use this crate are the ones for [`TStr`],
+every other macro expands to code that can be written manually.
+
 # Conditional methods
 
 ### `*box_*` methods
