@@ -9,73 +9,64 @@ mod tuple_impls;
 
 /// A trait which allows getting a heterogeneous collection type (like tuples),
 /// in which `Type` was added after the last element.
-pub trait PushBack_<Type>{
+pub trait PushBack<Type> {
     type Output;
 }
 
 /// This allows getting a heterogeneous collection type (like tuples),
 /// in which `Type` was added after the last element.
-pub type PushBack<This,Type>=
-    <This as PushBack_<Type>>::Output;
+pub type PushBackOut<This, Type> = <This as PushBack<Type>>::Output;
 
 ///////////////////////////////////////////////////////////
 
 /// Gets the `TList` equivalent of `Self`.
 #[doc(hidden)]
-pub trait ToTList_{
+pub trait ToTList {
     type Output;
 }
-
 
 /// Gets the `TList` type equivalent of `This`.
 #[doc(hidden)]
-pub type ToTList<This>=
-    <This as ToTList_>::Output;
-
+pub type ToTListOut<This> = <This as ToTList>::Output;
 
 ///////////////////////////////////////////////////////////
 
-/// Gets the `TString` equivalent of `Self`.
+/// Gets the `TStr` equivalent of `Self`.
 #[doc(hidden)]
-pub trait ToTString_{
+pub trait ToTString {
     type Output;
 }
 
-/// Gets the `TString` equivalent of `This`.
+/// Gets the `TStr` equivalent of `This`.
 #[doc(hidden)]
-pub type ToTString<This>=
-    <This as ToTString_>::Output;
+pub type ToTStringOut<This> = <This as ToTString>::Output;
 
 ///////////////////////////////////////////////////////////
 
 /// Gets a tuple type equivalent of `Self`.
-pub trait ToTuple_{
+pub trait ToTuple {
     type Output;
 }
 
 /// Gets a tuple type equivalent of `This`.
-pub type ToTuple<This>=
-    <This as ToTuple_>::Output;
+pub type ToTupleOut<This> = <This as ToTuple>::Output;
 
 ///////////////////////////////////////////////////////////
 
 /// Gets this collection type with `Other` appended at the end.
-pub trait Append_<Other>{
+pub trait Append<Other> {
     type Output;
 }
 
-
 /// Gets the `This` collection type with `Other` appended at the end.
-pub type Append<This,Other>=
-    <This as Append_<Other>>::Output;
+pub type AppendOut<This, Other> = <This as Append<Other>>::Output;
 
 ///////////////////////////////////////////////////////////
 
-/// Flattens a collection of collection.
-pub trait Flatten_{
+/// FlattenOuts a collection of collection.
+pub trait Flatten {
     type Output;
 }
 
-/// Flattens a collection of collection.
-pub type Flatten<This>=
-    <This as Flatten_>::Output;
+/// FlattenOuts a collection of collection.
+pub type FlattenOut<This> = <This as Flatten>::Output;

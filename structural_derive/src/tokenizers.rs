@@ -1,123 +1,75 @@
-use proc_macro2::{
-    TokenStream as TokenStream2,
-    Span,
-};
+use crate::ident_or_index::IdentOrIndexRef;
 
-use quote::{quote,ToTokens};
+use proc_macro2::{Span, TokenStream as TokenStream2};
 
-use syn::Ident;
-
-
-/// Whether to use the full path to an item when refering to it.
-#[derive(Debug,Copy,Clone,Eq,PartialEq)]
-pub(crate) enum FullPathForChars{
-    Yes,
-    No,
-    StructPmr,
-}
-
+#[allow(unused_imports)]
+use quote::{quote_spanned, ToTokens};
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-
-pub(crate) fn struct_pmr_prefix()->TokenStream2{
-    quote!( __struct_pmr:: )
-}
-
-#[allow(dead_code)]
-pub(crate) fn struct_pmr()->TokenStream2{
-    quote!( __struct_pmr )
-}
-
-
-
-/// Tokenizes a `TString<>` in which each character is written as a type.
-pub(crate) fn tident_tokens<S>(string:S,char_verbosity:FullPathForChars)->TokenStream2
+#[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
+pub(crate) fn tstr_tokens<S>(string: S, span: Span) -> TokenStream2
 where
-    S:AsRef<str>
+    S: AsRef<str>,
 {
-    let path_prefix=match char_verbosity {
-        FullPathForChars::Yes=>quote!(::structural::chars::),
-        FullPathForChars::No=>quote!(),
-        FullPathForChars::StructPmr=>struct_pmr_prefix(),
-    };
+    let string = string.as_ref();
 
-    use std::fmt::Write;
-    let mut buffer=String::new();
-    let bytes=string.as_ref().bytes()
-        .map(move|b|{
-            buffer.clear();
-            let c=b as char;
-            let _=if (c.is_alphanumeric() || c=='_' )&& b < 128 {
-                write!(buffer,"_{}",c)
-            }else{
-                write!(buffer,"B{}",b)
-            };
-            syn::Ident::new(&buffer, Span::call_site())
-        });
-    quote!( ::structural::pmr::TString<( #( #path_prefix #bytes,)* )> )
+    quote_spanned!(span=> ::structural::TStr<::structural::__TS<#string>> )
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-/// Represents a crate-visible module with a bunch of type aliases for TStrings.
-pub(crate) struct NamedModuleAndTokens{
-    pub(crate) names_module:Ident,
-    pub(crate) alias_names:Vec<Ident>,
-    pub(crate) mod_tokens:TokenStream2,
+#[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]
+/// Tokenizes a `TStr<>` in which each character is written as a type.
+pub(crate) fn tstr_tokens<S>(string: S, span: Span) -> TokenStream2
+where
+    S: AsRef<str>,
+{
+    let mut buffer = String::with_capacity(6);
+    let bytes = string.as_ref().bytes().map(move |b| {
+        buffer.clear();
+        let c = b as char;
+        let _ = if (c.is_alphanumeric() || c == '_') && b < 128 {
+            buffer.push_str("__");
+            buffer.push(c);
+        } else {
+            buffer.push_str("__0x");
+            write_hex(b / 16, &mut buffer);
+            write_hex(b % 16, &mut buffer);
+        };
+        syn::Ident::new(&buffer, Span::call_site())
+    });
+    quote_spanned!(span=>
+        ::structural::TStr<::structural::__TS<( #( ::structural::#bytes,)* )>>
+    )
 }
 
-impl NamedModuleAndTokens{
-    pub fn new<'a,I,S>(thing_ident:&'a syn::Ident,iter:I)->Self
-    where
-        I:IntoIterator<Item=S>+Clone,
-        S:std::fmt::Display+'a,
-    {
-
-        let names_module=Ident::new(
-            &format!("{}_names_module",thing_ident),
-            Span::call_site(),
-        );
-
-        let alias_names=iter.clone().into_iter()
-            .map(|ident| Ident::new(&format!("STR_{}",ident),Span::call_site()) )
-            .collect::<Vec<Ident>>();
-
-        let aliases_names=alias_names.iter()
-            .zip( iter.clone().into_iter() )
-            .map(|(alias_name,field_name)|{
-                let field_name=tident_tokens(field_name.to_string(),FullPathForChars::No);
-                quote!(pub type #alias_name=structural::pmr::FieldPath<(#field_name,)>;)
-            });
-
-        let mod_tokens=quote!(
-            pub(crate) mod #names_module{
-                use super::*;
-                use structural::pmr::*;
-
-                #(#aliases_names)*
-            }
-        );
-        
-        Self{
-            names_module,
-            alias_names,
-            mod_tokens,
-        }
-    }
+#[inline]
+#[allow(dead_code)]
+fn write_hex(mut n: u8, buffer: &mut String) {
+    n = n & 0xF;
+    const HEX_OFFSET: u8 = b'A' - 10;
+    let offset = if n < 10 { b'0' } else { HEX_OFFSET };
+    buffer.push((n + offset) as char);
 }
 
-
-impl ToTokens for NamedModuleAndTokens{
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        self.mod_tokens.to_tokens(tokens);
-    }
+pub(crate) fn variant_field_tokens(
+    variant: IdentOrIndexRef<'_>,
+    field: IdentOrIndexRef<'_>,
+) -> TokenStream2 {
+    let variant_tokens = variant.tstr_tokens();
+    let field_tokens = field.tstr_tokens();
+    let span = field.span();
+    quote_spanned!(span=>
+        ::structural::pmr::VariantField<
+            #variant_tokens,
+            #field_tokens,
+        >
+    )
 }
 
-
-
-
-
-
+pub(crate) fn variant_name_tokens(variant: IdentOrIndexRef<'_>) -> TokenStream2 {
+    let variant_tokens = variant.tstr_tokens();
+    let span = variant.span();
+    quote_spanned!(span=>
+        ::structural::pmr::VariantName< #variant_tokens >
+    )
+}

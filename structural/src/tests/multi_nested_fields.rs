@@ -1,13 +1,12 @@
-use crate::GetFieldExt;
+use crate::StructuralExt;
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use crate::pmr::Box;
 
-use core_extensions::{SelfOps,Void};
 use core_extensions::type_asserts::AssertEq;
+use core_extensions::{SelfOps, Void};
 
-
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 #[test]
 fn boxed_fields() {
     let mut f = Box::new((0, 1, Box::new((20, 21)), 3));
@@ -32,15 +31,14 @@ fn boxed_fields() {
     assert_eq!(f.3, 9);
 }
 
-fn wrap_single<T>(value:T)->(T,){
-    (value,) 
+fn wrap_single<T>(value: T) -> (T,) {
+    (value,)
 }
 
 #[test]
-fn deeply_nested(){
-
+fn deeply_nested() {
     {
-        let mut f=make_struct!{
+        let mut f = make_struct! {
             a:make_struct!{
                 aa:(101,103),
                 ab:"hello",
@@ -48,19 +46,19 @@ fn deeply_nested(){
             b:false,
         };
 
-        let (f_aa_0,f_aa_1,f_ab,f_b)=f.fields_mut(fp!( a.aa.0, a.aa.1, a.ab, b ));
-        assert_eq!(f_aa_0 , &mut 101);
+        let (f_aa_0, f_aa_1, f_ab, f_b) = f.fields_mut(fp!(a.aa.0, a.aa.1, a.ab, b));
+        assert_eq!(f_aa_0, &mut 101);
         assert_eq!(f_aa_1, &mut 103);
         assert_eq!(f_ab, &mut "hello");
-        *f_aa_0*=3;
-        *f_aa_1*=2;
-        *f_ab="shoot";
-        *f_b=true;
-        assert_eq!(f_aa_0 , &mut 303);
+        *f_aa_0 *= 3;
+        *f_aa_1 *= 2;
+        *f_ab = "shoot";
+        *f_b = true;
+        assert_eq!(f_aa_0, &mut 303);
         assert_eq!(f_aa_1, &mut 206);
         assert_eq!(f_ab, &mut "shoot");
         assert_eq!(f_b, &mut true);
-        
+
         assert_eq!(f.a.aa.0, 303);
         assert_eq!(f.a.aa.1, 206);
         assert_eq!(f.a.ab, "shoot");
@@ -68,27 +66,25 @@ fn deeply_nested(){
     }
 
     {
-        let mut this=10
+        let mut this = 10
             .piped(wrap_single)
             .piped(wrap_single)
             .piped(wrap_single)
             .piped(wrap_single);
 
-        assert_eq!( (((this.0).0).0).0, 10 );
-        let num=this.field_mut(fp!(0.0.0.0));
-        *num*=2;
-        assert_eq!( (((this.0).0).0).0, 20 );
+        assert_eq!((((this.0).0).0).0, 10);
+        let num = this.field_mut(fp!(0.0.0.0));
+        *num *= 2;
+        assert_eq!((((this.0).0).0).0, 20);
     }
-
-
 }
 
 #[test]
-fn identity_getters(){
-    #[cfg(feature="alloc")]
+fn identity_getters() {
+    #[cfg(feature = "alloc")]
     {
-        let mut this=Box::new((0,1));
-        let ()=this.fields_mut(fp!());
+        let mut this = Box::new((0, 1));
+        let () = this.fields_mut(fp!());
     }
     /*
     {
@@ -101,21 +97,19 @@ fn identity_getters(){
         let _:FieldPathSet<(),UniquePaths>=
             fp!();
 
-        let _:FieldPath<()>=
+        let _:NestedFieldPath<()>=
             fp!(());
 
-        let _:FieldPathSet<(FieldPath<()>,FieldPath<()>),AliasedPaths>=
+        let _:FieldPathSet<(NestedFieldPath<()>,NestedFieldPath<()>),AliasedPaths>=
             fp!((),());
 
-        let _:FieldPathSet<(FieldPath<()>,FieldPath<()>,FieldPath<()>),AliasedPaths>=
+        let _:FieldPathSet<(NestedFieldPath<()>,NestedFieldPath<()>,NestedFieldPath<()>),AliasedPaths>=
             fp!((),(),());
     }
     */
 }
 
-
-
-field_path_aliases!{
+field_path_aliases! {
     FP_0_0=0.0,
     FP_0_1=0.1,
     FP_0_2_0=0.2.0,
@@ -125,48 +119,45 @@ field_path_aliases!{
 }
 
 #[test]
-fn get_nested_field_types(){
-    use crate::{
-        GetFieldType,GetFieldType2,GetFieldType3,GetFieldType4,
-        RevGetFieldType,
-    };
+fn get_nested_field_types() {
+    use crate::field::RevGetFieldType;
+    use crate::{GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4};
 
+    type FP0 = FP!(0);
+    type FP1 = FP!(1);
+    type FP2 = FP!(2);
 
-    type FP0=FP!(0);
-    type FP1=FP!(1);
-    type FP2=FP!(2);
+    type Unary<T> = (T,);
 
-    type Unary<T>=(T,);
-
-    type SStr=&'static str;
-    type VVec=&'static [()];
+    type SStr = &'static str;
+    type VVec = &'static [()];
 
     {
-        type Tuple=Unary<SStr>;
-        let _:AssertEq<GetFieldType<Tuple,FP0>,SStr>;
+        type Tuple = Unary<SStr>;
+        let _: AssertEq<GetFieldType<Tuple, FP0>, SStr>;
     }
     {
-        type Tuple=Unary<(Void,SStr)>;
-        let _:AssertEq<GetFieldType2<Tuple,FP0,FP0>,Void>;
-        let _:AssertEq<GetFieldType2<Tuple,FP0,FP1>,SStr>;
+        type Tuple = Unary<(Void, SStr)>;
+        let _: AssertEq<GetFieldType2<Tuple, FP0, FP0>, Void>;
+        let _: AssertEq<GetFieldType2<Tuple, FP0, FP1>, SStr>;
 
-        let _:AssertEq<RevGetFieldType<FP_0_0,Tuple>,Void>;
-        let _:AssertEq<RevGetFieldType<FP_0_1,Tuple>,SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_0, Tuple>, Void>;
+        let _: AssertEq<RevGetFieldType<FP_0_1, Tuple>, SStr>;
     }
     {
-        type Tuple=Unary<((),(),(u64,SStr))>;
-        let _:AssertEq<GetFieldType3<Tuple,FP0,FP2,FP0>,u64>;
-        let _:AssertEq<GetFieldType3<Tuple,FP0,FP2,FP1>,SStr>;
+        type Tuple = Unary<((), (), (u64, SStr))>;
+        let _: AssertEq<GetFieldType3<Tuple, FP0, FP2, FP0>, u64>;
+        let _: AssertEq<GetFieldType3<Tuple, FP0, FP2, FP1>, SStr>;
 
-        let _:AssertEq<RevGetFieldType<FP_0_2_0,Tuple>,u64>;
-        let _:AssertEq<RevGetFieldType<FP_0_2_1,Tuple>,SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_0, Tuple>, u64>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1, Tuple>, SStr>;
     }
     {
-        type Tuple=Unary<((),(),((),(SStr,VVec)))>;
-        let _:AssertEq<GetFieldType4<Tuple,FP0,FP2,FP1,FP0>,SStr>;
-        let _:AssertEq<GetFieldType4<Tuple,FP0,FP2,FP1,FP1>,VVec>;
+        type Tuple = Unary<((), (), ((), (SStr, VVec)))>;
+        let _: AssertEq<GetFieldType4<Tuple, FP0, FP2, FP1, FP0>, SStr>;
+        let _: AssertEq<GetFieldType4<Tuple, FP0, FP2, FP1, FP1>, VVec>;
 
-        let _:AssertEq<RevGetFieldType<FP_0_2_1_0,Tuple>,SStr>;
-        let _:AssertEq<RevGetFieldType<FP_0_2_1_1,Tuple>,VVec>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1_0, Tuple>, SStr>;
+        let _: AssertEq<RevGetFieldType<FP_0_2_1_1, Tuple>, VVec>;
     }
 }

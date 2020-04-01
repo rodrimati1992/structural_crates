@@ -1,22 +1,23 @@
-use super::*;
+use super::{
+    TEqual, TLess, U0, U1, U10, U11, U12, U13, U14, U15, U16, U17, U18, U19, U2, U20, U21, U22,
+    U23, U24, U25, U26, U27, U28, U29, U3, U30, U31, U32, U33, U4, U5, U6, U7, U8, U9,
+};
 
-use crate::type_level::cmp::{Compare,ReverseOrdering};
+use crate::type_level::cmp::{CompareOut, ReverseOrdering};
 
 use core_extensions::type_asserts::AssertEq;
 
-
 #[test]
-fn compare(){
-
-    type AssertCmp<L,R,Expected>=(
-        AssertEq<Compare<L,R>,Expected>,
-        AssertEq<Compare<R,L>,ReverseOrdering<Expected>>,
+fn compare() {
+    type AssertCmp<L, R, Expected> = (
+        AssertEq<CompareOut<L, R>, Expected>,
+        AssertEq<CompareOut<R, L>, ReverseOrdering<Expected>>,
     );
 
     /*
     use std::cmp::{Ord, Ordering};
     use std::collections::HashSet;
-    
+
     fn main() {
         let len = 33;
         let mut set = HashSet::new();
@@ -43,7 +44,7 @@ fn compare(){
         };
     }
 
-    cmp_assertions!{
+    cmp_assertions! {
         (U0,U0,TEqual)
         (U0,U1,TLess)
         (U0,U2,TLess)

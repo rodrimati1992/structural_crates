@@ -1,6 +1,6 @@
 [package]
 name = "structural_derive"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -28,6 +28,10 @@ testing=["as_derive_utils/testing"]
 test_asserts=[]
 impl_fields=[]
 
+# Re-enable this feature every time you want to test whether const generics work.
+use_const_str=[]
+disable_const_str=[]
+
 [badges]
 travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 
@@ -35,12 +39,12 @@ travis-ci = { repository =  "rodrimati1992/structural_crates/" }
 proc-macro = true
 
 [dependencies]
-quote = "1.0"
 proc-macro2 = "1.0"
+quote = "1.0"
+typed-arena = "~1.5"
 
 [dependencies.core_extensions]
 default_features=false
-features=["std"]
 version="0.1"
 
 [dependencies.syn]

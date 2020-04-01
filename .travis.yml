@@ -21,23 +21,19 @@ matrix:
         - rustup component add miri
         - cargo miri setup
 
-        - cargo test --no-default-features --features testing --features nightly_specialization
-        - cargo test --no-default-features --features testing --features alloc --features nightly_specialization
-        - cargo test --no-default-features --features testing --features std nightly_specialization
+        - cargo test --no-default-features --features testing --features       nightly_specialization
+        - cargo test --no-default-features --features testing --features alloc nightly_specialization
+        - cargo test --no-default-features --features testing --features std   nightly_specialization
         
-        - cargo test --no-default-features --features testing --features nightly_better_macros
-        - cargo test --no-default-features --features testing --features alloc --features nightly_better_macros
-        - cargo test --no-default-features --features testing --features std nightly_better_macros
+        - cargo test --no-default-features --features testing --features       nightly_use_const_str
+        - cargo test --no-default-features --features testing --features alloc nightly_use_const_str
+        - cargo test --no-default-features --features testing --features std   nightly_use_const_str
         
-        - cargo test --no-default-features --features testing --features better_macros
-        - cargo test --no-default-features --features testing --features alloc --features better_macros
-        - cargo test --no-default-features --features testing --features std better_macros
+        - cargo test --no-default-features --features testing --features       nightly_impl_fields
+        - cargo test --no-default-features --features testing --features alloc nightly_impl_fields
+        - cargo test --no-default-features --features testing --features std   nightly_impl_fields
         
-        - cargo test --no-default-features --features testing --features nightly_impl_fields
-        - cargo test --no-default-features --features testing --features alloc --features nightly_impl_fields
-        - cargo test --no-default-features --features testing --features std nightly_impl_fields
-        
-        - cargo test --all-features
+        - cargo test --features test_all
         
         - cargo clean
 
@@ -46,9 +42,9 @@ matrix:
         - cargo miri test --no-default-features --features testing --features nightly_specialization
         - cargo miri test --no-default-features --features testing --features alloc --features nightly_specialization
         - cargo miri test --no-default-features --features testing --features std --features nightly_specialization
-        - cargo miri test --all-features
+        - cargo miri test --features test_all
 
-    - rust: 1.34.0
+    - rust: 1.40.0
 
 script:
   

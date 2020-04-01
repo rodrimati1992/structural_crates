@@ -1,69 +1,53 @@
 use crate::{
-    tokenizers::FullPathForChars,
-    field_paths::FieldPaths,
+    field_paths::{parse_field, FieldPaths},
+    ident_or_index::IdentOrIndex,
 };
 
 use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use quote::quote;
+use syn::parse::{self, ParseStream};
 
-use syn::Ident;
-
-
-/// This is the implementation of the FP macro when 
-/// the input isn't space separated characters.
 #[allow(non_snake_case)]
-pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2,syn::Error> {
-    parsed.type_tokens(FullPathForChars::Yes)
-        .piped(Ok)
-}
-
-
-#[cfg(test)]
-#[allow(non_snake_case)]
-pub(crate) fn FP_from_str(input: &str) -> Result<TokenStream2,syn::Error> {
-    syn::parse_str(input).and_then(FP_impl)
+pub(crate) fn FP_impl(parsed: FieldPaths) -> Result<TokenStream2, syn::Error> {
+    parsed.type_tokens().piped(Ok)
 }
 
 #[test]
 #[allow(non_snake_case)]
-fn test_FP_macro(){
+fn test_FP_macro() {
     use as_derive_utils::test_framework::Tests;
 
-    Tests::load("field_paths").run_test(FP_from_str);
+    Tests::load("field_paths").run_test(|input: &str| syn::parse_str(input).and_then(FP_impl));
 }
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) fn old_fp_impl(set: FieldPaths) -> Result<TokenStream2,syn::Error> {
-    let const_name=Ident::new("VALUE",proc_macro2::Span::call_site());
-    let constant=set.constant_named(&const_name,FullPathForChars::StructPmr);
+/// This is what the `fp` and `FP` macros call when literals are passed in.
+#[allow(non_snake_case)]
+pub(crate) fn FP_literal_impl(params: FpLitParams) -> Result<TokenStream2, syn::Error> {
+    let FpLitParams { first, second } = params;
 
-    Ok(quote!(
-        #constant
-    ))
+    let first = first.tstr_tokens();
+    let ret = match second {
+        Some(second) => {
+            let second = second.tstr_tokens();
+            quote::quote!( ::structural::pmr::NestedFieldPath<(#first,#second)> )
+        }
+        None => first,
+    };
+    Ok(ret)
 }
 
-/*
-
-This is for referencing generic parameters within `fp!()`,
-uncomment this if you add a cargo feature to enable proc macros in expression position.
-
-pub(crate) fn new_fp_impl(set: FieldPaths) -> Result<TokenStream2,syn::Error> {
-    let const_name=Ident::new("value",proc_macro2::Span::call_site());
-    let variable=set.variable_named(&const_name,FullPathForChars::StructPmr);
-
-    let pmr_rename=crate::tokenizers::struct_pmr();
-
-    Ok(quote!({
-        use structural::pmr as #pmr_rename;
-        #variable
-        value
-    }))
+pub(crate) struct FpLitParams {
+    first: IdentOrIndex,
+    second: Option<IdentOrIndex>,
 }
-*/
+
+impl parse::Parse for FpLitParams {
+    fn parse(input: ParseStream<'_>) -> parse::Result<Self> {
+        let (first, second) = parse_field(input)?;
+        Ok(FpLitParams { first, second })
+    }
+}
