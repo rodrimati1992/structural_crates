@@ -57,9 +57,7 @@ The changelog is in the "Changelog.md" file.
 
 # Future plans
 
-### 0.3
-
-Adding support for enums,accessing values inside of enum variants which happen to be named the same.
+None for now
 
 # no-std support
 
