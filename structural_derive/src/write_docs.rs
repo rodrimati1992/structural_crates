@@ -1,7 +1,8 @@
 use crate::{
     datastructure::StructOrEnum,
     field_access::Access,
-    structural_alias_impl_mod::{FieldType, StructuralDataType, StructuralField, VariantIdent},
+    structural_alias_impl_mod::{FieldType, IdentType, StructuralDataType, StructuralField},
+    utils::StrExt,
 };
 
 use quote::ToTokens;
@@ -13,6 +14,10 @@ pub enum DocsFor {
     Type,
     Trait,
     VsiTrait,
+}
+
+struct FieldsState {
+    has_generic_field_name: bool,
 }
 
 fn try_opt2<A, B>(a: Option<A>, b: Option<B>) -> Option<(A, B)> {
@@ -47,25 +52,36 @@ pub(crate) fn write_datatype_docs(
 
     let mut has_generic_variant_name = false;
 
+    let fields_state = &mut FieldsState {
+        has_generic_field_name: false,
+    };
+
     for variant in &datatype.variants {
         let variant_name_clarification_string;
         let printed_variant_name;
         let variant_name_clarification: &str;
+
         match variant.name {
-            VariantIdent::Generic(generic) => {
+            IdentType::Generic { .. } | IdentType::SomeType { .. } => {
                 has_generic_variant_name = true;
-                printed_variant_name = format!("<{}>", generic);
+                let (the_tstr_type, type_origin) = match variant.name {
+                    IdentType::Generic(generic) => (generic.to_string(), " parameter"),
+                    IdentType::SomeType(ty) => (ty.to_token_stream().to_string(), ""),
+                    _ => unreachable!(),
+                };
+                printed_variant_name = the_tstr_type.surrounded_with("<", ">");
 
                 variant_name_clarification_string = format!(
                     "{SP}\
-                     The name of this variant is determined by the `{}` type parameter\
-                     (a `structural::TStr`),<br>",
-                    generic,
+                     The name of this variant is determined by the `{}` type{}\
+                     (a `TStr`),<br>",
+                    the_tstr_type,
+                    type_origin,
                     SP = SPACES_X8,
                 );
                 variant_name_clarification = &variant_name_clarification_string;
             }
-            VariantIdent::Ident(generic) => {
+            IdentType::Ident(generic) => {
                 printed_variant_name = generic.to_string();
                 variant_name_clarification = "";
             }
@@ -110,7 +126,14 @@ pub(crate) fn write_datatype_docs(
             (None, _) => {
                 let variant_ident = Some(variant.name);
                 for field in &variant.fields {
-                    let _ = write_field_docs(buff, SPACES_X8, type_name, variant_ident, field);
+                    let _ = write_field_docs(
+                        buff,
+                        fields_state,
+                        SPACES_X8,
+                        type_name,
+                        variant_ident,
+                        field,
+                    );
                 }
             }
         }
@@ -122,19 +145,24 @@ pub(crate) fn write_datatype_docs(
         buff.push_str("### Fields\n\n");
     }
     for field in datatype_fields.iter() {
-        let _ = write_field_docs(buff, "", type_name, None, field);
+        let _ = write_field_docs(buff, fields_state, "", type_name, None, field);
     }
-    if has_generic_variant_name {
-        buff.push_str(GENERIC_VARIANT_NAME_DOCS)
+    if has_generic_variant_name || fields_state.has_generic_field_name {
+        buff.push_str(if datatype.variants.is_empty() {
+            GENERIC_STRUCT_NAME_DOCS
+        } else {
+            GENERIC_ENUM_NAME_DOCS
+        })
     }
     Ok(())
 }
 
 fn write_field_docs(
     buff: &mut String,
+    fields_state: &mut FieldsState,
     left_padding: &str,
     type_name: Option<&syn::Ident>,
-    variant: Option<VariantIdent<'_>>,
+    variant: Option<IdentType<'_>>,
     field: &StructuralField<'_>,
 ) -> std::fmt::Result {
     use self::FieldType as FT;
@@ -143,16 +171,32 @@ fn write_field_docs(
 
     let the_trait = field.compute_trait(soe).trait_name();
 
-    let ident = match variant {
-        Some(VariantIdent::Ident(ident)) => format!(
-            "TS!({}), TS!({})",
-            ident.to_token_stream(),
-            field.ident.to_token_stream()
-        ),
-        Some(VariantIdent::Generic(generic)) => {
-            format!("{}, TS!({})", generic, field.ident.to_token_stream())
+    // This intentionally does NOT have a default case (else,or `_=>{}`)
+    let is_generic_field_name = match field.ident {
+        IdentType::Generic { .. } | IdentType::SomeType { .. } => true,
+        IdentType::Ident { .. } => false,
+    };
+    fields_state.has_generic_field_name |= is_generic_field_name;
+
+    let field_ident_tstr = match field.ident {
+        IdentType::Ident(ident) => format!("FP!({})", ident.to_token_stream()),
+        IdentType::Generic(generic) => generic.to_string(),
+        IdentType::SomeType(ty) => format!("{}", ty.to_token_stream()),
+    };
+
+    let (field_ident_in_desc, type_origin) = match field.ident {
+        IdentType::Ident(ident) => (ident.to_string(), ""),
+        IdentType::Generic(generic) => (format!("<{}>", generic), " parameter"),
+        IdentType::SomeType(ty) => (format!("<{}>", ty.to_token_stream()), ""),
+    };
+
+    let path_param = match variant {
+        Some(IdentType::Ident(ident)) => {
+            format!("TS!({}), {}", ident.to_token_stream(), field_ident_tstr,)
         }
-        None => format!("FP!({})", field.ident.to_token_stream()),
+        Some(IdentType::Generic(generic)) => format!("{}, {}", generic, field_ident_tstr),
+        Some(IdentType::SomeType(ty)) => format!("{}, {}", ty.to_token_stream(), field_ident_tstr),
+        None => field_ident_tstr.clone(),
     };
 
     let access_desc = match field.access {
@@ -173,14 +217,14 @@ fn write_field_docs(
         buff,
         "{LP}Bound:`{0}<{1},{2}>`\n<br>",
         the_trait,
-        ident,
+        path_param,
         assoc_ty,
         LP = left_padding,
     )?;
     writeln!(
         buff,
         "{LP}The &nbsp; `{0}: {1}` field {2} &nbsp; ",
-        field.ident,
+        field_ident_in_desc,
         field_ty,
         try_opt2(type_name, field.pub_field_rename).map_or(String::new(), |(t, f)| format!(
             "(named `{}` in `{}`)",
@@ -189,29 +233,51 @@ fn write_field_docs(
         LP = left_padding,
     )?;
     match variant {
-        Some(VariantIdent::Ident(vari_name)) => {
+        Some(IdentType::Ident(vari_name)) => {
             write!(buff, " in the `{}` variant", vari_name)?;
         }
-        Some(VariantIdent::Generic(generic)) => {
-            write!(buff, " in the `{}` variant", generic)?;
+        Some(IdentType::Generic(generic)) => {
+            write!(buff, " in the `<{}>` variant", generic)?;
+        }
+        Some(IdentType::SomeType(ty)) => {
+            write!(buff, " in the `<{}>` variant", ty.to_token_stream())?;
         }
         None => {}
     }
 
     buff.push_str(", with ");
     buff.push_str(access_desc);
+    if is_generic_field_name {
+        write!(
+            buff,
+            "<br>{LP}The `{}` type {} (a `TStr`) determines the field name.",
+            field_ident_tstr,
+            type_origin,
+            LP = left_padding,
+        )?;
+    }
     buff.push_str("\n\n");
     Ok(())
 }
 
 const SPACES_X8: &str = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-const GENERIC_VARIANT_NAME_DOCS: &str = "
-# Generic Variant Names
+const GENERIC_ENUM_NAME_DOCS: &str = "
+# Generic Names
 
 In the general case,
-`<Foo>` as the name of a variant in the generated documentation means that the 
-name of the variant is determined by the `Foo` type parameter.<br>
-If `TS!(Bar)` is passed as the `Foo` type argument,then the variant is named `Bar`.
+`<Foo>` as the name of a variant/field in the generated documentation means that the 
+name of the variant/field is determined by the `Foo` type.<br>
+If `Foo` is the `TS!(Bar)` type,then the variant/field is named `Bar`.
+
+";
+
+const GENERIC_STRUCT_NAME_DOCS: &str = "
+# Generic Field Names
+
+In the general case,
+`<Foo>` as the name of a field in the generated documentation means that the 
+name of the field is determined by the `Foo` type.<br>
+If `Foo` is the `TS!(Bar)` type,then the field is named `Bar`.
 
 ";

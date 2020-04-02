@@ -1,14 +1,14 @@
 use crate::{
-    arenas::Arenas, field_access::Access, ident_or_index::IdentOrIndexRef, ignored_wrapper::Ignored,
+    arenas::Arenas, field_access::Access, ident_or_index::IdentOrIndexRef,
+    ignored_wrapper::Ignored, parse_utils::ParseBufferExt,
 };
 
 use super::{
-    attribute_parsing, FieldType, StructuralAlias, StructuralAliases, StructuralDataType,
-    StructuralField, StructuralVariant, TinyStructuralField, VariantIdent,
+    attribute_parsing, FieldType, IdentType, StructuralAlias, StructuralAliases,
+    StructuralDataType, StructuralField, StructuralVariant, TinyStructuralField,
 };
 
-use as_derive_utils::datastructure::StructKind;
-use as_derive_utils::return_syn_err;
+use as_derive_utils::{datastructure::StructKind, return_syn_err, utils::type_from_ident};
 
 #[allow(unused_imports)]
 use core_extensions::{matches, SelfOps};
@@ -71,7 +71,12 @@ impl<'a> StructuralAlias<'a> {
         let content;
         let braces = syn::braced!(content in input);
 
-        let datatype = StructuralDataType::parse(&mut extra_items, arenas, &content)?;
+        let type_params = generics
+            .type_params()
+            .map(|tp| &tp.ident)
+            .collect::<Vec<&Ident>>();
+
+        let datatype = StructuralDataType::parse(&mut extra_items, &type_params, arenas, &content)?;
 
         let span = trait_token
             .span
@@ -95,6 +100,7 @@ impl<'a> StructuralAlias<'a> {
 impl<'a> StructuralDataType<'a> {
     pub(super) fn parse(
         extra_items: &mut Vec<TraitItem>,
+        type_params: &[&syn::Ident],
         arenas: &'a Arenas,
         input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
@@ -113,15 +119,15 @@ impl<'a> StructuralDataType<'a> {
             }
 
             let access = input.parse::<Access>()?;
+            let ident = IdentType::parse(type_params, arenas, input)?;
             if let Some(enum_token) = VariantToken::peek_from(input) {
-                let ident = IdentOrIndexRef::parse(arenas, input)?;
-
                 let variant_kind: StructKind = enum_token.into();
                 let mut push_variant = |content: ParseStream<'_>| -> Result<(), syn::Error> {
                     variants.push(StructuralVariant::parse(
                         access,
                         ident,
                         variant_kind,
+                        type_params,
                         arenas,
                         content,
                     )?);
@@ -146,7 +152,9 @@ impl<'a> StructuralDataType<'a> {
                     input.parse::<Token![,]>()?;
                 }
             } else {
-                fields.push(StructuralField::parse_braced_field(access, arenas, input)?);
+                fields.push(StructuralField::parse_braced_field(
+                    access, ident, arenas, input,
+                )?);
             }
         }
         {
@@ -172,8 +180,9 @@ impl<'a> StructuralDataType<'a> {
 impl<'a> StructuralVariant<'a> {
     pub(super) fn parse(
         access: Access,
-        name: IdentOrIndexRef<'a>,
+        name: IdentType<'a>,
         variant_kind: StructKind,
+        type_params: &[&syn::Ident],
         arenas: &'a Arenas,
         input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
@@ -183,8 +192,10 @@ impl<'a> StructuralVariant<'a> {
             StructKind::Braced => {
                 while !input.is_empty() {
                     let nested_access = Access::parse_optional(input)?;
+                    let ident = IdentType::parse(type_params, arenas, input)?;
                     fields.push(StructuralField::parse_braced_field(
                         nested_access.unwrap_or(access),
+                        ident,
                         arenas,
                         input,
                     )?);
@@ -206,7 +217,7 @@ impl<'a> StructuralVariant<'a> {
             }
         }
         Ok(Self {
-            name: VariantIdent::Ident(name),
+            name,
             pub_vari_rename: None,
             fields,
             is_newtype: false,
@@ -218,10 +229,11 @@ impl<'a> StructuralVariant<'a> {
 impl<'a> TinyStructuralField<'a> {
     pub(crate) fn parse(
         access: Access,
+        type_params: &[&syn::Ident],
         arenas: &'a Arenas,
         input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
-        let ident = IdentOrIndexRef::parse(arenas, input)?;
+        let ident = IdentType::parse(type_params, arenas, input)?;
         let _: Token![:] = input.parse()?;
         let ty = FieldType::parse(arenas, input)?;
 
@@ -232,14 +244,12 @@ impl<'a> TinyStructuralField<'a> {
 impl<'a> StructuralField<'a> {
     pub(super) fn parse_braced_field(
         access: Access,
+        ident: IdentType<'a>,
         arenas: &'a Arenas,
         input: ParseStream<'_>,
     ) -> Result<Self, syn::Error> {
-        let TinyStructuralField {
-            access: _,
-            ident,
-            ty,
-        } = TinyStructuralField::parse(access, arenas, input)?;
+        let _: Token![:] = input.parse()?;
+        let ty = FieldType::parse(arenas, input)?;
 
         if !input.is_empty() {
             input.parse::<Token![,]>()?;
@@ -264,7 +274,8 @@ impl<'a> StructuralField<'a> {
         let ident = IdentOrIndexRef::Index {
             index,
             span: Ignored::new(span),
-        };
+        }
+        .piped(IdentType::Ident);
 
         if !input.is_empty() {
             input.parse::<Token![,]>()?;
@@ -281,6 +292,35 @@ impl<'a> StructuralField<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+impl<'a> IdentType<'a> {
+    pub(super) fn parse(
+        type_params: &[&syn::Ident],
+        arenas: &'a Arenas,
+        input: ParseStream<'_>,
+    ) -> Result<Self, syn::Error> {
+        if let Some(_) = input.peek_parse(Token!(<))? {
+            let ret = if input.peek(syn::Ident) && input.peek2(Token!(>)) {
+                let ident = input.parse::<syn::Ident>()?;
+                if type_params.contains(&&ident) {
+                    IdentType::Generic(arenas.alloc(ident))
+                } else {
+                    let ty = type_from_ident(ident);
+                    IdentType::SomeType(arenas.alloc(ty))
+                }
+            } else {
+                let ty = input.parse::<syn::Type>()?;
+                IdentType::SomeType(arenas.alloc(ty))
+            };
+            input.parse::<Token!(>)>()?;
+            Ok(ret)
+        } else {
+            IdentOrIndexRef::parse(arenas, input).map(IdentType::Ident)
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Debug, Copy, Clone)]
 enum VariantToken {
     Brace,
@@ -290,11 +330,11 @@ enum VariantToken {
 
 impl VariantToken {
     pub(super) fn peek_from(input: ParseStream<'_>) -> Option<Self> {
-        if input.peek2(token::Brace) {
+        if input.peek(token::Brace) {
             Some(VariantToken::Brace)
-        } else if input.peek2(token::Paren) {
+        } else if input.peek(token::Paren) {
             Some(VariantToken::Paren)
-        } else if input.peek2(token::Comma) || input.is_empty() {
+        } else if input.peek(token::Comma) || input.is_empty() {
             Some(VariantToken::NoToken)
         } else {
             None
