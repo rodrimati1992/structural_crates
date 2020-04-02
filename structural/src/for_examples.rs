@@ -170,8 +170,10 @@ structural_alias! {
     }
 }
 
-pub type Ooh_TStr = TS!(Ooh);
-pub type Qux_TStr = TS!(Qux);
+tstr_aliases! {
+    Ooh_TStr = Ooh,
+    Qux_TStr = Qux,
+}
 
 structural_alias! {
     pub trait WithGenericNames<B,C,D>{
@@ -179,15 +181,13 @@ structural_alias! {
         <B>:i32,
         Foo{
             c:(),
-            <FP!("what the")>:i8,
-            <C>:&'static str,
+            ref <FP!("what the")>:i8,
+            mut move <C>:&'static str,
             <Ooh_TStr>:&'static str,
         },
         Bar(i16,u16),
-        <TS!(Baz)>,
-        <Qux_TStr>,
-        <D>,
+        ref <TS!(Baz)>,
+        mut <Qux_TStr>,
+        mut move <D>,
     }
 }
-
-const _: [&dyn WithGenericNames<Ooh_TStr, Ooh_TStr, Ooh_TStr>; 0] = [];

@@ -172,7 +172,7 @@ fn deriving_structural<'a>(
 
                 let ident = match &config_f.renamed {
                     Some(x) => IdentType::Ident(x.borrowed()),
-                    None => IdentType::from(field.ident()),
+                    None => IdentType::from(&field.ident),
                 };
 
                 Some(StructuralField {

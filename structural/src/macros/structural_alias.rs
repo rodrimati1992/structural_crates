@@ -5,12 +5,15 @@ The `structural_alias` macro defines a trait alias for multiple field accessors.
 # Syntax
 
 ```
-# use structural::structural_alias;
+# use structural::{structural_alias,TS};
 # pub trait SuperTrait{}
+
+type Foo_S=TS!("a TStr");
+type Bar_S=TS!("another TStr");
 
 structural_alias!{
     #[struc( /* attributes detailed in the attributes section */ )]
-    pub trait Foo<'a,T:Copy>:SuperTrait
+    pub trait Foo<'a,T:Copy,V,F>:SuperTrait
     where
         T:SuperTrait
     {
@@ -49,7 +52,17 @@ structural_alias!{
             ref bam:&'static [u8],
         },
 
-        F,
+        // The name of the variant is determined by the V type parameter (a TStr).
+        <V>,
+
+        // The name of the field is determined by the F type parameter (a TStr).
+        <F>:u32,
+
+        // The name of the variant is determined by the Foo_S type alias (a TStr).
+        <Foo_S>,
+
+        // The name of the field is determined by the Bar_S type alias (a TStr).
+        <Bar_S>:&'static str,
 
         /////////////////////
         // Extension method
@@ -520,6 +533,63 @@ structural_alias!{
         }
     }
 }
+```
+
+### Generic Variant Name
+
+This example demonstrates declaring a structural alias with a generic variant name.
+
+```rust
+
+use structural::{structural_alias, switch, Structural, TS};
+
+use std::cmp::Ordering;
+
+#[derive(Structural)]
+enum Enum{
+    Foo(u32),
+    Bar(&'static str),
+}
+
+#[derive(Structural)]
+enum OtherEnum{
+    Foo(u32,Ordering),
+    Bar(&'static str,u64),
+    Baz,
+}
+
+fn main(){
+    hello(Enum::Foo(0));
+
+    hello(Enum::Bar("what"));
+
+    // The `Ordering` field is ignored
+    hello(OtherEnum::Foo(0, Ordering::Less));
+
+    // The integer field is ignored
+    hello(OtherEnum::Bar("what", 1000));
+
+    // `OtherEnum::Baz` is just ignored
+    hello(OtherEnum::Baz);
+}
+
+fn hello(this:impl Single_VSI<TS!(Foo),u32> + Single_VSI<TS!(Bar),&'static str>){
+    switch!{ref this;
+        Foo(&number)=>assert_eq!(number,0),
+        Bar(&string)=>assert_eq!(string,"what"),
+        _=>{}
+    }
+}
+
+structural_alias!{
+    // This trait is equivalent to what the `Structural` derive would generate for
+    // this type: `struct Single<T>(pub T);`
+    trait Single_VSI<V,T>{
+        // `V` is the type parameter(a TStr),it determines the name of the variant.
+        <V>(T)
+    }
+}
+
 ```
 
 */

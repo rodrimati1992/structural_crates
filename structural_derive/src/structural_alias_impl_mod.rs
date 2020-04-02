@@ -9,6 +9,7 @@ use crate::{
 };
 
 use as_derive_utils::{
+    datastructure::FieldIdent,
     gen_params_in::{GenParamsIn, InWhat},
     return_spanned_err,
 };
@@ -162,6 +163,12 @@ impl<'a> From<&'a Ident> for IdentType<'a> {
     #[inline]
     fn from(from: &'a Ident) -> Self {
         IdentType::Ident(IdentOrIndexRef::Ident(from))
+    }
+}
+
+impl<'a> From<&'_ FieldIdent<'a>> for IdentType<'a> {
+    fn from(x: &'_ FieldIdent<'a>) -> Self {
+        IdentType::Ident(IdentOrIndexRef::from(x))
     }
 }
 
