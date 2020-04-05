@@ -1,5 +1,11 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
+# 0.3.1
+
+Added generic variant and field names in `structural_alias` macro,
+allowing the name of a variant or field name to be determined by a type parameter or 
+type alias.
+
 # 0.3.0
 
 Added support for enums,
