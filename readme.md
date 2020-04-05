@@ -43,8 +43,7 @@ All the `structural` traits are dyn-compatible(also known as object-safe),
 and no change will be made to make them not dyn-compatible.
 
 By default all structural types are open,
-structs and enums can have more variants and or fields than are required.
-
+structs and enums can have more variants and or fields than are required.<br>
 The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
 this is useful for exhaustive matching of variants (in the [`switch`] macro).

@@ -1,6 +1,6 @@
 [package]
 name = "structural"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -61,7 +61,7 @@ all=[
 
 
 [dependencies]
-structural_derive={version="=0.3.0",path="../structural_derive"}
+structural_derive={version="=0.3.1",path="../structural_derive"}
 
 [dependencies.core_extensions]
 version="0.1.15"

@@ -108,10 +108,11 @@ fn field_path_nested() {
         fp!(0.1)
     );
     // `0.1.2`,`0.1 .2`,`0 .1.2` and `0 .1 .2` are tokenized differently
+    #[rustfmt::skip]
     path_assertion!(
         fp!(0.1.2),
         NestedFieldPath<(S_0, S_1, S_2)>,
-        fp!(0.1.2),
+        fp!(0 .1 .2),
         fp!(0 .1.2),
         fp!(0.1 .2),
         fp!("0"."1"."2")
