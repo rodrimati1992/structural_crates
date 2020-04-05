@@ -162,6 +162,14 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// The `rev_get_field_raw_mut` function must return a valid pointer derived
 /// from the passed in pointer, that is safe to dereference mutably.
 ///
+/// ### Locality of Implementations
+///
+/// You must only implement `RevGetFieldMutImpl` for field paths defined locally
+/// (in the same crate as the implementation itself).
+///
+/// This allows crate authors to add more `RevGetFieldMutImpl` impls while
+/// lowering the rist of aliasing the returned pointer from `rev_get_field_raw_mut`.
+///
 /// # Use as bound
 ///
 /// For examples of using `RevGetFieldMutImpl` as a bound look at example for:

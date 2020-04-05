@@ -9,6 +9,7 @@ use crate::{
 };
 
 use as_derive_utils::{
+    datastructure::FieldIdent,
     gen_params_in::{GenParamsIn, InWhat},
     return_spanned_err,
 };
@@ -70,7 +71,7 @@ pub struct StructuralDataType<'a> {
 
 #[derive(Debug, Clone)]
 pub struct StructuralVariant<'a> {
-    pub(crate) name: VariantIdent<'a>,
+    pub(crate) name: IdentType<'a>,
     /// The name of the original variant.
     /// This is Some if all these conditions are true:
     /// - this was derived from a type definition.
@@ -86,14 +87,14 @@ pub struct StructuralVariant<'a> {
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TinyStructuralField<'a> {
     pub(crate) access: Access,
-    pub(crate) ident: IdentOrIndexRef<'a>,
+    pub(crate) ident: IdentType<'a>,
     pub(crate) ty: FieldType<'a>,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct StructuralField<'a> {
     pub(crate) access: Access,
-    pub(crate) ident: IdentOrIndexRef<'a>,
+    pub(crate) ident: IdentType<'a>,
     /// The name of the original field.
     /// This is Some if all these conditions are true:
     /// - this was derived from a type definition.
@@ -120,10 +121,12 @@ pub(crate) enum Exhaustiveness<'a> {
 pub(crate) type TypeParamBounds = Punctuated<syn::TypeParamBound, syn::token::Add>;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub(crate) enum VariantIdent<'a> {
+pub(crate) enum IdentType<'a> {
     Ident(IdentOrIndexRef<'a>),
     /// The variant name is determined by a generic parameter
     Generic(&'a Ident),
+    /// The variant name is determined by a type
+    SomeType(&'a syn::Type),
 }
 
 // A hack to allow borrowing from the arena inside a parser
@@ -156,44 +159,69 @@ impl<'a> StructuralField<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<'a> Display for VariantIdent<'a> {
+impl<'a> From<&'a Ident> for IdentType<'a> {
+    #[inline]
+    fn from(from: &'a Ident) -> Self {
+        IdentType::Ident(IdentOrIndexRef::Ident(from))
+    }
+}
+
+impl<'a> From<&'_ FieldIdent<'a>> for IdentType<'a> {
+    fn from(x: &'_ FieldIdent<'a>) -> Self {
+        IdentType::Ident(IdentOrIndexRef::from(x))
+    }
+}
+
+impl<'a> Display for IdentType<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            VariantIdent::Ident(ident) => Display::fmt(&ident.tstr_tokens(), f),
-            VariantIdent::Generic(ident) => Display::fmt(ident, f),
+            IdentType::Ident(ident) => Display::fmt(&ident.tstr_tokens(), f),
+            IdentType::Generic(ident) => Display::fmt(ident, f),
+            IdentType::SomeType(ty) => Display::fmt(&ty.to_token_stream(), f),
         }
     }
 }
 
-impl<'a> ToTokens for VariantIdent<'a> {
+impl<'a> ToTokens for IdentType<'a> {
     fn to_tokens(&self, ts: &mut TokenStream2) {
         match self {
-            VariantIdent::Ident(ident) => ts.append_all(ident.tstr_tokens()),
-            VariantIdent::Generic(ident) => ident.to_tokens(ts),
+            IdentType::Ident(ident) => ts.append_all(ident.tstr_tokens()),
+            IdentType::Generic(ident) => ident.to_tokens(ts),
+            IdentType::SomeType(ty) => ty.to_tokens(ts),
         }
     }
 }
 
-impl<'a> VariantIdent<'a> {
-    pub(crate) fn span(&self) -> Span {
-        match *self {
-            VariantIdent::Ident(ident) => ident.span(),
-            VariantIdent::Generic(ident) => ident.span(),
+impl<'a> IdentType<'a> {
+    pub(crate) fn tstr_tokens(self) -> TokenStream2 {
+        match self {
+            IdentType::Ident(ident) => ident.tstr_tokens(),
+            IdentType::Generic(ident) => ident.to_token_stream(),
+            IdentType::SomeType(ty) => ty.to_token_stream(),
         }
     }
 
-    pub(crate) fn tokens(&self) -> TokenStream2 {
+    pub(crate) fn span(self) -> Span {
         match self {
-            VariantIdent::Ident(ident) => ident.tstr_tokens(),
-            VariantIdent::Generic(ident) => ident.to_token_stream(),
+            IdentType::Ident(ident) => ident.span(),
+            IdentType::Generic(ident) => ident.span(),
+            IdentType::SomeType(ty) => syn::spanned::Spanned::span(ty),
+        }
+    }
+
+    pub(crate) fn tokens(self) -> TokenStream2 {
+        match self {
+            IdentType::Ident(ident) => ident.tstr_tokens(),
+            IdentType::Generic(ident) => ident.to_token_stream(),
+            IdentType::SomeType(ty) => ty.to_token_stream(),
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl From<Option<VariantIdent<'_>>> for StructOrEnum {
-    fn from(opt: Option<VariantIdent<'_>>) -> Self {
+impl From<Option<IdentType<'_>>> for StructOrEnum {
+    fn from(opt: Option<IdentType<'_>>) -> Self {
         match opt {
             Some(_) => StructOrEnum::Enum,
             None => StructOrEnum::Struct,
@@ -215,7 +243,7 @@ impl ReplaceBounds {
     pub(crate) fn to_tokens(
         &self,
         field_bounds: &mut TokenStream2,
-        variant_name: VariantIdent<'_>,
+        variant_name: IdentType<'_>,
     ) -> Result<(), syn::Error> {
         let bounds_str = syn::LitStr::new(
             &self.bounds.replace(Self::NEEDLE, &variant_name.to_string()),
@@ -236,10 +264,11 @@ impl ReplaceBounds {
         Ok(())
     }
 
-    pub(crate) fn get_docs(&self, variant_name: VariantIdent<'_>) -> String {
+    pub(crate) fn get_docs(&self, variant_name: IdentType<'_>) -> String {
         let replacement = match variant_name {
-            VariantIdent::Ident(ident) => format!("TS!({})", ident),
-            VariantIdent::Generic(ident) => ident.to_string(),
+            IdentType::Ident(ident) => format!("TS!({})", ident),
+            IdentType::Generic(ident) => ident.to_string(),
+            IdentType::SomeType(ty) => ty.to_token_stream().to_string(),
         };
         self.bounds.replace(Self::NEEDLE, &replacement)
     }
@@ -341,7 +370,7 @@ pub(crate) fn macro_impl(aliases: StructuralAliases<'_>) -> Result<TokenStream2,
 
 fn process_field(
     field: &StructuralField<'_>,
-    variant_ident: Option<VariantIdent<'_>>,
+    variant_ident: Option<IdentType<'_>>,
     field_bounds: &mut TokenStream2,
 ) {
     use self::FieldType as FT;
@@ -451,7 +480,7 @@ where
             type_name: datatype.type_name,
             fields: Vec::new(),
             variants: vec![StructuralVariant {
-                name: VariantIdent::Generic(&variant_name_generic),
+                name: IdentType::Generic(&variant_name_generic),
                 pub_vari_rename: None,
                 fields: datatype.fields.clone(),
                 is_newtype: false,

@@ -51,7 +51,7 @@ impl<'a> ImplStruct<'a> {
 
         while !input.is_empty() {
             let access = input.parse()?;
-            fields.push(TinyStructuralField::parse(access, &arenas, input)?);
+            fields.push(TinyStructuralField::parse(access, &[], &arenas, input)?);
             input.peek_parse(syn::Token![,])?;
         }
 

@@ -39,9 +39,11 @@ For **examples** you can look at
 The way that this library emulates structural types is by using traits as bounds
 or trait objects.
 
-By default all structural types are open,
-structs and enums can have more variants and or fields than are required.
+All the `structural` traits are dyn-compatible(also known as object-safe),
+and no change will be made to make them not dyn-compatible.
 
+By default all structural types are open,
+structs and enums can have more variants and or fields than are required.<br>
 The only exception to this is exhaustive enums,
 in which the variant count and names must match exactly,
 this is useful for exhaustive matching of variants (in the [`switch`] macro).

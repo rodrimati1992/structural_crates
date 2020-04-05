@@ -18,3 +18,18 @@ pub(crate) fn remove_raw_prefix(mut s: String) -> String {
     }
     s
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+pub(crate) trait StrExt: AsRef<str> {
+    fn surrounded_with(&self, before: &str, after: &str) -> String {
+        let this = self.as_ref();
+        let mut s = String::with_capacity(this.len() + before.len() + after.len());
+        s.push_str(before);
+        s.push_str(this);
+        s.push_str(after);
+        s
+    }
+}
+
+impl<T> StrExt for T where T: AsRef<str> {}

@@ -368,14 +368,18 @@ pub type GetFieldType4<This, FieldPath, FieldPath2, FieldPath3, FieldPath4> =
 ///
 /// - The field you access must always be the same one.
 ///
-/// - That no implementation returns a pointer to a field that other ones also return,
+/// - That no implementation returns a pointer to a field that (other) implementations
+/// for the same type also return,
 ///
-/// You can unerase the pointer by casting it to `*mut  Self`
+/// - That no implementation returns a pointer to a field that (other)
+/// `GetVariantFieldMut` implementations for the same type also return,
+///
+/// You can unerase the pointer by casting it to `*mut Self`
 /// (you can also use any type that's compatible with `Self`).
 ///
 /// Your implementation of the `get_field_raw_mut_fn` method must only return a
 /// function pointer to a function that ensures the properties listed
-/// [here](#raw_mut_properties).
+/// [above](#raw_mut_properties).
 ///
 ///
 /// # Example: Usage as Bound

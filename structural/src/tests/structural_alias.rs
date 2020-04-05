@@ -530,3 +530,58 @@ mod non_ident_variant_names {
         )
     }
 }
+
+mod with_generic_names {
+    use super::*;
+
+    tstr_aliases! {
+        mod tstrs{
+            Ooh,
+            Qux,
+            Foo,
+            Bar,
+            Baz,
+        }
+    }
+
+    structural_alias! {
+        pub trait GenericNames<B,C,D>{
+            <TS!(a)>:u32,
+            <B>:i32,
+            Foo{
+                c:(),
+                ref <FP!("what the")>:i8,
+                mut move <C>:&'static str,
+                <tstrs::Ooh>:&'static str,
+            },
+            Bar(i16,u16),
+            ref <TS!(Baz)>(u32),
+            mut <tstrs::Qux>(u64),
+            mut move<D>(u128),
+        }
+    }
+
+    assert_equal_bounds! {
+        trait Dummy0[B,C,D,],
+        (GenericNames<B,C,D>),
+        (
+            IntoFieldMut<TS!(a),Ty=u32>+
+            IntoFieldMut<B,Ty=i32>+
+
+            IntoVariantFieldMut<tstrs::Foo, TS!(c),Ty=()>+
+            GetVariantField<tstrs::Foo, TS!("what the"),Ty=i8>+
+            IntoVariantFieldMut<tstrs::Foo, C,Ty=&'static str>+
+            IntoVariantFieldMut<tstrs::Foo, tstrs::Ooh,Ty=&'static str>+
+
+            IntoVariantFieldMut<tstrs::Bar, TS!(0),Ty=i16>+
+            IntoVariantFieldMut<tstrs::Bar, TS!(1),Ty=u16>+
+
+            GetVariantField<tstrs::Baz, TS!(0),Ty=u32>+
+
+            GetVariantFieldMut<tstrs::Qux, TS!(0),Ty=u64>+
+
+            IntoVariantFieldMut<D, TS!(0),Ty=u128>+
+
+        )
+    }
+}

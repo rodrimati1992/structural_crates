@@ -3,8 +3,8 @@ use crate::{
     datastructure::StructOrEnum,
     ident_or_index::IdentOrIndexRef,
     structural_alias_impl_mod::{
-        Exhaustiveness, FieldType, StructuralAliasParams, StructuralDataType, StructuralField,
-        StructuralVariant, VariantIdent,
+        Exhaustiveness, FieldType, IdentType, StructuralAliasParams, StructuralDataType,
+        StructuralField, StructuralVariant,
     },
     tokenizers::tstr_tokens,
     write_docs::{self, DocsFor},
@@ -170,16 +170,16 @@ fn deriving_structural<'a>(
                     return None;
                 }
 
-                let ident: IdentOrIndexRef<'a> = match &config_f.renamed {
-                    Some(x) => x.borrowed(),
-                    None => (&field.ident).into(),
+                let ident = match &config_f.renamed {
+                    Some(x) => IdentType::Ident(x.borrowed()),
+                    None => IdentType::from(&field.ident),
                 };
 
                 Some(StructuralField {
                     access: config_f.access,
                     ident,
                     pub_field_rename: if field.is_public() && config_f.renamed.is_some() {
-                        Some((&field.ident).into())
+                        Some(IdentOrIndexRef::from(&field.ident))
                     } else {
                         None
                     },
@@ -214,7 +214,7 @@ fn deriving_structural<'a>(
                     };
 
                     StructuralVariant {
-                        name: VariantIdent::Ident(name),
+                        name: IdentType::Ident(name),
                         pub_vari_rename: if options.generate_docs && config_v.renamed.is_some() {
                             Some(variant.name.into())
                         } else {

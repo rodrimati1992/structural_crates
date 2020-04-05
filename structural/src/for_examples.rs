@@ -169,3 +169,25 @@ structural_alias! {
         Bar(i16,u16),
     }
 }
+
+tstr_aliases! {
+    Ooh_TStr = Ooh,
+    Qux_TStr = Qux,
+}
+
+structural_alias! {
+    pub trait WithGenericNames<B,C,D>{
+        <TS!(a)>:u32,
+        <B>:i32,
+        Foo{
+            c:(),
+            ref <FP!("what the")>:i8,
+            mut move <C>:&'static str,
+            <Ooh_TStr>:&'static str,
+        },
+        Bar(i16,u16),
+        ref <TS!(Baz)>,
+        mut <Qux_TStr>,
+        mut move <D>,
+    }
+}
