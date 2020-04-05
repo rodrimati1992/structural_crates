@@ -100,9 +100,20 @@ fn field_path_nested() {
     path_assertion!(fp!(21), S_21, fp!("21"));
     path_assertion!(fp!(ab0), S_ab0, fp!("ab0"));
     path_assertion!(fp!(0.1), NestedFieldPath<(S_0, S_1)>, fp!("0"."1"));
+    // 0.1 and 0 .1 are tokenized differently
+    path_assertion!(
+        fp!(0.1),
+        NestedFieldPath<(S_0, S_1)>,
+        fp!("0"."1"),
+        fp!(0.1)
+    );
+    // `0.1.2`,`0.1 .2`,`0 .1.2` and `0 .1 .2` are tokenized differently
     path_assertion!(
         fp!(0.1.2),
         NestedFieldPath<(S_0, S_1, S_2)>,
+        fp!(0.1.2),
+        fp!(0 .1.2),
+        fp!(0.1 .2),
         fp!("0"."1"."2")
     );
     path_assertion!(fp!(0.1.2.3), NestedFieldPath<(S_0, S_1, S_2, S_3)>);

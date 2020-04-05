@@ -39,6 +39,9 @@ For **examples** you can look at
 The way that this library emulates structural types is by using traits as bounds
 or trait objects.
 
+All the `structural` traits are dyn-compatible(also known as object-safe),
+and no change will be made to make them not dyn-compatible.
+
 By default all structural types are open,
 structs and enums can have more variants and or fields than are required.
 
