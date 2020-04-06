@@ -45,7 +45,7 @@ typed-arena = "~1.5"
 
 [dependencies.core_extensions]
 default_features=false
-version="0.1"
+version="0.1.16"
 
 [dependencies.syn]
 version = "1.0"
@@ -56,5 +56,5 @@ features=["full","extra-traits"]
 ###### as_derive_utils
 
 [dependencies.as_derive_utils]
-version="0.8.1"
+version="0.8.2"
 default-features=false

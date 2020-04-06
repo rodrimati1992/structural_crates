@@ -64,10 +64,10 @@ all=[
 structural_derive={version="=0.3.1",path="../structural_derive"}
 
 [dependencies.core_extensions]
-version="0.1.15"
+version="0.1.16"
 default_features=false
 features=["colltraits"]
 
 
 [build-dependencies]
-rustc_version = "0.2"
+rustc_version = "0.2.3"
