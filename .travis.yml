@@ -49,9 +49,9 @@ matrix:
 script:
   - cargo update -Z minimal-versions
   - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
-  - cargo build --test --features testing
+  - cargo build --tests --features testing
   - cd "${TRAVIS_BUILD_DIR}/structural/"
-  - cargo build --test --features testing
+  - cargo build --tests --features testing
   
   - cargo update
   - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
