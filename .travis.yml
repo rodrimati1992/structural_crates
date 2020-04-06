@@ -10,6 +10,12 @@ matrix:
     - rust: nightly  
     - rust: nightly
       script:
+        - cargo update -Z minimal-versions
+        - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
+        - cargo build --tests --features testing
+        - cd "${TRAVIS_BUILD_DIR}/structural/"
+        - cargo build --tests --features testing
+
         - cd "${TRAVIS_BUILD_DIR}/structural/"
 
         - MIRI_NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)
@@ -47,12 +53,6 @@ matrix:
     - rust: 1.40.0
 
 script:
-  - cargo update -Z minimal-versions
-  - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
-  - cargo build --tests --features testing
-  - cd "${TRAVIS_BUILD_DIR}/structural/"
-  - cargo build --tests --features testing
-  
   - cargo update
   - cd "${TRAVIS_BUILD_DIR}/structural_derive/"
   - cargo test --features testing
