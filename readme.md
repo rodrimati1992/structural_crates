@@ -59,7 +59,9 @@ The changelog is in the "Changelog.md" file.
 
 # Future plans
 
-None for now
+### 0.4
+
+The ability to convert a structural type into multiple fields by value.
 
 # no-std support
 
