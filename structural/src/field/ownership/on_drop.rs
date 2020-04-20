@@ -1,4 +1,4 @@
-use super::{DropFields, DroppedFields};
+use super::{DropFields, DroppedFields, PrePostDropFields};
 
 use std_::mem::ManuallyDrop;
 

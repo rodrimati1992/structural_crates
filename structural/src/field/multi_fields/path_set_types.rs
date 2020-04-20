@@ -5,7 +5,7 @@ use crate::{
         ownership::AndDroppedFields, DropFields, IsFieldErr, NormalizeFields, NormalizeFieldsOut,
         RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutField,
     },
-    path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, ShallowFieldPath, UniquePaths},
+    path::{FieldPathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths},
 };
 
 #[allow(unused_imports)]

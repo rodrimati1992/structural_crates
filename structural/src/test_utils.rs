@@ -1,4 +1,46 @@
-use std_::cell::Cell;
+use std_::{cell::Cell, mem::ManuallyDrop};
+
+///////////////////////////////////////////////////////////////////////////////
+
+pub(crate) struct OrOnDrop<'a, T> {
+    value: T,
+    bits: &'a Cell<u64>,
+    bits_to_set: u64,
+}
+
+impl<'a, T> OrOnDrop<'a, T> {
+    pub(crate) fn new(value: T, bits: &'a Cell<u64>, bits_to_set: u64) -> Self {
+        Self {
+            value,
+            bits,
+            bits_to_set,
+        }
+    }
+    pub fn into_inner(self) -> T {
+        self.on_drop();
+        let mut this = ManuallyDrop::new(self);
+        unsafe { std::ptr::read(&mut this.value) }
+    }
+    pub fn bits_to_set(&self) -> u64 {
+        self.bits_to_set
+    }
+    fn on_drop(&self) {
+        let prev = self.bits.get();
+        let next = prev | self.bits_to_set;
+        assert_ne!(
+            prev, next,
+            "Expected a different prev and next,found both the the same value:\n{:b}",
+            prev,
+        );
+        self.bits.set(next);
+    }
+}
+
+impl<'a, T> Drop for OrOnDrop<'a, T> {
+    fn drop(&mut self) {
+        self.on_drop();
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

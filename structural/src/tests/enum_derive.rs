@@ -36,7 +36,7 @@ fn option_test() {
 #[derive(Debug, Clone, PartialEq)]
 enum Pair<T, U> {
     AllCorrect(T),
-    Pair { left: T, right: U },
+    Pair { left: u32, right: U },
     Unit,
 }
 
@@ -55,26 +55,30 @@ crate::_private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
+        drop_fields=just_fields,
         variant_count=TS!(3),
         (
             AllCorrect,
             pair_strs::AllCorrect,
             kind=newtype,
-            fields((IntoVariantFieldMut,0:T))
+            not_public(),
+            fields((IntoVariantFieldMut,0:T,dropping(f0, 0)))
         )
         (
             Pair,
             pair_strs::Pair,
             kind=regular,
+            not_public(),
             fields(
-                (IntoVariantFieldMut,left:T ,pair_strs::left )
-                (IntoVariantFieldMut,right:U,pair_strs::right)
+                (IntoVariantFieldMut,left:u32,dropping(left , 0),pair_strs::left )
+                (IntoVariantFieldMut,right:U,dropping(right, 1),pair_strs::right)
             )
         )
         (
             Unit,
             pair_strs::Unit,
             kind=regular,
+            not_public(),
             fields()
         )
     }
@@ -88,7 +92,7 @@ enum DerivingPair<T, U> {
     #[struc(newtype)]
     AllCorrect(T),
     Pair {
-        left: T,
+        left: u32,
         right: U,
     },
     Unit,
@@ -110,7 +114,7 @@ assert_equal_bounds! {
     (DerivingPair_ESI<T,U>),
     (
           IsVariant<dp_strs::AllCorrect>
-        + IntoVariantFieldMut<dp_strs::Pair, dp_strs::left, Ty = T>
+        + IntoVariantFieldMut<dp_strs::Pair, dp_strs::left, Ty = u32>
         + IntoVariantFieldMut<dp_strs::Pair, dp_strs::right, Ty = U>
         + IsVariant<dp_strs::Unit>
         + VariantCount<Count = dp_strs::vc>
@@ -146,22 +150,22 @@ macro_rules! pair_accessors {
             assert_eq!(this.clone().into_field(fp!(::Pair.right)), None);
         }
         {
-            let mut this = $type_::<bool, u32>::Pair {
-                left: false,
+            let mut this = $type_::<(u32,), u32>::Pair {
+                left: 55,
                 right: 100,
             };
             assert_eq!(this.field_(fp!(::AllCorrect)).map(drop), None);
-            assert_eq!(this.field_(fp!(::Pair.left)), Some(&false));
+            assert_eq!(this.field_(fp!(::Pair.left)), Some(&55));
             assert_eq!(this.field_(fp!(::Pair.right)), Some(&100));
-            assert_eq!(this.fields(fp!(::Pair=>left,right)), Some((&false,&100)));
+            assert_eq!(this.fields(fp!(::Pair=>left,right)), Some((&55,&100)));
 
             assert_eq!(this.field_mut(fp!(::AllCorrect)).map(|_|()), None);
-            assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut false));
+            assert_eq!(this.field_mut(fp!(::Pair.left)), Some(&mut 55));
             assert_eq!(this.field_mut(fp!(::Pair.right)), Some(&mut 100));
-            assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), Some((&mut false,&mut 100)));
+            assert_eq!(this.fields_mut(fp!(::Pair=>left,right)), Some((&mut 55,&mut 100)));
 
             assert_eq!(this.clone().into_field(fp!(::AllCorrect)), None);
-            assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(false));
+            assert_eq!(this.clone().into_field(fp!(::Pair.left)), Some(55));
             assert_eq!(this.clone().into_field(fp!(::Pair.right)), Some(100));
         }
         {

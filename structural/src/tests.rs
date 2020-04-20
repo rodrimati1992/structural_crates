@@ -14,6 +14,7 @@ mod delegation;
 mod enum_derive;
 mod field_paths;
 mod impl_struct;
+mod into_fields;
 mod make_struct;
 mod multi_fields;
 mod multi_nested_fields;

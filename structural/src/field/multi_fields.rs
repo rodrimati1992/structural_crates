@@ -4,9 +4,8 @@ Contains traits for accessing multiple fields at once.
 #![allow(non_snake_case)]
 
 use crate::{
-    field::NormalizeFields,
+    field::{NormalizeFields, NormalizeFieldsOut},
     path::{IsMultiFieldPath, UniquePaths},
-    NormalizeFieldsOut,
 };
 
 #[allow(unused_imports)]
