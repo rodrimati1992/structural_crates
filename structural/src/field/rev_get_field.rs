@@ -5,8 +5,8 @@ Contains traits implemented on field paths,taking Structural types as parameters
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{errors::IsFieldErr, FailedAccess, InfallibleAccess},
-    path::IsSingleFieldPath,
+    field::{errors::IsFieldErr, DroppedFields, FailedAccess, InfallibleAccess},
+    path::{IsSingleFieldPath, ShallowFieldPath},
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ mod path_set_types;
 pub type RevGetFieldType<FieldPath, This> = <FieldPath as RevFieldType<This>>::Ty;
 
 /// Queries the error type returned by `Rev*Field` methods.
-pub type RevGetFieldErr<'a, FieldPath, This> = <FieldPath as RevGetFieldImpl<'a, This>>::Err;
+pub type RevFieldErrOut<FieldPath, This> = <FieldPath as RevFieldErr<This>>::Err;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -69,6 +69,24 @@ pub type RevGetFieldErr<'a, FieldPath, This> = <FieldPath as RevGetFieldImpl<'a,
 pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
     /// The type of the field.
     type Ty: ?Sized;
+}
+
+pub trait RevFieldErr<This: ?Sized>: IsSingleFieldPath + RevFieldType<This> {
+    /// The error returned by `rev_*` methods.
+    ///
+    /// This can be either:
+    ///
+    /// - [`InfallibleAccess`]:
+    ///     For `Rev*` accessors that return a field that always exists,
+    ///     most often in a struct.
+    ///
+    /// - [`FailedAccess`]:
+    ///     For `Rev*` accessors that attempt to return a field that may not exist,
+    ///     most often inside an enum.
+    ///
+    /// [`InfallibleAccess`]: ../errors/enum.InfallibleAccess.html
+    /// [`FailedAccess`]: ../errors/struct.FailedAccess.html
+    type Err: IsFieldErr;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -96,7 +114,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 ///
 /// ```rust
-/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl};
+/// use structural::field::{FailedAccess,RevFieldType,RevFieldErr,RevGetFieldImpl};
 /// use structural::path::IsSingleFieldPath;
 /// use structural::StructuralExt;
 ///
@@ -107,9 +125,10 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 /// impl<'a,T> RevFieldType<[T]> for FromEnd {
 ///     type Ty = T;
 /// }
-/// impl<'a,T> RevGetFieldImpl<'a,[T]> for FromEnd {
+/// impl<'a,T> RevFieldErr<[T]> for FromEnd {
 ///     type Err = FailedAccess;
-///
+/// }
+/// impl<'a,T> RevGetFieldImpl<'a,[T]> for FromEnd {
 ///     fn rev_get_field(self, this: &'a [T]) -> Result<&'a T, FailedAccess>{
 ///         let len=this.len();
 ///         this.get(len.wrapping_sub(self.0 + 1))
@@ -127,23 +146,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
 ///
 ///
 /// ```
-pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
-    /// The error returned by `rev_*` methods.
-    ///
-    /// This can be either:
-    ///
-    /// - [`InfallibleAccess`]:
-    ///     For `Rev*` accessors that return a field that always exists,
-    ///     most often in a struct.
-    ///
-    /// - [`FailedAccess`]:
-    ///     For `Rev*` accessors that attempt to return a field that may not exist,
-    ///     most often inside an enum.
-    ///
-    /// [`InfallibleAccess`]: ../errors/enum.InfallibleAccess.html
-    /// [`FailedAccess`]: ../errors/struct.FailedAccess.html
-    type Err: IsFieldErr;
-
+pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldErr<This> {
     /// Accesses the field that `self` represents inside of `this`,by reference.
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err>;
 }
@@ -186,9 +189,11 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 /// based on a runtime value.
 ///
 /// ```rust
-/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevGetFieldMutImpl};
-/// use structural::path::IsSingleFieldPath;
-/// use structural::{StructuralExt,ts};
+/// use structural::{
+///     field::{FailedAccess, RevFieldErr, RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl},
+///     path::IsSingleFieldPath,
+///     StructuralExt, ts,
+/// };
 ///
 /// let mut tup=(3,5,8,13);
 ///
@@ -217,13 +222,19 @@ pub trait RevGetFieldImpl<'a, This: ?Sized>: RevFieldType<This> {
 ///     type Ty = P0::Ty;
 /// }
 ///
+/// impl<P0,P1,T> RevFieldErr<T> for Choose<P0,P1>
+/// where
+///     P0: RevFieldErr<T>,
+///     P1: RevFieldErr<T, Ty=P0::Ty, Err=P0::Err>,
+/// {
+///     type Err = P0::Err;
+/// }
+///
 /// impl<'a,P0,P1,T> RevGetFieldImpl<'a,T> for Choose<P0,P1>
 /// where
 ///     P0: RevGetFieldImpl<'a,T>,
 ///     P1: RevGetFieldImpl<'a,T, Ty=P0::Ty, Err=P0::Err>,
 /// {
-///     type Err = P0::Err;
-///
 ///     fn rev_get_field(self, this: &'a T) -> Result<&'a P0::Ty, P0::Err>{
 ///         match self.0 {
 ///             Which::First=>self.1.rev_get_field(this),
@@ -298,18 +309,15 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// since the layout of `Foo` is allowed to change.
 ///
 /// ```rust
-/// use structural::field::{FailedAccess,RevFieldType,RevGetFieldImpl,RevIntoFieldImpl};
-/// use structural::path::IsSingleFieldPath;
-/// use structural::{StructuralExt,fp};
+/// use structural::{
+///     field::{FailedAccess, RevFieldErr, RevFieldType, RevGetFieldImpl, RevIntoFieldImpl},
+///     path::IsSingleFieldPath,
+///     StructuralExt, fp,
+/// };
 ///
 /// use core::mem;
 ///
 /// let mut tup=(3,5,8,13);
-///
-/// assert_eq!( tup.field_(Wrapped(fp!(0))), &Newtype(3) );
-/// assert_eq!( tup.field_(Wrapped(fp!(1))), &Newtype(5) );
-/// assert_eq!( tup.field_(Wrapped(fp!(2))), &Newtype(8) );
-/// assert_eq!( tup.field_(Wrapped(fp!(3))), &Newtype(13) );
 ///
 /// assert_eq!( tup.into_field(Wrapped(fp!(0))), Newtype(3) );
 /// assert_eq!( tup.into_field(Wrapped(fp!(1))), Newtype(5) );
@@ -333,21 +341,16 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 ///     type Ty = Newtype<P::Ty>;
 /// }
 ///
-/// impl<'a,P,T> RevGetFieldImpl<'a,T> for Wrapped<P>
+/// impl<P,T> RevFieldErr<T> for Wrapped<P>
 /// where
-///     P: RevGetFieldImpl<'a,T>,
+///     P: RevFieldErr<T>,
 /// {
 ///     type Err = P::Err;
-///
-///     fn rev_get_field(self, this: &'a T) -> Result<&'a Self::Ty, P::Err>{
-///         self.0.rev_get_field(this)
-///             .map(|x|unsafe{ mem::transmute::<&P::Ty,&Newtype<P::Ty>>(x) })
-///     }
 /// }
 ///
-/// impl<'a,P,T> RevIntoFieldImpl<'a,T> for Wrapped<P>
+/// impl<P,T> RevIntoFieldImpl<T> for Wrapped<P>
 /// where
-///     P: RevIntoFieldImpl<'a,T>,
+///     P: RevIntoFieldImpl<T>,
 ///     P::Ty: Sized,
 /// {
 ///     fn rev_into_field(self, this: T) -> Result<Self::Ty, Self::Err>
@@ -359,11 +362,23 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 ///     }
 /// }
 /// ```
-pub trait RevIntoFieldImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
+pub trait RevIntoFieldImpl<This: ?Sized>: RevFieldErr<This> {
     /// Accesses the field that `self` represents inside of `this`,by value.
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err>
     where
         This: Sized,
+        Self::Ty: Sized;
+}
+
+pub unsafe trait RevMoveOutField<This: ?Sized>:
+    RevIntoFieldImpl<This> + ShallowFieldPath
+{
+    unsafe fn rev_move_out_field(
+        self,
+        this: &mut This,
+        dropped: &mut DroppedFields,
+    ) -> Result<Self::Ty, Self::Err>
+    where
         Self::Ty: Sized;
 }
 
@@ -372,13 +387,13 @@ pub trait RevIntoFieldImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This> {
 macro_rules! declare_accessor_trait_alias {
     (
         $(#[$attr:meta])*
-        $vis:vis trait $trait_name:ident<$lt:lifetime,$This:ident>=
+        $vis:vis trait $trait_name:ident<$($lt:lifetime,)?$This:ident>=
         $($supertraits:tt)*
     ) => (
         $(#[$attr])*
-        $vis trait $trait_name<$lt, $This >:$($supertraits)* {}
+        $vis trait $trait_name<$($lt,)? $This >:$($supertraits)* {}
 
-        impl<$lt,Path,$This> $trait_name<$lt, $This > for Path
+        impl<$($lt,)? Path,$This> $trait_name<$($lt,)? $This > for Path
         where
             Path:$($supertraits)*
         {}
@@ -559,17 +574,17 @@ declare_accessor_trait_alias! {
     ///
     /// assert_eq!( get_nested(struct_), Ordering::Greater );
     ///
-    /// fn get_nested<'a,T>(this:T)->Ordering
+    /// fn get_nested<T>(this:T)->Ordering
     /// where
-    ///     FP!(bar.bar.bar): RevIntoField<'a,T,Ty=Ordering>
+    ///     FP!(bar.bar.bar): RevIntoField<T,Ty=Ordering>
     /// {
     ///     this.into_field(fp!(bar.bar.bar))
     /// }
     ///
     ///
     /// ```
-    pub trait RevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=InfallibleAccess>
+    pub trait RevIntoField<This>=
+        RevIntoFieldImpl<This,Err=InfallibleAccess>
 }
 
 declare_accessor_trait_alias! {
@@ -593,17 +608,17 @@ declare_accessor_trait_alias! {
     /// assert_eq!( get_nested(nope), None );
     /// assert_eq!( get_nested(boom), Some(&[3,5,8,13][..]) );
     ///
-    /// fn get_nested<'a,T>(this:T)->Option<&'static [u16]>
+    /// fn get_nested<T>(this:T)->Option<&'static [u16]>
     /// where
-    ///     FP!(foo::Boom.b): OptRevIntoField<'a,T,Ty=&'static [u16]>
+    ///     FP!(foo::Boom.b): OptRevIntoField<T,Ty=&'static [u16]>
     /// {
     ///     this.into_field(fp!(foo::Boom.b))
     /// }
     ///
     ///
     /// ```
-    pub trait OptRevIntoField<'a,This>=
-        RevIntoFieldImpl<'a,This,Err=FailedAccess>
+    pub trait OptRevIntoField<This>=
+        RevIntoFieldImpl<This,Err=FailedAccess>
 }
 
 declare_accessor_trait_alias! {
@@ -661,7 +676,7 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait RevIntoFieldMut<'a,This>=
-        RevIntoField<'a,This> + RevGetFieldMut<'a,This>
+        RevIntoField<This> + RevGetFieldMut<'a,This>
 }
 
 declare_accessor_trait_alias! {
@@ -713,5 +728,5 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevIntoFieldMut<'a,This>=
-        OptRevIntoField<'a,This> + OptRevGetFieldMut<'a,This>
+        OptRevIntoField<This> + OptRevGetFieldMut<'a,This>
 }
