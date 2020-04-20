@@ -1,3 +1,83 @@
+/// For creating a raw pointer of an enum field,as either `Some(NonNull<_>)` or `None`.
+///
+/// # Safety
+///
+/// The `$pointer` must be raw pointer to a valid(and fully initialized)
+/// instance of the `$enum` type.
+///
+/// # Example
+///
+/// For an example of using this macro look at
+/// [the manual implementation example for `GetVariantFieldMut`
+/// ](./field/trait.GetVariantFieldMut.html#manual-impl-example)
+#[macro_export]
+macro_rules! z_raw_borrow_enum_field {
+    (
+        $pointer:expr,
+        $enum:ident::$variant:ident.$field:tt : $field_ty:ty
+    ) => {{
+        match *$pointer {
+            $enum::$variant {
+                $field: ref mut field,
+                ..
+            } => {
+                if false {
+                    let _: *mut $field_ty = field;
+                }
+                let ptr = field as *mut $field_ty;
+                Some($crate::pmr::NonNull::new_unchecked(ptr))
+            }
+            #[allow(unreachable_patterns)]
+            _ => None,
+        }
+    }};
+}
+
+/// Implements the [`get_vfield_raw_mut_fn`] and [`get_vfield_raw_mut_unchecked_fn`]
+/// methods from the [`GetVariantFieldMut`] trait.
+///
+/// # Safety
+///
+/// The `$Self` argument must be the `Self` type in the impl block.
+///
+/// # Example
+///
+/// For an example of using this macro look at
+/// [the manual implementation example
+/// ](./field/trait.GetVariantFieldMut.html#manual-impl-example)
+/// for [`GetVariantFieldMut`]
+///
+/// [`GetVariantFieldMut`]: ./field/trait.GetVariantFieldMut.html
+/// [`get_vfield_raw_mut_fn`]:
+/// ./field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_fn
+/// [`get_vfield_raw_mut_unchecked_fn`]:
+/// ./field/trait.GetVariantFieldMut.html#tymethod.get_vfield_raw_mut_unchecked_fn
+#[macro_export]
+macro_rules! z_unsafe_impl_get_vfield_raw_mut_fn {
+    (
+        Self=$Self:ty,
+        variant_tstr=$variant_name:ty,
+        field_tstr=$field_name:ty,
+        field_type=$field_ty:ty,
+    ) => {
+        fn get_vfield_raw_mut_fn(
+            &self,
+        ) -> $crate::pmr::GetVFieldRawMutFn<$variant_name, $field_name, $field_ty> {
+            <$Self as
+                        $crate::pmr::GetVariantFieldMut<$variant_name,$field_name>
+                    >::get_vfield_raw_mut_
+        }
+
+        fn get_vfield_raw_mut_unchecked_fn(
+            &self,
+        ) -> $crate::pmr::GetFieldRawMutFn<$field_name, $field_ty> {
+            <$Self as
+                                        $crate::pmr::GetVariantFieldMut<$variant_name, $field_name>
+                                    >::get_vfield_raw_mut_unchecked
+        }
+    };
+}
+
 /// Implements enum variant+field getter(s)
 #[doc(hidden)]
 #[macro_export]
@@ -16,7 +96,8 @@ macro_rules! _private_impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         newtype(
-            $field_name:tt : $field_ty:ty
+            $field_name:tt : $field_ty:ty,
+            dropping $dropping:tt
             $(,$field_name_param:ty)? $( , )*
         )
     )=>{
@@ -65,6 +146,7 @@ macro_rules! _private_impl_getter_enum{
         )
         regular(
             $field_name:tt : $field_ty:ty,
+            dropping $dropping:tt,
             $field_name_param:ty $( , )*
         )
     )=>{
@@ -116,7 +198,8 @@ macro_rules! _private_impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         newtype(
-            $field_name:tt : $field_ty:ty
+            $field_name:tt : $field_ty:ty,
+            dropping $dropping:tt
             $(,$field_name_param:ty)? $( , )*
         )
     )=>{
@@ -202,6 +285,7 @@ macro_rules! _private_impl_getter_enum{
         )
         regular(
             $field_name:tt : $field_ty:ty,
+            dropping $dropping:tt,
             $field_name_param:ty $( , )*
         )
     )=>{
@@ -276,7 +360,8 @@ macro_rules! _private_impl_getter_enum{
             variant_name($variant_name_str:ty)
         )
         newtype(
-            $field_name:tt : $field_ty:ty
+            $field_name:tt : $field_ty:ty,
+            dropping($field_var:ident, $field_index:expr)
             $(,$field_name_param:ty)? $( , )*
         )
     )=>{
@@ -285,26 +370,34 @@ macro_rules! _private_impl_getter_enum{
         for $self_
         where
             $field_ty: $crate::IntoField<__F,Ty=__Ty>,
+            Self: $crate::pmr::DropFields,
             $($where_)*
         {
             #[inline(always)]
-            fn into_vfield_(
-                self,
-                _:$variant_name_str,
-                name:__F,
-            )->Option<__Ty>{
+            fn into_vfield_(self, _:$variant_name_str, name:__F) -> Option<Self::Ty> {
                 match self {
-                    $enum_::$variant{$field_name:field,..}=>
-                        Some($crate::IntoField::into_field_(field,name)),
+                    $enum_::$variant{$field_name:field,..}=>{
+                        Some($crate::IntoField::into_field_(field,name))
+                    }
                     #[allow(unreachable_patterns)]
                     _=>None
                 }
             }
 
-            $crate::z_impl_box_into_variant_field_method!{
-                variant_tstr= $variant_name_str,
-                field_tstr= __F,
-                field_type= __Ty,
+            #[inline(always)]
+            unsafe fn move_out_vfield_(
+                &mut self,
+                _:$variant_name_str,
+                name:__F,
+                dropped_fields: &mut $crate::pmr::DroppedFields,
+            ) -> Option<Self::Ty> {
+                match self {
+                    $enum_::$variant{$field_name:field,..}=>{
+                        Some($crate::IntoField::move_out_field_(field,name,dropped_fields))
+                    }
+                    #[allow(unreachable_patterns)]
+                    _=>None
+                }
             }
         }
     };
@@ -320,6 +413,7 @@ macro_rules! _private_impl_getter_enum{
         )
         regular(
             $field_name:tt : $field_ty:ty,
+            dropping($field_var:ident, $field_index:expr),
             $field_name_param:ty $( , )*
         )
     )=>{
@@ -327,14 +421,11 @@ macro_rules! _private_impl_getter_enum{
             $crate::pmr::IntoVariantField<$variant_name_str,$field_name_param>
         for $self_
         where
+            Self: $crate::pmr::DropFields,
             $($where_)*
         {
             #[inline(always)]
-            fn into_vfield_(
-                self,
-                _:$variant_name_str,
-                _:$field_name_param,
-            )->Option<$field_ty>{
+            fn into_vfield_(self, _:$variant_name_str, _:$field_name_param)->Option<$field_ty>{
                 match self {
                     $enum_::$variant{$field_name:field,..}=>Some(field),
                     #[allow(unreachable_patterns)]
@@ -342,10 +433,25 @@ macro_rules! _private_impl_getter_enum{
                 }
             }
 
-            $crate::z_impl_box_into_variant_field_method!{
-                variant_tstr= $variant_name_str,
-                field_tstr= $field_name_param,
-                field_type= $field_ty,
+            #[inline(always)]
+            unsafe fn move_out_vfield_(
+                &mut self,
+                _:$variant_name_str,
+                _:$field_name_param,
+                dropped_fields: &mut $crate::pmr::DroppedFields,
+            )->Option<$field_ty>{
+                match self {
+                    $enum_::$variant{$field_name:field,..}=>{
+                        {
+                            use $crate::pmr::DropBit;
+                            const BIT: DropBit = DropBit::new($field_index);
+                            dropped_fields.set_dropped(BIT);
+                        }
+                        Some((field as *mut $field_ty).read())
+                    },
+                    #[allow(unreachable_patterns)]
+                    _=>None
+                }
             }
         }
     };
@@ -430,15 +536,14 @@ macro_rules! _private_impl_getter_enum{
                 variant_name($variant_name_str:ty)
             )
 
-            $field_name:tt : $field_ty:ty
-            $(,$field_name_param:ty)? $( , )*
+            $($field_params:tt)*
         )
     )=>{
         $crate::_private_impl_getter_enum!{
             $trait_
             shared $shared
             newtype(
-                $field_name : $field_ty $(,$field_name_param)?
+                $($field_params)*
             )
         }
     };
@@ -450,9 +555,10 @@ macro_rules! _private_impl_getter_enum{
         kind=newtype
         fields(
             (
-                $trait_:ident ,
-                $field_name:tt : $field_ty:ty
-                    $(,$field_name_param:ty)? $( , )*
+                $trait_:ident,
+                $field_name:tt : $field_ty:ty,
+                dropping $dropping:tt
+                $(,$field_name_param:ty)? $( , )*
             )
         )
     )=>{
@@ -464,7 +570,7 @@ macro_rules! _private_impl_getter_enum{
 
                 shared $shared
 
-                $field_name : $field_ty $(,$field_name_param)?
+                $field_name : $field_ty, dropping $dropping $(,$field_name_param)?
             )
         }
     };
@@ -493,11 +599,13 @@ macro_rules! _private_impl_getters_for_derive_enum{
         where $where_preds:tt
         {
             enum=$enum_:ident
+            drop_fields=$($drop_kind:ident)?,
             $(variant_count=$variant_count:ty,)?
             $((
                 $variant:ident,
                 $variant_tstr:ty,
                 kind=$variant_kind:ident,
+                not_public( $(($priv_field:tt = $priv_field_var:ident))* ),
                 fields($( $field:tt )*)
             ))*
         }
@@ -508,9 +616,6 @@ macro_rules! _private_impl_getters_for_derive_enum{
             $(#[doc=$docs])*
             impl $typarams Structural for $self_
             where $where_preds
-            {
-                variants=[ $( $variant, )* ]
-            }
         }
 
         $(
@@ -539,6 +644,26 @@ macro_rules! _private_impl_getters_for_derive_enum{
                 variant_name($variant_tstr)
             }
         )*
+
+        $crate::_private_impl_drop_fields!{
+            struct_or_enum(enum),
+            drop_kind=$($drop_kind)?,
+
+            impl $typarams DropFields for $self_
+            where $where_preds
+            {
+                $(
+                    $variant(
+                        kind=$variant_kind,
+
+                        not_public( $(($priv_field = $priv_field_var))* ),
+
+                        fields( $( $field )* ),
+                    )
+                )*
+            }
+        }
+
 
         $(
             $crate::_private_impl_getters_for_derive_enum!{

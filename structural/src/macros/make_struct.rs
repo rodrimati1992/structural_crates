@@ -126,13 +126,20 @@ macro_rules! make_struct {
                     )*
                 }
 
+                enum __Indices{
+                    $($field_name,)*
+                }
+
                 $crate::_private_impl_getters_for_derive_struct!{
                     impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*>
                     where[]
                     {
+                        DropFields{ drop_fields=just_fields, }
+
                         $((
                             IntoFieldMut<
                                 $field_name : $field_name,
+                                __Indices::$field_name as u8,
                                 _names_module_::$field_name,
                                 stringify!($field_name),
                             >
