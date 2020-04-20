@@ -137,8 +137,9 @@ pub enum Enum4 {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Structural, Copy, Clone)]
+#[derive(Structural)]
 // #[struc(debug_print)]
+#[derive(Copy, Clone)]
 pub enum EnumWithNewtype<'a> {
     #[struc(newtype(bounds = "RefWrapper_VSI<'a,u32,@variant>"))]
     U32(RefWrapper<'a, u32>),

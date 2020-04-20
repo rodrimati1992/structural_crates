@@ -77,6 +77,8 @@ impl_to_path_to_set! {
 
 impl<T> IsSingleFieldPath for TStr<T> {}
 
+unsafe impl<T> ShallowFieldPath for TStr<T> {}
+
 impl<T> IsMultiFieldPath for TStr<T> {
     type PathUniqueness=UniquePaths;
 }
@@ -126,6 +128,8 @@ impl<V, F> VariantField<V, F> {
 }
 
 impl<V, F> IsSingleFieldPath for VariantField<V, F> {}
+
+unsafe impl<V, F> ShallowFieldPath for VariantField<V, F> {}
 
 impl<V, F> IsMultiFieldPath for VariantField<V, F> {
     type PathUniqueness=UniquePaths;

@@ -726,6 +726,7 @@ pub mod reexports {
 pub mod pmr {
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
+    pub use crate::field::ownership::*;
     pub use crate::field::*;
     pub use crate::path::*;
     pub use crate::type_level::collection_traits::*;
@@ -738,7 +739,7 @@ pub mod pmr {
         marker::PhantomData,
         mem::drop,
         option::Option::{self, None, Some},
-        ptr::NonNull,
+        ptr::{drop_in_place, NonNull},
     };
 
     #[cfg(feature = "alloc")]

@@ -83,6 +83,17 @@ impl<T> Sealed for TStr<T> {}
 /// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`, `RevIntoFieldImpl`.
 pub trait IsSingleFieldPath: Sized {}
 
+/// A marker trait for field paths of non-nested field(s).
+///
+/// # Safety
+///
+/// If this type implements any of the
+/// `RevGetFieldImpl`/`RevGetFieldMutImpl`/`RevIntoFieldImpl` traits,
+/// it must delegate those impls to non-nested
+/// `Get*Field`/`Get*FieldMut`/`Into*Field` impls
+/// of the `this` parameter (the `This` type parameter in the `Rev*` traits).
+pub unsafe trait ShallowFieldPath: Sized {}
+
 /// A marker trait for field paths that refer to multiple fields
 ///
 /// # Expectations
@@ -105,6 +116,8 @@ pub trait IsMultiFieldPath: Sized {
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<T> IsSingleFieldPath for NestedFieldPath<T> {}
+
+unsafe impl<F0> ShallowFieldPath for NestedFieldPath<(F0,)> where F0: ShallowFieldPath {}
 
 impl<T> IsMultiFieldPath for NestedFieldPath<T> {
     type PathUniqueness = UniquePaths;

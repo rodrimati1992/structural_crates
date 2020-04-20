@@ -315,9 +315,9 @@ impl<T> StrucWrapper<T> {
     ///
     /// [`StructuralExt::into_field`]: ./trait.StructuralExt.html#method.into_field
     #[inline(always)]
-    pub fn v<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
+    pub fn v<P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: RevIntoFieldImpl<'a, T>,
+        P: RevIntoFieldImpl<T>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
     {
@@ -790,4 +790,9 @@ unsafe_delegate_structural_with! {
     IntoField{
         this.0
     }
+    move_out_field{
+        &mut this.0
+    }
+
+    DropFields = { dropped_fields[] }
 }
