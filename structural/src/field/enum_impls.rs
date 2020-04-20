@@ -15,9 +15,16 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Option
+        drop_fields=just_fields,
         variant_count=TS!(2),
-        (Some,strings::Some,kind=regular,fields((IntoVariantFieldMut,0:T,strings::field0)))
-        (None,strings::None,kind=regular,fields())
+        (
+            Some,
+            strings::Some,
+            kind=regular,
+            not_public(),
+            fields((IntoVariantFieldMut,0:T,dropping(f0, 0),strings::field0))
+        )
+        (None,strings::None,kind=regular,not_public(),fields())
     }
 }
 
@@ -28,9 +35,22 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Result
+        drop_fields=just_fields,
         variant_count=TS!(2),
-        (Ok,strings::Ok,kind=regular,fields((IntoVariantFieldMut,0:T,strings::field0)))
-        (Err,strings::Err,kind=regular,fields((IntoVariantFieldMut,0:E,strings::field0)))
+        (
+            Ok,
+            strings::Ok,
+            kind=regular,
+            not_public(),
+            fields((IntoVariantFieldMut,0:T,dropping(f0, 0),strings::field0))
+        )
+        (
+            Err,
+            strings::Err,
+            kind=regular,
+            not_public(),
+            fields((IntoVariantFieldMut,0:E,dropping(f0, 0),strings::field0))
+        )
     }
 }
 

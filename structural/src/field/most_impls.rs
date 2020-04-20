@@ -1,11 +1,11 @@
 #![allow(non_camel_case_types)]
 
-use crate::{FieldType, GetField, IntoField, Structural};
+use crate::{FieldType, GetField, Structural};
 
 #[allow(unused_imports)]
 use crate::StructuralExt;
 
-use core::{
+use std_::{
     //marker::Unpin,
     mem::ManuallyDrop,
     ops::Deref,
@@ -22,16 +22,21 @@ _private_impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",> )
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields=just_fields, }
+
+        (IntoFieldMut < start : T,0,Start_STR,"start",> )
+        (IntoFieldMut < end : T,1,End_STR,"end",> )
     }
+
 }
 
 _private_impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",> )
+        DropFields{ drop_fields=just_fields, }
+
+        (IntoFieldMut < start : T,0,Start_STR,"start",> )
     }
 }
 
@@ -39,7 +44,9 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields=just_fields, }
+
+        (IntoFieldMut < end : T,0,End_STR,"end",> )
     }
 }
 
@@ -47,7 +54,9 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields=just_fields, }
+
+        (IntoFieldMut < end : T,0,End_STR,"end",> )
     }
 }
 
@@ -73,19 +82,6 @@ impl<T> GetField<End_STR> for RangeInclusive<T> {
     }
 }
 
-impl<T> IntoField<Start_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: Start_STR) -> Self::Ty {
-        self.into_inner().0
-    }
-    z_impl_box_into_field_method! {field_tstr=Start_STR}
-}
-impl<T> IntoField<End_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: End_STR) -> Self::Ty {
-        self.into_inner().0
-    }
-    z_impl_box_into_field_method! {field_tstr=End_STR}
-}
-
 ///////////////////////////////////////////////////////
 
 // This allows using all the field accessors in T from `ManuallyDrop<T>`
@@ -102,6 +98,12 @@ unsafe_delegate_structural_with! {
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
 
     IntoField { ManuallyDrop::into_inner(this) }
+    move_out_field { &mut *this }
+
+    DropFields = {
+        dropped_fields[]
+        drop_delegated_to_variable=false;
+    }
 }
 
 #[test]
@@ -147,8 +149,15 @@ fn delegated_pin() {
 
 #[cfg(feature = "alloc")]
 mod alloc_impls {
-    use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
-    use crate::{IntoField, IntoVariantField, TStr};
+    use crate::{
+        alloc::{boxed::Box, rc::Rc, sync::Arc},
+        field::{
+            ownership::{AndDroppedFields, DropFields, DroppedFields},
+            IntoField, IntoVariantField,
+        },
+        TStr,
+    };
+    use std_::mem::ManuallyDrop;
 
     macro_rules! impl_shared_ptr_accessors {
         ( $this:ident ) => {
@@ -188,15 +197,25 @@ mod alloc_impls {
         }
     }
 
-    impl<T, P> IntoField<P> for Box<T>
+    unsafe impl<T, P> IntoField<P> for Box<T>
     where
         T: ?Sized + IntoField<P>,
     {
         #[inline(always)]
         fn into_field_(self, path: P) -> Self::Ty {
-            <T as IntoField<P>>::box_into_field_(self, path)
+            unsafe {
+                let mut this = AndDroppedFields::new(self);
+                let (this, dropped) = this.inner_and_dropped_mut();
+                let this: &mut T = this;
+                this.move_out_field_(path, dropped)
+            }
         }
-        crate::z_impl_box_into_field_method! {field_tstr=P}
+
+        #[inline(always)]
+        unsafe fn move_out_field_(&mut self, path: P, dropped: &mut DroppedFields) -> Self::Ty {
+            let this: &mut T = self;
+            this.move_out_field_(path, dropped)
+        }
     }
 
     unsafe impl<T, V, F, Ty> IntoVariantField<TStr<V>, F> for Box<T>
@@ -205,12 +224,36 @@ mod alloc_impls {
     {
         #[inline(always)]
         fn into_vfield_(self, vname: TStr<V>, fname: F) -> Option<Ty> {
-            <T as IntoVariantField<TStr<V>, F>>::box_into_vfield_(self, vname, fname)
+            unsafe {
+                let mut this = AndDroppedFields::new(self);
+                let (this, dropped) = this.inner_and_dropped_mut();
+                let this: &mut T = this;
+                this.move_out_vfield_(vname, fname, dropped)
+            }
         }
-        crate::z_impl_box_into_variant_field_method! {
-            variant_tstr= TStr<V>,
-            field_tstr=F,
-            field_type=Ty,
+
+        #[inline(always)]
+        unsafe fn move_out_vfield_(
+            &mut self,
+            vname: TStr<V>,
+            fname: F,
+            dropped: &mut DroppedFields,
+        ) -> Option<Ty> {
+            let this: &mut T = self;
+            this.move_out_vfield_(vname, fname, dropped)
+        }
+    }
+
+    unsafe impl<T> DropFields for Box<T>
+    where
+        T: ?Sized + DropFields,
+    {
+        unsafe fn drop_fields(&mut self, dropped: DroppedFields) {
+            let mut this = Box::<ManuallyDrop<T>>::from_raw(
+                &mut **({ self } as *mut Box<T> as *mut Box<ManuallyDrop<T>>),
+            );
+            let this: &mut T = &mut **this;
+            this.drop_fields(dropped)
         }
     }
 }

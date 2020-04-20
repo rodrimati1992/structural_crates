@@ -1,16 +1,16 @@
 use crate::{
-    field::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
+    field::{for_arrays::names, DropFields, DroppedFields, IntoFieldMut, IntoVariantFieldMut},
     structural_trait::Structural,
 };
 
 macro_rules! impl_tuple {
     (inner;
-        ($field:tt,$field_ty:ident,$field_param:ty)
+        ($field:tt,$field_ty:ident,$field_index:expr,$field_param:ty)
         ($($tuple_param:ident),* $(,)* )
     )=>{
         _private_impl_getter!{
             unsafe impl[$($tuple_param),*]
-                IntoFieldMut< $field:$field_ty,$field_param >
+                IntoFieldMut< $field:$field_ty,$field_index,$field_param >
             for ($($tuple_param,)*)
         }
     };
@@ -39,6 +39,18 @@ macro_rules! impl_tuple {
                 )*
         {}
 
+        unsafe impl<$($field_ty,)*> DropFields for $tuple_ty {
+            unsafe fn drop_fields(&mut self,dropped: DroppedFields){
+                use $crate::pmr::DropBit;
+                $({
+                    const BIT: DropBit = DropBit::new($field);
+                    if !dropped.is_dropped(BIT) {
+                        std::ptr::drop_in_place(&mut self.$field)
+                    }
+                })*
+            }
+        }
+
 
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
@@ -62,7 +74,7 @@ macro_rules! impl_tuple {
         $(
             impl_tuple!{
                 inner;
-                ($field,$field_ty,names::$field_param) $tuple_ty
+                ($field, $field_ty, $field, names::$field_param) $tuple_ty
             }
         )*
     }

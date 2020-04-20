@@ -124,7 +124,10 @@ enum OtherEnum{
 */
 
 use crate::{
-    field::{FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField},
+    field::{
+        DropBit, DropFields, DroppedFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn,
+        IntoField,
+    },
     path::IsSingleFieldPath,
     structural_trait::Structural,
     type_level::{
@@ -168,6 +171,8 @@ use self::sealed::Sealed;
 /// A NestedFieldPath that is usable for indexing (some) arrays.
 pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
+
+    const DROP_BIT: DropBit = DropBit::new(Self::INDEX as u8);
 
     type Index: IsUnsigned;
 }
@@ -263,7 +268,7 @@ macro_rules! declare_array_paths {
                 }
             }
 
-            impl<T,P> IntoField<P> for [T;$index]
+            unsafe impl<T,P> IntoField<P> for [T;$index]
             where
                 P:IsPathForArray<Self>,
             {
@@ -277,7 +282,24 @@ macro_rules! declare_array_paths {
                     }
                 }
 
-                z_impl_box_into_field_method!{ field_tstr=P }
+                unsafe fn move_out_field_(
+                    &mut self,
+                    _field_name: P,
+                    dropped_fields: &mut DroppedFields,
+                )->T{
+                    dropped_fields.set_dropped(P::DROP_BIT);
+                    self.as_mut_ptr().add(P::INDEX).read()
+                }
+            }
+
+            unsafe impl<T> DropFields for [T;$index]{
+                unsafe fn drop_fields(&mut self,dropped: DroppedFields){
+                    for (i,mutref) in (0..$index).zip(self) {
+                        if !dropped.is_dropped(DropBit::new(i)) {
+                            std::ptr::drop_in_place(mutref);
+                        }
+                    }
+                }
             }
         )*
     )

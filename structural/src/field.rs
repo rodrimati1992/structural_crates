@@ -94,7 +94,7 @@ The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
 type alias gets the type of a nested field
 (which one is determined by the field path).
 
-The [RevGetFieldErr](./rev_get_field/type.RevGetFieldErr.html)
+The [RevFieldErrOut](./rev_get_field/type.RevFieldErrOut.html)
 type alias allows querying the `RevGetField::Err` associated type,
 useful when delegating the `Rev*Impl` traits.
 
@@ -129,6 +129,7 @@ pub mod for_tuples;
 mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
+pub mod ownership;
 pub mod rev_get_field;
 mod tuple_impls;
 
@@ -144,13 +145,16 @@ pub use self::{
     for_tuples::*,
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
-        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
+        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut, RevIntoMultiField,
+        RevIntoMultiFieldImpl, RevIntoMultiFieldOut,
     },
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
+    ownership::{DropBit, DropFields, DroppedFields, PrePostDropFields},
     rev_get_field::{
-        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
-        RevGetField, RevGetFieldErr, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl,
-        RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldErr,
+        RevFieldErrOut, RevFieldType, RevGetField, RevGetFieldImpl, RevGetFieldMut,
+        RevGetFieldMutImpl, RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        RevMoveOutField,
     },
 };
 
@@ -498,7 +502,18 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 /// While this trait is not unsafe,
 /// implementors ought not mutate fields inside accessor trait impls.
 ///
-/// Mutating fields is only advisable if those fields don't have field accessor impls.
+/// ### Implementing `move_out_field_`
+///
+/// The way this method is expected to be implemented is like this:
+///
+/// - Move out the field using `std::ptr::read` or equivalent.
+///
+/// - Set a bit of the `dropped_fields` parameters on using the `set_dropped` method.
+///
+/// The `DropFields::drop_fields` implementation for this type must then
+/// check the same bit in its `DroppedFields` parameter
+/// (using the `is_dropped` method) to decide whether to drop the field.
+///
 ///
 /// <span id="features-section"></span>
 /// # Features
@@ -547,6 +562,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// ```rust
 /// use structural::{FieldType,GetField,IntoField,Structural,FP};
+/// use structural::field::ownership::{DropFields, DroppedFields, RunDrop, DropBit};
 ///
 /// struct Huh<T>{
 ///     value:T,
@@ -560,38 +576,51 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 /// }
 ///
 /// impl<T> GetField<FP!(value)> for Huh<T>{
-///     fn get_field_(&self,_:FP!(value))->&Self::Ty{
+///     fn get_field_(&self, _: FP!(value))->&Self::Ty{
 ///         &self.value
 ///     }
 /// }
 ///
-/// impl<T> IntoField<FP!(value)> for Huh<T>{
-///     fn into_field_(self,_:FP!(value))->Self::Ty{
+/// const VALUE_DROP_BIT: DropBit = DropBit::new(0);
+///
+/// unsafe impl<T> IntoField<FP!(value)> for Huh<T>{
+///     fn into_field_(self, _: FP!(value))->Self::Ty{
 ///         self.value
 ///     }
 ///
-///     // You must use this, even in crates that don't enable the "alloc" feature
-///     // (the "alloc" feature is enabled by default),
-///     // since other crates that depend on structural might enable the feature.
-///     structural::z_impl_box_into_field_method!{field_tstr=FP!(value)}
+///     unsafe fn move_out_field_(
+///         &mut self,
+///         field_name: FP!(value),
+///         dropped_fields: &mut DroppedFields,
+///     ) -> Self::Ty {
+///         dropped_fields.set_dropped(VALUE_DROP_BIT);
+///         std::ptr::read(&mut self.value)
+///     }
+/// }
+///
+/// unsafe impl<T> DropFields for Huh<T>{
+///     unsafe fn drop_fields(&mut self, dropped: DroppedFields){
+///         let Self{value} = self;
+///
+///         // RunDrop here ensures that the destructors for all fields are ran
+///         // even if any of them panics.
+///         if dropped.is_dropped(VALUE_DROP_BIT) {
+///             unsafe{ std::ptr::drop_in_place(value); }
+///         }
+///     }
 /// }
 ///
 /// ```
 ///
-pub trait IntoField<FieldName>: GetField<FieldName> {
-    /// Converts self into the field.
-    fn into_field_(self, field_name: FieldName) -> Self::Ty
-    where
-        Self: Sized;
+pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
+    fn into_field_(self, field_name: FieldName) -> Self::Ty;
 
-    /// Converts a boxed self into the field.
-    ///
-    /// # Features
-    ///
-    /// This method is defined conditional on the "alloc" feature,
-    /// read [here](#features-section) for more details.
-    #[cfg(feature = "alloc")]
-    fn box_into_field_(self: crate::pmr::Box<Self>, field_name: FieldName) -> Self::Ty;
+    /// Converts self into the field.
+    unsafe fn move_out_field_(
+        &mut self,
+        field_name: FieldName,
+        dropped_fields: &mut DroppedFields,
+    ) -> Self::Ty;
 }
 
 /// A bound for shared, mutable,and by-value access to the `FieldName` field.
