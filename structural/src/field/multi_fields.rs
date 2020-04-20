@@ -4,14 +4,16 @@ Contains traits for accessing multiple fields at once.
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{IsFieldErr, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl},
-    path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, UniquePaths},
+    field::NormalizeFields,
+    path::{IsMultiFieldPath, UniquePaths},
+    NormalizeFieldsOut,
 };
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
-mod components;
+mod path_set_types;
+mod single_field_path;
 
 /// Queries the type returned by the
 /// `RevGetMultiFieldImpl::rev_get_multi_field_impl` method.
@@ -32,6 +34,12 @@ pub type RevGetMultiFieldMutImplRaw<'a, Path, This> =
     <Path as RevGetMultiFieldMutImpl<'a, This>>::UnnormFieldsRawMut;
 
 /// Queries the type returned by the
+/// `RevIntoMultiFieldImpl::rev_into_multi_field_impl` method.
+/// This is some collection of values.
+pub type RevIntoMultiFieldImplOut<Path, This> =
+    <Path as RevIntoMultiFieldImpl<This>>::UnnormIntoFields;
+
+/// Queries the type returned by the
 /// `RevGetMultiField::rev_get_multi_field` method.
 /// This is some collection of references.
 pub type RevGetMultiFieldOut<'a, Path, This> = <Path as RevGetMultiField<'a, This>>::Fields;
@@ -47,6 +55,11 @@ pub type RevGetMultiFieldMutOut<'a, Path, This> =
 /// This is some collection of mutable pointers.
 pub type RevGetMultiFieldMutRaw<'a, Path, This> =
     <Path as RevGetMultiFieldMut<'a, This>>::FieldsRawMut;
+
+/// Queries the type returned by the
+/// `RevIntoMultiField::rev_into_multi_field` method.
+/// This is some collection of values.
+pub type RevIntoMultiFieldOut<Path, This> = <Path as RevIntoMultiField<This>>::IntoFields;
 
 /// Gets references to multiple fields from `This`,
 /// usually a tuple of `Result<&_, E: IsFieldErr>`s,
@@ -488,231 +501,35 @@ where
     }
 }
 
-macro_rules! impl_get_multi_field {
-    ( $(($fpath:ident $err:ident $fty:ident))* ) => (
-        impl<'a,This:?Sized,$($fpath,$err,$fty,)* U>
-            RevGetMultiFieldImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),U>
-        where
-            This:'a,
-            $(
-                $fpath:RevGetFieldImpl<'a, This, Ty=$fty, Err=$err >,
-                $fty:'a,
-                $err:IsFieldErr,
-                Result<&'a $fty,$err>: NormalizeFields,
-            )*
-        {
-            type UnnormFields=(
-                $(
-                    Result<&'a $fty,$err>,
-                )*
-            );
-
-            #[allow(unused_variables)]
-            fn rev_get_multi_field_impl(self,this:&'a This)-> Self::UnnormFields {
-                let ($($fpath,)*)=self.into_paths();
-                (
-                    $(
-                        $fpath.rev_get_field(this),
-                    )*
-                )
-            }
-        }
-
-        unsafe impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
-            RevGetMultiFieldMutImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),UniquePaths>
-        where
-            This:'a,
-            $(
-                $fpath: RevGetFieldMutImpl<'a,This, Ty=$fty, Err=$err >,
-                Result<&'a mut $fty,$err>: NormalizeFields,
-                Result<*mut $fty,$err>: NormalizeFields,
-                $fty:'a,
-                $err:IsFieldErr,
-            )*
-        {
-            type UnnormFieldsMut=(
-                $(
-                    Result<&'a mut $fty,$err>,
-                )*
-            );
-            type UnnormFieldsRawMut=(
-                $(
-                    Result<*mut $fty,$err>,
-                )*
-            );
-
-            #[allow(unused_unsafe,unused_variables)]
-            fn rev_get_multi_field_mut_impl(
-                self,
-                this:&'a mut This,
-            )-> Self::UnnormFieldsMut {
-                unsafe{
-                    let ($($fpath,)*)={
-                        #[allow(unused_variables)]
-                        let ($($fpath,)*)=self.into_paths();
-                        (
-                            $(
-                                $fpath.rev_get_field_raw_mut(this),
-                            )*
-                        )
-                    };
-
-                    (
-                        $(
-                            match $fpath {
-                                Ok($fpath)=>Ok(&mut *$fpath),
-                                Err(e)=>Err(e),
-                            },
-                        )*
-                    )
-                }
-            }
-
-            #[allow(unused_variables)]
-            unsafe fn rev_get_multi_field_raw_mut_impl(
-                self,
-                this:*mut This,
-            )-> Self::UnnormFieldsRawMut {
-                let ($($fpath,)*)=self.into_paths();
-                (
-                    $(
-                        $fpath.rev_get_field_raw_mut(this),
-                    )*
-                )
-            }
-        }
-    )
-}
-
-impl_get_multi_field! {}
-impl_get_multi_field! {
-    (F0 E0 T0)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
-}
-
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
-    (F8 E8 T8) (F9 E9 T9) (F10 E10 T10) (F11 E11 T11) (F12 E12 T12)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<'a, F, S, U, This, Mid, OutTy, OutErr> RevGetMultiFieldImpl<'a, This>
-    for NestedFieldPathSet<F, S, U>
-where
-    F: RevGetFieldImpl<'a, This, Ty = Mid, Err = OutErr>,
-    FieldPathSet<S, U>: RevGetMultiFieldImpl<'a, Mid, UnnormFields = OutTy>,
-    OutErr: IsFieldErr,
-    This: 'a + ?Sized,
-    Mid: 'a + ?Sized,
-    OutTy: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutTy, OutErr>: 'a + NormalizeFields,
+pub unsafe trait RevIntoMultiFieldImpl<This>:
+    IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
 {
-    type UnnormFields = NestedFieldPathSetOutput<OutTy, OutErr>;
+    /// This is usually a tuple of `Result<_, E: IsFieldErr>`s.
+    type UnnormIntoFields: NormalizeFields;
 
-    #[inline(always)]
-    fn rev_get_multi_field_impl(self, this: &'a This) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
+    /// Converts `this` into multiple fields by value,
+    /// usually a tuple of `Result<_, E: IsFieldErr>`s.
+    fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields;
 }
 
-unsafe impl<'a, F, S, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMutImpl<'a, This>
-    for NestedFieldPathSet<F, S, UniquePaths>
-where
-    F: RevGetFieldMutImpl<'a, This, Ty = Mid, Err = OutErr>,
-    FieldPathSet<S, UniquePaths>:
-        RevGetMultiFieldMutImpl<'a, Mid, UnnormFieldsMut = OutTy, UnnormFieldsRawMut = OutRawTy>,
-    This: 'a + ?Sized,
-    OutErr: IsFieldErr,
-    Mid: 'a + ?Sized,
-    OutTy: 'a + NormalizeFields,
-    OutRawTy: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutTy, OutErr>: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutRawTy, OutErr>: 'a + NormalizeFields,
-{
-    type UnnormFieldsMut = NestedFieldPathSetOutput<OutTy, OutErr>;
-    type UnnormFieldsRawMut = NestedFieldPathSetOutput<OutRawTy, OutErr>;
+pub trait RevIntoMultiField<This>: RevIntoMultiFieldImpl<This> {
+    /// This is usually a tuple of `Option<T>`s and `T`s.
+    type IntoFields;
 
-    #[inline(always)]
-    fn rev_get_multi_field_mut_impl(
-        self,
-        this: &'a mut This,
-    ) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field_mut(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_mut_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
-
-    #[inline(always)]
-    unsafe fn rev_get_multi_field_raw_mut_impl(
-        self,
-        this: *mut This,
-    ) -> NestedFieldPathSetOutput<OutRawTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field_raw_mut(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_raw_mut_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
+    /// Converts `this` into multiple fields by value.
+    /// usually a tuple of `Option<T>`s and `T`s.
+    fn rev_into_multi_field(self, this: This) -> Self::IntoFields;
 }
 
-/// The return type of NestedFieldPathSet's `Rev*MultiField*Impl` impls,
-///
-/// This implements NormalizeFields so that a the wrapped `Result<TupleType,Err>`
-/// also normalizes the tuple type itself,
-/// turning each individual `Result<T,E>` in the tuple into `T` or `Option<T>`.
-pub struct NestedFieldPathSetOutput<T, E>(pub Result<T, E>);
-
-impl<T, E> NormalizeFields for NestedFieldPathSetOutput<T, E>
+impl<This, Path> RevIntoMultiField<This> for Path
 where
-    T: NormalizeFields,
-    Result<T::Output, E>: NormalizeFields,
+    Path: RevIntoMultiFieldImpl<This>,
 {
-    type Output = NormalizeFieldsOut<Result<T::Output, E>>;
+    type IntoFields = NormalizeFieldsOut<Path::UnnormIntoFields>;
 
-    #[inline(always)]
-    fn normalize_fields(self) -> Self::Output {
-        match self.0 {
-            Ok(x) => Ok(x.normalize_fields()),
-            Err(e) => Err(e),
-        }
-        .normalize_fields()
+    fn rev_into_multi_field(self, this: This) -> Self::IntoFields {
+        self.rev_into_multi_field_impl(this).normalize_fields()
     }
 }

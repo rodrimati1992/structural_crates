@@ -3,6 +3,7 @@ use crate::{
     field::{
         NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
         RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
+        RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
 };
@@ -607,14 +608,23 @@ pub trait StructuralExt {
     ///
     /// ```
     #[inline(always)]
-    fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
+    fn into_field<P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: RevIntoFieldImpl<'a, Self>,
+        P: RevIntoFieldImpl<Self>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
         Self: Sized,
     {
         path.rev_into_field(self).normalize_fields()
+    }
+
+    #[inline(always)]
+    fn into_fields<P>(self, path: P) -> RevIntoMultiFieldOut<P, Self>
+    where
+        P: RevIntoMultiField<Self>,
+        Self: Sized,
+    {
+        path.rev_into_multi_field(self)
     }
 
     /// Checks whether an enum is a particular variant.
