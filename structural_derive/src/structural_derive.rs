@@ -14,6 +14,7 @@ use as_derive_utils::{
     datastructure::{DataStructure, DataVariant, Field, Struct},
     gen_params_in::{GenParamsIn, InWhat},
     return_syn_err,
+    utils::expr_from_int,
 };
 
 use core_extensions::SelfOps;
@@ -80,7 +81,17 @@ fn delegating_structural<'a>(
         move_bounds,
     } = delegate_to;
 
+    let field = *field;
+
     use std::fmt::Write;
+
+    let struct_ = &ds.variants[0];
+
+    let non_delegated_to_fields = struct_
+        .fields
+        .iter()
+        .filter(|&f| !std::ptr::eq(field, f))
+        .map(|f| &f.ident);
 
     let (_, ty_generics, where_clause) = ds.generics.split_for_impl();
 
@@ -131,6 +142,11 @@ fn delegating_structural<'a>(
         IntoField
         where[ #(#move_bounds,)* ]
         { this.#the_field }
+        move_out_field{ &mut this.#the_field }
+
+        DropFields = {
+            dropped_fields[ #(#non_delegated_to_fields)* ]
+        }
     })
     .piped(Ok)
 }
@@ -159,7 +175,9 @@ fn deriving_structural<'a>(
         DataVariant::Union => unreachable!(),
     };
 
-    let make_fields = |variant: &'a Struct<'a>| {
+    let mut contains_move_field = false;
+
+    let mut make_fields = |variant: &'a Struct<'a>| {
         variant
             .fields
             .iter()
@@ -174,6 +192,10 @@ fn deriving_structural<'a>(
                     Some(x) => IdentType::Ident(x.borrowed()),
                     None => IdentType::from(&field.ident),
                 };
+
+                if config_f.access.has_by_value_access() {
+                    contains_move_field = true;
+                }
 
                 Some(StructuralField {
                     access: config_f.access,
@@ -302,134 +324,165 @@ fn deriving_structural<'a>(
 
     let mut config_variants = options.variants.iter();
 
-    let tuple =
-        match struct_or_enum {
-            StructOrEnum::Struct => {
-                let fields = struct_
-                    .fields
+    let drop_fields_arg = if contains_move_field {
+        quote!(drop_fields = just_fields,)
+    } else {
+        quote!(drop_fields=,)
+    };
+
+    let tuple = match struct_or_enum {
+        StructOrEnum::Struct => {
+            let fields = struct_
+                .fields
+                .iter()
+                .filter(|&f| config_fields[f].is_pub)
+                .collect::<Vec<&Field<'_>>>();
+
+            let getter_trait = sdt
+                .fields
+                .iter()
+                .map(|f| f.access.compute_trait(StructOrEnum::Struct));
+
+            let indices = (0..).map(expr_from_int);
+
+            let not_public_field_names = struct_
+                .fields
+                .iter()
+                .filter(|&f| !config_fields[f].is_pub)
+                .map(|f| &f.ident);
+
+            let field_names = fields.iter().map(|f| &f.ident);
+
+            let field_name_tstrs = sdt.fields.iter().map(|f| f.ident.tstr_tokens());
+
+            let field_tys = fields.iter().map(|f| f.ty);
+
+            let renamed_field_names =
+                fields
                     .iter()
-                    .filter(|&f| config_fields[f].is_pub)
-                    .collect::<Vec<&Field<'_>>>();
+                    .map(|&field| match &config_fields[field].renamed {
+                        Some(x) => x.to_string(),
+                        None => field.ident.to_string(),
+                    });
 
-                let getter_trait = sdt
-                    .fields
-                    .iter()
-                    .map(|f| f.access.compute_trait(StructOrEnum::Struct));
+            (
+                quote!(_private_impl_getters_for_derive_struct),
+                quote!(),
+                quote!(
+                    DropFields{
+                        #drop_fields_arg
+                        not_public( #(#not_public_field_names)* )
+                    }
 
-                let field_names = fields.iter().map(|f| &f.ident);
+                    #((
+                        #getter_trait<
+                            #field_names : #field_tys ,
+                            #indices,
+                            #field_name_tstrs,
+                            #renamed_field_names,
+                        >
+                    ))*
+                ),
+            )
+        }
+        StructOrEnum::Enum => {
+            let variants = ds
+                .variants
+                .iter()
+                .zip(&sdt.variants)
+                .map(|(variant, sdt_variant)| {
+                    let config_v = config_variants.next().unwrap();
 
-                let field_name_tstrs = sdt.fields.iter().map(|f| f.ident.tstr_tokens());
+                    let variant_kind = if config_v.is_newtype {
+                        quote!(newtype)
+                    } else {
+                        quote!(regular)
+                    };
 
-                let field_tys = fields.iter().map(|f| f.ty);
-
-                let renamed_field_names =
-                    fields
+                    let field_tokens = variant
+                        .fields
                         .iter()
-                        .map(|&field| match &config_fields[field].renamed {
-                            Some(x) => x.to_string(),
-                            None => field.ident.to_string(),
-                        });
-
-                (
-                    quote!(_private_impl_getters_for_derive_struct),
-                    quote!(),
-                    quote!(
-                        #((
-                            #getter_trait<
-                                #field_names : #field_tys ,
-                                #field_name_tstrs,
-                                #renamed_field_names,
-                            >
-                        ))*
-                    ),
-                )
-            }
-            StructOrEnum::Enum => {
-                let variants =
-                    ds.variants
-                        .iter()
-                        .zip(&sdt.variants)
-                        .map(|(variant, sdt_variant)| {
-                            let fields = variant
-                                .fields
-                                .iter()
-                                .filter(|&f| config_fields[f].is_pub)
-                                .collect::<Vec<&Field<'_>>>();
-
-                            let config_v = config_variants.next().unwrap();
-
-                            let variant_kind = if config_v.is_newtype {
-                                quote!(newtype)
-                            } else {
-                                quote!(regular)
-                            };
-
-                            let field_tokens = fields.iter().zip(&sdt_variant.fields).map(
-                                |(&field, sdt_field)| {
-                                    let access = sdt_field.access.compute_trait(StructOrEnum::Enum);
-                                    let fname = &field.ident;
-                                    let fty = field.ty;
-                                    let f_tstr = sdt_field.ident.tstr_tokens();
-                                    quote!(
-                                        #access,
-                                        #fname:#fty,
-                                        #f_tstr,
-                                    )
-                                },
-                            );
-
-                            let variant_name = variant.name;
-                            let variant_str = sdt_variant.name.tokens();
+                        .filter(|&f| config_fields[f].is_pub)
+                        .zip(&sdt_variant.fields)
+                        .zip((0..).map(expr_from_int))
+                        .map(|((field, sdt_field), field_index)| {
+                            let access = sdt_field.access.compute_trait(StructOrEnum::Enum);
+                            let fname = &field.ident;
+                            let fty = field.ty;
+                            let field_variable = field.ident();
+                            let f_tstr = sdt_field.ident.tstr_tokens();
                             quote!(
-                                #variant_name,
-                                #variant_str,
-                                kind=#variant_kind,
-                                fields( #( (#field_tokens) )* )
+                                #access,
+                                #fname:#fty,
+                                dropping(#field_variable ,#field_index),
+                                #f_tstr,
                             )
                         });
 
-                let enum_ = ds.name;
-                let variant_count = tstr_tokens(ds.variants.len().to_string(), tyname.span());
+                    let not_public = variant
+                        .fields
+                        .iter()
+                        .filter(|&f| !config_fields[f].is_pub)
+                        .map(|field| {
+                            let ident = &field.ident;
+                            let var_ident = field.ident();
+                            quote!((#ident = #var_ident))
+                        });
 
-                let variant_count_tokens = if options.make_variant_count_alias {
-                    let variant_count_ident_str = format!("{}_VC", ds.name);
-                    let variant_count_docs = format!(
-                        "\
+                    let variant_name = variant.name;
+                    let variant_str = sdt_variant.name.tokens();
+                    quote!(
+                        #variant_name,
+                        #variant_str,
+                        kind=#variant_kind,
+                        not_public( #(#not_public)* ),
+                        fields( #( (#field_tokens) )* )
+                    )
+                });
+
+            let enum_ = ds.name;
+            let variant_count = tstr_tokens(ds.variants.len().to_string(), tyname.span());
+
+            let variant_count_tokens = if options.make_variant_count_alias {
+                let variant_count_ident_str = format!("{}_VC", ds.name);
+                let variant_count_docs = format!(
+                    "\
                         The amount of variants in the [{0} enum](./enum.{0}.html)\n\
                         \n\
                         This is a structural::TStr,\
                         which can be instantiated with {1}::NEW.\n\
                     ",
-                        ds.name, variant_count_ident_str,
-                    );
-                    let variant_count_type =
-                        syn::Ident::new(&variant_count_ident_str, Span::call_site());
+                    ds.name, variant_count_ident_str,
+                );
+                let variant_count_type =
+                    syn::Ident::new(&variant_count_ident_str, Span::call_site());
 
-                    quote!(
-                        #[doc=#variant_count_docs]
-                        #vis type #variant_count_type=#variant_count;
-                    )
-                } else {
-                    quote!()
-                };
-
-                let variant_count_param = if *non_exhaustive_attr {
-                    quote!()
-                } else {
-                    quote!(variant_count=#variant_count,)
-                };
-
-                (
-                    quote!(_private_impl_getters_for_derive_enum),
-                    variant_count_tokens,
-                    quote! {
-                        enum=#enum_
-                        #variant_count_param
-                        #((#variants))*
-                    },
+                quote!(
+                    #[doc=#variant_count_docs]
+                    #vis type #variant_count_type=#variant_count;
                 )
-            }
-        };
+            } else {
+                quote!()
+            };
+
+            let variant_count_param = if *non_exhaustive_attr {
+                quote!()
+            } else {
+                quote!(variant_count=#variant_count,)
+            };
+
+            (
+                quote!(_private_impl_getters_for_derive_enum),
+                variant_count_tokens,
+                quote! {
+                    enum=#enum_
+                    #drop_fields_arg
+                    #variant_count_param
+                    #((#variants))*
+                },
+            )
+        }
+    };
 
     let mut impl_docs = String::new();
     if options.generate_docs {
