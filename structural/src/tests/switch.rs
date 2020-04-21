@@ -2,7 +2,7 @@ use crate::{
     enums::VariantProxy,
     field_path_aliases,
     test_utils::{GetRefKind, RefKind},
-    Structural, StructuralExt,
+    Structural, StructuralExt, TS,
 };
 
 use core_extensions::SelfOps;
@@ -41,8 +41,7 @@ macro_rules! ne_move_test_0 {
                 assert_eq!(self_.fields(paths::f_var0), (&5,&8));
                 assert_eq!(self_.fields_mut(paths::f_var0), (&mut 5,&mut 8));
                 assert_eq!(self_.cloned_fields(paths::f_var0), (5,8));
-                assert_eq!(self_.into_field(paths::f0), 5);
-                assert_eq!(self_.into_field(paths::f1), 8);
+                assert_eq!(self_.into_fields(paths::f_var0), (5,8));
                 0
             }
             Var1=>self_
@@ -185,18 +184,16 @@ fn nonexhaustive_switch() {
         T: Foo_SI + Copy + Debug,
     {
         switch! { this ;
-            Var0=>{
-                let _:VariantProxy<T,_>=this;
-                assert_eq!(this.into_field(paths::f0), 5);
-                assert_eq!(this.into_field(paths::f1), 8);
+            Var0(f0,f1)=>{
+                assert_eq!(f0, 5);
+                assert_eq!(f1, 8);
             }
-            Var1=>{
-                let _:VariantProxy<T,_>=this;
-                assert_eq!(this.into_field(paths::order), 13);
-                assert_eq!(this.into_field(paths::is_true), 21);
+            Var1{order, is_true}=>{
+                assert_eq!(order, 13);
+                assert_eq!(is_true, 21);
             }
             Var2=>{
-                let _:VariantProxy<T,_>=this;
+                let _:VariantProxy<T, TS!(Var2)>=this;
             }
             _=>{
                 let _:T=this;
@@ -242,6 +239,11 @@ fn irrefutable_patterns() {
             assert_eq!(b, &mut 1);
             assert_eq!(c, &mut 2);
             assert_eq!(d, &mut 3);
+        }
+    }
+    switch! { WithT::Var0([0,1,2,3],());
+        Var0([a,b,c,d],())=>{
+            assert_eq!((a, b, c, d), (0, 1, 2, 3));
         }
     }
 }

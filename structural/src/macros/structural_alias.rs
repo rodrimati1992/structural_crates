@@ -574,9 +574,9 @@ fn main(){
 }
 
 fn hello(this:impl Single_VSI<TS!(Foo),u32> + Single_VSI<TS!(Bar),&'static str>){
-    switch!{ref this;
-        Foo(&number)=>assert_eq!(number,0),
-        Bar(&string)=>assert_eq!(string,"what"),
+    switch!{this;
+        Foo(number)=>assert_eq!(number,0),
+        Bar(string)=>assert_eq!(string,"what"),
         _=>{}
     }
 }

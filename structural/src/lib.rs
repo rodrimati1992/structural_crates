@@ -201,21 +201,15 @@ where
 {
     switch!{cmd;
         // This matches the SendEmail variant and destructures it into the
-        // `to` and `content` fields (by reference,because of the `ref`).
-        ref SendEmail{to,content}=>{
+        // `to` and `content` fields  by value.
+        SendEmail{to,content}=>{
             println!("Sending message to the '{}' email address.",to);
             println!("Content:{:?}",content);
             Ok(())
         }
-        // `cmd` is moved into the branch here,
-        // wrapped into a `VariantProxy<S,TS!(RemoveAddress)>`,
-        // which allows direct access to the fields in the variant.
-        //
-        // This does not destructure the variant because
-        // it's not possible to unwrap a structural type into multiple fields yet
-        // (special casing the single field case doesn't seem like a good idea).
-        RemoveAddress=>{
-            let address=cmd.into_field(fp!(0));
+        // This matches the RemoveAddress variant and destructures it into
+        // the 0th field (by reference,because of the `ref`).
+        ref RemoveAddress(address)=>{
             println!("removing the '{}' email address",address);
             Ok(())
         }

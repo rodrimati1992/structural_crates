@@ -177,6 +177,7 @@ where
     ////    Demonstrating the `switch` macro
 
     switch!{foo;
+        // Destructuring the Foo variant into references to its fields
         ref Foo(f0,f1)=>{
             assert_eq!( f0, &3 );
             assert_eq!( f1, &false );
@@ -189,6 +190,7 @@ where
         _=>{}
     }
     switch!{foo;
+        // Destructuring the Foo variant into mutable references to its fields
         ref mut Foo(f0,f1)=>{
             assert_eq!( f0, &mut 3 );
             assert_eq!( f1, &mut false );
@@ -200,13 +202,11 @@ where
         }
         _=>{}
     }
-    switch!{variant = foo.clone();
-        // Can't destructure an enum into multiple fields by value yet.
-        Foo=>{
-            let _: VariantProxy<This,TS!(Foo)>= variant;
-
-            assert_eq!( variant.clone().into_field(fp!(0)), 3 );
-            assert_eq!( variant.clone().into_field(fp!(1)), false );
+    switch!{foo;
+        // Destructuring the Foo variant into its fields by value
+        Foo(f0, f1)=>{
+            assert_eq!( f0, 3 );
+            assert_eq!( f1, false );
         }
         _=>{}
     }
@@ -273,6 +273,8 @@ fn main(){
 }
 
 fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
+    // The `ref` here causes the matched variants to destructure into fields by
+    // reference by default.
     Some(switch!{ref this;
         Bar=>0,
         Baz{a,b}=>*a as u64 + *b as u64,
@@ -286,11 +288,12 @@ fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
 
 
 fn sum_fields_exhaustive_variants(this: &impl Foo_ESI)->u64 {
-    // `ref` before the name of every single variant
-    // is equivalent to `ref` before the matched expression.
+    // When no access mode (`ref`/`mut`/`move`) is specified before the matched expression
+    // this defaults to destructuring variants by value.
     switch!{this;
         Bar=>0,
         ref Baz{&a,&b}=>a as u64 + b as u64,
+        // The `ref` here causes the matched variants to destructure into fields by reference.
         ref Bam(t0,t1)=>*t0 + *t1,
         // No need for a default branch,since `Foo_ESI` requires the variants
         // to be `Bar`,`Baz`,`Bam`,and no more
@@ -392,14 +395,14 @@ fn with_wrapper_vsi<'a>(
         Wrapper_VSI<'a,u64,TS!(U64)> +
         VariantCount<Count=TS!(2)>
 ){
-    switch!{ref this;
+    switch!{this;
         U32(field0,field1)=>{
-            assert_eq!(*field0,3);
-            assert_eq!(**field1,5);
+            assert_eq!(field0,3);
+            assert_eq!(*field1,5);
         }
         U64(field0,field1)=>{
-            assert_eq!(*field0,8);
-            assert_eq!(**field1,13);
+            assert_eq!(field0,8);
+            assert_eq!(*field1,13);
         }
     }
 }
