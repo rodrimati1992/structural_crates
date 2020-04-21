@@ -151,10 +151,10 @@ pub use self::{
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
     ownership::{DropBit, DropFields, DroppedFields, PrePostDropFields},
     rev_get_field::{
-        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldErr,
-        RevFieldErrOut, RevFieldType, RevGetField, RevGetFieldImpl, RevGetFieldMut,
+        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, OptRevIntoFieldRef,
+        RevFieldErr, RevFieldErrOut, RevFieldType, RevGetField, RevGetFieldImpl, RevGetFieldMut,
         RevGetFieldMutImpl, RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
-        RevMoveOutField,
+        RevIntoFieldRef, RevMoveOutFieldImpl,
     },
 };
 
@@ -495,12 +495,9 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 
 /////////////////////////////////////////////////
 
-/// Converts this type into its `FieldName` field.
+/// Converts this type into its `FieldName` field by value.
 ///
 /// # Safety
-///
-/// While this trait is not unsafe,
-/// implementors ought not mutate fields inside accessor trait impls.
 ///
 /// ### Implementing `move_out_field_`
 ///
@@ -508,25 +505,20 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// - Move out the field using `std::ptr::read` or equivalent.
 ///
-/// - Set a bit of the `dropped_fields` parameters on using the `set_dropped` method.
+/// - Mark the field in the `dropped_fields` parameter as being dropped using the
+/// `set_dropped` method.
+///
+/// Every implementation of `IntoField::move_out_field_`
+/// must return field(s) that no other implementation of
+/// `IntoVariantField` or `IntòField` for this type return.
 ///
 /// The `DropFields::drop_fields` implementation for this type must then
-/// check the same bit in its `DroppedFields` parameter
-/// (using the `is_dropped` method) to decide whether to drop the field.
+/// call `is_dropped` in its `DroppedFields` parameter
+/// to decide whether to drop the field,
+/// passing the same `DropBit` argument as in the `move_out_field_` implementation.
 ///
 ///
 /// <span id="features-section"></span>
-/// # Features
-///
-/// If you disable the default feature,and don't enable the "alloc" feature,
-/// you must implement the [`box_into_field_`] method using the
-/// [`z_impl_box_into_field_method`] macro,
-/// this trait's [manual implementation example](#manual-impl-example)
-/// shows how you can use the macro.
-///
-/// [`box_into_field_`]: #tymethod.box_into_field_
-/// [`z_impl_box_into_field_method`]: ../macro.z_impl_box_into_field_method.html
-///
 /// # Usage as Bound Example
 ///
 /// ```
@@ -535,7 +527,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// fn example<T>(this: T)
 /// where
-///     T: Copy + IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
+///     T: IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
 /// {
 ///     assert_eq!( this.field_(fp!(foo)), &None );
 ///     assert_eq!( this.field_(fp!(bar)), &"great" );
@@ -545,8 +537,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
 ///     // assert_eq!( this.field_mut(fp!(bar)), &mut "great" );
 ///
-///     assert_eq!( this.into_field(fp!(foo)), None );
-///     assert_eq!( this.into_field(fp!(bar)), "great" );
+///     assert_eq!( this.into_fields(fp!(foo, bar)), (None, "great") );
 /// }
 ///
 /// example(Struct2{ foo:None, bar: "great" });
@@ -604,8 +595,9 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 ///         // RunDrop here ensures that the destructors for all fields are ran
 ///         // even if any of them panics.
+///         let _drop;
 ///         if dropped.is_dropped(VALUE_DROP_BIT) {
-///             unsafe{ std::ptr::drop_in_place(value); }
+///             _drop = unsafe{ RunDrop::new(value) };
 ///         }
 ///     }
 /// }
@@ -613,9 +605,20 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 /// ```
 ///
 pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
+    /// Converts this into the field by value.
     fn into_field_(self, field_name: FieldName) -> Self::Ty;
 
-    /// Converts self into the field.
+    /// Moves out the field from self.
+    ///
+    /// # Safety
+    ///
+    /// The same instance of `DroppedFields` must be passed to every call to
+    /// `move_out_field_` on the same instance of this type,
+    /// as well as not mutating that `DroppedFields` instance outside of
+    /// methods of this trait for this type.
+    ///
+    /// Each field must be moved with any method at most once on the same instance
+    /// of this type.
     unsafe fn move_out_field_(
         &mut self,
         field_name: FieldName,
@@ -638,7 +641,6 @@ pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
 /// use structural::{StructuralExt,IntoFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
-///
 /// fn example(mut this:Box<dyn Bounds>){
 ///     assert_eq!( this.field_(fp!(foo)), &Some(false) );
 ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
@@ -652,7 +654,7 @@ pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
 ///
 ///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(false), &mut "oh boy") );
 ///
-///     assert_eq!( this.into_field(fp!(bar)), "oh boy" );
+///     assert_eq!( this.into_fields(fp!(foo, bar)), (Some(false), "oh boy") );
 /// }
 ///
 /// example(Box::new(Struct2{ foo:Some(false), bar: "oh boy" }));

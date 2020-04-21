@@ -1,7 +1,7 @@
 use crate::{
     field::{
         DroppedFields, IntoFieldErr, RevFieldErr, RevFieldType, RevGetFieldImpl,
-        RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutField,
+        RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     FieldPathSet, NestedFieldPathSet,
 };
@@ -64,10 +64,10 @@ where
     }
 }
 
-unsafe impl<This, T, U> RevMoveOutField<This> for FieldPathSet<(T,), U>
+unsafe impl<This, T, U> RevMoveOutFieldImpl<This> for FieldPathSet<(T,), U>
 where
     This: ?Sized,
-    T: RevMoveOutField<This>,
+    T: RevMoveOutFieldImpl<This>,
 {
     #[inline(always)]
     unsafe fn rev_move_out_field(

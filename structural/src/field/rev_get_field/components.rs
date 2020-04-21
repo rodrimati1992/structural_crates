@@ -4,7 +4,7 @@ use crate::{
         DroppedFields, FailedAccess, FieldType, GetField, GetFieldMut, GetFieldType,
         GetVariantField, GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField,
         RevFieldErr, RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
-        RevMoveOutField,
+        RevMoveOutFieldImpl,
     },
     TStr, VariantField, VariantName,
 };
@@ -124,7 +124,7 @@ where
     }
 }
 
-unsafe impl<This, T> RevMoveOutField<This> for TStr<T>
+unsafe impl<This, T> RevMoveOutFieldImpl<This> for TStr<T>
 where
     This: ?Sized + IntoField<Self>,
 {
@@ -246,7 +246,7 @@ where
     }
 }
 
-unsafe impl<This, _V, _F> RevMoveOutField<This> for VariantField<_V, _F>
+unsafe impl<This, _V, _F> RevMoveOutFieldImpl<This> for VariantField<_V, _F>
 where
     This: ?Sized + IntoVariantField<_V, _F>,
 {

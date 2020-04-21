@@ -1,7 +1,7 @@
 use crate::{
     field::{
         CombinedErrs, DroppedFields, InfallibleAccess, IntoFieldErr, IsFieldErr, RevFieldErr,
-        RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutField,
+        RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     NestedFieldPath,
 };
@@ -336,10 +336,10 @@ where
     }
 }
 
-unsafe impl<This, F0> RevMoveOutField<This> for NestedFieldPath<(F0,)>
+unsafe impl<This, F0> RevMoveOutFieldImpl<This> for NestedFieldPath<(F0,)>
 where
     This: ?Sized,
-    F0: RevMoveOutField<This>,
+    F0: RevMoveOutFieldImpl<This>,
 {
     #[inline(always)]
     unsafe fn rev_move_out_field(

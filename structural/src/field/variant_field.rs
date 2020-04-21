@@ -490,6 +490,27 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// and return the same field as the checked equivalents if the enum
 /// is currently the `V` variant.
 ///
+/// ### Implementing `move_out_vfield_`
+///
+/// The way this method is expected to be implemented like this:
+///
+/// - Match on the enum,if it's the expected variant continue the steps,
+/// otherwise return `None`.
+///
+/// - Move out the field using `std::ptr::read` or equivalent.
+///
+/// - Mark the field in the `dropped_fields` parameter as being dropped using the
+/// `set_dropped` method.
+///
+/// Every implementation of `IntoVariantField::move_out_vfield_`
+/// must return field(s) that no other implementation of 
+/// `IntoVariantField` or `IntoField` for this type return.
+///
+/// The `DropFields::drop_fields` implementation for this type must then
+/// call `is_dropped` in its `DroppedFields` parameter
+/// to decide whether to drop the field, 
+/// passing the same `DropBit` argument as in the `move_out_vfield_` implementation.
+///
 /// <span id="features-section"></span>
 /// # Features
 ///
@@ -550,14 +571,12 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// // The `FooBounds` trait is defined below.
 /// fn using_enum(bar: impl FooBounds, baz: impl FooBounds){
 ///     assert_eq!( bar.fields(fp!(::Bar=>0,1)), Some((&34, &51)) );
-///     assert_eq!( bar.into_field(fp!(::Bar.0)), Some(34) );
-///     assert_eq!( bar.into_field(fp!(::Bar.1)), Some(51) );
+///     assert_eq!( bar.into_fields(fp!(::Bar=>0,1)), Some((34, 51)) );
 ///     assert_eq!( bar.is_variant(fp!(Bar)), true );
 ///     assert_eq!( bar.is_variant(fp!(Baz)), false );
 ///
 ///     assert_eq!( baz.fields(fp!(::Bar=>0,1)), None );
-///     assert_eq!( baz.into_field(fp!(::Bar.0)), None );
-///     assert_eq!( baz.into_field(fp!(::Bar.1)), None );
+///     assert_eq!( baz.into_fields(fp!(::Bar=>0,1)), None );
 ///     assert_eq!( baz.is_variant(fp!(Bar)), false );
 ///     assert_eq!( baz.is_variant(fp!(Baz)), true );
 /// }
@@ -706,8 +725,14 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///
 ///
 pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
+    /// Converts this into the `F` field in the `V` variant by value.
     fn into_vfield_(self, variant_name: V, field_name: F)->Option<Self::Ty>;
     
+    /// Converts this into the `F` field in the `V` variant by value.
+    ///
+    /// # Safety
+    ///
+    /// The enum must be the `V` variant.
     #[inline(always)]
     unsafe fn into_vfield_unchecked_(self, variant_name: V, field_name: F)->Self::Ty
     where
@@ -719,7 +744,18 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
         }
     }
 
-    /// Converts this into the `F` field in the `V` variant by value.
+    /// Moves out the `F` field from the `V` variant.
+    ///
+    /// # Safety
+    ///
+    /// The same instance of `DroppedFields` must be passed to every call to
+    /// `move_out_vfield_` on the same instance of this type,
+    /// as well as not mutating that `DroppedFields` instance outside of 
+    /// methods of this trait for this type.
+    /// 
+    /// Each field must be moved with any method at most once on the same instance 
+    /// of this type.
+    /// 
     unsafe fn move_out_vfield_(
         &mut self,
         variant_name: V,
@@ -735,6 +771,15 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
     /// # Safety
     ///
     /// The enum must be the `V` variant.
+    ///
+    /// The same instance of `DroppedFields` must be passed to every call to
+    /// `move_out_vfield_unchecked_` on the same instance of this type,
+    /// as well as not mutating that `DroppedFields` instance outside of 
+    /// methods of this trait for this type.
+    /// 
+    /// Each field must be moved with any method at most once on the same instance 
+    /// of this type.
+    /// 
     #[inline(always)]
     unsafe fn move_out_vfield_unchecked_(
         &mut self,
@@ -785,7 +830,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
 ///         Some(( &mut "Because.", &mut &[13,21][..] )),
 ///     );
 ///
-///     assert_eq!( this.into_field(fp!(::Boom.a)), Some("Because.") );
+///     assert_eq!( this.into_fields(fp!(::Boom=>a,b)), Some(( "Because.", &[13,21][..] )) );
 /// }
 ///
 /// example(WithBoom::Boom{ a:"Because.", b:&[13,21] });

@@ -71,6 +71,7 @@ pub trait RevFieldType<This: ?Sized>: IsSingleFieldPath {
     type Ty: ?Sized;
 }
 
+/// For querying the error type returned by single-field `Rev*` trait methods.
 pub trait RevFieldErr<This: ?Sized>: IsSingleFieldPath + RevFieldType<This> {
     /// The error returned by `rev_*` methods.
     ///
@@ -278,7 +279,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Like Into*Field,except that the parameters are reversed,
+/// Like `Into*Field::into_*field_`,except that the parameters are reversed,
 ///
 /// `This` is the type we are accessing,and `Self` is a field path.
 ///
@@ -292,7 +293,7 @@ pub unsafe trait RevGetFieldMutImpl<'a, This: ?Sized>: RevGetFieldImpl<'a, This>
 /// For examples of using `RevIntoFieldImpl` as a bound look at example for:
 ///
 /// - [RevIntoField](./trait.RevIntoField.html):
-/// For infallible field access,generally struct fields,not inside of a nested enum.
+/// For infallible field access,generalerally struct fields,not inside of a nested enum.
 ///
 /// - [OptRevIntoField](./trait.OptRevIntoField.html):
 /// Fallible field access,generally for getting a field in a (potentially nested) enum.
@@ -370,9 +371,30 @@ pub trait RevIntoFieldImpl<This: ?Sized>: RevFieldErr<This> {
         Self::Ty: Sized;
 }
 
-pub unsafe trait RevMoveOutField<This: ?Sized>:
+/// Like `Into*Field::move_out_*field_`,except that the parameters are reversed,
+///
+/// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// This is used by the implementations of the [`RevIntoMultiFieldImpl`] trait.
+///
+/// [`RevIntoMultiFieldImpl`]: ../multi_fields/trait.RevIntoMultiFieldImpl.html
+///
+/// # Safety
+///
+/// Implementors of this traits must do any of:
+///
+/// - Delegate their implementations to the `IntoField` and `IntoVariantField` traits.
+///
+/// - Be implemented following the safety requirements of the
+/// [`IntoField`](../trait.IntoField.html#implementing-move_out_field_)
+/// (if it's moving out a struct field) or
+/// [`IntoVariantField`](../trait.IntoVariantField.html#implementing-move_out_vfield_)
+/// (if it's moving out an enum field).
+///
+pub unsafe trait RevMoveOutFieldImpl<This: ?Sized>:
     RevIntoFieldImpl<This> + ShallowFieldPath
 {
+    /// Moves out the field that `self` represents inside of `this`.
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
@@ -639,7 +661,6 @@ declare_accessor_trait_alias! {
     /// ```rust
     /// use structural::field::{RevIntoFieldMut,RevGetFieldType};
     /// use structural::for_examples::StructBar;
-    /// use structural::reexports::{ConstDefault,const_default};
     /// use structural::{StructuralExt,FP,fp};
     ///
     /// let mut foo=StructBar{
@@ -728,5 +749,114 @@ declare_accessor_trait_alias! {
     ///
     /// ```
     pub trait OptRevIntoFieldMut<'a,This>=
+        OptRevIntoField<This> + OptRevGetFieldMut<'a,This>
+}
+
+declare_accessor_trait_alias! {
+    /// A trait alias for infallible [`RevIntoFieldImpl`] + [`RevGetFieldImpl`],
+    /// generally used to access fields in structs(not in a nested enum inside the struct).
+    ///
+    /// `This` is the type we are accessing,and `Self` is a field path.
+    ///
+    /// [`RevIntoFieldImpl`]: ./trait.RevIntoFieldImpl.html
+    /// [`RevGetFieldImpl`]: ./trait.RevGetFieldImpl.html
+    ///
+    /// # Example
+    ///
+    /// This example shows how to access a struct field by reference,and by value.
+    ///
+    /// Also,how to write extension traits with `Rev*` traits.
+    ///
+    /// ```rust
+    /// use structural::field::{RevIntoFieldRef,RevGetFieldType};
+    /// use structural::for_examples::StructBar;
+    /// use structural::{StructuralExt,FP,fp};
+    ///
+    /// let foo=StructBar{
+    ///     bar: ([(0,3),(5,8)], [(40,50,60)]),
+    /// };
+    ///
+    /// assert_eq!( foo.get_nested(), &(5,8) );
+    /// assert_eq!( foo.into_nested(), (5,8) );
+    ///
+    /// let oop=StructBar{
+    ///     bar: [["hello","world"],["uh","no"]],
+    /// };
+    ///
+    /// assert_eq!( oop.get_nested(), &"world" );
+    /// assert_eq!( oop.into_nested(), "world" );
+    ///
+    /// trait GetNested: Sized {
+    ///     fn get_nested<'a,Ty>(&'a self)->&'a Ty
+    ///     where
+    ///         FP!(bar.0.1): RevIntoFieldRef<'a,Self,Ty=Ty>
+    ///     {
+    ///         self.field_(fp!(bar.0.1))
+    ///     }
+    ///
+    ///     fn into_nested<'a,Ty>(self)->Ty
+    ///     where
+    ///         FP!(bar.0.1): RevIntoFieldRef<'a,Self,Ty=Ty>
+    ///     {
+    ///         self.into_field(fp!(bar.0.1))
+    ///     }
+    /// }
+    ///
+    /// impl<T> GetNested for T {}
+    ///
+    /// ```
+    pub trait RevIntoFieldRef<'a,This>=
+        RevIntoField<This> + RevGetFieldMut<'a,This>
+}
+
+declare_accessor_trait_alias! {
+    /// A trait alias for fallible [`RevIntoFieldImpl`] + [`RevGetFieldImpl`],
+    /// generally used to access fields inside enums.
+    ///
+    /// `This` is the type we are accessing,and `Self` is a field path.
+    ///
+    /// [`RevIntoFieldImpl`]: ./trait.RevIntoFieldImpl.html
+    /// [`RevGetFieldImpl`]: ./trait.RevGetFieldImpl.html
+    ///
+    /// # Example
+    ///
+    /// This example shows how to access an enum field by reference,and by value.
+    ///
+    /// Also,how to write extension traits with `Rev*` traits.
+    ///
+    /// ```rust
+    /// use structural::field::{OptRevIntoFieldRef,RevGetFieldType};
+    /// use structural::for_examples::{StructFoo,WithBoom};
+    /// use structural::{StructuralExt,FP,fp};
+    ///
+    /// let nope=StructFoo{ foo: WithBoom::Nope };
+    /// let boom=StructFoo{ foo: WithBoom::Boom{  a: "hello", b: &[3,5,8,13]  } };
+    ///
+    /// assert_eq!( nope.get_nested(), None );
+    /// assert_eq!( boom.get_nested(), Some(&&[3,5,8,13][..]) );
+    ///
+    /// assert_eq!( nope.into_nested(), None );
+    /// assert_eq!( boom.into_nested(), Some(&[3,5,8,13][..]) );
+    ///
+    /// trait GetNested: Sized {
+    ///     fn get_nested<'a,Ty>(&'a self)->Option<&'a Ty>
+    ///     where
+    ///         FP!(foo::Boom.b): OptRevIntoFieldRef<'a,Self,Ty=Ty>
+    ///     {
+    ///         self.field_(fp!(foo::Boom.b))
+    ///     }
+    ///
+    ///     fn into_nested<'a,Ty>(self)->Option<Ty>
+    ///     where
+    ///         FP!(foo::Boom.b): OptRevIntoFieldRef<'a,Self,Ty=Ty>
+    ///     {
+    ///         self.into_field(fp!(foo::Boom.b))
+    ///     }
+    /// }
+    ///
+    /// impl<T> GetNested for T {}
+    ///
+    /// ```
+    pub trait OptRevIntoFieldRef<'a,This>=
         OptRevIntoField<This> + OptRevGetFieldMut<'a,This>
 }

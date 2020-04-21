@@ -3,7 +3,7 @@ use super::{RevGetMultiFieldImpl, RevGetMultiFieldMutImpl, RevIntoMultiFieldImpl
 use crate::{
     field::{
         ownership::AndDroppedFields, DropFields, IsFieldErr, NormalizeFields, NormalizeFieldsOut,
-        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutField,
+        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     path::{FieldPathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths},
 };
@@ -113,7 +113,7 @@ macro_rules! impl_get_multi_field {
         where
             This: DropFields,
             $(
-                $fpath: RevMoveOutField<This, Ty=$fty, Err=$err >,
+                $fpath: RevMoveOutFieldImpl<This, Ty=$fty, Err=$err >,
                 Result<$fty,$err>: NormalizeFields,
                 $err:IsFieldErr,
             )*
