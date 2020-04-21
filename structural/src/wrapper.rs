@@ -3,7 +3,7 @@ use crate::{
     field::{
         GetField, GetFieldMut, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl,
         RevGetFieldMutImpl, RevGetMultiField, RevGetMultiFieldMut, RevGetMultiFieldMutOut,
-        RevGetMultiFieldOut, RevIntoFieldImpl,
+        RevGetMultiFieldOut, RevIntoFieldImpl, RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
 };
@@ -488,6 +488,128 @@ impl<T> StrucWrapper<T> {
         P: RevGetMultiFieldMut<'a, T>,
     {
         path.rev_get_multi_field_mut(&mut self.0)
+    }
+
+    /// Converts this into multiple fields by value, determined by path.
+    ///
+    /// This function is equivalent to [`StructuralExt::into_fields`],
+    /// which has more complete documentation.
+    ///
+    /// # Valid Paths
+    ///
+    /// As opposed to the other multiple fields accessor methods,
+    /// this method only accepts field paths that refer to
+    /// multiple non-nested fields inside some value (possibly a nested field itself).
+    ///
+    /// For examples of valid and invalid paths to pass as parameter
+    /// [look here](./trait.StructuralExt.html#valid_into_field_paths).
+    ///
+    /// # Example: Struct
+    ///
+    /// ```rust
+    /// use structural::{StrucWrapper, Structural, fp, make_struct};
+    ///
+    /// assert_eq!(
+    ///     into_parts(Bicycle{
+    ///         frame: Frame("wheeee"),
+    ///         wheels: [Wheel("first"), Wheel("second")],
+    ///         handle_bar: HandleBar("hands on me"),
+    ///     }),
+    ///     (Frame("wheeee"), [Wheel("first"), Wheel("second")], HandleBar("hands on me"))
+    /// );
+    ///
+    /// assert_eq!(
+    ///     into_parts(make_struct!{
+    ///         frame: Frame("frame"),
+    ///         wheels: [Wheel("1"), Wheel("4")],
+    ///         handle_bar: HandleBar("9"),
+    ///     }),
+    ///     (Frame("frame"), [Wheel("1"), Wheel("4")], HandleBar("9"))
+    /// );
+    ///
+    /// // The `Bicycle_SI` was generated for the `Bicycle` struct by the `Structural` derive,
+    /// // aliasing it's accessor traits
+    /// fn into_parts(this: impl Bicycle_SI)-> (Frame, [Wheel;2], HandleBar) {
+    ///     let this = StrucWrapper(this);
+    ///
+    ///     this.vals(fp!(frame, wheels, handle_bar))
+    /// }
+    ///
+    /// #[derive(Structural,Debug,Copy,Clone,PartialEq)]
+    /// struct Bicycle{
+    ///     pub frame: Frame,
+    ///     pub wheels: [Wheel;2],
+    ///     pub handle_bar: HandleBar,
+    /// }
+    ///
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct Frame(&'static str);
+    /// #
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct Wheel(&'static str);
+    /// #
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct HandleBar(&'static str);
+    ///
+    /// ```
+    ///
+    /// # Example: Enum
+    ///
+    /// ```rust
+    /// use structural::{StrucWrapper, Structural, TS, fp, make_struct};
+    ///
+    /// let human=Human{name: "bob".into(), gold: 600};
+    /// assert_eq!( enum_into_human(Entities::Human(human.clone())), Some(human.clone()) );
+    ///
+    /// assert_eq!(
+    ///     enum_into_human(MoreEntities::Human{name: "John".into(), gold: 1234}),
+    ///     Some(Human{name: "John".into(), gold: 1234})
+    /// );
+    ///
+    /// // The `Human_VSI` trait was generated for `Human` by the `Structural` derive macro,
+    /// // to access variants with the same fields as Human.
+    /// // The `TS!(Human)` argument makes it require the variant to be `Human`.
+    /// fn enum_into_human(this: impl Human_VSI<TS!(Human)>)-> Option<Human> {
+    ///     let this= StrucWrapper(this);
+    ///     let (name, gold)= this.vals(fp!(::Human=>name,gold))?;
+    ///     Some(Human{name, gold})
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// pub struct Human{
+    ///     pub name: String,
+    ///     pub gold: u64,
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// pub enum Entities {
+    ///     #[struc(newtype(bounds = "Human_VSI<@variant>"))]
+    ///     Human(Human),
+    ///     Wolf,
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// # #[struc(no_trait)]
+    /// pub enum MoreEntities {
+    ///     Human{
+    ///         name: String,
+    ///         gold: u64,
+    ///     },
+    ///     Wolf,
+    ///     Cat,
+    ///     Dog,
+    /// }
+    ///
+    ///
+    /// ```
+    ///
+    /// [`StructuralExt::into_fields`]: ./trait.StructuralExt.html#method.into_fields
+    #[inline(always)]
+    pub fn vals<P>(self, path: P) -> RevIntoMultiFieldOut<P, T>
+    where
+        P: RevIntoMultiField<T>,
+    {
+        path.rev_into_multi_field(self.0)
     }
 
     /// Queries whether an enum is a particular variant.

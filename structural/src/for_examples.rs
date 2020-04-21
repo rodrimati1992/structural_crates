@@ -115,6 +115,11 @@ pub enum Vegetable {
 }
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
+pub enum Enum1 {
+    Foo(u8, u16),
+}
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
 pub enum Enum2 {
     Foo(u8, u16),
     Bar(Ordering, Option<u64>),

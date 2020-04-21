@@ -618,6 +618,96 @@ pub trait StructuralExt {
         path.rev_into_field(self).normalize_fields()
     }
 
+    /// Converts `self` into multiple fields by value.
+    ///
+    /// # Valid Paths
+    ///
+    /// As opposed to the other multiple fields accessor methods,
+    /// this method only accepts field paths that refer to
+    /// multiple non-nested fields inside some value (possibly a nested field itself).
+    ///
+    /// <span id="valid_into_field_paths"></span>
+    ///
+    /// Examples of accepted field paths:
+    ///
+    /// - `fp!(a, b, c)`:
+    /// Accesses the `a`,`b`,and `c` fields.
+    ///
+    /// - `fp!(a.b.c=> d, e, f)`:
+    /// Accesses the `d`,`e`,and `f` fields inside the `a.b.c` field.
+    ///
+    /// - `fp!(::Foo=> bar, baz)`:
+    /// Accesses the `bar` and `baz` field in the `Foo` variant.
+    ///
+    /// Examples of rejected field paths(accepted in other methods):
+    ///
+    /// - `fp!(a.b, c)`
+    ///
+    /// - `fp!(a.b, c.d)`
+    ///
+    /// - `fp!(::Bar=> a.b, c.d)`
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{StructuralExt,fp,make_struct};
+    /// use structural::for_examples::{Struct2, Struct2_SI, Struct3};
+    ///
+    /// assert_eq!(
+    ///     into_struct2(Struct3{ foo:Some("13".to_string()), bar: 21, baz: 34}),
+    ///     Struct2{ foo:Some("13".to_string()), bar: 21 }
+    /// );
+    ///
+    /// {
+    ///     let value=Struct2{ foo:Some(vec![55, 89]), bar: 144 };
+    ///     assert_eq!( into_struct2(value.clone()), value );
+    /// }
+    ///
+    /// assert_eq!(
+    ///     into_struct2(make_struct!{
+    ///         foo: None::<()>,
+    ///         bar: 233,
+    ///         baz: false,
+    ///         qux: "hello".to_string()
+    ///     }),
+    ///     Struct2{ foo:None, bar: 233 }
+    /// );
+    ///
+    /// // `Struct2_SI` was declared by the `Structural` derive on `Struct2`,
+    /// // aliasing the accessor traits that `Struct2` implements.
+    /// fn into_struct2<T,U>(this: impl Struct2_SI<T,U>)->Struct2<T,U>{
+    ///     let (foo, bar)=this.into_fields(fp!(foo, bar));
+    ///     Struct2{foo, bar}
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```rust
+    /// use structural::{StructuralExt,fp};
+    /// use structural::for_examples::{Enum1, Enum1_SI, Enum2, Enum3};
+    ///
+    /// use std::cmp::Ordering;
+    ///
+    /// assert_eq!( into_enum1(Enum1::Foo(3, 5)), Some(Enum1::Foo(3, 5)) );
+    ///
+    /// assert_eq!( into_enum1(Enum2::Foo(8, 13)), Some(Enum1::Foo(8, 13)) );
+    /// assert_eq!( into_enum1(Enum2::Bar(Ordering::Less, None)), None );
+    ///
+    /// assert_eq!( into_enum1(Enum3::Foo(21, 34)), Some(Enum1::Foo(21, 34)) );
+    /// assert_eq!( into_enum1(Enum3::Bar(Ordering::Less, None)), None );
+    /// assert_eq!( into_enum1(Enum3::Baz { foom: "whoop"}), None );
+    ///
+    /// // `Enum1_SI` was declared by the `Structural` derive on `Enum1`,
+    /// // aliasing the accessor traits that `Enum1` implements.
+    /// fn into_enum1(this: impl Enum1_SI)-> Option<Enum1> {
+    ///     this.into_fields(fp!(::Foo=>0,1))
+    ///         .map(|(a,b)| Enum1::Foo(a,b) )
+    /// }
+    ///
+    /// ```
+    ///
     #[inline(always)]
     fn into_fields<P>(self, path: P) -> RevIntoMultiFieldOut<P, Self>
     where
@@ -639,7 +729,8 @@ pub trait StructuralExt {
     ///
     /// fn check_colors<T>( red:&T, blue:&T, green:&T )
     /// where
-    ///     // `Color_SI` was declared by the `Structural` derive on `Color`.
+    ///     // `Color_SI` was declared by the `Structural` derive on `Color`,
+    ///     // aliasing the accessor traits that `Color` implements.
     ///     T: Color_SI
     /// {
     ///     assert!(  red.is_variant(fp!(Red)) );
