@@ -1,7 +1,7 @@
 use crate::{
     field::{
-        DropFields, DroppedFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn,
-        GetVariantField, GetVariantFieldMut, IntoField, IntoVariantField, SpecGetFieldMut,
+        DropFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField,
+        GetVariantFieldMut, IntoField, IntoVariantField, MovedOutFields, SpecGetFieldMut,
     },
     path::{IsTStr, TStr, VariantField},
 };
@@ -610,14 +610,14 @@ where
     }
 
     #[inline(always)]
-    unsafe fn move_out_field_(&mut self, fname: F, dropped_fields: &mut DroppedFields) -> T::Ty
+    unsafe fn move_out_field_(&mut self, fname: F, moved: &mut MovedOutFields) -> T::Ty
     where
         Self: Sized,
     {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
         self.value
-            .move_out_vfield_unchecked_(V::DEFAULT, fname, dropped_fields)
+            .move_out_vfield_unchecked_(V::DEFAULT, fname, moved)
     }
 }
 
@@ -625,7 +625,7 @@ unsafe impl<T, V> DropFields for VariantProxy<T, V>
 where
     T: DropFields,
 {
-    unsafe fn drop_fields(&mut self, dropped: DroppedFields) {
-        <T as DropFields>::drop_fields(&mut self.value, dropped)
+    unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
+        <T as DropFields>::drop_fields(&mut self.value, moved)
     }
 }

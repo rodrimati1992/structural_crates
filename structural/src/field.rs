@@ -149,7 +149,7 @@ pub use self::{
         RevIntoMultiFieldImpl, RevIntoMultiFieldOut,
     },
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
-    ownership::{DropBit, DropFields, DroppedFields, PrePostDropFields},
+    ownership::{DropFields, FieldBit, MovedOutFields, PrePostDropFields},
     rev_get_field::{
         OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, OptRevIntoFieldRef,
         RevFieldErr, RevFieldErrOut, RevFieldType, RevGetField, RevGetFieldImpl, RevGetFieldMut,
@@ -505,20 +505,21 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// - Move out the field using `std::ptr::read` or equivalent.
 ///
-/// - Mark the field in the `dropped_fields` parameter as being dropped using the
-/// `set_dropped` method.
+/// - Mark the field in the `moved_fields` parameter as being moved out using the
+/// `set_moved_out` method,
+/// with a `FieldBit` argument unique to this field in this type
+/// (fields from different types can use the same `FieldBit` as fields in other types).
 ///
 /// Every implementation of `IntoField::move_out_field_`
 /// must return field(s) that no other implementation of
 /// `IntoVariantField` or `IntòField` for this type return.
 ///
 /// The `DropFields::drop_fields` implementation for this type must then
-/// call `is_dropped` in its `DroppedFields` parameter
+/// call `is_moved_out` on its `MovedOutFields` parameter
 /// to decide whether to drop the field,
-/// passing the same `DropBit` argument as in the `move_out_field_` implementation.
+/// passing the same `FieldBit` argument as in the `move_out_field_` implementation.
+/// If `is_moved_out` returns false, then the field must be dropped.
 ///
-///
-/// <span id="features-section"></span>
 /// # Usage as Bound Example
 ///
 /// ```
@@ -553,51 +554,86 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// ```rust
 /// use structural::{FieldType,GetField,IntoField,Structural,FP};
-/// use structural::field::ownership::{DropFields, DroppedFields, RunDrop, DropBit};
+/// use structural::field::ownership::{DropFields, MovedOutFields, RunDrop, FieldBit};
 ///
 /// struct Huh<T>{
-///     value:T,
+///     first:T,
+///     second:T,
 /// }
 ///
 ///
 /// impl<T> Structural for Huh<T>{}
 ///
-/// impl<T> FieldType<FP!(value)> for Huh<T>{
+///
+/// impl<T> FieldType<FP!(first)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// impl<T> GetField<FP!(value)> for Huh<T>{
-///     fn get_field_(&self, _: FP!(value))->&Self::Ty{
-///         &self.value
+/// impl<T> GetField<FP!(first)> for Huh<T>{
+///     fn get_field_(&self, _: FP!(first))->&Self::Ty{
+///         &self.first
 ///     }
 /// }
 ///
-/// const VALUE_DROP_BIT: DropBit = DropBit::new(0);
+/// const FIRST_INDEX: FieldBit = FieldBit::new(0);
 ///
-/// unsafe impl<T> IntoField<FP!(value)> for Huh<T>{
-///     fn into_field_(self, _: FP!(value))->Self::Ty{
-///         self.value
+/// unsafe impl<T> IntoField<FP!(first)> for Huh<T>{
+///     fn into_field_(self, _: FP!(first))->Self::Ty{
+///         self.first
 ///     }
 ///
 ///     unsafe fn move_out_field_(
 ///         &mut self,
-///         field_name: FP!(value),
-///         dropped_fields: &mut DroppedFields,
+///         field_name: FP!(first),
+///         moved_fields: &mut MovedOutFields,
 ///     ) -> Self::Ty {
-///         dropped_fields.set_dropped(VALUE_DROP_BIT);
-///         std::ptr::read(&mut self.value)
+///         moved_fields.set_moved_out(FIRST_INDEX);
+///         std::ptr::read(&mut self.first)
 ///     }
 /// }
 ///
+///
+/// impl<T> FieldType<FP!(second)> for Huh<T>{
+///     type Ty=T;
+/// }
+///
+/// impl<T> GetField<FP!(second)> for Huh<T>{
+///     fn get_field_(&self, _: FP!(second))->&Self::Ty{
+///         &self.second
+///     }
+/// }
+///
+/// const SECOND_INDEX: FieldBit = FieldBit::new(1);
+///
+/// unsafe impl<T> IntoField<FP!(second)> for Huh<T>{
+///     fn into_field_(self, _: FP!(second))->Self::Ty{
+///         self.second
+///     }
+///
+///     unsafe fn move_out_field_(
+///         &mut self,
+///         field_name: FP!(second),
+///         moved_fields: &mut MovedOutFields,
+///     ) -> Self::Ty {
+///         moved_fields.set_moved_out(SECOND_INDEX);
+///         std::ptr::read(&mut self.second)
+///     }
+/// }
+///
+///
 /// unsafe impl<T> DropFields for Huh<T>{
-///     unsafe fn drop_fields(&mut self, dropped: DroppedFields){
-///         let Self{value} = self;
+///     unsafe fn drop_fields(&mut self, moved: MovedOutFields){
+///         let Self{first, second} = self;
 ///
 ///         // RunDrop here ensures that the destructors for all fields are ran
 ///         // even if any of them panics.
 ///         let _drop;
-///         if dropped.is_dropped(VALUE_DROP_BIT) {
-///             _drop = unsafe{ RunDrop::new(value) };
+///         if moved.is_moved_out(FIRST_INDEX) {
+///             _drop = unsafe{ RunDrop::new(first) };
+///         }
+///         let _drop;
+///         if moved.is_moved_out(SECOND_INDEX) {
+///             _drop = unsafe{ RunDrop::new(second) };
 ///         }
 ///     }
 /// }
@@ -612,9 +648,9 @@ pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
     ///
     /// # Safety
     ///
-    /// The same instance of `DroppedFields` must be passed to every call to
+    /// The same instance of `MovedOutFields` must be passed to every call to
     /// `move_out_field_` on the same instance of this type,
-    /// as well as not mutating that `DroppedFields` instance outside of
+    /// as well as not mutating that `MovedOutFields` instance outside of
     /// methods of this trait for this type.
     ///
     /// Each field must be moved with any method at most once on the same instance
@@ -622,7 +658,7 @@ pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
     unsafe fn move_out_field_(
         &mut self,
         field_name: FieldName,
-        dropped_fields: &mut DroppedFields,
+        moved_fields: &mut MovedOutFields,
     ) -> Self::Ty;
 }
 

@@ -499,31 +499,20 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///
 /// - Move out the field using `std::ptr::read` or equivalent.
 ///
-/// - Mark the field in the `dropped_fields` parameter as being dropped using the
-/// `set_dropped` method.
+/// - Mark the field in the `moved_fields` parameter as being moved out using the
+/// `set_moved_out` method,
+/// with a `FieldBit` argument unique to this field in the variant
+/// (fields from different variants can use the same `FieldBit` as fields in other variants).
 ///
 /// Every implementation of `IntoVariantField::move_out_vfield_`
 /// must return field(s) that no other implementation of 
 /// `IntoVariantField` or `IntoField` for this type return.
 ///
 /// The `DropFields::drop_fields` implementation for this type must then
-/// call `is_dropped` in its `DroppedFields` parameter
+/// call `is_moved_out` on its `MovedOutFields` parameter
 /// to decide whether to drop the field, 
-/// passing the same `DropBit` argument as in the `move_out_vfield_` implementation.
-///
-/// <span id="features-section"></span>
-/// # Features
-///
-/// If you disable the default feature,and don't enable the "alloc" feature,
-/// you must implement the [`box_into_vfield_`] method using the
-/// [`z_impl_box_into_variant_field_method`] macro,
-/// this trait's [manual implementation example](#manual-impl-example)
-/// shows how you can use the macro.
-///
-/// [`box_into_vfield_`]: #tymethod.box_into_vfield_
-///
-/// [`z_impl_box_into_variant_field_method`]:
-/// ../macro.z_impl_box_into_variant_field_method.html
+/// passing the same `FieldBit` argument as in the `move_out_vfield_` implementation.
+/// If `is_moved_out` returns false, then the field must be dropped.
 ///
 /// # Example
 ///
@@ -554,6 +543,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// ```
 ///
 /// <span id="manual-impl-example"></span>
+/// <span id="manual-implementation-example"></span>
 /// # Example: Manual implementation
 ///
 /// While this trait is better derived, it can be implemented manually.
@@ -562,7 +552,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///
 /// ```rust
 /// use structural::{
-///     field::ownership::{DropBit, DropFields, DroppedFields, RunDrop},
+///     field::ownership::{FieldBit, DropFields, MovedOutFields, RunDrop},
 ///     FieldType, GetVariantField, IntoVariantField, FP, TS,
 ///     StructuralExt,fp,structural_alias,
 /// };
@@ -593,8 +583,8 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///     Baz,
 /// }
 ///
-/// const BAR_0_DROP_BIT: DropBit = DropBit::new(0);
-/// const BAR_1_DROP_BIT: DropBit = DropBit::new(1);
+/// const BAR_0_INDEX: FieldBit = FieldBit::new(0);
+/// const BAR_1_INDEX: FieldBit = FieldBit::new(1);
 ///
 /// unsafe impl VariantCount for Foo{
 ///     type Count=TS!(2);
@@ -634,11 +624,11 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///         &mut self,
 ///         _: TS!(Bar),
 ///         _: TS!(0),
-///         dropped_fields: &mut DroppedFields,
+///         moved_fields: &mut MovedOutFields,
 ///     ) -> Option<u32> {
 ///         match self {
 ///             Foo::Bar(ret,_)=>{
-///                 dropped_fields.set_dropped(BAR_0_DROP_BIT);
+///                 moved_fields.set_moved_out(BAR_0_INDEX);
 ///                 Some(std::ptr::read(ret))
 ///             },
 ///             _=>None,
@@ -672,11 +662,11 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///         &mut self,
 ///         _: TS!(Bar),
 ///         _: TS!(1),
-///         dropped_fields: &mut DroppedFields,
+///         moved_fields: &mut MovedOutFields,
 ///     ) -> Option<u64> {
 ///         match self {
 ///             Foo::Bar(_,ret)=>{
-///                 dropped_fields.set_dropped(BAR_1_DROP_BIT);
+///                 moved_fields.set_moved_out(BAR_1_INDEX);
 ///                 Some(std::ptr::read(ret))
 ///             },
 ///             _=>None,
@@ -685,18 +675,18 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// }
 ///
 /// unsafe impl DropFields for Foo{
-///     unsafe fn drop_fields(&mut self, dropped: DroppedFields){
+///     unsafe fn drop_fields(&mut self, moved_fields: MovedOutFields){
 ///         match self {
 ///             Foo::Bar(field0, field1)=>{
 ///                 // RunDrop here ensures that the destructors for all fields are ran 
 ///                 // even if any of them panics.
 ///                 let _a;
-///                 if dropped.is_dropped(BAR_0_DROP_BIT){
+///                 if moved_fields.is_moved_out(BAR_0_INDEX){
 ///                     _a = RunDrop::new(field0);
 ///                 }
 ///
 ///                 let _a;
-///                 if dropped.is_dropped(BAR_1_DROP_BIT){
+///                 if moved_fields.is_moved_out(BAR_1_INDEX){
 ///                     _a = RunDrop::new(field1);
 ///                 }
 ///             }
@@ -748,9 +738,9 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
     ///
     /// # Safety
     ///
-    /// The same instance of `DroppedFields` must be passed to every call to
+    /// The same instance of `MovedOutFields` must be passed to every call to
     /// `move_out_vfield_` on the same instance of this type,
-    /// as well as not mutating that `DroppedFields` instance outside of 
+    /// as well as not mutating that `MovedOutFields` instance outside of 
     /// methods of this trait for this type.
     /// 
     /// Each field must be moved with any method at most once on the same instance 
@@ -760,7 +750,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
         &mut self,
         variant_name: V,
         field_name: F,
-        dropped_fields: &mut DroppedFields,
+        moved_fields: &mut MovedOutFields,
     ) -> Option<Self::Ty>;
 
     /// Converts this into the `F` field in the `V` variant by value,
@@ -772,9 +762,9 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
     ///
     /// The enum must be the `V` variant.
     ///
-    /// The same instance of `DroppedFields` must be passed to every call to
+    /// The same instance of `MovedOutFields` must be passed to every call to
     /// `move_out_vfield_unchecked_` on the same instance of this type,
-    /// as well as not mutating that `DroppedFields` instance outside of 
+    /// as well as not mutating that `MovedOutFields` instance outside of 
     /// methods of this trait for this type.
     /// 
     /// Each field must be moved with any method at most once on the same instance 
@@ -785,9 +775,9 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
         &mut self,
         variant_name: V,
         field_name: F,
-        dropped_fields: &mut DroppedFields,
+        moved_fields: &mut MovedOutFields,
     ) -> Self::Ty {
-        match self.move_out_vfield_(variant_name, field_name, dropped_fields) {
+        match self.move_out_vfield_(variant_name, field_name, moved_fields) {
             Some(x) => x,
             None => crate::utils::unreachable_unchecked(),
         }

@@ -5,7 +5,7 @@ Contains traits implemented on field paths,taking Structural types as parameters
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{errors::IsFieldErr, DroppedFields, FailedAccess, InfallibleAccess},
+    field::{errors::IsFieldErr, FailedAccess, InfallibleAccess, MovedOutFields},
     path::{IsSingleFieldPath, ShallowFieldPath},
 };
 
@@ -398,7 +398,7 @@ pub unsafe trait RevMoveOutFieldImpl<This: ?Sized>:
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
-        dropped: &mut DroppedFields,
+        moved: &mut MovedOutFields,
     ) -> Result<Self::Ty, Self::Err>
     where
         Self::Ty: Sized;

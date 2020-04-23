@@ -152,7 +152,7 @@ mod alloc_impls {
     use crate::{
         alloc::{boxed::Box, rc::Rc, sync::Arc},
         field::{
-            ownership::{AndDroppedFields, DropFields, DroppedFields},
+            ownership::{AndMovedOutFields, DropFields, MovedOutFields},
             IntoField, IntoVariantField,
         },
         TStr,
@@ -204,17 +204,17 @@ mod alloc_impls {
         #[inline(always)]
         fn into_field_(self, path: P) -> Self::Ty {
             unsafe {
-                let mut this = AndDroppedFields::new(self);
-                let (this, dropped) = this.inner_and_dropped_mut();
+                let mut this = AndMovedOutFields::new(self);
+                let (this, moved) = this.inner_and_moved_mut();
                 let this: &mut T = this;
-                this.move_out_field_(path, dropped)
+                this.move_out_field_(path, moved)
             }
         }
 
         #[inline(always)]
-        unsafe fn move_out_field_(&mut self, path: P, dropped: &mut DroppedFields) -> Self::Ty {
+        unsafe fn move_out_field_(&mut self, path: P, moved: &mut MovedOutFields) -> Self::Ty {
             let this: &mut T = self;
-            this.move_out_field_(path, dropped)
+            this.move_out_field_(path, moved)
         }
     }
 
@@ -225,10 +225,10 @@ mod alloc_impls {
         #[inline(always)]
         fn into_vfield_(self, vname: TStr<V>, fname: F) -> Option<Ty> {
             unsafe {
-                let mut this = AndDroppedFields::new(self);
-                let (this, dropped) = this.inner_and_dropped_mut();
+                let mut this = AndMovedOutFields::new(self);
+                let (this, moved) = this.inner_and_moved_mut();
                 let this: &mut T = this;
-                this.move_out_vfield_(vname, fname, dropped)
+                this.move_out_vfield_(vname, fname, moved)
             }
         }
 
@@ -237,10 +237,10 @@ mod alloc_impls {
             &mut self,
             vname: TStr<V>,
             fname: F,
-            dropped: &mut DroppedFields,
+            moved: &mut MovedOutFields,
         ) -> Option<Ty> {
             let this: &mut T = self;
-            this.move_out_vfield_(vname, fname, dropped)
+            this.move_out_vfield_(vname, fname, moved)
         }
     }
 
@@ -248,12 +248,12 @@ mod alloc_impls {
     where
         T: ?Sized + DropFields,
     {
-        unsafe fn drop_fields(&mut self, dropped: DroppedFields) {
+        unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
             let mut this = Box::<ManuallyDrop<T>>::from_raw(
                 &mut **({ self } as *mut Box<T> as *mut Box<ManuallyDrop<T>>),
             );
             let this: &mut T = &mut **this;
-            this.drop_fields(dropped)
+            this.drop_fields(moved)
         }
     }
 }

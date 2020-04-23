@@ -731,7 +731,7 @@ pub mod pmr {
 
     pub use crate::std_::{
         marker::PhantomData,
-        mem::drop,
+        mem::{drop, forget},
         option::Option::{self, None, Some},
         ptr::{drop_in_place, NonNull},
     };

@@ -2,7 +2,7 @@ use super::{RevGetMultiFieldImpl, RevGetMultiFieldMutImpl, RevIntoMultiFieldImpl
 
 use crate::{
     field::{
-        ownership::AndDroppedFields, DropFields, IsFieldErr, NormalizeFields, NormalizeFieldsOut,
+        ownership::AndMovedOutFields, DropFields, IsFieldErr, NormalizeFields, NormalizeFieldsOut,
         RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     path::{FieldPathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths},
@@ -126,14 +126,15 @@ macro_rules! impl_get_multi_field {
 
             fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
                 let ($($fpath,)*)=self.into_paths();
+                #[allow(unused_unsafe)]
                 unsafe{
-                    let mut this=AndDroppedFields::new(this);
+                    let mut this=AndMovedOutFields::new(this);
 
                     #[allow(unused_variables)]
-                    let (this, dropped)=this.inner_and_dropped_mut();
+                    let (this, moved)=this.inner_and_moved_mut();
                     (
                         $(
-                            $fpath.rev_move_out_field(this, dropped),
+                            $fpath.rev_move_out_field(this, moved),
                         )*
                     )
                 }

@@ -969,7 +969,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 &mut self,
                 vname:$crate::TStr<__V>,
                 fname:__F,
-                dropped: &mut $crate::pmr::DroppedFields,
+                moved: &mut $crate::pmr::MovedOutFields,
             )->Option<__Ty>{
                 let $this=self;
                 let field:&mut $delegating_to_type=$move_out_field_closure;
@@ -977,7 +977,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                     field,
                     vname,
                     fname,
-                    dropped,
+                    moved,
                 )
             }
         }
@@ -1002,14 +1002,14 @@ macro_rules! unsafe_delegate_structural_with_inner {
             unsafe fn move_out_field_(
                 &mut self,
                 fname:__F,
-                dropped: &mut $crate::pmr::DroppedFields,
+                moved: &mut $crate::pmr::MovedOutFields,
             )->__Ty{
                 let $this=self;
                 let field:&mut $delegating_to_type=$move_out_field_closure;
                 $crate::IntoField::<__F>::move_out_field_(
                     field,
                     fname,
-                    dropped,
+                    moved,
                 )
             }
         }
@@ -1051,7 +1051,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
             $($where_clause)*
         {
             #[allow(unused_variables)]
-            unsafe fn drop_fields(&mut self, dropped: $crate::pmr::DroppedFields) {
+            unsafe fn drop_fields(&mut self, moved: $crate::pmr::MovedOutFields) {
                 let $this=self;
 
                 $crate::delegate_to_into_helper!{
@@ -1081,7 +1081,7 @@ macro_rules! unsafe_delegate_structural_with_inner {
                         self_ident=this,
                         delegating_to_type=$delegating_to_type,
                         delegating_to=$move_out_field_closure,
-                        dropped_fields_variable=dropped,
+                        moved_fields_variable=moved,
                     }
 
                     $(
@@ -1131,7 +1131,7 @@ macro_rules! delegate_to_into_helper {
         pre_drop=true,
         self_ident=$this:ident,
     ) => (
-        abort_on_return!{
+        $crate::abort_on_return!{
             error_context="Inside PrePostDropFields::pre_drop",
             code{
                 $crate::pmr::PrePostDropFields::pre_drop($this);
@@ -1151,17 +1151,17 @@ macro_rules! delegate_to_into_helper {
         self_ident=$this:ident,
         delegating_to_type=$delegating_to_type:ty,
         delegating_to=$into_field_closure:block,
-        dropped_fields_variable=$dropped_var:ident,
+        moved_fields_variable=$moved_fields_var:ident,
     ) => ();
     (
         drop_delegated_to=$(true)?,
         self_ident=$this:ident,
         delegating_to_type=$delegating_to_type:ty,
         delegating_to=$into_field_closure:block,
-        dropped_fields_variable=$dropped_var:ident,
+        moved_fields_variable=$moved_fields_var:ident,
     ) => (
         let delegated_to:&mut $delegating_to_type = $into_field_closure;
-        let _a=$crate::pmr::RunDropFields::new(delegated_to,$dropped_var);
+        let _a=$crate::pmr::RunDropFields::new(delegated_to,$moved_fields_var);
     );
 }
 

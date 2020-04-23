@@ -389,11 +389,11 @@ macro_rules! _private_impl_getter_enum{
                 &mut self,
                 _:$variant_name_str,
                 name:__F,
-                dropped_fields: &mut $crate::pmr::DroppedFields,
+                moved_fields: &mut $crate::pmr::MovedOutFields,
             ) -> Option<Self::Ty> {
                 match self {
                     $enum_::$variant{$field_name:field,..}=>{
-                        Some($crate::IntoField::move_out_field_(field,name,dropped_fields))
+                        Some($crate::IntoField::move_out_field_(field,name,moved_fields))
                     }
                     #[allow(unreachable_patterns)]
                     _=>None
@@ -438,14 +438,14 @@ macro_rules! _private_impl_getter_enum{
                 &mut self,
                 _:$variant_name_str,
                 _:$field_name_param,
-                dropped_fields: &mut $crate::pmr::DroppedFields,
+                moved_fields: &mut $crate::pmr::MovedOutFields,
             )->Option<$field_ty>{
                 match self {
                     $enum_::$variant{$field_name:field,..}=>{
                         {
-                            use $crate::pmr::DropBit;
-                            const BIT: DropBit = DropBit::new($field_index);
-                            dropped_fields.set_dropped(BIT);
+                            use $crate::pmr::FieldBit;
+                            const BIT: FieldBit = FieldBit::new($field_index);
+                            moved_fields.set_moved_out(BIT);
                         }
                         Some((field as *mut $field_ty).read())
                     },

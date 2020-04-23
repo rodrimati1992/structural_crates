@@ -1,8 +1,8 @@
 use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
     field::{
-        DroppedFields, FailedAccess, FieldType, GetField, GetFieldMut, GetFieldType,
-        GetVariantField, GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField,
+        FailedAccess, FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField,
+        GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField, MovedOutFields,
         RevFieldErr, RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
         RevMoveOutFieldImpl,
     },
@@ -131,12 +131,12 @@ where
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
-        dropped: &mut DroppedFields,
+        moved: &mut MovedOutFields,
     ) -> Result<Self::Ty, Self::Err>
     where
         Self::Ty: Sized,
     {
-        Ok(this.move_out_field_(self, dropped))
+        Ok(this.move_out_field_(self, moved))
     }
 }
 
@@ -254,12 +254,12 @@ where
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
-        dropped: &mut DroppedFields,
+        moved: &mut MovedOutFields,
     ) -> Result<This::Ty, FailedAccess>
     where
         This::Ty: Sized,
     {
-        ok_or_of!(this.move_out_vfield_(self.variant, self.field, dropped))
+        ok_or_of!(this.move_out_vfield_(self.variant, self.field, moved))
     }
 }
 

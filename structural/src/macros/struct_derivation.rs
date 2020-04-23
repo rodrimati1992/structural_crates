@@ -114,12 +114,12 @@ macro_rules! _private_impl_getter{
             unsafe fn move_out_field_(
                 &mut self,
                 _: $name_param,
-                dropped_fields: &mut $crate::pmr::DroppedFields,
+                moved_fields: &mut $crate::pmr::MovedOutFields,
             ) -> Self::Ty {
                 {
-                    use $crate::pmr::DropBit;
-                    const BIT: DropBit = DropBit::new($field_index);
-                    dropped_fields.set_dropped(BIT);
+                    use $crate::pmr::FieldBit;
+                    const BIT: FieldBit = FieldBit::new($field_index);
+                    moved_fields.set_moved_out(BIT);
                 }
                 (&mut self.$field_name as *mut $field_ty).read()
             }

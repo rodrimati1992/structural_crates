@@ -1,6 +1,6 @@
 use crate::{
     field::{
-        CombinedErrs, DroppedFields, InfallibleAccess, IntoFieldErr, IsFieldErr, RevFieldErr,
+        CombinedErrs, InfallibleAccess, IntoFieldErr, IsFieldErr, MovedOutFields, RevFieldErr,
         RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     NestedFieldPath,
@@ -345,11 +345,11 @@ where
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
-        dropped: &mut DroppedFields,
+        moved: &mut MovedOutFields,
     ) -> Result<Self::Ty, Self::Err>
     where
         Self::Ty: Sized,
     {
-        self.list.0.rev_move_out_field(this, dropped)
+        self.list.0.rev_move_out_field(this, moved)
     }
 }

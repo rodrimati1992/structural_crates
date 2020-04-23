@@ -125,8 +125,8 @@ enum OtherEnum{
 
 use crate::{
     field::{
-        DropBit, DropFields, DroppedFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn,
-        IntoField,
+        DropFields, FieldBit, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField,
+        MovedOutFields,
     },
     path::IsSingleFieldPath,
     structural_trait::Structural,
@@ -172,7 +172,7 @@ use self::sealed::Sealed;
 pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
 
-    const DROP_BIT: DropBit = DropBit::new(Self::INDEX as u8);
+    const DROP_BIT: FieldBit = FieldBit::new(Self::INDEX as u8);
 
     type Index: IsUnsigned;
 }
@@ -285,17 +285,17 @@ macro_rules! declare_array_paths {
                 unsafe fn move_out_field_(
                     &mut self,
                     _field_name: P,
-                    dropped_fields: &mut DroppedFields,
+                    moved: &mut MovedOutFields,
                 )->T{
-                    dropped_fields.set_dropped(P::DROP_BIT);
+                    moved.set_moved_out(P::DROP_BIT);
                     self.as_mut_ptr().add(P::INDEX).read()
                 }
             }
 
             unsafe impl<T> DropFields for [T;$index]{
-                unsafe fn drop_fields(&mut self,dropped: DroppedFields){
+                unsafe fn drop_fields(&mut self,moved: MovedOutFields){
                     for (i,mutref) in (0..$index).zip(self) {
-                        if !dropped.is_dropped(DropBit::new(i)) {
+                        if !moved.is_moved_out(FieldBit::new(i)) {
                             std::ptr::drop_in_place(mutref);
                         }
                     }

@@ -82,14 +82,18 @@ macro_rules! _private_impl_drop_fields_inner{
             $($where)*
         {
             #[inline(always)]
-            unsafe fn drop_fields(&mut self,dropped: $crate::pmr::DroppedFields) {
+            unsafe fn drop_fields(&mut self,moved: $crate::pmr::MovedOutFields) {
                 let mut this=$crate::pmr::RunPostDrop::new(self);
                 let this=this.get_mut();
 
-                let mut this=$crate::pmr::RunPreDrop::new(this);
-                let this=this.get_mut();
+                $crate::abort_on_return!{
+                    error_context="Inside PrePostDropFields::pre_drop",
+                    code{
+                        $crate::pmr::PrePostDropFields::pre_drop(this);
+                    }
+                }
 
-                use $crate::pmr::{RunDrop,DropBit};
+                use $crate::pmr::{RunDrop,FieldBit};
 
                 $(
                     let _a=RunDrop::new( &mut this.$drop_uncond );
@@ -98,8 +102,8 @@ macro_rules! _private_impl_drop_fields_inner{
                 $(
                     let _a;
                     {
-                        const __DROP_BIT:DropBit=DropBit::new($field_index);
-                        if !dropped.is_dropped(__DROP_BIT) {
+                        const __DROP_BIT:FieldBit=FieldBit::new($field_index);
+                        if !moved.is_moved_out(__DROP_BIT) {
                             _a=RunDrop::new( &mut this.$field_name )
                         }
                     }
@@ -116,7 +120,7 @@ macro_rules! _private_impl_drop_fields_inner{
     )=>{
         $crate::_private_impl_drop_fields_inner!{
             @step
-            dropped_variable=dropped,
+            moved_fields_variable=moved_fields,
             impl $impl_params DropFields for $self_
             where $where
             branches()
@@ -126,7 +130,7 @@ macro_rules! _private_impl_drop_fields_inner{
     ////////////////////////////////////////////////////////////////////////////
     //// How enums are dropped
     (@step
-        dropped_variable=$dropped:ident,
+        moved_fields_variable=$moved_fields:ident,
         impl $impl_params:tt DropFields for $self_:ty
         where [$($where:tt)*]
         branches($($branches:tt)*)
@@ -152,7 +156,7 @@ macro_rules! _private_impl_drop_fields_inner{
     )=>{
         $crate::_private_impl_drop_fields_inner!{
             @step
-            dropped_variable=$dropped,
+            moved_fields_variable=$moved_fields,
             impl $impl_params DropFields for $self_
             where [$($where)*]
             branches(
@@ -170,9 +174,9 @@ macro_rules! _private_impl_drop_fields_inner{
                     $(
                         let _a;
                         {
-                            use $crate::pmr::{RunDrop, DropBit};
-                            const __DROP_BIT:DropBit=DropBit::new($field_index);
-                            if !$dropped.is_dropped(__DROP_BIT) {
+                            use $crate::pmr::{RunDrop, FieldBit};
+                            const __DROP_BIT:FieldBit=FieldBit::new($field_index);
+                            if !$moved_fields.is_moved_out(__DROP_BIT) {
                                 _a=RunDrop::new( $field_var );
                             }
                         }
@@ -186,7 +190,7 @@ macro_rules! _private_impl_drop_fields_inner{
     };
     // Dropping a newtype variant
     (@step
-        dropped_variable=$dropped:ident,
+        moved_fields_variable=$moved_fields:ident,
         impl $impl_params:tt DropFields for $self_:ty
         where [$($where:tt)*]
         branches($($branches:tt)*)
@@ -212,7 +216,7 @@ macro_rules! _private_impl_drop_fields_inner{
     )=>{
         $crate::_private_impl_drop_fields_inner!{
             @step
-            dropped_variable=$dropped,
+            moved_fields_variable=$moved_fields,
             impl $impl_params DropFields for $self_
             where [
                 $field_ty: $crate::pmr::DropFields,
@@ -230,7 +234,7 @@ macro_rules! _private_impl_drop_fields_inner{
                         let _a=$crate::pmr::RunDrop::new(&mut $drop_uncond_var);
                     )*
 
-                    $crate::pmr::DropFields::drop_fields( $field_var, $dropped );
+                    $crate::pmr::DropFields::drop_fields( $field_var, $moved_fields );
                 }
             )
             {
@@ -239,7 +243,7 @@ macro_rules! _private_impl_drop_fields_inner{
         }
     };
     (@step
-        dropped_variable=$dropped:ident,
+        moved_fields_variable=$moved_fields:ident,
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where [$($where:tt)*]
         branches($($branches:tt)*)
@@ -251,12 +255,16 @@ macro_rules! _private_impl_drop_fields_inner{
             $($where)*
         {
             #[inline(always)]
-            unsafe fn drop_fields(&mut self, $dropped: $crate::pmr::DroppedFields) {
+            unsafe fn drop_fields(&mut self, $moved_fields: $crate::pmr::MovedOutFields) {
                 let mut this=$crate::pmr::RunPostDrop::new(self);
                 let this=this.get_mut();
 
-                let mut this=$crate::pmr::RunPreDrop::new(this);
-                let this=this.get_mut();
+                $crate::abort_on_return!{
+                    error_context="Inside PrePostDropFields::pre_drop",
+                    code{
+                        $crate::pmr::PrePostDropFields::pre_drop(this);
+                    }
+                }
 
                 match this {
                     $($branches)*

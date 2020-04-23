@@ -1,5 +1,5 @@
 use crate::{
-    field::{for_arrays::names, DropFields, DroppedFields, IntoFieldMut, IntoVariantFieldMut},
+    field::{for_arrays::names, DropFields, IntoFieldMut, IntoVariantFieldMut, MovedOutFields},
     structural_trait::Structural,
 };
 
@@ -40,11 +40,11 @@ macro_rules! impl_tuple {
         {}
 
         unsafe impl<$($field_ty,)*> DropFields for $tuple_ty {
-            unsafe fn drop_fields(&mut self,dropped: DroppedFields){
-                use $crate::pmr::DropBit;
+            unsafe fn drop_fields(&mut self,moved: MovedOutFields){
+                use $crate::pmr::FieldBit;
                 $({
-                    const BIT: DropBit = DropBit::new($field);
-                    if !dropped.is_dropped(BIT) {
+                    const BIT: FieldBit = FieldBit::new($field);
+                    if !moved.is_moved_out(BIT) {
                         std::ptr::drop_in_place(&mut self.$field)
                     }
                 })*
