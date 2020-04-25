@@ -15,13 +15,24 @@ use std_::mem::ManuallyDrop;
 /// to drop the fields that haven't been moved out.
 ///
 /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
-pub struct AndMovedOutFields<T: DropFields> {
+///
+/// # Example
+///
+/// For an example that uses `IntoFieldsWrapper` there's the
+/// [implementation example] for [`RevIntoMultiFieldImpl`]
+///
+/// [implementation example]:
+/// ../multi_fields/trait.RevIntoMultiFieldImpl.html#implementation-example
+///
+/// [`RevIntoMultiFieldImpl`]: ../multi_fields/trait.RevIntoMultiFieldImpl.html
+///
+pub struct IntoFieldsWrapper<T: DropFields> {
     value: ManuallyDrop<T>,
     moved: MovedOutFields,
 }
 
-impl<T: DropFields> AndMovedOutFields<T> {
-    /// Constructs this `AndMovedOutFields`,wrapping the `value`.
+impl<T: DropFields> IntoFieldsWrapper<T> {
+    /// Constructs this `IntoFieldsWrapper`,wrapping the `value`.
     pub fn new(value: T) -> Self {
         Self {
             value: ManuallyDrop::new(value),
@@ -42,7 +53,7 @@ impl<T: DropFields> AndMovedOutFields<T> {
     }
 }
 
-impl<T: DropFields> Drop for AndMovedOutFields<T> {
+impl<T: DropFields> Drop for IntoFieldsWrapper<T> {
     fn drop(&mut self) {
         unsafe {
             DropFields::drop_fields(&mut *self.value, self.moved);
@@ -73,6 +84,7 @@ macro_rules! declare_run_on_drop {
         impl<'a,T> $struct<'a,T>
         $(where $($where_preds)*)?
         {
+            $(#[$new_meta])*
             /// # Drop order
             ///
             /// Remember that variables on the stack are dropped in the opposite order
@@ -138,7 +150,7 @@ declare_run_on_drop! {
     /// A guard that calls [`PrePostDropFields::post_drop`] on the mutable reference
     /// when *it* is dropped.
     ///
-    /// [`PrePostDropFields::post_drop`]: ./trait.PrePostDropFields.html#method.post_drop
+    /// [`PrePostDropFields::post_drop`]: ./trait.PrePostDropFields.html#tymethod.post_drop
     struct RunPostDrop
     where[ T: PrePostDropFields ]
 
@@ -147,7 +159,8 @@ declare_run_on_drop! {
     /// # Safety
     ///
     /// This has the same safety requirements as [`PrePostDropFields::post_drop`].
-    /// [`PrePostDropFields::post_drop`]: ./trait.PrePostDropFields.html#method.post_drop
+    ///
+    /// [`PrePostDropFields::post_drop`]: ./trait.PrePostDropFields.html#tymethod.post_drop
     fn new()
 
     this=this,
@@ -159,6 +172,10 @@ declare_run_on_drop! {
 }
 
 declare_run_on_drop! {
+    /// A guard that calls [`DropFields::drop_fields`] on the mutable reference
+    /// when *it* is dropped.
+    ///
+    /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
     struct RunDropFields
     where[ T: DropFields ]
 
@@ -167,7 +184,8 @@ declare_run_on_drop! {
     /// # Safety
     ///
     /// This has the same safety requirements as [`DropFields::drop_fields`].
-    /// [`DropFields::drop_fields`]: ./trait.DropFields.html#method.drop_fields
+    ///
+    /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
     fn new(moved: MovedOutFields)
 
     this=this,

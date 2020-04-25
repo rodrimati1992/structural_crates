@@ -502,6 +502,86 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Converts `This` into multiple fields by value.
+///
+/// <span id="implementation-example"></span>
+/// # Example: implementation
+///
+/// This example demonstrates how you can implement this trait by delegating to
+/// implementations of `RevMoveOutFieldImpl` known not to alias.
+///
+/// ```rust
+/// use structural::{FP, make_struct};
+/// use structural::for_examples::{Struct2, Struct3};
+/// use structural::path::{IsMultiFieldPath, UniquePaths};
+/// use structural::field::{
+///     ownership::IntoFieldsWrapper,
+///     DropFields, IsFieldErr, NormalizeFields,
+///     RevIntoMultiFieldImpl, RevIntoMultiFieldOut, RevIntoMultiField, RevMoveOutFieldImpl
+/// };
+///
+/// let value_0=Struct2{foo: Some(5), bar: 8};
+/// assert_eq!(into_foo_bar(value_0), (Some(5), 8));
+///
+/// let value_1=Struct3{foo: Some(13), bar: 21, baz: 34};
+/// assert_eq!(into_foo_bar(value_1), (Some(13), 21));
+///
+/// fn into_foo_bar<T>(this: T)->RevIntoMultiFieldOut<FooBarPair, T>
+/// where
+///     FooBarPair: RevIntoMultiField<T>,
+/// {
+///     FooBarPair.rev_into_multi_field(this)
+/// }
+///
+///
+/// struct FooBarPair;
+///
+/// type Foo_P=FP!(foo);
+/// type Bar_P=FP!(bar);
+///
+/// impl IsMultiFieldPath for FooBarPair{
+///     type PathUniqueness = UniquePaths;
+/// }
+///
+/// unsafe impl<T0,T1,E0,E1,This> RevIntoMultiFieldImpl<This> for FooBarPair
+/// where
+///     This: DropFields,
+///     Foo_P: RevMoveOutFieldImpl<This, Ty=T0, Err=E0>,
+///     Bar_P: RevMoveOutFieldImpl<This, Ty=T1, Err=E1>,
+///     E0: IsFieldErr,
+///     E1: IsFieldErr,
+///     (
+///         Result<T0, E0>,
+///         Result<T1, E1>,
+///     ): NormalizeFields
+/// {
+///     type UnnormIntoFields=(
+///         Result<T0, E0>,
+///         Result<T1, E1>,
+///     );
+///
+///     fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
+///         // This is unsafe because:
+///         //
+///         // - The `moved: &mut MovedOutFields` passed to `rev_move_out_field` must only
+///         // be mutated inside of `rev_move_out_field`
+///         //
+///         // - `rev_move_out_field` must be called only once for any given field,
+///         // since calling it twice would move a field twice.
+///         unsafe{
+///             let mut this=IntoFieldsWrapper::new(this);
+///
+///             let (this, moved)=this.inner_and_moved_mut();
+///             (
+///                 <Foo_P>::NEW.rev_move_out_field(this, moved),
+///                 <Bar_P>::NEW.rev_move_out_field(this, moved),
+///             )
+///         }
+///     }
+/// }
+///
+/// ```
+///
 pub unsafe trait RevIntoMultiFieldImpl<This>:
     IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
 {

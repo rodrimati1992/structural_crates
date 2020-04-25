@@ -1,6 +1,8 @@
+//! Items for moving out fields out of a type,and dropping it afterwards.
+
 mod on_drop;
 
-pub use self::on_drop::{AndMovedOutFields, RunDrop, RunDropFields, RunPostDrop};
+pub use self::on_drop::{IntoFieldsWrapper, RunDrop, RunDropFields, RunPostDrop};
 
 /////////////////////////////////////////////////////////////////////////////////
 

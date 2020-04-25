@@ -152,7 +152,7 @@ mod alloc_impls {
     use crate::{
         alloc::{boxed::Box, rc::Rc, sync::Arc},
         field::{
-            ownership::{AndMovedOutFields, DropFields, MovedOutFields},
+            ownership::{DropFields, IntoFieldsWrapper, MovedOutFields},
             IntoField, IntoVariantField,
         },
         TStr,
@@ -204,7 +204,7 @@ mod alloc_impls {
         #[inline(always)]
         fn into_field_(self, path: P) -> Self::Ty {
             unsafe {
-                let mut this = AndMovedOutFields::new(self);
+                let mut this = IntoFieldsWrapper::new(self);
                 let (this, moved) = this.inner_and_moved_mut();
                 let this: &mut T = this;
                 this.move_out_field_(path, moved)
@@ -225,7 +225,7 @@ mod alloc_impls {
         #[inline(always)]
         fn into_vfield_(self, vname: TStr<V>, fname: F) -> Option<Ty> {
             unsafe {
-                let mut this = AndMovedOutFields::new(self);
+                let mut this = IntoFieldsWrapper::new(self);
                 let (this, moved) = this.inner_and_moved_mut();
                 let this: &mut T = this;
                 this.move_out_vfield_(vname, fname, moved)
