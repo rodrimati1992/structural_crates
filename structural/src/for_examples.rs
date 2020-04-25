@@ -13,6 +13,10 @@ pub struct Tuple2<A, B>(pub Option<A>, pub B);
 pub struct Tuple3<A, B, C>(pub Option<A>, pub B, pub C);
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub struct Tuple4<A, B, C, D>(pub Option<A>, pub B, pub C, pub D);
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
 pub struct Struct2<A, B> {
     pub foo: Option<A>,
     pub bar: B,

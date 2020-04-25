@@ -24,6 +24,9 @@ to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 - [`VariantCount`] impl for the enum,with the amount of variants in it.<br>
 This isn't generated if the `#[non_exhaustive]` attribute was used on the enum.<br>
 
+- Implementation of the [`DropFields`] trait,
+if the type has by-value accessors (implements [`IntoVariantField`]) for any field.
+
 - Enums with the `#[struc(variant_count_alias)]` attribute
 have the `<DerivingType>_VC` type alias,
 a [`TStr`] with the amount of variants in the enum,
@@ -107,6 +110,7 @@ Every variant also gets a [`IsVariant`] bound.
 [`GetVariantField`]: ../../field/trait.GetVariantField.html
 [`GetVariantFieldMut`]: ../../field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]: ../../field/trait.IntoVariantField.html
+[`DropFields`]: ../../field/ownership/trait.DropFields.html
 
 # Examples
 

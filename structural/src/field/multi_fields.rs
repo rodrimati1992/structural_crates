@@ -502,7 +502,13 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Converts `This` into multiple fields by value.
+/// Converts `This` into multiple fields by value,
+/// usually returning a tuple of `Result<T, E: IsFieldErr>`s,
+///
+/// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// To get `Option<T>`s and `T`s instead of each of those `Result`s,
+/// you can use the [`RevIntoMultiField`] as a bound instead.
 ///
 /// <span id="implementation-example"></span>
 /// # Example: implementation
@@ -543,7 +549,7 @@ where
 ///     type PathUniqueness = UniquePaths;
 /// }
 ///
-/// unsafe impl<T0,T1,E0,E1,This> RevIntoMultiFieldImpl<This> for FooBarPair
+/// impl<T0,T1,E0,E1,This> RevIntoMultiFieldImpl<This> for FooBarPair
 /// where
 ///     This: DropFields,
 ///     Foo_P: RevMoveOutFieldImpl<This, Ty=T0, Err=E0>,
@@ -582,7 +588,10 @@ where
 ///
 /// ```
 ///
-pub unsafe trait RevIntoMultiFieldImpl<This>:
+/// [`RevIntoMultiField`]: ./trait.RevIntoMultiField.html
+///
+///
+pub trait RevIntoMultiFieldImpl<This>:
     IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
 {
     /// This is usually a tuple of `Result<_, E: IsFieldErr>`s.
@@ -593,6 +602,84 @@ pub unsafe trait RevIntoMultiFieldImpl<This>:
     fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields;
 }
 
+/// Converts `This` into multiple fields by value.
+///
+/// This trait has a blanket implementation for the [`RevIntoMultiFieldImpl`] trait,
+/// implementing that trait is necessary to be able to use this trait.
+///
+/// This is used by the
+/// [`StructuralExt::into_fields`](../../trait.StructuralExt.html#method.into_fields)
+/// method.
+///
+/// There's also the [`RevIntoMultiFieldOut`] type alias to get this trait's
+/// [`IntoFields`] associated type.
+///
+/// # Example
+///
+/// This demonstrates how you can use `RevIntoMultiField` with structs.
+///
+/// ```rust
+/// use structural::{
+///     field::RevIntoMultiField,
+///     for_examples::{Tuple3, Tuple4},
+///     FP, StructuralExt, fp,
+/// };
+///
+/// assert_eq!(into_pair((13,21,34)), (13,21));
+///
+/// assert_eq!(into_pair(('a','b','c','d','e')), ('a','b'));
+///
+/// assert_eq!(into_pair(Tuple3(Some(3),5,8)), (Some(3),5));
+///
+/// assert_eq!(into_pair(Tuple4(Some("foo"),"bar","baz","qux")), (Some("foo"),"bar"));
+///
+/// fn into_pair<A,B,T>(this: T)->(A,B)
+/// where
+///     FP!(0,1): RevIntoMultiField<T,IntoFields= (A,B)>,
+/// {
+///     this.into_fields(fp!(0,1))
+/// }
+///
+/// ```
+///
+/// # Example
+///
+/// This demonstrates how you can use `RevIntoMultiField` with enums.
+///
+/// ```rust
+/// use structural::{
+///     field::RevIntoMultiField,
+///     for_examples::{Bomb, WithBoom},
+///     FP, StructuralExt, fp,
+/// };
+///
+/// let with_0 = WithBoom::Nope;
+/// let with_1 = WithBoom::Boom{a:"hi", b: &[0,1,2]};
+/// assert_eq!( into_pair(with_0), None );
+/// assert_eq!( into_pair(with_1), Some(("hi", &[0,1,2][..])) );
+///
+/// let bomb_0 = Bomb::Nope;
+/// let bomb_1 = Bomb::Boom{a:"hello", b: &[5,8,13]};
+/// assert_eq!( into_pair(bomb_0), None );
+/// assert_eq!( into_pair(bomb_1), Some(("hello", &[5,8,13][..])) );
+///
+/// fn into_pair<A,B,T>(this: T)->Option<(A,B)>
+/// where
+///     FP!(::Boom=>a,b): RevIntoMultiField<T,IntoFields= Option<(A,B)>>,
+/// {
+///     this.into_fields(fp!(::Boom=>a,b))
+/// }
+///
+/// ```
+///
+/// [`RevIntoMultiFieldOut`]: ./type.RevIntoMultiFieldOut.html
+///
+/// [`RevIntoMultiFieldImpl`]: ./trait.RevIntoMultiFieldImpl.html
+///
+/// [`FieldsMut`]: ./trait.RevIntoMultiField.html#associatedtype.FieldsMut
+///
+/// [`IntoFields`]: ./trait.RevIntoMultiField.html#associatedtype.IntoFields
+///
 pub trait RevIntoMultiField<This>: RevIntoMultiFieldImpl<This> {
     /// This is usually a tuple of `Option<T>`s and `T`s.
     type IntoFields;

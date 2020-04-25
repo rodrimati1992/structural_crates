@@ -56,7 +56,7 @@ macro_rules! delegate_multi_field_traits {
             }
         }
 
-        unsafe impl<This, $($impl_params)*> RevIntoMultiFieldImpl<This> for $type
+        impl<This, $($impl_params)*> RevIntoMultiFieldImpl<This> for $type
         where
             Self: RevIntoFieldImpl<This>,
             RGFT<Self,This>: Sized,

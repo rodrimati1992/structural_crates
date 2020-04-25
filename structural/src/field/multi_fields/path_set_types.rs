@@ -107,7 +107,7 @@ macro_rules! impl_get_multi_field {
             }
         }
 
-        unsafe impl<'a,This,$($fpath,$err,$fty,)*>
+        impl<'a,This,$($fpath,$err,$fty,)*>
             RevIntoMultiFieldImpl<This>
         for FieldPathSet<($($fpath,)*),UniquePaths>
         where
@@ -259,7 +259,7 @@ where
     }
 }
 
-unsafe impl<F, S, This, Mid, OutTy, OutErr> RevIntoMultiFieldImpl<This>
+impl<F, S, This, Mid, OutTy, OutErr> RevIntoMultiFieldImpl<This>
     for NestedFieldPathSet<F, S, UniquePaths>
 where
     F: RevIntoFieldImpl<This, Ty = Mid, Err = OutErr>,

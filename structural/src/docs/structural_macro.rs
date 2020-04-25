@@ -24,6 +24,9 @@ with documentation describing all the accessor trait impls for the type.
 - Implementations of the accessor traits ([`GetField`]/[`GetFieldMut`]/[`IntoField`])
 for pub fields.
 
+- Implementation of the [`DropFields`] trait,
+if the type has by-value accessors (implements [`IntoField`]) for any field.
+
 - A trait named `<DerivingType>_SI`,aliasing the accessor traits for the type,
 implemented for all types with the same accessor trait impls.
 
@@ -32,7 +35,7 @@ to use the struct (or any other struct that implements the same accessor traits)
 in a newtype variant,by annotating the variant with
 `#[struc(newtype(bounds="<DerivingType>_VSI<@variant>"))]`.
 
-All of these can be overriden.
+Many of these can be overriden.
 
 [`GetField`]: ../../field/trait.GetField.html
 [`GetFieldMut`]: ../../field/trait.GetFieldMut.html
@@ -41,6 +44,7 @@ All of these can be overriden.
 [`GetVariantFieldMut`]: ../../field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]: ../../field/trait.IntoVariantField.html
 [`TStr`]: ../../struct.TStr.html
+[`DropFields`]: ../../field/ownership/trait.DropFields.html
 
 
 # Container Attributes
