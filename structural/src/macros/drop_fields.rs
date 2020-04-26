@@ -95,19 +95,23 @@ macro_rules! _private_impl_drop_fields_inner{
 
                 use $crate::pmr::{RunDrop,FieldBit};
 
-                $(
-                    let _a=RunDrop::new( &mut this.$drop_uncond );
-                )*
+                $crate::reverse_code!{
+                    $((
+                        let _a=RunDrop::new( &mut this.$drop_uncond );
+                    ))*
+                }
 
-                $(
-                    let _a;
-                    {
-                        const __DROP_BIT:FieldBit=FieldBit::new($field_index);
-                        if !moved.is_moved_out(__DROP_BIT) {
-                            _a=RunDrop::new( &mut this.$field_name )
+                $crate::reverse_code!{
+                    $((
+                        let _a;
+                        {
+                            const __DROP_BIT:FieldBit=FieldBit::new($field_index);
+                            if !moved.is_moved_out(__DROP_BIT) {
+                                _a=RunDrop::new( &mut this.$field_name )
+                            }
                         }
-                    }
-                )*
+                    ))*
+                }
             }
         }
     };
@@ -167,20 +171,24 @@ macro_rules! _private_impl_drop_fields_inner{
                     $($field_name: $field_var,)*
                     ..
                 }=>{
-                    $(
-                        let _a=RunDrop::new(&mut $drop_uncond_var);
-                    )*
+                    $crate::reverse_code!{
+                        $((
+                            let _a=$crate::pmr::RunDrop::new($drop_uncond_var);
+                        ))*
+                    }
 
-                    $(
-                        let _a;
-                        {
-                            use $crate::pmr::{RunDrop, FieldBit};
-                            const __DROP_BIT:FieldBit=FieldBit::new($field_index);
-                            if !$moved_fields.is_moved_out(__DROP_BIT) {
-                                _a=RunDrop::new( $field_var );
+                    $crate::reverse_code!{
+                        $((
+                            let _a;
+                            {
+                                use $crate::pmr::{RunDrop, FieldBit};
+                                const __DROP_BIT:FieldBit=FieldBit::new($field_index);
+                                if !$moved_fields.is_moved_out(__DROP_BIT) {
+                                    _a=RunDrop::new( $field_var );
+                                }
                             }
-                        }
-                    )*
+                        ))*
+                    }
                 }
             )
             {

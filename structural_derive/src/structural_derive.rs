@@ -13,7 +13,7 @@ use crate::{
 use as_derive_utils::{
     datastructure::{DataStructure, DataVariant, Field, Struct},
     gen_params_in::{GenParamsIn, InWhat},
-    return_syn_err,
+    return_spanned_err, return_syn_err,
     utils::expr_from_int,
 };
 
@@ -32,12 +32,17 @@ mod delegation;
 #[cfg(test)]
 mod tests;
 
-use self::{attribute_parsing::StructuralOptions, delegation::DelegateTo};
+use self::{
+    attribute_parsing::{DropKind, StructuralOptions},
+    delegation::DelegateTo,
+};
 
 #[cfg(test)]
 fn derive_from_str(string: &str) -> Result<TokenStream2, syn::Error> {
     syn::parse_str(string).and_then(derive)
 }
+
+const STRUCTURAL_SIZE_LIMIT: usize = 64;
 
 pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
     let ds = &DataStructure::new(&data);
@@ -70,7 +75,7 @@ pub fn derive(data: DeriveInput) -> Result<TokenStream2, syn::Error> {
 
 fn delegating_structural<'a>(
     ds: &'a DataStructure<'a>,
-    _options: &'a StructuralOptions<'a>,
+    options: &'a StructuralOptions<'a>,
     delegate_to: &'a DelegateTo<'a>,
 ) -> Result<TokenStream2, syn::Error> {
     let DelegateTo {
@@ -80,6 +85,8 @@ fn delegating_structural<'a>(
         mut_bounds,
         move_bounds,
     } = delegate_to;
+
+    let StructuralOptions { drop_kind, .. } = options;
 
     let field = *field;
 
@@ -115,6 +122,11 @@ fn delegating_structural<'a>(
         _ => write!(docs, "a private `{}` field", ty_tokens),
     };
 
+    let pre_post_drop = match drop_kind {
+        DropKind::Regular => quote!(pre_post_drop_fields=false;),
+        DropKind::PrePostDropFields => quote!(pre_post_drop_fields=true;),
+    };
+
     quote!(::structural::unsafe_delegate_structural_with! {
         #[doc=#docs]
         impl[#impl_generics] #tyname #ty_generics
@@ -146,6 +158,7 @@ fn delegating_structural<'a>(
 
         DropFields = {
             dropped_fields[ #(#non_delegated_to_fields)* ]
+            #pre_post_drop
         }
     })
     .piped(Ok)
@@ -157,6 +170,7 @@ fn deriving_structural<'a>(
     _arenas: &'a Arenas,
 ) -> Result<TokenStream2, syn::Error> {
     let StructuralOptions {
+        drop_kind,
         fields: config_fields,
         with_trait_alias,
         non_exhaustive_attr,
@@ -251,6 +265,28 @@ fn deriving_structural<'a>(
         },
     };
 
+    {
+        if sdt.fields.len() > STRUCTURAL_SIZE_LIMIT {
+            return_spanned_err! {
+                ds.name,
+                "Structs cannot have more than {} fields with accessors",
+                STRUCTURAL_SIZE_LIMIT,
+            }
+        }
+
+        if let Some(i) = sdt
+            .variants
+            .iter()
+            .position(|v| v.fields.len() > STRUCTURAL_SIZE_LIMIT)
+        {
+            return_spanned_err! {
+                ds.variants[i].name,
+                "Variants cannot have more than {} fields with accessors",
+                STRUCTURAL_SIZE_LIMIT,
+            }
+        }
+    }
+
     let mut structural_alias_trait = TokenStream2::new();
 
     if *with_trait_alias {
@@ -325,7 +361,10 @@ fn deriving_structural<'a>(
     let mut config_variants = options.variants.iter();
 
     let drop_fields_arg = if contains_move_field {
-        quote!(drop_fields = just_fields,)
+        match drop_kind {
+            DropKind::Regular => quote!(drop_fields = just_fields,),
+            DropKind::PrePostDropFields => quote!(drop_fields = pre_post_drop,),
+        }
     } else {
         quote!(drop_fields=,)
     };

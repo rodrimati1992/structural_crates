@@ -200,3 +200,17 @@ macro_rules! abort_on_return {
         ret
     )
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! reverse_code {
+    ( $( ($($block:tt)*) )* ) => {
+        $crate::reverse_code!{@inner [] $(( $($block)* ))* }
+    };
+    (@inner [$(( $($rem:tt)* ))*] ) => {
+        $($($rem)*)*
+    };
+    (@inner [$($rem:tt)*] $first:tt $($block:tt)* ) => {
+        $crate::reverse_code!{@inner [$first $($rem)*] $($block)* }
+    };
+}

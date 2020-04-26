@@ -238,12 +238,17 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// Here is one way you can get the type of a `struct` field.
 ///
-/// ```
+// These attributes are a workaround for const generics being broken.
+//
+// When const generics are enabled,
+// there's some lifetime bound errors that can't be worked around.
+#[cfg_attr(not(feature = "use_const_str"), doc = "```rust")]
+#[cfg_attr(feature = "use_const_str", doc = "```ignore")]
 /// use structural::{GetField,StructuralExt,GetFieldType,FP,fp};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(name)>
+/// fn get_name<'a,T>(this:&'a T)->&'a GetFieldType<T,FP!(name)>
 /// where
-///     T:GetField<FP!(name)>
+///     T:GetField<FP!(name)>,
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -285,7 +290,12 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// This also demonstrates a way to write extension traits.
 ///
-/// ```
+// These attributes are a workaround for const generics being broken.
+//
+// When const generics are enabled,
+// there's some lifetime bound errors that can't be worked around.
+#[cfg_attr(not(feature = "use_const_str"), doc = "```rust")]
+#[cfg_attr(feature = "use_const_str", doc = "```ignore")]
 /// use structural::{FP, StructuralExt, GetFieldType, GetVariantField, Structural, TS, fp};
 /// use structural::for_examples::EnumOptA;
 ///

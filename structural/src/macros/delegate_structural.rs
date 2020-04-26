@@ -127,8 +127,10 @@ unsafe_delegate_structural_with!{
     // for the type, which isn't as trivial as delegating to the delegated_to type.
     //
     DropFields = {
-        // Which fields are dropped in `DropFields::drop_fields`
-        // if you're dropping a nested field,it must be wrapped in parentheses(ie:`(a.b.c)`).
+        // Which fields are dropped in `DropFields::drop_fields`,
+        // in the order that they're dropped.
+        //
+        // If you're dropping a nested field,it must be wrapped in parentheses(ie:`(a.b.c)`).
         dropped_fields[ a,b,c,(d.e) ]
 
         // An optional argument which determines whether there's pre/post field-drop logic
@@ -1056,13 +1058,13 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
                 $crate::delegate_to_into_helper!{
                     post_drop=$($pp_drop_fields)?,
-                    self_ident=this,
+                    self_ident=$this,
                 }
 
                 {
                     $crate::delegate_to_into_helper!{
                         pre_drop=$($pp_drop_fields)?,
-                        self_ident=this,
+                        self_ident=$this,
                     }
                 }
 
@@ -1084,12 +1086,14 @@ macro_rules! unsafe_delegate_structural_with_inner {
                         moved_fields_variable=moved,
                     }
 
-                    $(
-                        $crate::delegate_to_into_helper!{
-                            drop_field($field),
-                            self_ident=$this,
-                        }
-                    )*
+                    $crate::reverse_code!{
+                        $((
+                            $crate::delegate_to_into_helper!{
+                                drop_field($field),
+                                self_ident=$this,
+                            }
+                        ))*
+                    }
                 }
             }
         }

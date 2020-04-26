@@ -978,9 +978,11 @@ macro_rules! switch_inn{
     };
     ////////////////////////////////////////////////
     (@get_expr $expr:block $($rem:tt)*)=>{
+        #[allow(unused_braces)]
         $expr
     };
     (@get_expr $expr:expr $(, $($rem:tt)*)? )=>{
+        #[allow(unused_braces)]
         $expr
     };
     ////////////////////////////////////////////////

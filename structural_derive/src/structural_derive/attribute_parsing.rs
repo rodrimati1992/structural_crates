@@ -34,6 +34,7 @@ pub(crate) struct StructuralOptions<'a> {
     pub(crate) make_variant_count_alias: bool,
     pub(crate) bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
+    pub(crate) drop_kind: DropKind,
     pub(crate) debug_print: bool,
     pub(crate) with_trait_alias: bool,
     pub(crate) generate_docs: bool,
@@ -50,6 +51,7 @@ impl<'a> StructuralOptions<'a> {
             fields,
             make_variant_count_alias,
             bounds,
+            drop_kind,
             debug_print,
             with_trait_alias,
             generate_docs,
@@ -73,6 +75,7 @@ impl<'a> StructuralOptions<'a> {
             fields,
             make_variant_count_alias,
             bounds,
+            drop_kind,
             debug_print,
             with_trait_alias,
             generate_docs,
@@ -111,7 +114,11 @@ pub(crate) struct FieldConfig {
     pub(crate) is_pub: bool,
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+#[derive(Debug, Copy, Clone)]
+pub(crate) enum DropKind {
+    Regular,
+    PrePostDropFields,
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,6 +128,8 @@ struct StructuralAttrs<'a> {
     fields: FieldMap<FieldConfig>,
     make_variant_count_alias: Option<Span>,
     bounds: Punctuated<WherePredicate, syn::Token!(,)>,
+
+    drop_kind: DropKind,
 
     debug_print: bool,
     with_trait_alias: bool,
@@ -134,6 +143,12 @@ struct StructuralAttrs<'a> {
     errors: LinearResult<()>,
 
     _marker: PhantomData<&'a ()>,
+}
+
+impl Default for DropKind {
+    fn default() -> Self {
+        DropKind::Regular
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -363,6 +378,8 @@ fn parse_sabi_attr<'a>(
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = true;
                 }
+            } else if path.is_ident("pre_post_drop_fields") {
+                this.drop_kind = DropKind::PrePostDropFields;
             } else if path.is_ident("variant_count_alias") {
                 if data_variant != DataVariant::Enum {
                     return_spanned_err! {
