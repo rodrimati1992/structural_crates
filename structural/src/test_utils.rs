@@ -1,4 +1,8 @@
-use std_::{cell::Cell, mem::ManuallyDrop};
+use std_::{
+    cell::{Cell, RefCell},
+    mem::ManuallyDrop,
+    ops::{Deref, Index},
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -69,6 +73,93 @@ impl<'a> Clone for DecOnDrop<'a> {
 impl<'a> Drop for DecOnDrop<'a> {
     fn drop(&mut self) {
         self.counter.set(self.counter.get() - 1);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+const FIXED_ARR_LEN: usize = 72;
+
+/// Data structure used to test the order in which fields are dropped.
+pub struct FixedArray {
+    len: usize,
+    arr: [u8; FIXED_ARR_LEN],
+}
+
+impl FixedArray {
+    pub const fn new() -> Self {
+        Self {
+            len: 0,
+            arr: [0; FIXED_ARR_LEN],
+        }
+    }
+    pub fn push(&mut self, val: u8) {
+        assert!(self.len < FIXED_ARR_LEN);
+        self.arr[self.len] = val;
+        self.len += 1;
+    }
+    pub fn clear(&mut self) {
+        self.len = 0;
+    }
+    pub fn as_slice(&self) -> &[u8] {
+        &self.arr[..self.len]
+    }
+}
+
+impl Default for FixedArray {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Deref for FixedArray {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        &self.arr[..self.len]
+    }
+}
+
+impl<I> Index<I> for FixedArray
+where
+    [u8]: Index<I>,
+{
+    type Output = <[u8] as Index<I>>::Output;
+
+    fn index(&self, index: I) -> &<[u8] as Index<I>>::Output {
+        &self.as_slice()[index]
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct PushOnDrop<'a, T> {
+    value: T,
+    arr: &'a RefCell<FixedArray>,
+    to_push: u8,
+}
+
+impl<'a, T> PushOnDrop<'a, T> {
+    pub fn new(value: T, arr: &'a RefCell<FixedArray>, to_push: u8) -> Self {
+        Self {
+            value,
+            arr,
+            to_push,
+        }
+    }
+    pub fn into_inner(self) -> T {
+        self.on_drop();
+        let mut this = ManuallyDrop::new(self);
+        unsafe { std::ptr::read(&mut this.value) }
+    }
+    fn on_drop(&self) {
+        self.arr.borrow_mut().push(self.to_push);
+    }
+}
+
+impl<'a, T> Drop for PushOnDrop<'a, T> {
+    fn drop(&mut self) {
+        self.on_drop();
     }
 }
 

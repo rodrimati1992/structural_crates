@@ -2,6 +2,8 @@ use crate::{test_utils::OrOnDrop, StructuralExt};
 
 use std_::cell::Cell;
 
+mod drop_order;
+
 #[cfg(feature = "alloc")]
 #[test]
 fn tuple_into_fields() {
