@@ -20,9 +20,8 @@ pub use self::on_drop::{IntoFieldsWrapper, RunDrop, RunDropFields, RunPostDrop};
 ///
 /// ### Implementing `post_drop`
 ///
-/// In the implementation of `post_drop`,you must not read any fields that
-/// are considered moved out in `MovedOutFields`
-/// or could have been moved (using the `move_out_*field` methods from `Into*Field`).
+/// In the implementation of `post_drop`,you must only read Copy fields
+/// (because all non-Copy fields were dropped).
 ///
 /// # Panics
 ///
@@ -33,6 +32,11 @@ pub use self::on_drop::{IntoFieldsWrapper, RunDrop, RunDropFields, RunPostDrop};
 /// Both the [delegation macro] and the [`Structural`] derive macro provide ways
 /// to leak instead of aborting.
 ///
+/// # Example
+///
+/// There is an example of implementing this trait
+/// [in the documentation for the Structural macro
+/// ](../../docs/structural_macro/index.html#with-pre-post-drop-fields)
 ///
 /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
 /// [`DropFields`]: ./trait.DropFields.html

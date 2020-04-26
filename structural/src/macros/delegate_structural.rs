@@ -14,13 +14,44 @@ methods from `structural` traits are called in a sequence
 (with no method calls from non-`structural`-traits in between).
 
 You must ensure that the variable that you delegate `Get*Field` to is the same as the one
-you delegate `Get*FieldMut` to,
-as well as ensuring that there are no other impls of the `Get*FieldMut` trait
-borrowing from the same delegated-to variable mutably.
+you delegate `Get*FieldMut`/`Into*Field` to,
+as well as ensuring that there are no other impls of the `Get*FieldMut`/`Into*Field` traits
+accessing the same delegated-to variable.
 
-###  general
+# Drop behavior
 
+When converting a type into multiple fields by value
+(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+the type will be dropped with [`DropFields::drop_fields`] instead of
+invoking the regular destructor (`Drop::drop`).
 
+If your type has code that must run when it's dropped,
+you can implement the [`PrePostDropFields`] trait,
+and pass `DropFields= { ..... pre_post_drop_fields=true; }` to this macro
+to run that code when the type is converted into multiple fields by value
+(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+
+### Drop order
+
+The drop order when invoking [`DropFields::drop_fields`] is this by default:
+
+- Call [`PrePostDropFields::pre_drop`].
+
+- Drop the fields passed to `dropped_fields[]`, in the order that they were passed.
+
+- Drop the delegated-to variable with [`DropFields::drop_fields`].
+
+- Call [`PrePostDropFields::post_drop`].
+
+[`DropFields`]: ./field/ownership/trait.DropFields.html
+
+[`DropFields::drop_fields`]: ./field/ownership/trait.DropFields.html#tymethod.drop_fields
+
+[`PrePostDropFields`]: ./field/ownership/trait.PrePostDropFields.html
+
+[`PrePostDropFields::pre_drop`]: ./field/ownership/trait.PrePostDropFields.html#method.pre_drop
+
+[`PrePostDropFields::post_drop`]: ./field/ownership/trait.PrePostDropFields.html#method.post_drop
 
 # Example with all syntax
 
