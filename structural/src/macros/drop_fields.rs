@@ -109,32 +109,33 @@ macro_rules! _private_impl_drop_fields_inner{
                 let mut this=$crate::pmr::RunPostDrop::new(self);
                 let this=this.get_mut();
 
-                $crate::abort_on_return!{
-                    error_context="Inside PrePostDropFields::pre_drop",
-                    code{
-                        $crate::pmr::PrePostDropFields::pre_drop(this);
-                    }
-                }
-
                 use $crate::pmr::{RunDrop,FieldBit};
 
-                $crate::reverse_code!{
-                    $((
-                        let _a=RunDrop::new( &mut this.$drop_uncond );
-                    ))*
-                }
 
-                $crate::reverse_code!{
-                    $((
-                        let _a;
-                        {
-                            const __DROP_BIT:FieldBit=FieldBit::new($field_index);
-                            if !moved.is_moved_out(__DROP_BIT) {
-                                _a=RunDrop::new( &mut this.$field_name )
-                            }
+                let mut this=$crate::pmr::RunOnDrop::new(
+                    this,
+                    #[inline(always)]
+                    |this|{
+                        $crate::reverse_code!{
+                            $((
+                                let _a=RunDrop::new( &mut this.$drop_uncond );
+                            ))*
                         }
-                    ))*
-                }
+
+                        $crate::reverse_code!{$((
+                            let _a;
+                            {
+                                const __DROP_BIT:FieldBit=FieldBit::new($field_index);
+                                if !moved.is_moved_out(__DROP_BIT) {
+                                    _a=RunDrop::new( &mut this.$field_name )
+                                }
+                            }
+                        ))*}
+                    }
+                );
+
+                let this=this.reborrow_mut();
+                $crate::pmr::PrePostDropFields::pre_drop(this);
             }
         }
     };
@@ -339,16 +340,18 @@ macro_rules! _private_impl_drop_fields_inner{
                 let mut this=$crate::pmr::RunPostDrop::new(self);
                 let this=this.get_mut();
 
-                $crate::abort_on_return!{
-                    error_context="Inside PrePostDropFields::pre_drop",
-                    code{
-                        $crate::pmr::PrePostDropFields::pre_drop(this);
+                let mut this=$crate::pmr::RunOnDrop::new(
+                    this,
+                    #[inline(always)]
+                    |this|{
+                        match this {
+                            $($branches)*
+                        }
                     }
-                }
+                );
 
-                match this {
-                    $($branches)*
-                }
+                let this=this.reborrow_mut();
+                $crate::pmr::PrePostDropFields::pre_drop(this);
             }
         }
     };

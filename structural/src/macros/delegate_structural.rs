@@ -1131,13 +1131,6 @@ macro_rules! unsafe_delegate_structural_with_inner {
                     self_ident=$this,
                 }
 
-                {
-                    $crate::delegate_to_into_helper!{
-                        pre_drop=$($pp_drop_fields)?,
-                        self_ident=$this,
-                    }
-                }
-
                 // Remember that:
                 //
                 // - the fields are dropped in the destructor for RunDrop
@@ -1147,23 +1140,33 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 //
                 // Destructors run in the opposite order in which variables are declared,
                 // and after all statements.
-                {
-                    $crate::delegate_to_into_helper!{
-                        drop_delegated_to=$($drop_delegated)?,
-                        self_ident=this,
-                        delegating_to_type=$delegating_to_type,
-                        delegating_to=$move_out_field_closure,
-                        moved_fields_variable=moved,
-                    }
+                let mut $this=$crate::pmr::RunOnDrop::new(
+                    $this,
+                    #[inline(always)]
+                    |$this|{
+                        $crate::delegate_to_into_helper!{
+                            drop_delegated_to=$($drop_delegated)?,
+                            self_ident=$this,
+                            delegating_to_type=$delegating_to_type,
+                            delegating_to=$move_out_field_closure,
+                            moved_fields_variable=moved,
+                        }
 
-                    $crate::reverse_code!{
-                        $((
-                            $crate::delegate_to_into_helper!{
-                                drop_field($field),
-                                self_ident=$this,
-                            }
-                        ))*
+                        $crate::reverse_code!{
+                            $((
+                                $crate::delegate_to_into_helper!{
+                                    drop_field($field),
+                                    self_ident=$this,
+                                }
+                            ))*
+                        }
                     }
+                );
+
+                let $this=$this.reborrow_mut();
+                $crate::delegate_to_into_helper!{
+                    pre_drop=$($pp_drop_fields)?,
+                    self_ident=$this,
                 }
             }
         }
@@ -1205,12 +1208,7 @@ macro_rules! delegate_to_into_helper {
         pre_drop=true,
         self_ident=$this:ident,
     ) => (
-        $crate::abort_on_return!{
-            error_context="Inside PrePostDropFields::pre_drop",
-            code{
-                $crate::pmr::PrePostDropFields::pre_drop($this);
-            }
-        }
+        $crate::pmr::PrePostDropFields::pre_drop($this);
     );
     (
         post_drop=true,
