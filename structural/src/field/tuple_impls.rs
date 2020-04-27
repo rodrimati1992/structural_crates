@@ -40,6 +40,9 @@ macro_rules! impl_tuple {
         {}
 
         unsafe impl<$($field_ty,)*> DropFields for $tuple_ty {
+            #[inline(always)]
+            fn pre_move(&mut self){}
+
             unsafe fn drop_fields(&mut self,moved: MovedOutFields){
                 use $crate::pmr::FieldBit;
                 $({

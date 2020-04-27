@@ -293,6 +293,9 @@ macro_rules! declare_array_paths {
             }
 
             unsafe impl<T> DropFields for [T;$index]{
+                #[inline(always)]
+                fn pre_move(&mut self){}
+
                 unsafe fn drop_fields(&mut self,moved: MovedOutFields){
                     for (i,mutref) in (0..$index).zip(self) {
                         if !moved.is_moved_out(FieldBit::new(i)) {

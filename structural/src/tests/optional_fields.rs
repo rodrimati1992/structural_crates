@@ -29,7 +29,7 @@ _private_impl_getters_for_derive_struct! {
     impl[] StructManual
     where[]
     {
-        DropFields{ drop_fields=just_fields, }
+        DropFields{ drop_fields={just_fields,} }
 
         (IntoFieldMut < a : Option<u32>,0,names::a,"a",> )
         (IntoFieldMut < b : Option<u64>,1,names::b,"b",> )
@@ -157,7 +157,7 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=EnumManual
-        drop_fields=just_fields,
+        drop_fields={just_fields,}
         variant_count=TS!(3),
         (
             A,

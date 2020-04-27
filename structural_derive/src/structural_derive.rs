@@ -32,10 +32,7 @@ mod delegation;
 #[cfg(test)]
 mod tests;
 
-use self::{
-    attribute_parsing::{DropKind, StructuralOptions},
-    delegation::DelegateTo,
-};
+use self::{attribute_parsing::StructuralOptions, delegation::DelegateTo};
 
 #[cfg(test)]
 fn derive_from_str(string: &str) -> Result<TokenStream2, syn::Error> {
@@ -86,7 +83,7 @@ fn delegating_structural<'a>(
         move_bounds,
     } = delegate_to;
 
-    let StructuralOptions { drop_kind, .. } = options;
+    let StructuralOptions { drop_params, .. } = options;
 
     let field = *field;
 
@@ -122,10 +119,8 @@ fn delegating_structural<'a>(
         _ => write!(docs, "a private `{}` field", ty_tokens),
     };
 
-    let pre_post_drop = match drop_kind {
-        DropKind::Regular => quote!(pre_post_drop_fields=false;),
-        DropKind::PrePostDropFields => quote!(pre_post_drop_fields=true;),
-    };
+    let pre_move = drop_params.pre_move.as_ref().into_iter();
+    let pre_post_drop = drop_params.pre_post_drop_fields;
 
     quote!(::structural::unsafe_delegate_structural_with! {
         #[doc=#docs]
@@ -158,7 +153,8 @@ fn delegating_structural<'a>(
 
         DropFields = {
             dropped_fields[ #(#non_delegated_to_fields)* ]
-            #pre_post_drop
+            #( pre_move = #pre_move; )*
+            pre_post_drop_fields= #pre_post_drop ;
         }
     })
     .piped(Ok)
@@ -170,7 +166,7 @@ fn deriving_structural<'a>(
     _arenas: &'a Arenas,
 ) -> Result<TokenStream2, syn::Error> {
     let StructuralOptions {
-        drop_kind,
+        drop_params,
         fields: config_fields,
         with_trait_alias,
         non_exhaustive_attr,
@@ -361,12 +357,21 @@ fn deriving_structural<'a>(
     let mut config_variants = options.variants.iter();
 
     let drop_fields_arg = if contains_move_field {
-        match drop_kind {
-            DropKind::Regular => quote!(drop_fields = just_fields,),
-            DropKind::PrePostDropFields => quote!(drop_fields = pre_post_drop,),
+        let pre_post_drop_fields = if drop_params.pre_post_drop_fields {
+            quote!(pre_post_drop)
+        } else {
+            quote!(just_fields)
+        };
+
+        let pre_move = drop_params.pre_move.as_ref().into_iter();
+        quote! {
+            drop_fields={
+                #pre_post_drop_fields,
+                #( pre_move = #pre_move, )*
+            }
         }
     } else {
-        quote!(drop_fields=,)
+        quote!(drop_fields = custom_drop)
     };
 
     let tuple = match struct_or_enum {

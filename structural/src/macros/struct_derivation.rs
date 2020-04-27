@@ -179,7 +179,7 @@ macro_rules! _private_impl_getters_for_derive_struct{
         where $where_preds:tt
         {
             DropFields{
-                drop_fields=$($drop_kind:ident)?,
+                drop_fields=$for_drop:tt
                 $(not_public($($drop_fields:tt)*))?
             }
 
@@ -204,7 +204,7 @@ macro_rules! _private_impl_getters_for_derive_struct{
         $crate::_private_impl_drop_fields!{
             struct_or_enum(struct),
 
-            drop_kind=$($drop_kind)?,
+            for_drop=$for_drop
 
             impl $typarams DropFields for $self_
             where $where_preds

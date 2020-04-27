@@ -325,5 +325,19 @@
         ),
       ]
     ),
+    (
+      name:"pre_move twice",
+      code:r##"
+        #[struc(
+          pre_move="foo",
+          #f
+        )]
+        struct Huh{}
+      "##,
+      subcase: [
+        ( replacements: { "#f":"" }, error_count: 0 ),
+        ( replacements: { "#f":r##"pre_move="bar""## }, error_count: 1 ),
+      ],
+    ),
   ]
 )

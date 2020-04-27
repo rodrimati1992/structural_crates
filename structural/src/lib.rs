@@ -725,7 +725,7 @@ pub mod pmr {
     pub use crate::path::*;
     pub use crate::type_level::collection_traits::*;
     pub use crate::type_level::*;
-    pub use crate::utils::{_Structural_BorrowSelf, as_phantomdata};
+    pub use crate::utils::{RunOnDrop, _Structural_BorrowSelf, as_phantomdata};
     pub use core_extensions::type_level_bool::{Boolean, False, True};
     pub use core_extensions::{ConstDefault, MarkerType};
 

@@ -33,7 +33,12 @@ pub struct IntoFieldsWrapper<T: DropFields> {
 
 impl<T: DropFields> IntoFieldsWrapper<T> {
     /// Constructs this `IntoFieldsWrapper`,wrapping the `value`.
-    pub fn new(value: T) -> Self {
+    ///
+    /// Also calls `DropFields::pre_move` on the wrapped value
+    ///
+    #[inline(always)]
+    pub fn new(mut value: T) -> Self {
+        DropFields::pre_move(&mut value);
         Self {
             value: ManuallyDrop::new(value),
             moved: MovedOutFields::new(),
@@ -42,18 +47,21 @@ impl<T: DropFields> IntoFieldsWrapper<T> {
 
     /// Gets mutable references to the wrapped value,
     /// and the `MovedOutFields` that tracks which fields were moved out of it.
+    #[inline(always)]
     pub fn inner_and_moved_mut(&mut self) -> (&mut T, &mut MovedOutFields) {
         (&mut self.value, &mut self.moved)
     }
 
     /// Gets mutable pointers to the wrapped value,
     /// and the `MovedOutFields` that tracks which fields were moved out of it.
+    #[inline(always)]
     pub fn inner_and_moved_raw(&mut self) -> (*mut T, *mut MovedOutFields) {
         (&mut *self.value as *mut T, &mut self.moved as *mut _)
     }
 }
 
 impl<T: DropFields> Drop for IntoFieldsWrapper<T> {
+    #[inline(always)]
     fn drop(&mut self) {
         unsafe {
             DropFields::drop_fields(&mut *self.value, self.moved);
@@ -69,9 +77,9 @@ macro_rules! declare_run_on_drop {
         struct $struct:ident
         $(where[$($where_preds:tt)*])?
         $(#[$new_meta:meta])*
-        fn new($($extra_var:ident : $extra_ty:ty),* $(,)?)
+        $(unsafe $(#$dummy:ident#)?)? fn new($($extra_var:ident : $extra_ty:ty),* $(,)?)
         this=$this:ident,
-        drop={$($drop:tt)*}
+        fn drop(){$($drop:tt)*}
     ) => (
         $(#[$meta])*
         pub struct $struct<'a,T>
@@ -97,7 +105,9 @@ macro_rules! declare_run_on_drop {
             /// let c=Baz;
             /// ```
             /// `c` gets dropped first,then `b`, then `a`.
-            pub unsafe fn new(mutref:&'a mut T $(,$extra_var : $extra_ty)*)->Self{
+            #[inline(always)]
+            pub $(unsafe $(#$dummy#)?)?
+            fn new(mutref:&'a mut T $(,$extra_var : $extra_ty)*)->Self{
                 Self{
                     mutref,
                     $($extra_var,)*
@@ -105,6 +115,7 @@ macro_rules! declare_run_on_drop {
             }
 
             /// Reborrows the wrapped mutable reference.
+            #[inline(always)]
             pub fn get_mut(&mut self)->&mut T{
                 self.mutref
             }
@@ -139,7 +150,7 @@ declare_run_on_drop! {
     fn new()
 
     this=this,
-    drop={
+    fn drop(){
         unsafe{
             std_::ptr::drop_in_place(this.mutref)
         }
@@ -161,10 +172,10 @@ declare_run_on_drop! {
     /// This has the same safety requirements as [`PrePostDropFields::post_drop`].
     ///
     /// [`PrePostDropFields::post_drop`]: ./trait.PrePostDropFields.html#tymethod.post_drop
-    fn new()
+    unsafe fn new()
 
     this=this,
-    drop={
+    fn drop(){
         unsafe{
             PrePostDropFields::post_drop(this.mutref)
         }
@@ -186,10 +197,10 @@ declare_run_on_drop! {
     /// This has the same safety requirements as [`DropFields::drop_fields`].
     ///
     /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
-    fn new(moved: MovedOutFields)
+    unsafe fn new(moved: MovedOutFields)
 
     this=this,
-    drop={
+    fn drop(){
         unsafe{
             this.mutref.drop_fields(this.moved)
         }

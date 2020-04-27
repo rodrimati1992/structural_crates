@@ -7,6 +7,7 @@ use crate::{
 use std_::cell::RefCell;
 
 #[derive(Structural)]
+#[struc(pre_move = "drop_pre_post_structa")]
 #[struc(pre_post_drop_fields)]
 struct PrePostStructA<'a> {
     cell: &'a RefCell<FixedArray>,
@@ -17,6 +18,10 @@ struct PrePostStructA<'a> {
     pub e: PushOnDrop<'a, u32>,
     f: PushOnDrop<'a, u32>,
     pub g: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_post_structa(this: &mut PrePostStructA<'_>) {
+    this.cell.borrow_mut().push(240);
 }
 
 unsafe impl<'a> PrePostDropFields for PrePostStructA<'a> {
@@ -96,7 +101,7 @@ fn drop_order_struct() {
         type_name=PrePostStructA,
         constructor(PrePostStructA)
         post_constructor(|_arr,a|a)
-        before()
+        before(240)
         after()
     }
 }
@@ -104,6 +109,7 @@ fn drop_order_struct() {
 ////////////////////////////////////////
 
 #[derive(Structural)]
+#[struc(pre_move = "drop_pre_post_enum")]
 #[struc(pre_post_drop_fields)]
 enum PrePostEnum<'a> {
     Variant {
@@ -129,6 +135,11 @@ enum PrePostEnum<'a> {
     },
 }
 
+fn drop_pre_post_enum(this: &mut PrePostEnum<'_>) {
+    let PrePostEnum::Variant { ref mut cell, .. } = *this;
+    cell.borrow_mut().push(241);
+}
+
 unsafe impl<'a> PrePostDropFields for PrePostEnum<'a> {
     unsafe fn pre_drop(this: *mut Self) {
         let PrePostEnum::Variant { ref mut cell, .. } = *this;
@@ -149,7 +160,7 @@ fn drop_order_enum() {
         post_constructor(|_arr,a|a)
         variant=Variant,
         post_method=unwrap,
-        before()
+        before(241)
         after()
     }
 }
@@ -157,6 +168,7 @@ fn drop_order_enum() {
 ////////////////////////////////////////
 
 #[derive(Structural)]
+#[struc(pre_move = "drop_pre_post_struct_deleg")]
 #[struc(pre_post_drop_fields)]
 struct PrePostStructDeleg<'a, T> {
     cell: &'a RefCell<FixedArray>,
@@ -164,6 +176,10 @@ struct PrePostStructDeleg<'a, T> {
     value: T,
     f0: PushOnDrop<'a, u32>,
     f1: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_post_struct_deleg<T>(this: &mut PrePostStructDeleg<'_, T>) {
+    this.cell.borrow_mut().push(242);
 }
 
 unsafe impl<'a, T> PrePostDropFields for PrePostStructDeleg<'a, T> {
@@ -193,7 +209,7 @@ fn drop_order_derive_delegation() {
                 f1: PushOnDrop::new(0,cell,151),
             }
         })
-        before(250,150,151)
+        before(242,240,250,150,151)
         after(251)
     }
 }
@@ -205,6 +221,10 @@ struct PrePostStructDelegMacro<'a, T> {
     value: T,
     f0: PushOnDrop<'a, u32>,
     f1: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_post_struct_deleg_macro<T>(this: &mut PrePostStructDelegMacro<'_, T>) {
+    this.cell.borrow_mut().push(243);
 }
 
 unsafe_delegate_structural_with! {
@@ -225,6 +245,7 @@ unsafe_delegate_structural_with! {
 
     DropFields = {
         dropped_fields[cell f0 f1]
+        pre_move=drop_pre_post_struct_deleg_macro;
         pre_post_drop_fields=true;
     }
 }
@@ -256,7 +277,7 @@ fn drop_order_delegation_macro() {
                 f1: PushOnDrop::new(0,cell,151),
             }
         })
-        before(100,150,151)
+        before(243,240,100,150,151)
         after(110)
     }
 }

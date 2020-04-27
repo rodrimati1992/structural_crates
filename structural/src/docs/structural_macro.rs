@@ -54,6 +54,9 @@ Many of these can be overriden.
 [`DropFields::drop_fields`]:
 ../../field/ownership/trait.DropFields.html#tymethod.drop_fields
 
+[`DropFields::pre_move`]:
+../../field/ownership/trait.DropFields.html#tymethod.pre_move
+
 [`PrePostDropFields`]: ../../field/ownership/trait.PrePostDropFields.html
 
 [`PrePostDropFields::pre_drop`]:
@@ -62,24 +65,30 @@ Many of these can be overriden.
 [`PrePostDropFields::post_drop`]:
 ../../field/ownership/trait.PrePostDropFields.html#method.post_drop
 
+<span id="drop-behavior-section"></span>
 # Drop behavior
 
 When converting a type into multiple fields by value
 (using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
-the type will be dropped with [`DropFields::drop_fields`] instead of
-invoking the regular destructor (`Drop::drop`).
+the regular destructor (`Drop::drop`) won't run,
+instead the steps [in the section below](#drop-order-section) will happen.
 
 If your type has code that must run when it's dropped,
-you can implement the [`PrePostDropFields`] trait,
-and use the [`#[struc(pre_post_drop_fields)]`](#strucpre_post_drop_fields) attribute to
-run that code when the type is converted into multiple fields by value
+you can use the [`#[struc(pre_move="foo_function")]`](#strucpre_move) attribute to
+run that code before the type is converted into multiple fields by value
 (using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
 
-For an example of implementing [`PrePostDropFields`],[look here](#with-pre-post-drop-fields).
+For an example of using the `#[struc(pre_move="foo")]` attribute,[look here](#with-pre-move).
 
+<span id="drop-order-section"></span>
 ### Drop order
 
-The drop order when invoking [`DropFields::drop_fields`] is this by default:
+The order of operations when invoking [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]
+is this by default:
+
+- Call [`DropFields::pre_move`].
+
+- Move out the fields.
 
 - Call [`PrePostDropFields::pre_drop`].
 
@@ -88,6 +97,8 @@ The drop order when invoking [`DropFields::drop_fields`] is this by default:
 - Drop the private fields(fields that don't have accessor impls),in declaration order.
 
 - Call [`PrePostDropFields::post_drop`].
+
+- Return the moved out fields
 
 # Container Attributes
 
@@ -139,14 +150,31 @@ For this enum:`pub enum Foo{Bar,Baz}`<br>
 This macro would generate:`pub type Foo_VC=TS!(2);`<br>
 As well as documentaion explaining what the alias is.
 
+### `#[struc(pre_move="foo")]`
+
+This only has an effect for types with at least one by-value accessor impl.
+
+Changes the implementation of [`DropFields::pre_move`] to run the `foo` function,
+allowing custom code to run before the type is converted into multiple fields by value.
+
+For enums: `foo` is called before calling `DropFields::pre_move` on
+the delegated-to field in newtype variants.
+
+For a reference on the what happens when converting a type into multiple fields by value
+[go here](#drop-behavior-section).
+
 ### `#[struc(pre_post_drop_fields)]`
 
 This only has an effect for types with at least one by-value accessor impl.
 
-Changes the implementation of [`DropFields`] to use a manual implementation of the
-[`PrePostDropFields`] trait when converting this type into multiple fields by value,
-runing [`PrePostDropFields::pre_drop`] before and [`PrePostDropFields::post_drop`]
+Changes the implementation of [`DropFields`] to run
+[`PrePostDropFields::pre_drop`] before and [`PrePostDropFields::post_drop`]
 after the non-moved-out fields are dropped in [`DropFields::drop_fields`].
+
+This requires a manual implementation of [`PrePostDropFields`].
+
+For a reference on the what happens when converting a type into multiple fields by value
+[go here](#drop-behavior-section).
 
 # Variant Attributes
 
@@ -783,14 +811,13 @@ assert_eq!( letuce.field_mut(fp!(::"生菜"."树叶")), Some(&mut 21) );
 
 ```
 
-<span id="with-pre-post-drop-fields"></span>
-### With PrePostDropFields
+<span id="with-pre-move"></span>
+### Using the `#[struc(pre_move="foo")]` attribute
 
 This demonstrates how you can run code when converting a type into multiple fields by value.
 
 ```rust
 use structural::{fp, StructuralExt, Structural};
-use structural::field::ownership::PrePostDropFields;
 
 {
     let mut vector=Vec::new();
@@ -812,7 +839,9 @@ use structural::field::ownership::PrePostDropFields;
         z: 8
     };
     assert_eq!(into_xyz(this), (3, 5, 8));
-    // The vector was written to in WithDropLogic's impl of `PrePostDropFields`
+    // The vector was written to in `WithDropLogic::drop_`,
+    // because `DropFields::pre_move` delegates to it.
+    // (`WithDropLogic::drop_` was passed to the `#[struc(pre_move="...")]` attribute)
     assert_eq!(vector, [1001]);
 }
 {
@@ -840,7 +869,7 @@ struct Variables{
 
 #[derive(Structural)]
 # #[struc(no_trait)]
-#[struc(pre_post_drop_fields)]
+#[struc(pre_move="WithDropLogic::drop_")]
 struct WithDropLogic<'a>{
     vector: &'a mut Vec<u32>,
     pub x: u32,
@@ -848,21 +877,16 @@ struct WithDropLogic<'a>{
     pub z: u32,
 }
 
-// This trait is unsafe to implement because we make sure not to
-// use public fields(those with accessor impls)
-//
-unsafe impl PrePostDropFields for WithDropLogic<'_>{
-    unsafe fn pre_drop(this: *mut Self){
-        let Self{ref mut vector, ..}=*this;
+impl WithDropLogic<'_>{
+    fn drop_(&mut self){
+        let Self{ref mut vector, ..}=*self;
         vector.push(1001);
     }
 }
 
 impl Drop for WithDropLogic<'_>{
     fn drop(&mut self){
-        unsafe{
-            PrePostDropFields::pre_drop(self);
-        }
+        self.drop_();
     }
 }
 

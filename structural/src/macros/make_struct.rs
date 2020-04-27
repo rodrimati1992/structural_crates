@@ -134,7 +134,7 @@ macro_rules! make_struct {
                     impl[$($field_name,)*] __Anonymous_Struct<$($field_name,)*>
                     where[]
                     {
-                        DropFields{ drop_fields=just_fields, }
+                        DropFields{ drop_fields={just_fields,} }
 
                         $((
                             IntoFieldMut<

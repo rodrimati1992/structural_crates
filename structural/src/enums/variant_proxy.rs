@@ -1,4 +1,5 @@
 use crate::{
+    enums::IsVariant,
     field::{
         DropFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField,
         GetVariantFieldMut, IntoField, IntoVariantField, MovedOutFields, SpecGetFieldMut,
@@ -623,8 +624,17 @@ where
 
 unsafe impl<T, V> DropFields for VariantProxy<T, V>
 where
-    T: DropFields,
+    T: IsVariant<V> + DropFields,
+    V: IsTStr,
 {
+    fn pre_move(&mut self) {
+        <T as DropFields>::pre_move(&mut self.value);
+
+        // This is necessary because the enum can mutate itself into a different variant,
+        // invalidating the safety invariant of this type.
+        assert!(self.value.is_variant_(V::DEFAULT));
+    }
+
     unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
         <T as DropFields>::drop_fields(&mut self.value, moved)
     }

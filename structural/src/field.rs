@@ -632,6 +632,9 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 ///
 /// unsafe impl<T> DropFields for Huh<T>{
+///     // This type does nothing before fields are moved.
+///     fn pre_move(&mut self){}
+///
 ///     unsafe fn drop_fields(&mut self, moved: MovedOutFields){
 ///         let Self{first, second} = self;
 ///

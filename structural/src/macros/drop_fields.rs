@@ -9,7 +9,10 @@ macro_rules! _private_impl_drop_fields{
     //// The different way that structural types are dropped
     (
         struct_or_enum($soe:tt),
-        drop_kind=just_fields,
+        for_drop={
+            just_fields,
+            $($for_drop:tt)*
+        }
 
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where[$($where:tt)*]
@@ -24,6 +27,7 @@ macro_rules! _private_impl_drop_fields{
         $crate::_private_impl_drop_fields_inner!{
             @compute_where_clause
             struct_or_enum($soe),
+            for_drop($($for_drop)*)
 
             impl[$($typarams)*] DropFields for $self_
             where[$($where)*]
@@ -32,7 +36,10 @@ macro_rules! _private_impl_drop_fields{
     };
     (
         struct_or_enum($soe:tt),
-        drop_kind=pre_post_drop,
+        for_drop={
+            pre_post_drop,
+            $($for_drop:tt)*
+        }
 
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where[$($where:tt)*]
@@ -41,6 +48,7 @@ macro_rules! _private_impl_drop_fields{
         $crate::_private_impl_drop_fields_inner!{
             @compute_where_clause
             struct_or_enum($soe),
+            for_drop($($for_drop)*)
 
             impl[$($typarams)*] DropFields for $self_
             where[$($where)*]
@@ -49,12 +57,18 @@ macro_rules! _private_impl_drop_fields{
     };
     (
         struct_or_enum($soe:tt),
-        drop_kind=$(custom_drop)?,
+        for_drop=$(custom_drop)?
 
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where[$($where:tt)*]
         $impl_details:tt
     )=>{};
+    ( $($stuff:tt)* )=>{
+        compile_error!{concat!(
+            "Unrecognized `_private_impl_drop_fields` arguments:",
+            $(stringify!($stuff),)*
+        )}
+    };
 }
 
 #[doc(hidden)]
@@ -63,6 +77,9 @@ macro_rules! _private_impl_drop_fields_inner{
     // Structs don't need to compute any where clauses
     (@compute_where_clause
         struct_or_enum(struct),
+        for_drop(
+            $(pre_move = $pre_move_fn:expr,)?
+        )
 
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where[$($where:tt)*]
@@ -82,6 +99,12 @@ macro_rules! _private_impl_drop_fields_inner{
             $($where)*
         {
             #[inline(always)]
+            fn pre_move(&mut self){
+                $(
+                    $pre_move_fn(self);
+                )?
+            }
+
             unsafe fn drop_fields(&mut self,moved: $crate::pmr::MovedOutFields) {
                 let mut this=$crate::pmr::RunPostDrop::new(self);
                 let this=this.get_mut();
@@ -117,6 +140,7 @@ macro_rules! _private_impl_drop_fields_inner{
     };
     (@compute_where_clause
         struct_or_enum(enum),
+        for_drop $for_drop:tt
 
         impl $impl_params:tt DropFields for $self_:ty
         where $where:tt
@@ -125,8 +149,11 @@ macro_rules! _private_impl_drop_fields_inner{
         $crate::_private_impl_drop_fields_inner!{
             @step
             moved_fields_variable=moved_fields,
+            for_drop $for_drop
+
             impl $impl_params DropFields for $self_
             where $where
+            pre_move_branches()
             branches()
             $impl_details
         }
@@ -135,8 +162,11 @@ macro_rules! _private_impl_drop_fields_inner{
     //// How enums are dropped
     (@step
         moved_fields_variable=$moved_fields:ident,
+        for_drop $for_drop:tt
+
         impl $impl_params:tt DropFields for $self_:ty
         where [$($where:tt)*]
+        pre_move_branches($($pre_move_branches:tt)*)
         branches($($branches:tt)*)
         {
             $variant:ident(
@@ -161,8 +191,13 @@ macro_rules! _private_impl_drop_fields_inner{
         $crate::_private_impl_drop_fields_inner!{
             @step
             moved_fields_variable=$moved_fields,
+            for_drop $for_drop
+
             impl $impl_params DropFields for $self_
             where [$($where)*]
+            pre_move_branches(
+                $($pre_move_branches)*
+            )
             branches(
                 $($branches)*
 
@@ -199,8 +234,11 @@ macro_rules! _private_impl_drop_fields_inner{
     // Dropping a newtype variant
     (@step
         moved_fields_variable=$moved_fields:ident,
+        for_drop $for_drop:tt
+
         impl $impl_params:tt DropFields for $self_:ty
         where [$($where:tt)*]
+        pre_move_branches($($pre_move_branches:tt)*)
         branches($($branches:tt)*)
         {
             $variant:ident(
@@ -225,11 +263,20 @@ macro_rules! _private_impl_drop_fields_inner{
         $crate::_private_impl_drop_fields_inner!{
             @step
             moved_fields_variable=$moved_fields,
+            for_drop $for_drop
+
             impl $impl_params DropFields for $self_
             where [
                 $field_ty: $crate::pmr::DropFields,
                 $($where)*
             ]
+            pre_move_branches(
+                $($pre_move_branches)*
+
+                Self::$variant{$field_name: $field_var,..}=>{
+                    $crate::pmr::DropFields::pre_move( $field_var );
+                }
+            )
             branches(
                 $($branches)*
 
@@ -252,8 +299,13 @@ macro_rules! _private_impl_drop_fields_inner{
     };
     (@step
         moved_fields_variable=$moved_fields:ident,
+        for_drop(
+            $(pre_move = $pre_move_fn:expr,)?
+        )
+
         impl[$($typarams:tt)*] DropFields for $self_:ty
         where [$($where:tt)*]
+        pre_move_branches($($pre_move_branches:tt)*)
         branches($($branches:tt)*)
         {}
     )=>{
@@ -262,6 +314,26 @@ macro_rules! _private_impl_drop_fields_inner{
             Self: $crate::pmr::PrePostDropFields,
             $($where)*
         {
+            #[inline(always)]
+            fn pre_move(&mut self){
+                #[allow(unused_variables,unused_mut)]
+                let mut this=$crate::pmr::RunOnDrop::new(
+                    self,
+                    #[inline(always)]
+                    |this|{
+                        match this {
+                            $($pre_move_branches)*
+                            #[allow(unreachable_patterns)]
+                            _=>{}
+                        }
+                    }
+                );
+
+                $(
+                    $pre_move_fn(this.reborrow_mut());
+                )?
+            }
+
             #[inline(always)]
             unsafe fn drop_fields(&mut self, $moved_fields: $crate::pmr::MovedOutFields) {
                 let mut this=$crate::pmr::RunPostDrop::new(self);

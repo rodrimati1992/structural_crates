@@ -675,6 +675,9 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// }
 ///
 /// unsafe impl DropFields for Foo{
+///     // This type does nothing before fields are moved.
+///     fn pre_move(&mut self){}
+///     
 ///     unsafe fn drop_fields(&mut self, moved_fields: MovedOutFields){
 ///         match self {
 ///             Foo::Bar(field0, field1)=>{

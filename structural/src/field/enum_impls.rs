@@ -15,7 +15,7 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Option
-        drop_fields=just_fields,
+        drop_fields={just_fields,}
         variant_count=TS!(2),
         (
             Some,
@@ -35,7 +35,7 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Result
-        drop_fields=just_fields,
+        drop_fields={just_fields,}
         variant_count=TS!(2),
         (
             Ok,

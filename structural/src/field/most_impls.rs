@@ -22,7 +22,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        DropFields{ drop_fields=just_fields, }
+        DropFields{ drop_fields={just_fields,} }
 
         (IntoFieldMut < start : T,0,Start_STR,"start",> )
         (IntoFieldMut < end : T,1,End_STR,"end",> )
@@ -34,7 +34,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        DropFields{ drop_fields=just_fields, }
+        DropFields{ drop_fields={just_fields,} }
 
         (IntoFieldMut < start : T,0,Start_STR,"start",> )
     }
@@ -44,7 +44,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        DropFields{ drop_fields=just_fields, }
+        DropFields{ drop_fields={just_fields,} }
 
         (IntoFieldMut < end : T,0,End_STR,"end",> )
     }
@@ -54,7 +54,7 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        DropFields{ drop_fields=just_fields, }
+        DropFields{ drop_fields={just_fields,} }
 
         (IntoFieldMut < end : T,0,End_STR,"end",> )
     }
@@ -248,12 +248,18 @@ mod alloc_impls {
     where
         T: ?Sized + DropFields,
     {
+        #[inline(always)]
+        fn pre_move(&mut self) {
+            <T as DropFields>::pre_move(&mut **self);
+        }
+
+        #[inline(always)]
         unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
             let mut this = Box::<ManuallyDrop<T>>::from_raw(
                 &mut **({ self } as *mut Box<T> as *mut Box<ManuallyDrop<T>>),
             );
             let this: &mut T = &mut **this;
-            this.drop_fields(moved)
+            <T as DropFields>::drop_fields(this, moved)
         }
     }
 }

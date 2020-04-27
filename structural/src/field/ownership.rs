@@ -32,12 +32,6 @@ pub use self::on_drop::{IntoFieldsWrapper, RunDrop, RunDropFields, RunPostDrop};
 /// Both the [delegation macro] and the [`Structural`] derive macro provide ways
 /// to leak instead of aborting.
 ///
-/// # Example
-///
-/// There is an example of implementing this trait
-/// [in the documentation for the Structural macro
-/// ](../../docs/structural_macro/index.html#with-pre-post-drop-fields)
-///
 /// [`DropFields::drop_fields`]: ./trait.DropFields.html#tymethod.drop_fields
 /// [`DropFields`]: ./trait.DropFields.html
 /// [delegation macro]: ../../macro.unsafe_delegate_structural_with.html
@@ -80,6 +74,12 @@ pub unsafe trait PrePostDropFields {
 /// in its `Into*Field` implementation.
 /// If `is_moved_out` returns false, then you must drop the field.
 ///
+/// # Before move method
+///
+/// You can define drop logic similar to `Drop::drop` with `pre_move`.
+///
+/// All fields that have accessor impls must still be usable after `pre_move` is called.
+///
 /// # Example
 ///
 /// For an example of implementing this trait you can look at:
@@ -103,6 +103,9 @@ pub unsafe trait PrePostDropFields {
 ///
 /// [`IntoVariantField`]: ../trait.IntoVariantField.html
 pub unsafe trait DropFields {
+    /// What this type does right before any field is moved.
+    fn pre_move(&mut self);
+
     /// Drops all the fields that were not moved out.
     ///
     /// # Safety

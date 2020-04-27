@@ -55,7 +55,7 @@ crate::_private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=Pair
-        drop_fields=just_fields,
+        drop_fields={just_fields,}
         variant_count=TS!(3),
         (
             AllCorrect,

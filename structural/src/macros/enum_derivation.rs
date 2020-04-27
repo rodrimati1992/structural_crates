@@ -599,7 +599,7 @@ macro_rules! _private_impl_getters_for_derive_enum{
         where $where_preds:tt
         {
             enum=$enum_:ident
-            drop_fields=$($drop_kind:ident)?,
+            drop_fields=$drop_kind:tt
             $(variant_count=$variant_count:ty,)?
             $((
                 $variant:ident,
@@ -647,7 +647,7 @@ macro_rules! _private_impl_getters_for_derive_enum{
 
         $crate::_private_impl_drop_fields!{
             struct_or_enum(enum),
-            drop_kind=$($drop_kind)?,
+            for_drop=$drop_kind
 
             impl $typarams DropFields for $self_
             where $where_preds

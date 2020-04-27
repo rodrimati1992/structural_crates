@@ -22,18 +22,23 @@ accessing the same delegated-to variable.
 
 When converting a type into multiple fields by value
 (using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
-the type will be dropped with [`DropFields::drop_fields`] instead of
-invoking the regular destructor (`Drop::drop`).
+the regular destructor (`Drop::drop`) won't run,
+instead the steps [in the section below](#drop-order-section) will happen.
 
 If your type has code that must run when it's dropped,
-you can implement the [`PrePostDropFields`] trait,
-and pass `DropFields= { ..... pre_post_drop_fields=true; }` to this macro
-to run that code when the type is converted into multiple fields by value
+you can pass `DropFields= { ..... pre_move = foo_function; }` to this macro
+to run that code before the type is converted into multiple fields by value
 (using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
 
+<span id="drop-order-section"></span>
 ### Drop order
 
-The drop order when invoking [`DropFields::drop_fields`] is this by default:
+The order of operations when invoking [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]
+is this by default:
+
+- Call [`DropFields::pre_move`].
+
+- Move out the fields.
 
 - Call [`PrePostDropFields::pre_drop`].
 
@@ -43,9 +48,13 @@ The drop order when invoking [`DropFields::drop_fields`] is this by default:
 
 - Call [`PrePostDropFields::post_drop`].
 
+- Return the moved out fields
+
 [`DropFields`]: ./field/ownership/trait.DropFields.html
 
 [`DropFields::drop_fields`]: ./field/ownership/trait.DropFields.html#tymethod.drop_fields
+
+[`DropFields::pre_move`]: ./field/ownership/trait.DropFields.html#tymethod.pre_move
 
 [`PrePostDropFields`]: ./field/ownership/trait.PrePostDropFields.html
 
@@ -163,6 +172,16 @@ unsafe_delegate_structural_with!{
         //
         // If you're dropping a nested field,it must be wrapped in parentheses(ie:`(a.b.c)`).
         dropped_fields[ a,b,c,(d.e) ]
+
+        // An optional argument for code to run right before fields are moved.
+        //
+        // `some_function` is called in the implementation of
+        // `DropFields::pre_move` generated for this type.
+        //
+        // The passed in function must have this signature: `fn(&mut Self)`
+        // in this example it would be `fn<T: Trait>(&mut Foo<T>)`
+        //
+        // `pre_move = some_function;`
 
         // An optional argument which determines whether there's pre/post field-drop logic
         // in `DropFields::drop_fields`.
@@ -1073,6 +1092,8 @@ macro_rules! unsafe_delegate_structural_with_inner {
         DropFields = {
             dropped_fields[$($field:tt)*]
 
+            $(pre_move = $pre_move:expr;)?
+
             $(pre_post_drop_fields=$pp_drop_fields:ident;)?
             $(drop_delegated_to_variable=$drop_delegated:ident;)?
         }
@@ -1083,6 +1104,24 @@ macro_rules! unsafe_delegate_structural_with_inner {
             $($into_where_clause)*
             $($where_clause)*
         {
+            #[inline(always)]
+            fn pre_move(&mut self){
+                #[allow(unused_variables,unused_mut)]
+                let mut guard=$crate::pmr::RunOnDrop::new(
+                    self,
+                    #[inline(always)]
+                    |$this|{
+                        let field:&mut $delegating_to_type=$move_out_field_closure;
+                        $crate::pmr::DropFields::pre_move(field);
+                    }
+                );
+
+                $(
+                    let func=$pre_move;
+                    func(guard.reborrow_mut());
+                )?
+            }
+
             #[allow(unused_variables)]
             unsafe fn drop_fields(&mut self, moved: $crate::pmr::MovedOutFields) {
                 let $this=self;
