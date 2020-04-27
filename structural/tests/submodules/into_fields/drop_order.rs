@@ -1,10 +1,11 @@
-use crate::{
+use structural::{
     field::ownership::PrePostDropFields,
+    fp,
     test_utils::{FixedArray, PushOnDrop},
-    Structural, StructuralExt,
+    unsafe_delegate_structural_with, Structural, StructuralExt,
 };
 
-use std_::cell::RefCell;
+use std::cell::RefCell;
 
 #[derive(Structural)]
 #[struc(pre_move = "drop_pre_post_structa")]

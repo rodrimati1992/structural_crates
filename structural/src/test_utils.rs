@@ -6,14 +6,14 @@ use std_::{
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) struct OrOnDrop<'a, T> {
+pub struct OrOnDrop<'a, T> {
     value: T,
     bits: &'a Cell<u64>,
     bits_to_set: u64,
 }
 
 impl<'a, T> OrOnDrop<'a, T> {
-    pub(crate) fn new(value: T, bits: &'a Cell<u64>, bits_to_set: u64) -> Self {
+    pub fn new(value: T, bits: &'a Cell<u64>, bits_to_set: u64) -> Self {
         Self {
             value,
             bits,
@@ -49,12 +49,12 @@ impl<'a, T> Drop for OrOnDrop<'a, T> {
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Used to test that types that manually drop stuff do it correctly.
-pub(crate) struct DecOnDrop<'a> {
+pub struct DecOnDrop<'a> {
     counter: &'a Cell<usize>,
 }
 
 impl<'a> DecOnDrop<'a> {
-    pub(crate) fn new(counter: &'a Cell<usize>) -> Self {
+    pub fn new(counter: &'a Cell<usize>) -> Self {
         counter.set(counter.get() + 1);
 
         Self { counter }
@@ -166,12 +166,12 @@ impl<'a, T> Drop for PushOnDrop<'a, T> {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) enum RefKind {
+pub enum RefKind {
     Shared,
     Mutable,
 }
 
-pub(crate) trait GetRefKind {
+pub trait GetRefKind {
     fn get_ref_kind(self) -> RefKind;
 }
 

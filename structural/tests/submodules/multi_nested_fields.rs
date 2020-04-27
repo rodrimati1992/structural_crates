@@ -1,7 +1,7 @@
-use crate::StructuralExt;
+use structural::{field_path_aliases, fp, make_struct, StructuralExt, FP};
 
 #[cfg(feature = "alloc")]
-use crate::pmr::Box;
+use structural::pmr::Box;
 
 use core_extensions::type_asserts::AssertEq;
 use core_extensions::{SelfOps, Void};
@@ -120,8 +120,8 @@ field_path_aliases! {
 
 #[test]
 fn get_nested_field_types() {
-    use crate::field::RevGetFieldType;
-    use crate::{GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4};
+    use structural::field::RevGetFieldType;
+    use structural::{GetFieldType, GetFieldType2, GetFieldType3, GetFieldType4};
 
     type FP0 = FP!(0);
     type FP1 = FP!(1);

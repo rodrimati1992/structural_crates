@@ -1,5 +1,5 @@
-use crate::{
-    for_examples::Variants, fp, path::UniquePaths, FieldPathSet, NestedFieldPath,
+use structural::{
+    for_examples::Variants, fp, path::UniquePaths, ts, FieldPathSet, NestedFieldPath,
     NestedFieldPathSet, StructuralExt, TS,
 };
 
@@ -127,7 +127,7 @@ fn variant_field() {
 
 #[test]
 fn variant_name() {
-    use crate::enums::VariantProxy;
+    use structural::enums::VariantProxy;
 
     let mut foo = Variants::Foo(13, 21);
     let mut foo_b = Variants::Foo(13, 21);

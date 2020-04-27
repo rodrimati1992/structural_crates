@@ -1,8 +1,12 @@
-use crate::{
+use structural::{
     enums::IsVariant,
     field::{IntoFieldMut, IntoVariantFieldMut},
-    Structural, StructuralExt,
+    field_path_aliases, fp, tstr_aliases, Structural, StructuralExt,
+    _private_impl_getters_for_derive_enum, _private_impl_getters_for_derive_struct, TS,
 };
+
+// For tests
+use structural::assert_equal_bounds;
 
 field_path_aliases! {
     mod names{

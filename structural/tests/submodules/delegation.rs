@@ -1,11 +1,15 @@
-use crate::{
+use structural::{
     field::Array3,
     field_path_aliases,
     for_examples::{EnumOptFlying, EnumOptFlying_SI},
-    structural_alias, GetField, GetFieldMut, IntoField, Structural, StructuralExt,
+    fp, structural_alias, unsafe_delegate_structural_with, GetField, GetFieldMut, IntoField,
+    Structural, StructuralExt,
 };
 
-use std_::{fmt::Debug, marker::PhantomData, mem};
+// For test
+use structural::declare_querying_trait;
+
+use std::{fmt::Debug, marker::PhantomData, mem};
 
 use core_extensions::type_level_bool::{False, True};
 
@@ -52,7 +56,6 @@ where
 
     #[cfg(feature = "alloc")]
     {
-        use crate::reexports::Box;
         let erase = |v: &T| Box::new(v.clone()) as Box<dyn Array3<u32>>;
         assert_eq!(erase(&this).into_field(fp!(0)), 2);
         assert_eq!(erase(&this).into_field(fp!(1)), 3);
@@ -86,7 +89,6 @@ where
 
     #[cfg(feature = "alloc")]
     {
-        use crate::reexports::Box;
         let erase = |v: &T| Box::new(v.clone()) as Box<dyn EnumOptFlying_SI>;
         assert_eq!(erase(&this).into_field(fp!(::Limbs.legs?)), Some(3));
         assert_eq!(erase(&this).into_field(fp!(::Limbs.hands?)), Some(5));

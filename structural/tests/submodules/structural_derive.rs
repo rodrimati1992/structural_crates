@@ -1,7 +1,12 @@
-use crate::{GetField, GetFieldMut, IntoField, IntoFieldMut, Structural, StructuralExt};
+use structural::{
+    field_path_aliases, fp, structural_alias, ts, tstr_aliases, GetField, GetFieldMut, IntoField,
+    IntoFieldMut, Structural, StructuralExt, FP,
+};
 
-#[cfg(feature = "alloc")]
-use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
+// For tests
+use structural::assert_equal_bounds;
+
+use std::{rc::Rc, sync::Arc};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -32,7 +37,10 @@ fn derive_inside_function() {
 #[allow(dead_code)]
 fn object_safety() {
     #[cfg(feature = "alloc")]
-    type AllocPtrs<'a, T> = (crate::alloc::boxed::Box<T>, crate::alloc::sync::Arc<T>);
+    type AllocPtrs<'a, T> = (
+        structural::alloc::boxed::Box<T>,
+        structural::alloc::sync::Arc<T>,
+    );
 
     #[cfg(not(feature = "alloc"))]
     type AllocPtrs<'a, T> = (T,);
@@ -334,8 +342,13 @@ trait Vegetable_ESI {}
 
 mod struct_with_constraints {
     use super::{paths, strings};
-    use crate::field::{IntoFieldMut, IntoVariantFieldMut};
-    use crate::Structural;
+    use structural::{
+        field::{IntoFieldMut, IntoVariantFieldMut},
+        Structural,
+    };
+
+    // For tests
+    use structural::assert_equal_bounds;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -409,7 +422,7 @@ mod struct_with_constraints {
 }
 
 mod struct_delegated_with_constraints {
-    use crate::Structural;
+    use structural::Structural;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]
@@ -443,8 +456,10 @@ mod struct_delegated_with_constraints {
 mod enum_with_constraints {
     use super::strings;
 
-    use crate::field::IntoVariantFieldMut;
-    use crate::Structural;
+    use structural::{field::IntoVariantFieldMut, Structural};
+
+    // For tests
+    use structural::assert_equal_bounds;
 
     #[allow(dead_code)]
     #[derive(Structural, Copy, Clone)]

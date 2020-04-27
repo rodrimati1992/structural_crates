@@ -1,5 +1,5 @@
 mod param_ret {
-    use crate::StructuralExt;
+    use structural::{fp, impl_struct, make_struct, StructuralExt};
 
     fn hi(blah: impl_struct! {a:u32,b:u32}) -> impl_struct! {a:u32,b:u64} {
         make_struct! {
@@ -16,9 +16,9 @@ mod param_ret {
 }
 
 mod mutabilities {
-    use crate::StructuralExt;
+    use structural::{fp, impl_struct, StructuralExt};
 
-    #[derive(crate::Structural, Clone)]
+    #[derive(structural::Structural, Clone)]
     struct Mutabilities0 {
         #[struc(access = "ref")]
         a: u32,

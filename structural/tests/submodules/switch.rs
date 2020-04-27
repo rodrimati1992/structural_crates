@@ -1,13 +1,13 @@
-use crate::{
+use structural::{
     enums::VariantProxy,
-    field_path_aliases,
+    field_path_aliases, switch,
     test_utils::{GetRefKind, RefKind},
     Structural, StructuralExt, TS,
 };
 
 use core_extensions::SelfOps;
 
-use std_::fmt::Debug;
+use std::fmt::Debug;
 
 #[derive(Debug, Structural, Copy, Clone)]
 enum Foo {

@@ -1,8 +1,14 @@
-use crate::enums::{IsVariant, VariantCount};
-use crate::field::IntoVariantFieldMut;
-use crate::{GetVariantField, GetVariantFieldMut, IntoVariantField, Structural, StructuralExt};
+use structural::{
+    enums::{IsVariant, VariantCount},
+    field::IntoVariantFieldMut,
+    fp, tstr_aliases, GetVariantField, GetVariantFieldMut, IntoVariantField, Structural,
+    StructuralExt, TS,
+};
 
-use std_::mem;
+// For tests
+use structural::assert_equal_bounds;
+
+use std::mem;
 
 #[test]
 fn option_test() {
@@ -50,7 +56,7 @@ tstr_aliases! {
     }
 }
 
-crate::_private_impl_getters_for_derive_enum! {
+structural::_private_impl_getters_for_derive_enum! {
     impl[T,U,] Pair<T,U>
     where[]
     {
@@ -422,8 +428,8 @@ assert_equal_bounds! {
 ///////////////////////////////////////////////////////////////////////////////
 
 mod with_variant_count_attr_1 {
-    use crate::enums::VariantCountOut;
-    use crate::{Structural, TS};
+    use structural::enums::VariantCountOut;
+    use structural::{Structural, TS};
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
@@ -440,8 +446,8 @@ mod with_variant_count_attr_1 {
 }
 
 mod with_variant_count_attr_4 {
-    use crate::enums::VariantCountOut;
-    use crate::{Structural, TS};
+    use structural::enums::VariantCountOut;
+    use structural::{Structural, TS};
 
     #[derive(Structural)]
     #[struc(variant_count_alias)]
@@ -467,7 +473,7 @@ fn publicness_of_variant_count_alias() {
 }
 
 mod without_variant_count_attr {
-    use crate::Structural;
+    use structural::Structural;
 
     #[derive(Structural)]
     #[allow(dead_code)]
@@ -484,7 +490,7 @@ mod without_variant_count_attr {
 }
 
 mod nonexhaustive_enum {
-    use crate::Structural;
+    use structural::Structural;
 
     #[derive(Structural)]
     #[non_exhaustive]

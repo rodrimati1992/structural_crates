@@ -675,7 +675,8 @@ pub mod type_level;
 pub mod utils;
 mod wrapper;
 
-#[cfg(test)]
+#[doc(hidden)]
+#[cfg(feature = "testing")]
 pub mod test_utils;
 
 #[cfg(test)]

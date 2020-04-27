@@ -1,13 +1,15 @@
-use crate::{test_utils::OrOnDrop, StructuralExt};
+use structural::{fp, StructuralExt};
 
-use std_::cell::Cell;
+use structural::test_utils::OrOnDrop;
+
+use std::cell::Cell;
 
 mod drop_order;
 
 #[cfg(feature = "alloc")]
 #[test]
 fn tuple_into_fields() {
-    use crate::alloc::{
+    use structural::alloc::{
         boxed::Box,
         string::{String, ToString},
         vec,

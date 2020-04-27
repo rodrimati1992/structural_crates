@@ -69,7 +69,9 @@ macro_rules! _private_impl_structural{
 }
 
 /// Asserts that the `$left` bounds are the same as the `$right` bounds
-#[cfg(test)]
+#[cfg(feature = "testing")]
+#[macro_export]
+#[doc(hidden)]
 macro_rules! assert_equal_bounds {
     (
         trait $trait_:ident $([$($trait_params:tt)*])? ,
@@ -138,7 +140,9 @@ macro_rules! ok_or_of {
 }
 
 /// Using this to test implemented traits.
-#[cfg(test)]
+#[cfg(feature = "testing")]
+#[doc(hidden)]
+#[macro_export]
 macro_rules! declare_querying_trait {
     (
         trait $trait_name:ident $([$($params:tt)*])?
@@ -147,25 +151,25 @@ macro_rules! declare_querying_trait {
         fn $impls_fn:ident;
     ) => (
         trait $trait_name<$($($params)*)?>:Sized{
-            type Impls:crate::pmr::Boolean;
+            type Impls: $crate::pmr::Boolean;
             fn $impls_fn(self)->Self::Impls{
-                <Self::Impls as crate::pmr::MarkerType>::MTVAL
+                <Self::Impls as $crate::pmr::MarkerType>::MTVAL
             }
         }
 
         impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
-        for crate::pmr::PhantomData<__This>
+        for $crate::pmr::PhantomData<__This>
         where
             $( __This:$($supertraits)*, )?
             $( $($where_)* )?
         {
-            type Impls=crate::pmr::True;
+            type Impls=$crate::pmr::True;
         }
 
         impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
-        for &'_ crate::pmr::PhantomData<__This>
+        for &'_ $crate::pmr::PhantomData<__This>
         {
-            type Impls=crate::pmr::False;
+            type Impls=$crate::pmr::False;
         }
     )
 }
