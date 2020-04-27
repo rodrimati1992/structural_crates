@@ -879,8 +879,7 @@ struct WithDropLogic<'a>{
 
 impl WithDropLogic<'_>{
     fn drop_(&mut self){
-        let Self{ref mut vector, ..}=*self;
-        vector.push(1001);
+        self.vector.push(1001);
     }
 }
 

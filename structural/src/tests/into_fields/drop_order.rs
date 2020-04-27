@@ -165,6 +165,51 @@ fn drop_order_enum() {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Testing newtype variants
+// This checks that the `pre_move`,`pre_drop`,and `post_drop` calls for
+// the newtype happen in the expected order.
+
+#[derive(Structural)]
+#[struc(pre_move = "PrePostEnumNewtype::drop_")]
+#[struc(pre_post_drop_fields)]
+enum PrePostEnumNewtype<'a> {
+    #[struc(newtype(bounds = "PrePostStructA_VSI<'a,@variant>"))]
+    Variant(PrePostStructA<'a>),
+}
+
+impl PrePostEnumNewtype<'_> {
+    fn drop_(&mut self) {
+        let Self::Variant(variant) = self;
+        variant.cell.borrow_mut().push(245);
+    }
+}
+
+unsafe impl<'a> PrePostDropFields for PrePostEnumNewtype<'a> {
+    unsafe fn pre_drop(this: *mut Self) {
+        let Self::Variant(ref this) = *this;
+        this.cell.borrow_mut().push(160);
+    }
+
+    unsafe fn post_drop(this: *mut Self) {
+        let Self::Variant(ref this) = *this;
+        this.cell.borrow_mut().push(161);
+    }
+}
+
+#[test]
+fn drop_order_enum_newtype() {
+    pre_post_drop_test! {
+        type_name=PrePostEnumNewtype,
+        constructor(PrePostStructA)
+        post_constructor(|_arr,this| PrePostEnumNewtype::Variant(this) )
+        variant=Variant,
+        post_method=unwrap,
+        before(245,240,160)
+        after(161)
+    }
+}
+
 ////////////////////////////////////////
 
 #[derive(Structural)]
