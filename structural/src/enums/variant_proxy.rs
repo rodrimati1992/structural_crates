@@ -628,11 +628,24 @@ where
     V: IsTStr,
 {
     fn pre_move(&mut self) {
-        <T as DropFields>::pre_move(&mut self.value);
+        let this = crate::utils::RunOnDrop(
+            &mut self.value,
+            #[inline(always)]
+            |this| {
+                // This is necessary because the enum can mutate itself into a different variant,
+                // invalidating the safety invariant of this type.
+                if !this.is_variant_(V::DEFAULT) {
+                    abort!(
+                        "\n\n\n\
+                        The enum changed the active variant in `<{} as DropFields>::pre_move`\
+                        \n\n\n",
+                        std::any::type_name::<Self>(),
+                    );
+                }
+            },
+        );
 
-        // This is necessary because the enum can mutate itself into a different variant,
-        // invalidating the safety invariant of this type.
-        assert!(self.value.is_variant_(V::DEFAULT));
+        <T as DropFields>::pre_move(this.reborrow_mut());
     }
 
     unsafe fn drop_fields(&mut self, moved: MovedOutFields) {

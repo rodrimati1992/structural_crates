@@ -679,7 +679,7 @@ mod wrapper;
 #[cfg(feature = "testing")]
 pub mod test_utils;
 
-#[cfg(test)]
+#[cfg(feature = "testing")]
 pub mod tests;
 
 include! {"p.rs"}
@@ -731,6 +731,7 @@ pub mod pmr {
     pub use core_extensions::{ConstDefault, MarkerType};
 
     pub use crate::std_::{
+        format_args,
         marker::PhantomData,
         mem::{drop, forget},
         option::Option::{self, None, Some},

@@ -10,4 +10,7 @@
 // Every instance of this warning in tests is wrong
 #![allow(clippy::let_unit_value)]
 
+#[cfg(test)]
 mod field_paths;
+
+pub mod utils;

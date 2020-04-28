@@ -2,7 +2,7 @@
 Some helper functions.
 */
 
-use std_::{marker::PhantomData, mem::ManuallyDrop};
+use std_::{fmt, marker::PhantomData, mem::ManuallyDrop};
 
 /////////////////////////////////////////////////////////
 
@@ -24,6 +24,36 @@ pub fn as_phantomdata<T>(_: &T) -> PhantomData<T> {
 
 //////////////////////////////////
 
+/// Helper type to cause an abort in a `#![no_std]` context
+pub(crate) struct InfinitePanic;
+
+impl Drop for InfinitePanic {
+    fn drop(&mut self) {
+        let _guard = InfinitePanic;
+        panic!();
+    }
+}
+
+//////////////////////////////////
+
+#[doc(hidden)]
+#[inline(never)]
+#[cold]
+pub fn abort_fmt(args: fmt::Arguments<'_>) -> ! {
+    #[cfg(not(feature = "std"))]
+    {
+        let _guard = InfinitePanic;
+        panic!("{}", args)
+    }
+    #[cfg(feature = "std")]
+    {
+        std::eprintln!("{}", args);
+        std::process::abort()
+    }
+}
+
+//////////////////////////////////
+
 /// Information about a panic,used in `ffi_panic_message`.
 #[derive(Debug, Copy, Clone)]
 pub struct PanicInfo {
@@ -36,7 +66,7 @@ pub struct PanicInfo {
 #[inline(never)]
 #[cold]
 pub fn ffi_panic_message(info: &'static PanicInfo) -> ! {
-    panic!(
+    abort_fmt(format_args!(
         "\n\
         Attempted to panic.\n\
         file:{}\n\
@@ -45,7 +75,7 @@ pub fn ffi_panic_message(info: &'static PanicInfo) -> ! {
         Aborting to handle the panic...\n\
         ",
         info.file, info.line, info.context,
-    )
+    ))
 }
 
 #[doc(hidden)]

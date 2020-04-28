@@ -112,6 +112,33 @@ Every variant also gets a [`IsVariant`] bound.
 [`IntoVariantField`]: ../../field/trait.IntoVariantField.html
 [`DropFields`]: ../../field/ownership/trait.DropFields.html
 
+# Pre move
+
+If you pass a function to the `#[struc(pre_move="....")]` attribute
+that changes what the current active variant is,
+then converting the enum into multiple fields by value will abort the process.
+
+```should_panic
+use structural::{fp,Structural,StructuralExt};
+
+let this=Foo::Bar(3,4);
+let _=this.into_fields(fp!(::Bar=>0,1));
+
+#[derive(Structural)]
+#[struc(pre_move="Foo::pre_move_")]
+pub enum Foo{
+    Bar(u8,u8),
+    Baz(u8,u8),
+}
+
+impl Foo{
+    pub fn pre_move_(&mut self){
+        *self=Foo::Baz(0,1);
+    }
+}
+```
+
+
 # Examples
 
 ### Accessing Fields

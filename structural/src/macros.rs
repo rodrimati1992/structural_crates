@@ -205,8 +205,23 @@ macro_rules! abort_on_return {
     )
 }
 
-#[macro_export]
 #[doc(hidden)]
+#[macro_export]
+macro_rules! abort {
+    () => {
+        $crate::utils::abort_fmt(
+            $crate::pmr::format_args!("")
+        )
+    };
+    ($($params:tt)*) => {
+        $crate::utils::abort_fmt(
+            $crate::pmr::format_args!($($params)*)
+        )
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! reverse_code {
     ( $( ($($block:tt)*) )* ) => {
         $crate::reverse_code!{@inner [] $(( $($block)* ))* }
