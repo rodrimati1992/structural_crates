@@ -119,6 +119,17 @@ macro_rules! try_fe {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! map_fe {
+    ( $expr:expr ) => {
+        match $expr {
+            Ok(x) => Ok(x),
+            Err(e) => Err($crate::field::IntoFieldErr::into_field_err(e)),
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! map_of {
     ( $expr:expr ) => {
         match $expr {

@@ -53,6 +53,7 @@ fn tstr_path() {
         assert_eq!(array.field_mut(path), &mut 5);
         assert_eq!(array.fields_mut(path), (&mut 5,));
         assert_eq!(array.into_field(path), 5);
+        assert_eq!(array.into_fields(path), (5,));
     }
     {
         let path = ts!(4);
@@ -62,14 +63,16 @@ fn tstr_path() {
         assert_eq!(array.field_mut(path), &mut 21);
         assert_eq!(array.fields_mut(path), (&mut 21,));
         assert_eq!(array.into_field(path), 21);
+        assert_eq!(array.into_fields(path), (21,));
     }
 }
 
 #[test]
 fn nested_field_path() {
     let mut tuple = ((), (101, Some(444)));
-    {
-        let nested = fp!(1.0);
+    macro_rules! the_test{( ($($colons_token:tt)*) , ($($point_token:tt)*) ) => {
+        {
+        let nested = fp!(1 $($point_token)* 0);
 
         assert_eq!(tuple.field_(nested), &101);
         assert_eq!(tuple.fields(nested), (&101,));
@@ -77,9 +80,10 @@ fn nested_field_path() {
         assert_eq!(tuple.field_mut(nested), &mut 101);
         assert_eq!(tuple.fields_mut(nested), (&mut 101,));
         assert_eq!(tuple.into_field(nested), 101);
-    }
-    {
-        let nested = fp!(1.1::Some.0);
+        assert_eq!(tuple.into_fields(fp!(1=>0)), (101,));
+        }
+        {
+        let nested = fp!(1 $($point_token)* 1::Some.0);
 
         assert_eq!(tuple.field_(nested), Some(&444));
         assert_eq!(tuple.fields(nested), (Some(&444),));
@@ -87,9 +91,9 @@ fn nested_field_path() {
         assert_eq!(tuple.field_mut(nested), Some(&mut 444));
         assert_eq!(tuple.fields_mut(nested), (Some(&mut 444),));
         assert_eq!(tuple.into_field(nested), Some(444));
-    }
-    {
-        let nested = fp!(1.1::None);
+        }
+        {
+        let nested = fp!(1.1 $($colons_token)* ::None);
 
         assert_eq!(tuple.field_(nested), None);
         assert_eq!(tuple.fields(nested), (None,));
@@ -97,21 +101,26 @@ fn nested_field_path() {
         assert_eq!(tuple.field_mut(nested), None);
         assert_eq!(tuple.fields_mut(nested), (None,));
         assert_eq!(tuple.into_field(nested), None);
-    }
+        }
+    }}
+
+    the_test!(() , (.) );
+    the_test!((=>) , (=>));
 }
 
 #[test]
 fn variant_field() {
     let mut foo = Variants::Foo(13, 21);
+
     {
         let path = fp!(::Foo.0);
-
         assert_eq!(foo.field_(path), Some(&13));
         assert_eq!(foo.fields(path), (Some(&13),));
         assert_eq!(foo.cloned_fields(path), (Some(13),));
         assert_eq!(foo.field_mut(path), Some(&mut 13));
         assert_eq!(foo.fields_mut(path), (Some(&mut 13),));
         assert_eq!(foo.into_field(path), Some(13));
+        assert_eq!(foo.into_fields(path), (Some(13),));
     }
     {
         let path = fp!(::Boom.a);
@@ -122,6 +131,34 @@ fn variant_field() {
         assert_eq!(foo.field_mut(path), None);
         assert_eq!(foo.fields_mut(path), (None,));
         assert_eq!(foo.into_field(path), None);
+        assert_eq!(foo.into_fields(path), (None,));
+    }
+}
+
+#[test]
+fn variant_field_nested_set() {
+    let mut foo = Variants::Foo(13, 21);
+
+    {
+        let path = fp!(::Foo=>0);
+        assert_eq!(foo.field_(path), Some(&13));
+        assert_eq!(foo.fields(path), Some((&13,)));
+        assert_eq!(foo.cloned_fields(path), Some((13,)));
+        assert_eq!(foo.field_mut(path), Some(&mut 13));
+        assert_eq!(foo.fields_mut(path), Some((&mut 13,)));
+        assert_eq!(foo.into_field(path), Some(13));
+        assert_eq!(foo.into_fields(path), Some((13,)));
+    }
+    {
+        let path = fp!(::Boom=>a);
+
+        assert_eq!(foo.field_(path), None);
+        assert_eq!(foo.fields(path), None);
+        assert_eq!(foo.cloned_fields(path), None);
+        assert_eq!(foo.field_mut(path), None);
+        assert_eq!(foo.fields_mut(path), None);
+        assert_eq!(foo.into_field(path), None);
+        assert_eq!(foo.into_fields(path), None);
     }
 }
 
@@ -167,5 +204,6 @@ fn variant_name() {
         assert_eq!(foo.field_mut(path), None);
         assert_eq!(foo.fields_mut(path), (None,));
         assert_eq!(foo.into_field(path), None);
+        assert_eq!(foo.into_fields(path), (None,));
     }
 }
