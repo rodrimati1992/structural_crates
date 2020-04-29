@@ -25,6 +25,10 @@ impl<'a, T> OrOnDrop<'a, T> {
         let mut this = ManuallyDrop::new(self);
         unsafe { std::ptr::read(&mut this.value) }
     }
+    pub fn into_inner_and_bits(self) -> (T, u64) {
+        let bits = self.bits_to_set();
+        (self.into_inner(), bits)
+    }
     pub fn bits_to_set(&self) -> u64 {
         self.bits_to_set
     }

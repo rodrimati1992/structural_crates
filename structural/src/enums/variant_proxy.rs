@@ -628,7 +628,7 @@ where
     V: IsTStr,
 {
     fn pre_move(&mut self) {
-        let this = crate::utils::RunOnDrop(
+        let mut this = crate::utils::RunOnDrop::new(
             &mut self.value,
             #[inline(always)]
             |this| {

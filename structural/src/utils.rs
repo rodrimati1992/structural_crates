@@ -191,6 +191,7 @@ impl<'a, T, F> Drop for RunOnDrop<T, F>
 where
     F: FnOnce(T),
 {
+    #[inline(always)]
     fn drop(&mut self) {
         unsafe {
             let value = take_manuallydrop(&mut self.value);

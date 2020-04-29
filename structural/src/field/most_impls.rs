@@ -96,14 +96,6 @@ unsafe_delegate_structural_with! {
 
     GetFieldMut { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
-
-    IntoField { ManuallyDrop::into_inner(this) }
-    move_out_field { &mut *this }
-
-    DropFields = {
-        dropped_fields[]
-        drop_delegated_to_variable=false;
-    }
 }
 
 #[test]
@@ -116,11 +108,6 @@ fn delegated_mdrop() {
         mdrop.fields_mut(fp!(0, 1, 2, 3)),
         (&mut 2, &mut 3, &mut 5, &mut 8)
     );
-
-    assert_eq!(mdrop.clone().into_field(fp!(0)), 2);
-    assert_eq!(mdrop.clone().into_field(fp!(1)), 3);
-    assert_eq!(mdrop.clone().into_field(fp!(2)), 5);
-    assert_eq!(mdrop.clone().into_field(fp!(3)), 8);
 }
 
 ///////////////////////////////////////////////////////
