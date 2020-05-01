@@ -6,6 +6,7 @@ use crate::{
         RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
+    IntoStructural,
 };
 
 use core_extensions::collection_traits::{Cloned, ClonedOut};
@@ -774,6 +775,14 @@ pub trait StructuralExt {
         Self: IsVariant<P>,
     {
         IsVariant::is_variant_(self, _path)
+    }
+
+    /// Converts this into another structural type.
+    fn into_struc<U>(self) -> U
+    where
+        Self: IntoStructural<U>,
+    {
+        self.into_structural()
     }
 }
 
