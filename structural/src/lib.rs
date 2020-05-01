@@ -666,6 +666,7 @@ pub mod const_generic_utils;
 pub mod docs;
 pub mod enums;
 pub mod field;
+mod from_structural;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
@@ -690,6 +691,7 @@ pub use crate::{
         GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
+    from_structural::{FromStructural, IntoStructural},
     structural_ext::StructuralExt,
     structural_trait::Structural,
     wrapper::StrucWrapper,

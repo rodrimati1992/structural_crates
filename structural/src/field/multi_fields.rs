@@ -4,7 +4,7 @@ Contains traits for accessing multiple fields at once.
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{NormalizeFields, NormalizeFieldsOut},
+    field::{MovedOutFields, NormalizeFields, NormalizeFieldsOut},
     path::{IsMultiFieldPath, UniquePaths},
 };
 
@@ -698,4 +698,19 @@ where
     fn rev_into_multi_field(self, this: This) -> Self::IntoFields {
         self.rev_into_multi_field_impl(this).normalize_fields()
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+pub trait RevMoveOutMultiFieldImpl<This> :
+    // IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
+    RevIntoMultiFieldImpl<This>
+{
+    // type MovedFields;
+
+    unsafe fn rev_move_out_multi_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Self::UnnormIntoFields;
 }

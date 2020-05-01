@@ -23,6 +23,8 @@
 #![allow(clippy::let_unit_value)]
 
 mod submodules {
+    mod accessing_fields;
+    mod accessing_many_fields;
     mod delegation;
     mod enum_derive;
     mod impl_struct;
@@ -31,7 +33,6 @@ mod submodules {
     mod multi_fields;
     mod multi_nested_fields;
     mod optional_fields;
-    mod rev_field_traits;
     mod structural_alias;
     mod structural_derive;
     mod switch;

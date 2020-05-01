@@ -6,6 +6,10 @@ use std_::{fmt, marker::PhantomData, mem::ManuallyDrop};
 
 /////////////////////////////////////////////////////////
 
+pub mod deref_nested;
+
+/////////////////////////////////////////////////////////
+
 /// Defined this function just in case that `unreachable_unchecked`
 /// doesn't optimize as expected.
 #[inline(always)]

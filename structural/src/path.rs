@@ -604,6 +604,19 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A field path set for over 8 fields.
+#[derive(Copy, Clone)]
+pub struct LargePathSet<T>(pub T);
+
+impl<T> ConstDefault for LargePathSet<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = LargePathSet(T::DEFAULT);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 /// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
 /// on the type level.
 pub trait IntoAliasing: IsMultiFieldPath {

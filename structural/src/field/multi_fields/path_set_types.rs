@@ -2,10 +2,14 @@ use super::{RevGetMultiFieldImpl, RevGetMultiFieldMutImpl, RevIntoMultiFieldImpl
 
 use crate::{
     field::{
-        ownership::IntoFieldsWrapper, DropFields, IsFieldErr, NormalizeFields, NormalizeFieldsOut,
-        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
+        multi_fields::RevMoveOutMultiFieldImpl, ownership::IntoFieldsWrapper, DropFields,
+        IsFieldErr, MovedOutFields, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl,
+        RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
-    path::{FieldPathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths},
+    path::{
+        AliasedPaths, FieldPathSet, LargePathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths,
+    },
+    utils::deref_nested::DerefNested,
 };
 
 #[allow(unused_imports)]
@@ -125,27 +129,50 @@ macro_rules! impl_get_multi_field {
             );
 
             fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
-                let ($($fpath,)*)=self.into_paths();
-                #[allow(unused_unsafe)]
                 unsafe{
                     let mut this=IntoFieldsWrapper::new(this);
 
                     #[allow(unused_variables)]
                     let (this, moved)=this.inner_and_moved_mut();
-                    (
-                        $(
-                            $fpath.rev_move_out_field(this, moved),
-                        )*
-                    )
+
+                    self.rev_move_out_multi_field(this,moved)
                 }
             }
         }
+
+
+        impl<'a,This,$($fpath,$err,$fty,)*>
+            RevMoveOutMultiFieldImpl<This>
+        for FieldPathSet<($($fpath,)*),UniquePaths>
+        where
+            This: DropFields,
+            $(
+                $fpath: RevMoveOutFieldImpl<This, Ty=$fty, Err=$err >,
+                Result<$fty,$err>: NormalizeFields,
+                $err:IsFieldErr,
+            )*
+        {
+            #[allow(unused_variables)]
+            unsafe fn rev_move_out_multi_field(
+                self,
+                this: &mut This,
+                moved: &mut MovedOutFields,
+            ) -> Self::UnnormIntoFields {
+                let ($($fpath,)*)=self.into_paths();
+
+                (
+                    $(
+                        $fpath.rev_move_out_field(this, moved),
+                    )*
+                )
+            }
+        }
+
 
         unsafe impl<$($fpath,)* U> ShallowFieldPath for FieldPathSet<($($fpath,)*),U>
         where
             $($fpath: ShallowFieldPath,)*
         {}
-
 
     )
 }
@@ -176,9 +203,151 @@ impl_get_multi_field! {
     (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
 }
 
-impl_get_multi_field! {
+////////////////////////////////////////////////////////////////////////////////
+
+macro_rules! impl_get_multi_field_large {
+    ( $(($fpath:ident $unnorm_a:ident $unnorm_b:ident))* ) => (
+
+        /////////////////////////////////////////////////////////////////////////////
+        ////                    Impls for large field path sets
+        /////////////////////////////////////////////////////////////////////////////
+
+        impl<'a,This:?Sized,$($fpath, $unnorm_a,)* U>
+            RevGetMultiFieldImpl<'a,This>
+        for FieldPathSet<LargePathSet<($($fpath,)*)>,U>
+        where
+            This:'a,
+            $(
+                FieldPathSet<$fpath, AliasedPaths>:
+                    RevGetMultiFieldImpl<'a, This,UnnormFields= $unnorm_a>,
+                $unnorm_a: 'a + NormalizeFields,
+            )*
+        {
+            type UnnormFields=( $( $unnorm_a, )* );
+
+            #[allow(unused_variables)]
+            fn rev_get_multi_field_impl(self,this:&'a This)-> Self::UnnormFields {
+                let LargePathSet(($($fpath,)*))=self.into_paths();
+                (
+                    $(
+                        FieldPathSet::many($fpath).rev_get_multi_field_impl(this),
+                    )*
+                )
+            }
+        }
+
+        unsafe impl<'a,This:?Sized,$($fpath,$unnorm_a,$unnorm_b,)*>
+            RevGetMultiFieldMutImpl<'a,This>
+        for FieldPathSet<LargePathSet<($($fpath,)*)>,UniquePaths>
+        where
+            This:'a,
+            $(
+                FieldPathSet<$fpath, UniquePaths>: RevGetMultiFieldMutImpl<
+                    'a,
+                    This,
+                    UnnormFieldsMut = $unnorm_a,
+                    UnnormFieldsRawMut = $unnorm_b,
+                >,
+                $unnorm_a: 'a + NormalizeFields,
+                $unnorm_b: 'a + NormalizeFields + DerefNested<'a,Dereffed= $unnorm_a >,
+            )*
+        {
+            type UnnormFieldsMut=( $( $unnorm_a, )* );
+            type UnnormFieldsRawMut=( $( $unnorm_b, )* );
+
+            #[allow(unused_unsafe,unused_variables)]
+            fn rev_get_multi_field_mut_impl(
+                self,
+                this:&'a mut This,
+            )-> Self::UnnormFieldsMut {
+                unsafe{
+                    DerefNested::deref_nested(self.rev_get_multi_field_raw_mut_impl(this))
+                }
+            }
+
+            #[allow(unused_variables)]
+            unsafe fn rev_get_multi_field_raw_mut_impl(
+                self,
+                this:*mut This,
+            )-> Self::UnnormFieldsRawMut {
+                let LargePathSet(($($fpath,)*))=self.into_paths();
+                (
+                    $(
+                        FieldPathSet::many($fpath)
+                            .upgrade_unchecked()
+                            .rev_get_multi_field_raw_mut_impl(this),
+                    )*
+                )
+            }
+        }
+
+        impl<'a,This,$($fpath,$unnorm_a,)*>
+            RevIntoMultiFieldImpl<This>
+        for FieldPathSet<LargePathSet<($($fpath,)*)>,UniquePaths>
+        where
+            This: DropFields,
+            $(
+                FieldPathSet<$fpath, UniquePaths>:
+                    RevMoveOutMultiFieldImpl<This,UnnormIntoFields= $unnorm_a>,
+
+                $unnorm_a: NormalizeFields,
+            )*
+        {
+            type UnnormIntoFields=( $( $unnorm_a, )* );
+
+            fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
+                let LargePathSet(($($fpath,)*))=self.into_paths();
+
+                #[allow(unused_unsafe)]
+                unsafe{
+                    let mut this=IntoFieldsWrapper::new(this);
+
+                    #[allow(unused_variables)]
+                    let (this, moved)=this.inner_and_moved_mut();
+                    (
+                        $(
+                            FieldPathSet::many($fpath)
+                                .upgrade_unchecked()
+                                .rev_move_out_multi_field(this, moved),
+                        )*
+                    )
+                }
+            }
+        }
+
+
+        unsafe impl<$($fpath,)* U> ShallowFieldPath for FieldPathSet<LargePathSet<($($fpath,)*)>,U>
+        where
+            $( FieldPathSet<$fpath, U>: ShallowFieldPath,)*
+        {}
+
+    )
+}
+
+impl_get_multi_field_large! {}
+impl_get_multi_field_large! {
+    (F0 E0 T0)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5)
+}
+impl_get_multi_field_large! {
+    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6)
+}
+impl_get_multi_field_large! {
     (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
-    (F8 E8 T8) (F9 E9 T9) (F10 E10 T10) (F11 E11 T11) (F12 E12 T12)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
