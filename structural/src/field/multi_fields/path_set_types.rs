@@ -177,7 +177,6 @@ macro_rules! impl_get_multi_field {
     )
 }
 
-impl_get_multi_field! {}
 impl_get_multi_field! {
     (F0 E0 T0)
 }
@@ -202,6 +201,51 @@ impl_get_multi_field! {
 impl_get_multi_field! {
     (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a, This: ?Sized + 'a, U> RevGetMultiFieldImpl<'a, This> for FieldPathSet<(), U> {
+    type UnnormFields = ();
+
+    fn rev_get_multi_field_impl(self, _this: &'a This) {
+        ()
+    }
+}
+
+unsafe impl<'a, This: ?Sized + 'a> RevGetMultiFieldMutImpl<'a, This>
+    for FieldPathSet<(), UniquePaths>
+{
+    type UnnormFieldsMut = ();
+    type UnnormFieldsRawMut = ();
+
+    #[inline(always)]
+    fn rev_get_multi_field_mut_impl(self, _this: &'a mut This) {
+        ()
+    }
+
+    #[inline(always)]
+    unsafe fn rev_get_multi_field_raw_mut_impl(self, _this: *mut This) {
+        ()
+    }
+}
+
+impl<'a, This> RevIntoMultiFieldImpl<This> for FieldPathSet<(), UniquePaths> {
+    type UnnormIntoFields = ();
+
+    #[inline(always)]
+    fn rev_into_multi_field_impl(self, _this: This) {
+        ()
+    }
+}
+
+impl<'a, This> RevMoveOutMultiFieldImpl<This> for FieldPathSet<(), UniquePaths> {
+    #[inline(always)]
+    unsafe fn rev_move_out_multi_field(self, _this: &mut This, _moved: &mut MovedOutFields) {
+        ()
+    }
+}
+
+unsafe impl<U> ShallowFieldPath for FieldPathSet<(), U> {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -320,11 +364,9 @@ macro_rules! impl_get_multi_field_large {
         where
             $( FieldPathSet<$fpath, U>: ShallowFieldPath,)*
         {}
-
     )
 }
 
-impl_get_multi_field_large! {}
 impl_get_multi_field_large! {
     (F0 E0 T0)
 }
@@ -349,6 +391,45 @@ impl_get_multi_field_large! {
 impl_get_multi_field_large! {
     (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a, This: ?Sized + 'a, U> RevGetMultiFieldImpl<'a, This>
+    for FieldPathSet<LargePathSet<()>, U>
+{
+    type UnnormFields = ();
+
+    fn rev_get_multi_field_impl(self, _this: &'a This) {
+        ()
+    }
+}
+
+unsafe impl<'a, This: ?Sized + 'a> RevGetMultiFieldMutImpl<'a, This>
+    for FieldPathSet<LargePathSet<()>, UniquePaths>
+{
+    type UnnormFieldsMut = ();
+    type UnnormFieldsRawMut = ();
+
+    #[allow(unused_unsafe, unused_variables)]
+    fn rev_get_multi_field_mut_impl(self, _this: &'a mut This) {
+        ()
+    }
+
+    #[allow(unused_variables)]
+    unsafe fn rev_get_multi_field_raw_mut_impl(self, _this: *mut This) {
+        ()
+    }
+}
+
+impl<'a, This> RevIntoMultiFieldImpl<This> for FieldPathSet<LargePathSet<()>, UniquePaths> {
+    type UnnormIntoFields = ();
+
+    fn rev_into_multi_field_impl(self, _this: This) -> Self::UnnormIntoFields {
+        ()
+    }
+}
+
+unsafe impl<U> ShallowFieldPath for FieldPathSet<LargePathSet<()>, U> {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

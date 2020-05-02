@@ -8,6 +8,9 @@ mod drop_fields;
 mod enum_derivation;
 
 #[macro_use]
+mod field_tuples;
+
+#[macro_use]
 mod field_paths;
 
 #[macro_use]

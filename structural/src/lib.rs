@@ -670,6 +670,7 @@ mod from_structural;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
+pub mod structural_aliases;
 mod structural_ext;
 mod structural_trait;
 pub mod type_level;
