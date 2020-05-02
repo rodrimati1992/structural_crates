@@ -1,164 +1,29 @@
-/*!
-Traits related to arrays.
-
-# `Array*` traits
-
-The `Array*` traits alias the accessor traits for arrays,
-with shared,mutable,and by value access to every element of the array.
-
-These traits can be used with any array at least as large as the size indicated
-by the trait.<br>
-You can,for example,use `Array3` with any array type from `[T;3]` to `[T;32]` inclusive.
-
-
-### Homogeneous tuples
-
-You can pass homogeneous tuples to functions expecting `Array*` implementing types.
-
-
-```
-use structural::field::for_arrays::Array4;
-use structural::{StructuralExt,fp};
-
-fn takes_array(array:impl Array4<u32>){
-    assert_eq!( array.field_(fp!(0)), &3 );
-    assert_eq!( array.field_(fp!(1)), &5 );
-    assert_eq!( array.field_(fp!(2)), &8 );
-    assert_eq!( array.field_(fp!(3)), &13 );
-}
-
-takes_array( (3,5,8,13) );
-
-// Tuples only have to be homogeneous up to the size of the expected array.
-takes_array( (3,5,8,13,"foo") );
-takes_array( (3,5,8,13,"foo",vec!["bar"]) );
-
-```
-
-# `Array*` Example
-
-```
-use structural::field::for_arrays::Array3;
-use structural::{StructuralExt,fp};
-
-use std::fmt::Debug;
-
-fn print_first_3<T>(array:impl Array3<T>)
-where
-    T:Debug,
-{
-    println!("{:?}",array.fields(fp!(0,1,2)))
-}
-
-print_first_3( [3,5,8] );
-print_first_3( [3,5,8,13] );
-print_first_3( [3,5,8,13,21]);
-print_first_3( [3,5,8,13,21,34] );
-print_first_3( ["foo";7] );
-print_first_3( ["bar";31] );
-print_first_3( ["baz";32] );
-
-
-
-```
-
-# `Array*Variant` Example
-
-Demonstrates that you can use the `Array*Variant` trait with enums.
-
-```
-use structural::field::Array2Variant;
-use structural::{StructuralExt,Structural,TS,fp};
-
-use std::fmt::Debug;
-
-fn first_2<T>(mut foo:T, mut not_foo:T)
-where
-    T: Array2Variant<u8,TS!(Foo)> + Copy
-{
-    {
-        assert_eq!( foo.fields(fp!(::Foo=>0,1)), Some(( &101, &202 )) );
-
-        assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some(( &mut 101, &mut 202 )) );
-
-        assert_eq!( foo.into_field(fp!(::Foo.0)), Some(101) );
-        assert_eq!( foo.into_field(fp!(::Foo.1)), Some(202) );
-
-        assert_eq!( foo.is_variant(fp!(Foo)), true );
-    }
-    {
-        assert_eq!( not_foo.fields(fp!(::Foo=>0,1)), None );
-
-        assert_eq!( not_foo.fields_mut(fp!(::Foo=>0,1)), None );
-
-        assert_eq!( not_foo.into_field(fp!(::Foo.0)), None );
-        assert_eq!( not_foo.into_field(fp!(::Foo.1)), None );
-
-        assert_eq!( not_foo.is_variant(fp!(Foo)), false );
-    }
-}
-
-first_2( Enum::Foo(101,202), Enum::Bar );
-first_2( OtherEnum::Foo(101,202,"303"), OtherEnum::Bar );
-
-#[derive(Structural,Copy,Clone)]
-# #[struc(no_trait)]
-enum Enum{
-    Foo(u8,u8),
-    Bar,
-}
-
-#[derive(Structural,Copy,Clone)]
-# #[struc(no_trait)]
-enum OtherEnum{
-    Foo(u8,u8,&'static str),
-    Bar,
-}
-
-```
-
-
-
-
-
-*/
+#![allow(non_snake_case)]
 
 use crate::{
     field::{
         DropFields, FieldBit, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField,
         MovedOutFields,
     },
-    path::IsSingleFieldPath,
+    path::{FieldPathSet, IsSingleFieldPath, LargePathSet},
     structural_trait::Structural,
     type_level::{
         cmp::{Compare, TGreater},
-        integer::{
-            IsUnsigned, U0, U1, U10, U11, U12, U13, U14, U15, U16, U17, U18, U19, U2, U20, U21,
-            U22, U23, U24, U25, U26, U27, U28, U29, U3, U30, U31, U32, U4, U5, U6, U7, U8, U9,
-        },
+        integer::{self, IsUnsigned},
     },
+    FromStructural, StructuralExt,
 };
 
 use std_::{marker::PhantomData, mem::ManuallyDrop, ptr};
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub mod array_traits;
-
-pub use self::array_traits::{
-    Array0, Array1, Array10, Array11, Array12, Array13, Array14, Array15, Array16, Array17,
-    Array18, Array19, Array2, Array20, Array21, Array22, Array23, Array24, Array25, Array26,
-    Array27, Array28, Array29, Array3, Array30, Array31, Array32, Array4, Array5, Array6, Array7,
-    Array8, Array9,
-};
-
-pub use self::array_traits::{
-    Array0Variant, Array10Variant, Array11Variant, Array12Variant, Array13Variant, Array14Variant,
-    Array15Variant, Array16Variant, Array17Variant, Array18Variant, Array19Variant, Array1Variant,
-    Array20Variant, Array21Variant, Array22Variant, Array23Variant, Array24Variant, Array25Variant,
-    Array26Variant, Array27Variant, Array28Variant, Array29Variant, Array2Variant, Array30Variant,
-    Array31Variant, Array32Variant, Array3Variant, Array4Variant, Array5Variant, Array6Variant,
-    Array7Variant, Array8Variant, Array9Variant,
+use crate::structural_aliases::{
+    ArrayMove0, ArrayMove1, ArrayMove10, ArrayMove11, ArrayMove12, ArrayMove13, ArrayMove14,
+    ArrayMove15, ArrayMove16, ArrayMove17, ArrayMove18, ArrayMove19, ArrayMove2, ArrayMove20,
+    ArrayMove21, ArrayMove22, ArrayMove23, ArrayMove24, ArrayMove25, ArrayMove26, ArrayMove27,
+    ArrayMove28, ArrayMove29, ArrayMove3, ArrayMove30, ArrayMove31, ArrayMove32, ArrayMove4,
+    ArrayMove5, ArrayMove6, ArrayMove7, ArrayMove8, ArrayMove9,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,12 +55,11 @@ pub struct SealedIPFA<Path, Array> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-macro_rules! declare_array_paths {
+macro_rules! array_impls {
     (
         $(
             (
-                $index_name:ident = $index:expr,$index_str:literal,$tnum:ident,$fi_ind:ident,
-                [$($fi_in_array:ident,)*]
+                $index_name:ident = $index:tt,$index_str:literal,$tnum:ident,$trait:ident
             )
         )*
     ) => (
@@ -215,13 +79,13 @@ macro_rules! declare_array_paths {
 
             impl ArrayPath for $index_name{
                 const INDEX:usize=$index;
-                type Index=$tnum;
+                type Index=integer::$tnum;
             }
 
             impl<T,P> IsPathForArray<[T;$index]> for P
             where
                 P:ArrayPath,
-                $tnum:Compare<P::Index,Output=TGreater>,
+                integer::$tnum:Compare<P::Index,Output=TGreater>,
             {
                 #[doc(hidden)]
                 const _SEALED_IPFA:SealedIPFA<P,[T;$index]>=SealedIPFA{_marker:PhantomData};
@@ -305,7 +169,47 @@ macro_rules! declare_array_paths {
                 }
             }
         )*
-    )
+        array_impls!{
+            @inner
+            before()
+            $(
+                (
+                    $index_name = $index, $tnum, $trait
+                )
+            )*
+        }
+    );
+    (@inner
+        before( $( ( $index_name:ident = $index:tt, $field_name:ident, $trait:ident ) )* )
+        ( $next_index_name:ident = $next_index:tt, $next_field_name:ident, $next_trait:ident )
+        $($after:tt)*
+    ) => (
+        array_impls!{
+            @inner
+            before(
+                $( ( $index_name = $index, $field_name, $trait ) )*
+                ( $next_index_name = $next_index, $next_field_name, $next_trait )
+            )
+            $($after)*
+        }
+
+        impl<T,F> FromStructural<F> for [T;$next_index]
+        where
+            F: $next_trait<T>
+        {
+            fn from_structural(from: F)->Self{
+                // This unsafe is checked in the test for converting arrays to smaller srrays
+                let path_set=unsafe{
+                    let x=LargePathSet(field_tuple!( $($index_name,)* ));
+                    let x=FieldPathSet::many(x).upgrade_unchecked();
+                    x
+                };
+                let field_pat!($($field_name,)*)=from.into_fields(path_set);
+                [$($field_name),*]
+            }
+        }
+    );
+    (@inner before $before:tt ) => ();
 }
 
 /*
@@ -313,156 +217,46 @@ Generated with:
 
 fn main() {
     for i in 0..=32{
-        print!("(I{0}={0},\"{0}\",U{0},FI_{0},[",i);
-        for j in 0..i {
-            if j%10==0 {
-                print!("\n    ");
-            }
-            print!("FI_{0},",j);
-        }
-        println!("\n])");
+        println!("(I{0}={0},\"{0}\",U{0})",i);
     }
 }
 
 */
 
-declare_array_paths! {
-    (I0=0,"0",U0,FI_0,[
-    ])
-    (I1=1,"1",U1,FI_1,[
-        FI_0,
-    ])
-    (I2=2,"2",U2,FI_2,[
-        FI_0,FI_1,
-    ])
-    (I3=3,"3",U3,FI_3,[
-        FI_0,FI_1,FI_2,
-    ])
-    (I4=4,"4",U4,FI_4,[
-        FI_0,FI_1,FI_2,FI_3,
-    ])
-    (I5=5,"5",U5,FI_5,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,
-    ])
-    (I6=6,"6",U6,FI_6,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,
-    ])
-    (I7=7,"7",U7,FI_7,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,
-    ])
-    (I8=8,"8",U8,FI_8,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,
-    ])
-    (I9=9,"9",U9,FI_9,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,
-    ])
-    (I10=10,"10",U10,FI_10,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-    ])
-    (I11=11,"11",U11,FI_11,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,
-    ])
-    (I12=12,"12",U12,FI_12,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,
-    ])
-    (I13=13,"13",U13,FI_13,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,
-    ])
-    (I14=14,"14",U14,FI_14,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,
-    ])
-    (I15=15,"15",U15,FI_15,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,
-    ])
-    (I16=16,"16",U16,FI_16,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,
-    ])
-    (I17=17,"17",U17,FI_17,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,
-    ])
-    (I18=18,"18",U18,FI_18,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,
-    ])
-    (I19=19,"19",U19,FI_19,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,
-    ])
-    (I20=20,"20",U20,FI_20,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-    ])
-    (I21=21,"21",U21,FI_21,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,
-    ])
-    (I22=22,"22",U22,FI_22,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,
-    ])
-    (I23=23,"23",U23,FI_23,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,
-    ])
-    (I24=24,"24",U24,FI_24,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,
-    ])
-    (I25=25,"25",U25,FI_25,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,
-    ])
-    (I26=26,"26",U26,FI_26,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,
-    ])
-    (I27=27,"27",U27,FI_27,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,
-    ])
-    (I28=28,"28",U28,FI_28,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,
-    ])
-    (I29=29,"29",U29,FI_29,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,
-    ])
-    (I30=30,"30",U30,FI_30,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
-    ])
-    (I31=31,"31",U31,FI_31,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
-        FI_30,
-    ])
-    (I32=32,"32",U32,FI_32,[
-        FI_0,FI_1,FI_2,FI_3,FI_4,FI_5,FI_6,FI_7,FI_8,FI_9,
-        FI_10,FI_11,FI_12,FI_13,FI_14,FI_15,FI_16,FI_17,FI_18,FI_19,
-        FI_20,FI_21,FI_22,FI_23,FI_24,FI_25,FI_26,FI_27,FI_28,FI_29,
-        FI_30,FI_31,
-    ])
-
-
+array_impls! {
+    (I0=0,"0",U0,ArrayMove0)
+    (I1=1,"1",U1,ArrayMove1)
+    (I2=2,"2",U2,ArrayMove2)
+    (I3=3,"3",U3,ArrayMove3)
+    (I4=4,"4",U4,ArrayMove4)
+    (I5=5,"5",U5,ArrayMove5)
+    (I6=6,"6",U6,ArrayMove6)
+    (I7=7,"7",U7,ArrayMove7)
+    (I8=8,"8",U8,ArrayMove8)
+    (I9=9,"9",U9,ArrayMove9)
+    (I10=10,"10",U10,ArrayMove10)
+    (I11=11,"11",U11,ArrayMove11)
+    (I12=12,"12",U12,ArrayMove12)
+    (I13=13,"13",U13,ArrayMove13)
+    (I14=14,"14",U14,ArrayMove14)
+    (I15=15,"15",U15,ArrayMove15)
+    (I16=16,"16",U16,ArrayMove16)
+    (I17=17,"17",U17,ArrayMove17)
+    (I18=18,"18",U18,ArrayMove18)
+    (I19=19,"19",U19,ArrayMove19)
+    (I20=20,"20",U20,ArrayMove20)
+    (I21=21,"21",U21,ArrayMove21)
+    (I22=22,"22",U22,ArrayMove22)
+    (I23=23,"23",U23,ArrayMove23)
+    (I24=24,"24",U24,ArrayMove24)
+    (I25=25,"25",U25,ArrayMove25)
+    (I26=26,"26",U26,ArrayMove26)
+    (I27=27,"27",U27,ArrayMove27)
+    (I28=28,"28",U28,ArrayMove28)
+    (I29=29,"29",U29,ArrayMove29)
+    (I30=30,"30",U30,ArrayMove30)
+    (I31=31,"31",U31,ArrayMove31)
+    (I32=32,"32",U32,ArrayMove32)
 }
 
 ///
@@ -488,13 +282,15 @@ struct Foo0;
 #[cfg(test)]
 #[allow(clippy::redundant_clone)]
 mod tests {
-    use super::{
-        Array1, Array15, Array16, Array17, Array23, Array24, Array30, Array31, Array32, Array7,
-        Array8, Array9, I0, I1, I14, I15, I16, I2, I22, I23, I29, I3, I30, I31, I4, I5, I6, I7, I8,
-        I9,
-    };
+    use super::{I0, I1, I14, I15, I16, I2, I22, I23, I29, I3, I30, I31, I4, I5, I6, I7, I8, I9};
 
-    use crate::StructuralExt;
+    use crate::{
+        structural_aliases::{
+            Array1, Array15, Array16, Array17, Array23, Array24, Array30, Array31, Array32, Array7,
+            Array8, Array9,
+        },
+        StructuralExt,
+    };
 
     use std_::convert::TryFrom;
     use std_::mem;

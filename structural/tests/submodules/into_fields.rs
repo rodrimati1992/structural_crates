@@ -1,6 +1,7 @@
 use structural::{
-    field::{Array5, Array5Variant},
-    fp, Structural, StructuralExt, TS,
+    fp,
+    structural_aliases::{Array5, Array5Variant},
+    Structural, StructuralExt, TS,
 };
 
 use structural::test_utils::OrOnDrop;

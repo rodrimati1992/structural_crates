@@ -267,7 +267,7 @@ and the difference between the `*_SI`(nonexhaustive enum) and `*_ESI`(exhaustive
 ```rust
 
 use structural::{
-    field::Tuple2Variant,
+    structural_aliases::Tuple2Variant,
     StructuralExt,Structural,
     fp,switch,
 };

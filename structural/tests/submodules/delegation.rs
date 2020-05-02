@@ -1,9 +1,9 @@
 use structural::{
-    field::Array3,
     field_path_aliases,
     for_examples::{EnumOptFlying, EnumOptFlying_SI},
-    fp, structural_alias, unsafe_delegate_structural_with, GetField, GetFieldMut, IntoField,
-    Structural, StructuralExt,
+    fp, structural_alias,
+    structural_aliases::Array3,
+    unsafe_delegate_structural_with, GetField, GetFieldMut, IntoField, Structural, StructuralExt,
 };
 
 // For test

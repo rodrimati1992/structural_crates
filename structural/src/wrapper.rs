@@ -25,7 +25,7 @@ use std_::{
 ///
 /// ```rust
 /// use structural::{StrucWrapper, Structural, fp};
-/// use structural::field::Array3;
+/// use structural::structural_aliases::Array3;
 ///
 /// let mut this=Point{x:3, y:5, z:8};
 /// let mut tuple=(13,21,34);
@@ -134,7 +134,7 @@ impl<T> StrucWrapper<T> {
     ///
     /// ```
     /// use structural::{StrucWrapper, fp};
-    /// use structural::field::Array5;
+    /// use structural::structural_aliases::Array5;
     ///
     /// assertions((0,0,13,0,34));
     /// assertions((0,0,13,0,34,""));
@@ -442,7 +442,7 @@ impl<T> StrucWrapper<T> {
     ///
     /// ```
     /// use structural::{StrucWrapper, fp};
-    /// use structural::field::Array5;
+    /// use structural::structural_aliases::Array5;
     ///
     /// assertions((0,0,8,0,21));
     /// assertions((0,0,8,0,21,""));
@@ -820,7 +820,7 @@ impl<'a, T> StrucWrapper<&'a mut T> {
 ///
 /// ```
 /// use structural::{StrucWrapper, fp};
-/// use structural::field::Array4;
+/// use structural::structural_aliases::Array4;
 ///
 /// assertions(["hello","world","foo","bar"]);
 /// assertions(["hello","world","foo","bar","baz"]);

@@ -17,7 +17,7 @@ by-value accessor trait impls,
 satisfying the [IntoFieldMut trait](crate::field::IntoFieldMut)
 
 ```
-use structural::field::for_tuples::Tuple4;
+use structural::structural_aliases::tuple_traits::Tuple4;
 use structural::{StructuralExt,Structural, fp};
 
 fn sum_tuple_4(tuple: impl Tuple4<u8, u16, u32, u64>) -> u64 {
@@ -53,7 +53,7 @@ by-value accessor traits,
 satisfying the ([IntoVariantFieldMut trait](../trait.IntoVariantFieldMut.html))
 
 ```
-use structural::field::Tuple2Variant;
+use structural::structural_aliases::Tuple2Variant;
 use structural::{StructuralExt,Structural,TS,fp};
 
 use std::cmp::{Ordering,PartialEq};
@@ -117,4 +117,4 @@ enum OtherEnum<T>{
 
 */
 
-pub use super::tuple_impls::*;
+pub use crate::field::tuple_impls::*;

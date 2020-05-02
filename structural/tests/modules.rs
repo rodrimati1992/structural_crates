@@ -27,6 +27,7 @@ mod submodules {
     mod accessing_many_fields;
     mod delegation;
     mod enum_derive;
+    mod from_structural;
     mod impl_struct;
     mod into_fields;
     mod make_struct;

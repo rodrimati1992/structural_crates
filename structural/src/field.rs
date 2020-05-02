@@ -125,13 +125,12 @@ use std_::ptr::NonNull;
 mod enum_impls;
 pub mod errors;
 pub mod for_arrays;
-pub mod for_tuples;
 mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
 pub mod ownership;
 pub mod rev_get_field;
-mod tuple_impls;
+pub(crate) mod tuple_impls;
 
 // Using this macro instead of modules because compile-time errors print the full path to the
 // traits even if the variant_field module is private.
@@ -141,8 +140,6 @@ pub use self::{
     errors::{
         CombinedErrs, CombinedErrsOut, FailedAccess, InfallibleAccess, IntoFieldErr, IsFieldErr,
     },
-    for_arrays::array_traits::*,
-    for_tuples::*,
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
         RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut, RevIntoMultiField,

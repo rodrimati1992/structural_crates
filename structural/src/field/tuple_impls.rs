@@ -1,5 +1,7 @@
 use crate::{
-    field::{for_arrays::names, DropFields, IntoFieldMut, IntoVariantFieldMut, MovedOutFields},
+    field::{
+        for_arrays::names, DropFields, IntoField, IntoFieldMut, IntoVariantFieldMut, MovedOutFields,
+    },
     structural_trait::Structural,
 };
 
@@ -16,6 +18,7 @@ macro_rules! impl_tuple {
     };
     (
         $the_trait:ident,
+        $move_trait:ident,
         $variant_trait:ident,
         [
             $( ($field:tt,$field_ty:ident,$field_param:ident) ),*
@@ -25,6 +28,7 @@ macro_rules! impl_tuple {
         impl<$($field_ty),*> Structural for $tuple_ty {}
 
         /// A structural alias for a tuple of the size.
+        /// With shared,mutable,and by value access to the fields.
         pub trait $the_trait<$($field_ty),*>:
             $(
                 IntoFieldMut<names::$field_param,Ty=$field_ty>+
@@ -36,6 +40,22 @@ macro_rules! impl_tuple {
             This:
                 $(
                     IntoFieldMut<names::$field_param,Ty=$field_ty>+
+                )*
+        {}
+
+        /// A structural alias for a tuple of the size.
+        /// With shared,and by value access to the fields.
+        pub trait $move_trait<$($field_ty),*>:
+            $(
+                IntoField<names::$field_param,Ty=$field_ty>+
+            )*
+        {}
+
+        impl<$($field_ty,)* This> $move_trait<$($field_ty),*> for This
+        where
+            This:
+                $(
+                    IntoField<names::$field_param,Ty=$field_ty>+
                 )*
         {}
 
@@ -94,12 +114,13 @@ fn main(){
         let range=0..x;
         println!(
             "impl_tuple!{{\n\
-                {I4}Tuple{},\n\
-                {I4}Tuple{}Variant,\n\
+                {I4}Tuple{0},\n\
+                {I4}TupleMove{0},\n\
+                {I4}Tuple{0}Variant,\n\
                 {I4}[\n\
-                {I8}{}\n\
+                {I8}{1}\n\
                 {I4}]\n\
-                {I4}({},)\n\
+                {I4}({2},)\n\
             }}",
             x,
             range.clone().map(|x|format!("({0},C{0},I{0})",x)).join(",\n        "),
@@ -114,6 +135,7 @@ fn main(){
 
 impl_tuple! {
     Tuple1,
+    TupleMove1,
     Tuple1Variant,
     [
         (0,C0,I0)
@@ -122,6 +144,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple2,
+    TupleMove2,
     Tuple2Variant,
     [
         (0,C0,I0),
@@ -131,6 +154,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple3,
+    TupleMove3,
     Tuple3Variant,
     [
         (0,C0,I0),
@@ -141,6 +165,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple4,
+    TupleMove4,
     Tuple4Variant,
     [
         (0,C0,I0),
@@ -152,6 +177,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple5,
+    TupleMove5,
     Tuple5Variant,
     [
         (0,C0,I0),
@@ -164,6 +190,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple6,
+    TupleMove6,
     Tuple6Variant,
     [
         (0,C0,I0),
@@ -177,6 +204,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple7,
+    TupleMove7,
     Tuple7Variant,
     [
         (0,C0,I0),
@@ -191,6 +219,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple8,
+    TupleMove8,
     Tuple8Variant,
     [
         (0,C0,I0),
@@ -206,6 +235,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple9,
+    TupleMove9,
     Tuple9Variant,
     [
         (0,C0,I0),
@@ -222,6 +252,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple10,
+    TupleMove10,
     Tuple10Variant,
     [
         (0,C0,I0),
@@ -239,6 +270,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple11,
+    TupleMove11,
     Tuple11Variant,
     [
         (0,C0,I0),
@@ -257,6 +289,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple12,
+    TupleMove12,
     Tuple12Variant,
     [
         (0,C0,I0),
@@ -278,7 +311,7 @@ impl_tuple! {
 #[cfg(test)]
 #[allow(clippy::redundant_clone)]
 mod tests {
-    use crate::field::for_tuples::{Tuple4, Tuple4Variant};
+    use super::{Tuple4, Tuple4Variant};
     use crate::{fp, GetField, Structural, StructuralExt};
 
     fn get_field_1<T>(val: &T) -> &u64
