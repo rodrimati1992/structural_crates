@@ -17,6 +17,27 @@ pub struct Tuple3<A, B, C>(pub Option<A>, pub B, pub C);
 pub struct Tuple4<A, B, C, D>(pub Option<A>, pub B, pub C, pub D);
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub struct Tuple16<P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13, P14, P15, P16>(
+    pub P01,
+    pub P02,
+    pub P03,
+    pub P04,
+    pub P05,
+    pub P06,
+    pub P07,
+    pub P08,
+    pub P09,
+    pub P10,
+    pub P11,
+    pub P12,
+    pub P13,
+    pub P14,
+    pub P15,
+    pub P16,
+);
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
 pub struct Struct2<A, B> {
     pub foo: Option<A>,
     pub bar: B,

@@ -1,8 +1,12 @@
+#![allow(non_snake_case)]
+
 use crate::{
     field::{
         for_arrays::names, DropFields, IntoField, IntoFieldMut, IntoVariantFieldMut, MovedOutFields,
     },
+    path::{FieldPathSet, LargePathSet},
     structural_trait::Structural,
+    FromStructural, StructuralExt,
 };
 
 macro_rules! impl_tuple {
@@ -71,6 +75,21 @@ macro_rules! impl_tuple {
                         std::ptr::drop_in_place(&mut self.$field)
                     }
                 })*
+            }
+        }
+
+        impl<T, $($field_ty,)* > FromStructural<T> for $tuple_ty
+        where
+            T: $move_trait<$($field_ty),*>,
+        {
+            fn from_structural(value: T)->Self{
+                let path_set=unsafe{
+                    let x=LargePathSet(field_tuple!( $(names::$field_param,)* ));
+                    let x=FieldPathSet::many(x).upgrade_unchecked();
+                    x
+                };
+                let field_pat!($($field_ty,)*)=value.into_fields(path_set);
+                ($($field_ty,)*)
             }
         }
 
@@ -306,6 +325,12 @@ impl_tuple! {
         (11,C11,I11)
     ]
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,)
+}
+
+impl<T> FromStructural<T> for () {
+    fn from_structural(_: T) -> Self {
+        ()
+    }
 }
 
 #[cfg(test)]

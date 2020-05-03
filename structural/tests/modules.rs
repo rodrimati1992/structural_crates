@@ -34,6 +34,7 @@ mod submodules {
     mod multi_fields;
     mod multi_nested_fields;
     mod optional_fields;
+    mod std_structural_aliases;
     mod structural_alias;
     mod structural_derive;
     mod switch;

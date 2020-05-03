@@ -71,6 +71,21 @@ macro_rules! _private_impl_structural{
     };
 }
 
+/// Asserts that the `$type` implements the `$trait`
+#[cfg(feature = "testing")]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! assert_implements {
+    (for[$($params:tt)*] $type:ty, $trait:path)=>{{
+        fn __foo<$($params)*>(this: $type)-> impl $trait{
+            this
+        }
+    }};
+    ($type:ty, $trait:path)=>{{
+        $crate::assert_implements!(for[] $type,$trait)
+    }};
+}
+
 /// Asserts that the `$left` bounds are the same as the `$right` bounds
 #[cfg(feature = "testing")]
 #[macro_export]
