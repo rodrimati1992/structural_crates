@@ -259,6 +259,24 @@ pub struct MaxFields<T>(
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+#[struc(access = "move")]
+pub enum OptionLike<T> {
+    Some(T),
+    None,
+}
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+#[struc(access = "move")]
+pub enum ResultLike<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 structural_alias! {
     pub trait AStructuralAlias{
         a:u32,

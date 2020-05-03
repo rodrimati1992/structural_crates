@@ -9,7 +9,9 @@ use std::ops;
 #[test]
 fn std_types() {
     assert_implements!(for[T] Option<T>, sa::Option_SI<T>);
+    assert_implements!(for[T] Option<T>, sa::OptionMove_ESI<T>);
     assert_implements!(for[T,E] Result<T,E>, sa::Result_SI<T,E>);
+    assert_implements!(for[T,E] Result<T,E>, sa::ResultMove_ESI<T,E>);
 
     assert_implements!(for[T] ops::Range<T>, sa::Range_SI<T>);
     assert_implements!(for[T] ops::Range<T>, sa::RangeRef_SI<T>);

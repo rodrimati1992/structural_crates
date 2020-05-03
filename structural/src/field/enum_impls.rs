@@ -1,3 +1,5 @@
+use crate::{structural_aliases as sa, FromStructural};
+
 tstr_aliases! {
     mod strings {
         Ok,
@@ -28,6 +30,18 @@ _private_impl_getters_for_derive_enum! {
     }
 }
 
+impl<F, T> FromStructural<F> for Option<T>
+where
+    F: sa::OptionMove_ESI<T>,
+{
+    fn from_structural(this: F) -> Self {
+        switch! {this;
+            Some(x)=>Some(x),
+            None=>None,
+        }
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 _private_impl_getters_for_derive_enum! {
@@ -51,6 +65,18 @@ _private_impl_getters_for_derive_enum! {
             not_public(),
             fields((IntoVariantFieldMut,0:E,dropping(f0, 0),strings::field0))
         )
+    }
+}
+
+impl<F, T, E> FromStructural<F> for Result<T, E>
+where
+    F: sa::ResultMove_ESI<T, E>,
+{
+    fn from_structural(this: F) -> Self {
+        switch! {this;
+            Ok(x)=>Ok(x),
+            Err(x)=>Err(x),
+        }
     }
 }
 
