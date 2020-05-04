@@ -276,7 +276,7 @@ pub struct NestedFieldPath<T> {
 /// - [`fp`] macro,when you access multiple fields
 /// (using `=>` constructs a [`NestedFieldPathSet`] instead).
 ///
-/// - The [`one`] or [`many`] constructors.
+/// - The [`one`], [`many`], or [`large`] constructors.
 ///
 /// - The [`NEW`] associated constant,if `T` implements 
 /// `core_extensions::ConstDefault`
@@ -312,6 +312,7 @@ pub struct NestedFieldPath<T> {
 /// [`NEW`]: #associatedconstant.NEW
 /// [`one`]: #method.one
 /// [`many`]: #method.many
+/// [`large`]: #method.large
 /// [`NestedFieldPathSet`]: ./struct.NestedFieldPathSet.html
 /// [`UniquePaths`]: ./path/struct.UniquePaths.html
 /// [`AliasedPaths`]: ./path/struct.AliasedPaths.html

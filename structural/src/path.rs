@@ -331,13 +331,15 @@ impl<T> FieldPathSet<(T,), UniquePaths> {
 }
 
 impl<T> FieldPathSet<T, AliasedPaths> {
-    /// Constructs a FieldPathSet from a tuple of field paths.
+    /// Constructs a FieldPathSet from a tuple of up to 8 field paths.
     ///
-    /// Note that this doesn't enforce that its input is in fact a tuple of field paths
-    /// (because `const fn` can't have bounds yet).
+    /// Note that this doesn't enforce that its input is in fact a tuple of
+    /// up to 8 field paths (because `const fn` can't have bounds yet).
     ///
     /// To be able to access multiple fields mutably at the same time,
     /// you must call the unsafe `.upgrade()` method.
+    ///
+    /// To access more than 8 fields, you must use the [large constructor](#method.large).
     pub const fn many(paths: T) -> Self {
         FieldPathSet {
             paths: ManuallyDrop::new(paths),
@@ -665,8 +667,11 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// A field path set for over 8 fields.
-#[derive(Copy, Clone)]
+/// A newtype wrapper used to allow `FieldPathSet` to access from 9 up to 64 fields.
+///
+/// For examples of constructing and using `FieldPathSet<LargePathSet<_>,_>` you can look at
+/// the [docs for `FieldPathSet::large`](../struct.FieldPathSet.html#method.large)
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct LargePathSet<T>(pub T);
 
 impl<T> ConstDefault for LargePathSet<T>
