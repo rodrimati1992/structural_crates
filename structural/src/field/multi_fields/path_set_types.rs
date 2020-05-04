@@ -256,6 +256,7 @@ macro_rules! impl_get_multi_field_large {
         ////                    Impls for large field path sets
         /////////////////////////////////////////////////////////////////////////////
 
+        #[allow(unused_parens)]
         impl<'a,This:?Sized,$($fpath, $unnorm_a,)* U>
             RevGetMultiFieldImpl<'a,This>
         for FieldPathSet<LargePathSet<($($fpath,)*)>,U>
@@ -267,19 +268,20 @@ macro_rules! impl_get_multi_field_large {
                 $unnorm_a: 'a + NormalizeFields,
             )*
         {
-            type UnnormFields=( $( $unnorm_a, )* );
+            type UnnormFields=( $( $unnorm_a ),* );
 
             #[allow(unused_variables)]
             fn rev_get_multi_field_impl(self,this:&'a This)-> Self::UnnormFields {
                 let LargePathSet(($($fpath,)*))=self.into_paths();
                 (
                     $(
-                        FieldPathSet::many($fpath).rev_get_multi_field_impl(this),
-                    )*
+                        FieldPathSet::many($fpath).rev_get_multi_field_impl(this)
+                    ),*
                 )
             }
         }
 
+        #[allow(unused_parens)]
         unsafe impl<'a,This:?Sized,$($fpath,$unnorm_a,$unnorm_b,)*>
             RevGetMultiFieldMutImpl<'a,This>
         for FieldPathSet<LargePathSet<($($fpath,)*)>,UniquePaths>
@@ -296,8 +298,8 @@ macro_rules! impl_get_multi_field_large {
                 $unnorm_b: 'a + NormalizeFields + DerefNested<'a,Dereffed= $unnorm_a >,
             )*
         {
-            type UnnormFieldsMut=( $( $unnorm_a, )* );
-            type UnnormFieldsRawMut=( $( $unnorm_b, )* );
+            type UnnormFieldsMut=( $( $unnorm_a ),* );
+            type UnnormFieldsRawMut=( $( $unnorm_b ),* );
 
             #[allow(unused_unsafe,unused_variables)]
             fn rev_get_multi_field_mut_impl(
@@ -319,12 +321,13 @@ macro_rules! impl_get_multi_field_large {
                     $(
                         FieldPathSet::many($fpath)
                             .upgrade_unchecked()
-                            .rev_get_multi_field_raw_mut_impl(this),
-                    )*
+                            .rev_get_multi_field_raw_mut_impl(this)
+                    ),*
                 )
             }
         }
 
+        #[allow(unused_parens)]
         impl<'a,This,$($fpath,$unnorm_a,)*>
             RevIntoMultiFieldImpl<This>
         for FieldPathSet<LargePathSet<($($fpath,)*)>,UniquePaths>
@@ -337,7 +340,7 @@ macro_rules! impl_get_multi_field_large {
                 $unnorm_a: NormalizeFields,
             )*
         {
-            type UnnormIntoFields=( $( $unnorm_a, )* );
+            type UnnormIntoFields=( $( $unnorm_a ),* );
 
             fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
                 let LargePathSet(($($fpath,)*))=self.into_paths();
@@ -352,8 +355,8 @@ macro_rules! impl_get_multi_field_large {
                         $(
                             FieldPathSet::many($fpath)
                                 .upgrade_unchecked()
-                                .rev_move_out_multi_field(this, moved),
-                        )*
+                                .rev_move_out_multi_field(this, moved)
+                        ),*
                     )
                 }
             }

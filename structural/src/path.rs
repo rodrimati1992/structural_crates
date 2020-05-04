@@ -346,6 +346,67 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     }
 }
 
+impl<T> FieldPathSet<LargePathSet<T>, AliasedPaths> {
+    /// Constructs a FieldPathSet from a tuple of tuples of field paths,
+    /// for accessing up to 64 fields.
+    ///
+    /// Note that this doesn't enforce that its input is in fact a
+    /// tuple of tuples of field paths (because `const fn` can't have bounds yet).
+    ///
+    /// To be able to access multiple fields mutably at the same time,
+    /// you must call the unsafe `.upgrade()` method.
+    ///
+    /// # Example
+    ///
+    /// This example demonstrates calling this function with 8 and 9 field paths,
+    /// as well as the return value of `StructuralExt` methods for both path sets.
+    ///
+    /// Accessing over 8 fields returns a tuple of tuples (8 fields each).
+    ///
+    /// You can also destructure the tuple returned by accessor methods by using
+    /// the [`field_pat`] macro, usable from 0 to 64 fields.
+    ///
+    /// ```rust
+    /// use structural::{ FieldPathSet, StructuralExt, path_tuple, ts };
+    ///
+    /// let array = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    ///
+    /// {
+    ///     let path8 = FieldPathSet::large(path_tuple!(
+    ///         ts!(0), ts!(1), ts!(2), ts!(3), ts!(4), ts!(5), ts!(6), ts!(7),
+    ///     ));
+    ///     
+    ///     assert_eq!(
+    ///         array.cloned_fields(path8),
+    ///         (10, 11, 12, 13, 14, 15, 16, 17),
+    ///     );
+    /// }
+    /// {
+    ///     let path9 = FieldPathSet::large(path_tuple!(
+    ///         ts!(0), ts!(1), ts!(2), ts!(3), ts!(4), ts!(5), ts!(6), ts!(7),
+    ///         ts!(8),
+    ///     ));
+    ///     
+    ///     assert_eq!(
+    ///         array.cloned_fields(path9),
+    ///         (
+    ///             (10, 11, 12, 13, 14, 15, 16, 17),
+    ///             (18,),
+    ///         ),
+    ///     );
+    /// }
+    ///
+    /// ```
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html    
+    pub const fn large(paths: T) -> Self {
+        FieldPathSet {
+            paths: ManuallyDrop::new(LargePathSet(paths)),
+            uniqueness: PhantomData,
+        }
+    }
+}
+
 impl<T> FieldPathSet<T, AliasedPaths>
 where
     T: ConstDefault,

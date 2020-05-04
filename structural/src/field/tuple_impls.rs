@@ -84,7 +84,7 @@ macro_rules! impl_tuple {
         {
             fn from_structural(value: T)->Self{
                 let path_set=unsafe{
-                    let x=LargePathSet(field_tuple!( $(names::$field_param,)* ));
+                    let x=LargePathSet(path_tuple!( $(names::$field_param,)* ));
                     let x=FieldPathSet::many(x).upgrade_unchecked();
                     x
                 };

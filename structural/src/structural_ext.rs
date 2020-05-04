@@ -109,6 +109,16 @@ pub trait StructuralExt {
 
     /// Gets references to multiple fields,determined by `path`.
     ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
+    ///
     /// # Example
     ///
     /// ```
@@ -193,6 +203,16 @@ pub trait StructuralExt {
     }
 
     /// Gets clones of multiple fields,determined by `path`.
+    ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
     ///
     /// # Example
     ///
@@ -401,6 +421,16 @@ pub trait StructuralExt {
     }
 
     /// Gets mutable references to multiple fields,determined by `path`.
+    ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
     ///
     /// # Example
     ///
@@ -620,6 +650,16 @@ pub trait StructuralExt {
     }
 
     /// Converts `self` into multiple fields by value.
+    ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
     ///
     /// # Valid Paths
     ///

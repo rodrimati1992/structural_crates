@@ -200,7 +200,7 @@ macro_rules! array_impls {
             fn from_structural(from: F)->Self{
                 // This unsafe is checked in the test for converting arrays to smaller srrays
                 let path_set=unsafe{
-                    let x=LargePathSet(field_tuple!( $($index_name,)* ));
+                    let x=LargePathSet(path_tuple!( $($index_name,)* ));
                     let x=FieldPathSet::many(x).upgrade_unchecked();
                     x
                 };
