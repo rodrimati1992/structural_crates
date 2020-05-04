@@ -777,7 +777,82 @@ pub trait StructuralExt {
         IsVariant::is_variant_(self, _path)
     }
 
-    /// Converts this into another structural type.
+    /// Converts this into another structural type using `IntoStructural`.
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     structural_aliases::Array3,
+    ///     FromStructural, Structural, StructuralExt, fp, make_struct,
+    /// };
+    ///
+    /// assert_eq!( Foo(55, 89, 144, 233).into_struc::<[_;3]>(), [55, 89, 144] );
+    ///
+    /// assert_eq!(
+    ///     make_struct!{x:"foo", y:"bar", z:"baz", w:"what"}.into_struc::<Point<_>>(),
+    ///     Point{x:"foo", y:"bar", z:"baz"}
+    /// );
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// # #[struc(no_trait)]
+    /// struct Foo(pub u8, pub u8, pub u8, pub u8);
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// struct Point<T>{
+    ///     pub x: T,
+    ///     pub y: T,
+    ///     pub z: T,
+    /// }
+    ///
+    /// impl<F, T> FromStructural<F> for Point<T>
+    /// where
+    ///     // `Point_SI` was generated for `Point` by the Structural derive.
+    ///     F: Point_SI<T>,
+    /// {
+    ///     fn from_structural(this: F)->Self{
+    ///         let (x,y,z) = this.into_fields(fp!(x, y, z));
+    ///         Self{x,y,z}
+    ///     }
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     for_examples::ResultLike,
+    ///     FromStructural, Structural, StructuralExt, switch,
+    /// };
+    ///
+    /// assert_eq!( ResultLike::<_,()>::Ok (300).into_struc::<ResultV>(), ResultV::Ok );
+    /// assert_eq!( ResultLike::<(),_>::Err(300).into_struc::<ResultV>(), ResultV::Err );
+    ///
+    /// assert_eq!( Ok::<_,()>(300).into_struc::<ResultV>(), ResultV::Ok );
+    /// assert_eq!( Err::<(),_>(300).into_struc::<ResultV>(), ResultV::Err );
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum ResultV{
+    ///     Ok,
+    ///     Err,
+    /// }
+    ///
+    /// impl<F> FromStructural<F> for ResultV
+    /// where
+    ///     // `ResultV_ESI` was generated for `Point` by the Structural derive.
+    ///     F: ResultV_ESI
+    /// {
+    ///     fn from_structural(this: F)->Self{
+    ///         switch!{this;
+    ///             Ok => ResultV::Ok,
+    ///             Err => ResultV::Err,
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// ```
+    ///
     fn into_struc<U>(self) -> U
     where
         Self: IntoStructural<U>,

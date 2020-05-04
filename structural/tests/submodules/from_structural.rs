@@ -2,7 +2,7 @@ use structural::{
     for_examples::{MaxFields, Tuple16},
     structural_aliases as sa,
     structural_aliases::{ArrayMove32, TupleMove12},
-    IntoField, StructuralExt, FP,
+    IntoField, StrucWrapper, StructuralExt, FP,
 };
 
 fn from_array32_tests(this: impl ArrayMove32<u8> + Copy) {
@@ -259,6 +259,16 @@ fn wrappers_from_structural() {
             into_manuallydrop((8, 13, 21, 34)),
             ManuallyDrop::new([8, 13])
         );
+    }
+    {
+        fn into_wrapper<T>(
+            this: impl IntoField<FP!(0), Ty = T> + IntoField<FP!(1), Ty = T>,
+        ) -> StrucWrapper<[T; 2]> {
+            this.into_struc()
+        }
+
+        assert_eq!(into_wrapper((3, 5)), StrucWrapper([3, 5]));
+        assert_eq!(into_wrapper((8, 13, 21, 34)), StrucWrapper([8, 13]));
     }
 }
 

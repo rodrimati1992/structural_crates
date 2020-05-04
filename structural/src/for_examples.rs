@@ -1,4 +1,4 @@
-use crate::Structural;
+use crate::{FromStructural, IntoField, Structural, StructuralExt};
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
@@ -56,10 +56,32 @@ pub struct StructFoo<T> {
     pub foo: T,
 }
 
+impl<F, T> FromStructural<F> for StructFoo<T>
+where
+    F: IntoField<TS!(foo), Ty = T>,
+{
+    fn from_structural(this: F) -> Self {
+        Self {
+            foo: this.into_field(fp!(foo)),
+        }
+    }
+}
+
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
 pub struct StructBar<T> {
     pub bar: T,
+}
+
+impl<F, T> FromStructural<F> for StructBar<T>
+where
+    F: IntoField<TS!(bar), Ty = T>,
+{
+    fn from_structural(this: F) -> Self {
+        Self {
+            bar: this.into_field(fp!(bar)),
+        }
+    }
 }
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
@@ -261,7 +283,6 @@ pub struct MaxFields<T>(
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
-#[struc(access = "move")]
 pub enum OptionLike<T> {
     Some(T),
     None,
@@ -269,7 +290,6 @@ pub enum OptionLike<T> {
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
-#[struc(access = "move")]
 pub enum ResultLike<T, E> {
     Ok(T),
     Err(E),
