@@ -1,4 +1,5 @@
 use crate::{
+    convert::{IntoStructural, TryFromError, TryIntoStructural},
     enums::IsVariant,
     field::{
         NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
@@ -6,7 +7,6 @@ use crate::{
         RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
-    IntoStructural,
 };
 
 use core_extensions::collection_traits::{Cloned, ClonedOut};
@@ -824,7 +824,7 @@ pub trait StructuralExt {
     /// ```rust
     /// use structural::{
     ///     structural_aliases::Array3,
-    ///     FromStructural, Structural, StructuralExt, fp, make_struct,
+    ///     Structural, StructuralExt, fp, make_struct,
     /// };
     ///
     /// assert_eq!( Foo(55, 89, 144, 233).into_struc::<[_;3]>(), [55, 89, 144] );
@@ -845,14 +845,17 @@ pub trait StructuralExt {
     ///     pub z: T,
     /// }
     ///
-    /// impl<F, T> FromStructural<F> for Point<T>
-    /// where
-    ///     // `Point_SI` was generated for `Point` by the Structural derive.
-    ///     F: Point_SI<T>,
-    /// {
-    ///     fn from_structural(this: F)->Self{
-    ///         let (x,y,z) = this.into_fields(fp!(x, y, z));
-    ///         Self{x,y,z}
+    /// // This macro also implement TryFromStructural for Point
+    /// structural::z_impl_from_structural!{
+    ///     impl[F, T] FromStructural<F> for Point<T>
+    ///     where[
+    ///         // `Point_SI` was generated for `Point` by the Structural derive.
+    ///         F: Point_SI<T>,
+    ///     ]{
+    ///         fn from_structural(this){
+    ///             let (x,y,z) = this.into_fields(fp!(x, y, z));
+    ///             Self{x,y,z}
+    ///         }
     ///     }
     /// }
     ///
@@ -863,7 +866,7 @@ pub trait StructuralExt {
     /// ```rust
     /// use structural::{
     ///     for_examples::ResultLike,
-    ///     FromStructural, Structural, StructuralExt, switch,
+    ///     Structural, StructuralExt, switch,
     /// };
     ///
     /// assert_eq!( ResultLike::<_,()>::Ok (300).into_struc::<ResultV>(), ResultV::Ok );
@@ -878,15 +881,18 @@ pub trait StructuralExt {
     ///     Err,
     /// }
     ///
-    /// impl<F> FromStructural<F> for ResultV
-    /// where
-    ///     // `ResultV_ESI` was generated for `Point` by the Structural derive.
-    ///     F: ResultV_ESI
-    /// {
-    ///     fn from_structural(this: F)->Self{
-    ///         switch!{this;
-    ///             Ok => ResultV::Ok,
-    ///             Err => ResultV::Err,
+    /// // This macro also implement TryFromStructural for ResultV
+    /// structural::z_impl_from_structural!{
+    ///     impl[F] FromStructural<F> for ResultV
+    ///     where[
+    ///         // `ResultV_ESI` was generated for `Point` by the Structural derive.
+    ///         F: ResultV_ESI
+    ///     ]{
+    ///         fn from_structural(this){
+    ///             switch!{this;
+    ///                 Ok => ResultV::Ok,
+    ///                 Err => ResultV::Err,
+    ///             }
     ///         }
     ///     }
     /// }
@@ -898,6 +904,13 @@ pub trait StructuralExt {
         Self: IntoStructural<U>,
     {
         self.into_structural()
+    }
+
+    fn try_into_struc<U>(self) -> Result<U, TryFromError<Self, Self::Error>>
+    where
+        Self: TryIntoStructural<U>,
+    {
+        self.try_into_structural()
     }
 }
 

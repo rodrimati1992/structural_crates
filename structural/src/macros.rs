@@ -14,6 +14,9 @@ mod field_tuples;
 mod field_paths;
 
 #[macro_use]
+mod from_structural;
+
+#[macro_use]
 mod impl_struct;
 
 #[macro_use]

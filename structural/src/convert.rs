@@ -1,3 +1,8 @@
+use std_::fmt::{self, Display};
+
+#[cfg(feature = "std")]
+use std::error::Error as StdError;
+
 /// For conversions between structural types.
 ///
 /// Since Rust 1.41 it's possible to implement `FromStructural<LocalType>` for an external type,
@@ -13,7 +18,7 @@
 /// This example demonstrates how this trait can be manually implemented for structs.
 ///
 /// ```rust
-/// use structural::{FromStructural, StructuralExt, Structural, fp, make_struct};
+/// use structural::{convert::FromStructural, StructuralExt, Structural, fp, make_struct};
 ///
 /// {
 ///     let this = Point{x: 33, y:45};
@@ -47,15 +52,22 @@
 ///     health: u32,
 /// }
 ///
-/// impl<T> FromStructural<T> for Entity
-/// where
-///     T: Entity_SI
-/// {
-///     fn from_structural(from: T)->Self {
-///         let (x, y) = from.into_fields(fp!(x, y));
-///         Entity{ x, y, health: 100 }
+/// // This macro implements TryFromStructural for Entity by
+/// // delegating to the passed-in implementation of `FromStructural`.
+/// //
+/// // `TryFromStructural` cannot have a blanket impl because it would collide
+/// // with user implementations.
+/// structural::z_impl_from_structural!{
+///     impl[F] FromStructural<F> for Entity
+///     where[ F: Entity_SI ]
+///     {
+///         fn from_structural(from){
+///             let (x, y) = from.into_fields(fp!(x, y));
+///             Entity{ x, y, health: 100 }
+///         }    
 ///     }
 /// }
+///
 /// ```
 ///
 /// # Enum Example
@@ -65,9 +77,10 @@
 ///
 /// ```rust
 /// use structural::{
+///     convert::FromStructural,
 ///     for_examples::OptionLike,
 ///     structural_aliases::OptionMove_ESI,
-///     FromStructural, StructuralExt, Structural, switch,
+///     StructuralExt, Structural, switch,
 /// };
 ///
 /// assert_eq!(Some(100).into_struc::<UberOption<_>>(), UberOption::Some(100, 100));
@@ -97,21 +110,29 @@
 ///     None,
 /// }
 ///
-/// impl<F, T> FromStructural<F> for UberOption<T>
-/// where
-///     F: OptionMove_ESI<T>,
-///     T: Clone,
-/// {
-///     fn from_structural(from: F)->Self {
-///         switch!{from;
-///             Some(x) => Self::Some(x.clone(), x),
-///             None => Self::None,
+/// // This macro implements TryFromStructural for Entity by
+/// // delegating to the passed-in implementation of `FromStructural`.
+/// //
+/// // `TryFromStructural` cannot have a blanket impl because it would collide
+/// // with user implementations.
+/// structural::z_impl_from_structural!{
+///     impl[F, T] FromStructural<F> for UberOption<T>
+///     where[
+///         F: OptionMove_ESI<T>,
+///         T: Clone,
+///     ]{
+///         fn from_structural(from){
+///             switch!{from;
+///                 Some(x) => Self::Some(x.clone(), x),
+///                 None => Self::None,
+///             }
 ///         }
 ///     }
 /// }
+///
 /// ```
 ///
-pub trait FromStructural<T>: Sized {
+pub trait FromStructural<T>: TryFromStructural<T> {
     /// Performs the conversion
     fn from_structural(from: T) -> Self;
 }
@@ -125,7 +146,7 @@ pub trait FromStructural<T>: Sized {
 /// This example demonstrates how you can use `IntoStructural` as a bound.
 ///
 /// ```rust
-/// use structural::IntoStructural;
+/// use structural::convert::IntoStructural;
 ///
 /// assert_eq!( into_other((0, 1, 2), [3, 4]), [[0, 1], [3, 4]] );
 ///
@@ -151,3 +172,94 @@ where
         T::from_structural(self)
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+pub trait TryFromStructural<T>: Sized {
+    type Error;
+
+    /// Performs the conversion
+    fn try_from_structural(from: T) -> Result<Self, TryFromError<T, Self::Error>>;
+}
+
+pub trait TryIntoStructural<T>: Sized {
+    type Error;
+
+    /// Performs the conversion
+    fn try_into_structural(self) -> Result<T, TryFromError<Self, Self::Error>>;
+}
+
+impl<This, T> TryIntoStructural<T> for This
+where
+    T: TryFromStructural<This>,
+{
+    type Error = T::Error;
+
+    fn try_into_structural(self) -> Result<T, TryFromError<Self, Self::Error>> {
+        T::try_from_structural(self)
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone)]
+pub struct TryFromError<T, E> {
+    pub from: T,
+    pub error: E,
+}
+
+impl<T, E> TryFromError<T, E> {
+    pub fn new(from: T, error: E) -> Self {
+        Self { from, error }
+    }
+}
+
+impl<T> TryFromError<T, EmptyTryFromError> {
+    pub fn with_empty_error(from: T) -> Self {
+        Self {
+            from,
+            error: EmptyTryFromError,
+        }
+    }
+}
+
+impl<T, E> Display for TryFromError<T, E>
+where
+    E: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.error, f)
+    }
+}
+
+#[cfg(feature = "std")]
+#[allow(deprecated)]
+impl<T, E> StdError for TryFromError<T, E>
+where
+    T: fmt::Debug,
+    E: StdError,
+{
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        self.error.source()
+    }
+    fn description(&self) -> &str {
+        self.error.description()
+    }
+    fn cause(&self) -> Option<&dyn StdError> {
+        self.error.cause()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone)]
+pub struct EmptyTryFromError;
+
+impl Display for EmptyTryFromError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt("failed TryIntoStructural conversion", f)
+    }
+}
+
+#[cfg(feature = "std")]
+impl StdError for EmptyTryFromError {}

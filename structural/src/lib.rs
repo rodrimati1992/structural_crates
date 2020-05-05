@@ -663,10 +663,10 @@ mod macros;
 #[doc(hidden)]
 #[cfg(all(feature = "use_const_str", not(feature = "disable_const_str")))]
 pub mod const_generic_utils;
+pub mod convert;
 pub mod docs;
 pub mod enums;
 pub mod field;
-mod from_structural;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
@@ -692,7 +692,6 @@ pub use crate::{
         GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
-    from_structural::{FromStructural, IntoStructural},
     structural_ext::StructuralExt,
     structural_trait::Structural,
     wrapper::StrucWrapper,
@@ -722,6 +721,7 @@ pub mod reexports {
 // explicitly disallowed,and is likely to break.
 #[doc(hidden)]
 pub mod pmr {
+    pub use crate::convert::*;
     pub use crate::enums::variant_count::*;
     pub use crate::enums::*;
     pub use crate::field::ownership::*;
@@ -734,6 +734,7 @@ pub mod pmr {
     pub use core_extensions::{ConstDefault, MarkerType};
 
     pub use crate::std_::{
+        convert::Infallible,
         format_args,
         marker::PhantomData,
         mem::{drop, forget},

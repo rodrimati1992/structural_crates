@@ -211,7 +211,36 @@ unsafe_delegate_structural_with!{
     // Requires that the DropFields trait is implemented manually.
     // DropFields = manual;
 
+    // This is an optional parameter,
+    // which determines how the FromStructural and TryFromStructural traits are delegated.
+    //
+    // If this parameter is not passed,
+    // then neither FromStructural and TryFromStructural is implemented.
+    FromStructural
+    // An optional where clause, with additional constraints
+    where [ u32: Copy, ]
+    {
+        // An optional parameter, defaults to the delegated-to type.
+        converted_from = T;
+
+        // The function that constructs this type from the `converted_from` type.
+        constructor = Foo::new;
+    }
 }
+
+
+impl<T> Foo<T>{
+    pub fn new(value: T)->Self{
+        Self{
+            a: (),
+            b: (),
+            c: (),
+            d: Bar{e: ()},
+            value,
+        }
+    }
+}
+
 ```
 
 # Example
@@ -379,6 +408,15 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
             DropFields = $drop_fields_param:tt $(;)?
         )?
+
+        $(
+            FromStructural
+            $( where $from_struc_where:tt )?
+            {
+                $(converted_from=$converted_from:ty;)?
+                constructor = $constructor:expr;
+            }
+        )?
     ) => (
 
         $crate::unsafe_delegate_structural_with_inner!{
@@ -438,6 +476,21 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 move_out_field $move_out_field_closure
 
                 DropFields = $drop_fields_param
+            }
+        )?
+
+        $(
+            $crate::unsafe_delegate_structural_with_inner!{
+                inner;
+                impl $impl_params $self
+                where $where_clause
+                $(where $from_struc_where)?
+
+                FromStructural {
+                    $(converted_from = $converted_from;)?
+                    converted_from = $delegating_to_type;
+                    constructor = $constructor;
+                }
             }
         )?
     );
@@ -984,6 +1037,56 @@ macro_rules! unsafe_delegate_structural_with_inner {
 
 
         $($raw_ptr_impl)*
+    };
+    (inner;
+        impl [$($impl_params:tt)*] $self:ty
+        where [$($where_clause_a:tt)*]
+        $(where [$($where_clause_b:tt)*])?
+
+        FromStructural {
+            converted_from=$converted_from:ty;
+            $(converted_from=$converted_from_b:ty;)?
+            constructor = $constructor:expr;
+        }
+    )=>{
+        impl<$($impl_params)* __From> $crate::pmr::FromStructural<__From> for $self
+        where
+            $($where_clause_a)*
+            $($($where_clause_b)*)?
+            $converted_from: $crate::pmr::FromStructural<__From>,
+        {
+            #[inline]
+            fn from_structural(from: __From) -> Self {
+                let delegating_to=
+                    <$converted_from as
+                        $crate::pmr::FromStructural<__From>
+                    >::from_structural(from);
+                $constructor(delegating_to)
+            }
+        }
+
+        impl<$($impl_params)* __From,__Err> $crate::pmr::TryFromStructural<__From> for $self
+        where
+            $($where_clause_a)*
+            $($($where_clause_b)*)?
+            $converted_from: $crate::pmr::TryFromStructural<__From, Error=__Err>,
+        {
+            type Error=__Err;
+
+            #[inline]
+            fn try_from_structural(
+                from: __From,
+            ) -> Result<Self, $crate::pmr::TryFromError<__From,__Err>> {
+                let res=
+                    <$converted_from as
+                        $crate::pmr::TryFromStructural<__From>
+                    >::try_from_structural(from);
+                match res {
+                    Ok(x) => Ok($constructor(x)),
+                    Err(e) => Err(e),
+                }
+            }
+        }
     };
     (inner;
         impl [$($impl_params:tt)*] $self:ty
