@@ -302,10 +302,16 @@ This example shows many of the ways that fields can be accessed.
 use structural::{StructuralExt,Structural,fp};
 
 fn main(){
+    let array=[
+        10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,
+        26,27,28,29,30,31,32,33,34,35,36,37,38,39,30,31,
+    ];
+
     with_struct(Foo{
         name: "foo",
         year: 2020,
         tuple: Some((3,5,8)),
+        array,
     });
 
     with_struct(Bar{
@@ -313,6 +319,7 @@ fn main(){
         surname:"metavariable",
         year: 2020,
         tuple: Some((3,5,8)),
+        array,
     });
 }
 
@@ -369,6 +376,30 @@ where
     // it returns an `Option` wrapping all references to the fields.
     assert_eq!( foo.fields(fp!(tuple?=>0,1,2)), Some((&3,&5,&8)) );
 
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7)),
+        (&10,&11,&12,&13,&14,&15,&16,&17),
+    );
+
+    // If you access more than 8 fields,the fields method returns tuples of tuples,
+    // in which the nested tuples reference 8 fields each.
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (&10,&11,&12,&13,&14,&15,&16,&17),
+            (&18,),
+        )
+    );
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (&10,&11,&12,&13,&14,&15,&16,&17),
+            (&18,&19,&20,&21,&22,&23,&24,&25),
+            (&26,&27),
+        )
+    );
+
+
     ////////////////////////////////////////////////////
     ////            fields_mut method
     assert_eq!( foo.fields_mut(fp!(name, year)), (&mut "foo",&mut 2020) );
@@ -380,6 +411,60 @@ where
     );
     assert_eq!( foo.fields_mut(fp!(tuple?=>0,1,2)), Some((&mut 3, &mut 5, &mut 8)) );
 
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7)),
+        (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+    );
+
+    // If you access more than 8 fields,the `fields_mut` method returns tuples of tuples,
+    // in which the nested tuples reference 8 fields each.
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+            (&mut 18,),
+        )
+    );
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+            (&mut 18, &mut 19, &mut 20, &mut 21, &mut 22, &mut 23, &mut 24, &mut 25),
+            (&mut 26, &mut 27),
+        )
+    );
+
+    ////////////////////////////////////////////////////
+    ////            into_fields method
+    assert_eq!( foo.clone().into_fields(fp!(name, year)), ("foo",2020) );
+    assert_eq!( foo.clone().into_fields(fp!(=>name,year)), ("foo",2020) );
+
+    assert_eq!( foo.clone().into_fields(fp!(tuple?=>0,1,2)), Some((3, 5, 8)) );
+
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7)),
+        (10, 11, 12, 13, 14, 15, 16, 17),
+    );
+
+    // If you access more than 8 fields,the `into_fields` method returns tuples of tuples,
+    // in which the nested tuples have 8 fields each.
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (10, 11, 12, 13, 14, 15, 16, 17),
+            (18,),
+        )
+    );
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (10, 11, 12, 13, 14, 15, 16, 17),
+            (18, 19, 20, 21, 22, 23, 24, 25),
+            (26, 27),
+        )
+    );
+
+
 }
 
 #[derive(Structural,Clone)]
@@ -388,6 +473,7 @@ struct Foo{
     name: &'static str,
     year: i64,
     tuple: Option<(u32,u32,u32)>,
+    array: [u8;32],
 }
 
 #[derive(Structural,Clone)]
@@ -398,6 +484,7 @@ struct Bar{
     surname:&'static str,
     year:i64,
     tuple: Option<(u32,u32,u32)>,
+    array: [u8;32],
 }
 
 
