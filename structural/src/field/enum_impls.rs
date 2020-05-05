@@ -1,4 +1,7 @@
-use crate::{structural_aliases as sa, FromStructural};
+use crate::{
+    convert::{EmptyTryFromError, FromStructural, TryFromError, TryFromStructural},
+    structural_aliases as sa,
+};
 
 tstr_aliases! {
     mod strings {
@@ -42,6 +45,21 @@ where
     }
 }
 
+impl<F, T> TryFromStructural<F> for Option<T>
+where
+    F: sa::OptionMove_SI<T>,
+{
+    type Error = EmptyTryFromError;
+
+    fn try_from_structural(this: F) -> Result<Self, TryFromError<F, Self::Error>> {
+        Ok(switch! {this;
+            Some(x)=>Some(x),
+            None=>None,
+            _=>return Err(TryFromError::with_empty_error(this)),
+        })
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 _private_impl_getters_for_derive_enum! {
@@ -77,6 +95,21 @@ where
             Ok(x)=>Ok(x),
             Err(x)=>Err(x),
         }
+    }
+}
+
+impl<F, T, E> TryFromStructural<F> for Result<T, E>
+where
+    F: sa::ResultMove_SI<T, E>,
+{
+    type Error = EmptyTryFromError;
+
+    fn try_from_structural(this: F) -> Result<Self, TryFromError<F, Self::Error>> {
+        Ok(switch! {this;
+            Ok(x)=>Ok(x),
+            Err(x)=>Err(x),
+            _=>return Err(TryFromError::with_empty_error(this)),
+        })
     }
 }
 

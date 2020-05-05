@@ -1,4 +1,4 @@
-use crate::{FromStructural, IntoField, Structural, StructuralExt};
+use crate::{IntoField, Structural, StructuralExt};
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
@@ -56,13 +56,14 @@ pub struct StructFoo<T> {
     pub foo: T,
 }
 
-impl<F, T> FromStructural<F> for StructFoo<T>
-where
-    F: IntoField<TS!(foo), Ty = T>,
-{
-    fn from_structural(this: F) -> Self {
-        Self {
-            foo: this.into_field(fp!(foo)),
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for StructFoo<T>
+    where[ F: IntoField<TS!(foo), Ty = T>, ]
+    {
+        fn from_structural(this){
+            Self {
+                foo: this.into_field(fp!(foo)),
+            }
         }
     }
 }
@@ -73,13 +74,14 @@ pub struct StructBar<T> {
     pub bar: T,
 }
 
-impl<F, T> FromStructural<F> for StructBar<T>
-where
-    F: IntoField<TS!(bar), Ty = T>,
-{
-    fn from_structural(this: F) -> Self {
-        Self {
-            bar: this.into_field(fp!(bar)),
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for StructBar<T>
+    where[ F: IntoField<TS!(bar), Ty = T>, ]
+    {
+        fn from_structural(this){
+            Self {
+                bar: this.into_field(fp!(bar)),
+            }
         }
     }
 }
@@ -290,9 +292,25 @@ pub enum OptionLike<T> {
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
+pub enum ExtraOption<T> {
+    Some(T),
+    None,
+    FileNotFound,
+}
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
 pub enum ResultLike<T, E> {
     Ok(T),
     Err(E),
+}
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(no_trait)]
+pub enum ExtraResult<T, E> {
+    Ok(T),
+    Err(E),
+    Warn,
 }
 
 ///////////////////////////////////////////////////////////////////////////////

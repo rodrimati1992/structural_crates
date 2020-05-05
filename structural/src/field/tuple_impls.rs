@@ -6,7 +6,7 @@ use crate::{
     },
     path::{FieldPathSet, LargePathSet},
     structural_trait::Structural,
-    FromStructural, StructuralExt,
+    StructuralExt,
 };
 
 macro_rules! impl_tuple {
@@ -78,21 +78,21 @@ macro_rules! impl_tuple {
             }
         }
 
-        impl<T, $($field_ty,)* > FromStructural<T> for $tuple_ty
-        where
-            T: $move_trait<$($field_ty),*>,
-        {
-            fn from_structural(value: T)->Self{
-                let path_set=unsafe{
-                    let x=LargePathSet(path_tuple!( $(names::$field_param,)* ));
-                    let x=FieldPathSet::many(x).upgrade_unchecked();
-                    x
-                };
-                let field_pat!($($field_ty,)*)=value.into_fields(path_set);
-                ($($field_ty,)*)
+        z_impl_from_structural!{
+            impl[T, $($field_ty,)* ] FromStructural<T> for $tuple_ty
+            where[ T: $move_trait<$($field_ty),*>, ]
+            {
+                fn from_structural(value){
+                    let path_set=unsafe{
+                        let x=LargePathSet(path_tuple!( $(names::$field_param,)* ));
+                        let x=FieldPathSet::many(x).upgrade_unchecked();
+                        x
+                    };
+                    let field_pat!($($field_ty,)*)=value.into_fields(path_set);
+                    ($($field_ty,)*)
+                }
             }
         }
-
 
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
@@ -327,9 +327,13 @@ impl_tuple! {
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,)
 }
 
-impl<T> FromStructural<T> for () {
-    fn from_structural(_: T) -> Self {
-        ()
+z_impl_from_structural! {
+    impl[T] FromStructural<T> for ()
+    where[]
+    {
+        fn from_structural(_from){
+            ()
+        }
     }
 }
 

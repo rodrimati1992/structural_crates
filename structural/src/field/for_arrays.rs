@@ -11,7 +11,7 @@ use crate::{
         cmp::{Compare, TGreater},
         integer::{self, IsUnsigned},
     },
-    FromStructural, StructuralExt,
+    StructuralExt,
 };
 
 use std_::{marker::PhantomData, mem::ManuallyDrop, ptr};
@@ -193,19 +193,20 @@ macro_rules! array_impls {
             $($after)*
         }
 
-        impl<T,F> FromStructural<F> for [T;$next_index]
-        where
-            F: $next_trait<T>
-        {
-            fn from_structural(from: F)->Self{
-                // This unsafe is checked in the test for converting arrays to smaller srrays
-                let path_set=unsafe{
-                    let x=LargePathSet(path_tuple!( $($index_name,)* ));
-                    let x=FieldPathSet::many(x).upgrade_unchecked();
-                    x
-                };
-                let field_pat!($($field_name,)*)=from.into_fields(path_set);
-                [$($field_name),*]
+        z_impl_from_structural!{
+            impl[T,F] FromStructural<F> for [T;$next_index]
+            where[ F: $next_trait<T> ]
+            {
+                fn from_structural(from){
+                    // This unsafe is checked in the test for converting arrays to smaller srrays
+                    let path_set=unsafe{
+                        let x=LargePathSet(path_tuple!( $($index_name,)* ));
+                        let x=FieldPathSet::many(x).upgrade_unchecked();
+                        x
+                    };
+                    let field_pat!($($field_name,)*)=from.into_fields(path_set);
+                    [$($field_name),*]
+                }
             }
         }
     );

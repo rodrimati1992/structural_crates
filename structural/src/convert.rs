@@ -202,7 +202,7 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TryFromError<T, E> {
     pub from: T,
     pub error: E,
@@ -252,7 +252,7 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EmptyTryFromError;
 
 impl Display for EmptyTryFromError {

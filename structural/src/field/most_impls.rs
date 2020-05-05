@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use crate::{fp, FieldType, FromStructural, GetField, IntoField, Structural};
+use crate::{fp, FieldType, GetField, IntoField, Structural};
 
 #[allow(unused_imports)]
 use crate::StructuralExt;
@@ -29,14 +29,15 @@ _private_impl_getters_for_derive_struct! {
     }
 }
 
-impl<F, T> FromStructural<F> for Range<T>
-where
-    F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
-{
-    #[inline]
-    fn from_structural(this: F) -> Self {
-        let (start, end) = this.into_fields(fp!(start, end));
-        Self { start, end }
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for Range<T>
+    where[
+        F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let (start, end) = this.into_fields(fp!(start, end));
+            Self { start, end }
+        }
     }
 }
 
@@ -50,14 +51,15 @@ _private_impl_getters_for_derive_struct! {
     }
 }
 
-impl<F, T> FromStructural<F> for RangeFrom<T>
-where
-    F: IntoField<Start_STR, Ty = T>,
-{
-    #[inline]
-    fn from_structural(this: F) -> Self {
-        let start = this.into_field(fp!(start));
-        Self { start }
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeFrom<T>
+    where[
+        F: IntoField<Start_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let start = this.into_field(fp!(start));
+            Self { start }
+        }
     }
 }
 
@@ -71,14 +73,15 @@ _private_impl_getters_for_derive_struct! {
     }
 }
 
-impl<F, T> FromStructural<F> for RangeTo<T>
-where
-    F: IntoField<End_STR, Ty = T>,
-{
-    #[inline]
-    fn from_structural(this: F) -> Self {
-        let end = this.into_field(fp!(end));
-        Self { end }
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeTo<T>
+    where[
+        F: IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let end = this.into_field(fp!(end));
+            Self { end }
+        }
     }
 }
 
@@ -92,14 +95,15 @@ _private_impl_getters_for_derive_struct! {
     }
 }
 
-impl<F, T> FromStructural<F> for RangeToInclusive<T>
-where
-    F: IntoField<End_STR, Ty = T>,
-{
-    #[inline]
-    fn from_structural(this: F) -> Self {
-        let end = this.into_field(fp!(end));
-        Self { end }
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeToInclusive<T>
+    where[
+        F: IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let end = this.into_field(fp!(end));
+            Self { end }
+        }
     }
 }
 
@@ -125,14 +129,15 @@ impl<T> GetField<End_STR> for RangeInclusive<T> {
     }
 }
 
-impl<F, T> FromStructural<F> for RangeInclusive<T>
-where
-    F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
-{
-    #[inline]
-    fn from_structural(this: F) -> Self {
-        let (start, end) = this.into_fields(fp!(start, end));
-        Self::new(start, end)
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeInclusive<T>
+    where[
+        F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let (start, end) = this.into_fields(fp!(start, end));
+            Self::new(start, end)
+        }
     }
 }
 
@@ -150,16 +155,9 @@ unsafe_delegate_structural_with! {
 
     GetFieldMut { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
-}
 
-impl<F, T> FromStructural<F> for ManuallyDrop<T>
-where
-    T: FromStructural<F>,
-{
-    #[inline]
-    fn from_structural(value: F) -> Self {
-        let x = FromStructural::from_structural(value);
-        ManuallyDrop::new(x)
+    FromStructural {
+        constructor = ManuallyDrop::new;
     }
 }
 
@@ -187,17 +185,12 @@ unsafe_delegate_structural_with! {
     delegating_to_type=P::Target;
 
     GetField { &*this }
-}
 
-impl<F, T> FromStructural<F> for Pin<T>
-where
-    T: FromStructural<F> + Deref,
-    T::Target: Unpin,
-{
-    #[inline]
-    fn from_structural(value: F) -> Self {
-        let x = FromStructural::from_structural(value);
-        Pin::new(x)
+    FromStructural
+    where [ P::Target: Unpin, ]
+    {
+        converted_from = P;
+        constructor = Pin::new;
     }
 }
 
@@ -219,7 +212,7 @@ mod alloc_impls {
             ownership::{DropFields, IntoFieldsWrapper, MovedOutFields},
             IntoField, IntoVariantField,
         },
-        FromStructural, TStr,
+        TStr,
     };
     use std_::mem::ManuallyDrop;
 
@@ -235,16 +228,9 @@ mod alloc_impls {
                 GetField {
                     &*this
                 }
-            }
 
-            impl<F, T> FromStructural<F> for $this<T>
-            where
-                T: FromStructural<F>,
-            {
-                #[inline]
-                fn from_structural(value: F) -> Self {
-                    let x = FromStructural::from_structural(value);
-                    $this::new(x)
+                FromStructural{
+                    constructor = $this::new;
                 }
             }
         };
@@ -269,6 +255,10 @@ mod alloc_impls {
         }
         as_delegating_raw{
             *(this as *mut Box<T> as *mut *mut T)
+        }
+
+        FromStructural {
+            constructor = Box::new;
         }
     }
 
@@ -337,17 +327,6 @@ mod alloc_impls {
             <T as DropFields>::drop_fields(this, moved)
         }
     }
-
-    impl<F, T> FromStructural<F> for Box<T>
-    where
-        T: FromStructural<F>,
-    {
-        #[inline]
-        fn from_structural(value: F) -> Self {
-            let x = FromStructural::from_structural(value);
-            Box::new(x)
-        }
-    }
 }
 
 ///////////////////////////////////////////////////////
@@ -359,7 +338,6 @@ unsafe_delegate_structural_with! {
     delegating_to_type=T;
 
     GetField { &**this }
-
 }
 
 ///////////////////////////////////////////////////////

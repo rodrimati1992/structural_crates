@@ -1,4 +1,5 @@
 use crate::{
+    convert::IntoStructural,
     enums::IsVariant,
     field::{
         GetField, GetFieldMut, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl,
@@ -6,7 +7,6 @@ use crate::{
         RevGetMultiFieldOut, RevIntoFieldImpl, RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
-    FromStructural, IntoStructural,
 };
 
 use core_extensions::{
@@ -711,8 +711,9 @@ impl<T> StrucWrapper<T> {
     ///
     /// ```rust
     /// use structural::{
+    ///     convert::{EmptyTryFromError, FromStructural, TryFromError, TryFromStructural},
     ///     for_examples::Enum3,
-    ///     FromStructural, Structural, StrucWrapper, make_struct, switch,
+    ///     Structural, StrucWrapper, make_struct, switch,
     /// };
     ///
     /// use std::cmp::Ordering;
@@ -750,19 +751,32 @@ impl<T> StrucWrapper<T> {
     ///     Baz,
     /// }
     ///
+    /// // This macro allows enums to only implement the `TryFromStructural` trait,
+    /// // delegating the `FromStructural` trait to it.
+    /// //
+    /// // If not all the variants of the enum were handled in the impl below,
+    /// // then the `FromStructural::from_structural` impl for this type would panic
+    /// // when the parameter is a variant that wasn't handled.
+    /// // "handled" meaning matched on explicitly,then returning `Ok` with that variant.
+    /// structural::z_impl_try_from_structural_for_enum!{
+    ///     impl[F] TryFromStructural<F> for NoPayload
+    ///     where[ F: NoPayload_SI, ]
+    ///     {
+    ///         type Error = EmptyTryFromError;
     ///
-    /// impl<F> FromStructural<F> for NoPayload
-    /// where
-    ///     F: NoPayload_ESI
-    /// {
-    ///     fn from_structural(this: F)->Self{
-    ///         switch!{this;
-    ///             Foo => NoPayload::Foo,
-    ///             Bar => NoPayload::Bar,
-    ///             Baz => NoPayload::Baz,
-    ///         }
+    ///          fn try_from_structural(this){
+    ///              switch!{this;
+    ///                  Foo => Ok(NoPayload::Foo),
+    ///                  Bar => Ok(NoPayload::Bar),
+    ///                  Baz => Ok(NoPayload::Baz),
+    ///                  _ => Err(TryFromError::with_empty_error(this)),
+    ///              }
+    ///          }
     ///     }
+    ///     FromStructural
+    ///     where[ F: NoPayload_ESI, ]
     /// }
+    ///
     ///
     /// ```
     pub fn into_struc<U>(self) -> U
@@ -957,16 +971,6 @@ where
     const DEFAULT: Self = StrucWrapper(T::DEFAULT);
 }
 
-impl<F, T> FromStructural<F> for StrucWrapper<T>
-where
-    T: FromStructural<F>,
-{
-    fn from_structural(this: F) -> Self {
-        let x = T::from_structural(this);
-        StrucWrapper(x)
-    }
-}
-
 /// Gets a mutable reference to a non-nested struct field
 ///
 /// # Example
@@ -1027,4 +1031,8 @@ unsafe_delegate_structural_with! {
     }
 
     DropFields = { dropped_fields[] }
+
+    FromStructural {
+        constructor = StrucWrapper;
+    }
 }

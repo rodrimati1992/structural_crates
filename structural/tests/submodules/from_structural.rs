@@ -1,11 +1,20 @@
 use structural::{
-    for_examples::{MaxFields, Tuple16},
+    for_examples::{ExtraOption, ExtraResult, MaxFields, Tuple16},
     structural_aliases as sa,
     structural_aliases::{ArrayMove32, TupleMove12},
     IntoField, StrucWrapper, StructuralExt, FP,
 };
 
+mod macros;
+
 fn from_array32_tests(this: impl ArrayMove32<u8> + Copy) {
+    // Just testing TryFromStructural for the smaller arrays because a
+    // macro is used to implement the trait.
+    this.try_into_struc::<[u8; 0]>().ok().unwrap();
+    assert_eq!(this.try_into_struc::<[_; 1]>().ok().unwrap(), [11]);
+    assert_eq!(this.try_into_struc::<[_; 2]>().ok().unwrap(), [11, 12]);
+    assert_eq!(this.try_into_struc::<[_; 3]>().ok().unwrap(), [11, 12, 13]);
+
     this.into_struc::<[u8; 0]>();
     assert_eq!(this.into_struc::<[_; 1]>(), [11]);
     assert_eq!(this.into_struc::<[_; 2]>(), [11, 12]);
@@ -83,6 +92,20 @@ fn from_tuple_tests(
             Option<u64>,
         > + Copy,
 ) {
+    // Just testing TryFromStructural for the smaller tuples because a
+    // macro is used to implement the trait.
+    assert_eq!(this.try_into_struc::<()>().ok().unwrap(), ());
+    assert_eq!(this.try_into_struc::<(_,)>().ok().unwrap(), (3u8,));
+    assert_eq!(this.try_into_struc::<(_, _)>().ok().unwrap(), (3u8, 5u16,));
+    assert_eq!(
+        this.try_into_struc::<(_, _, _)>().ok().unwrap(),
+        (3u8, 5u16, 8u32,)
+    );
+    assert_eq!(
+        this.try_into_struc::<(_, _, _, _)>().ok().unwrap(),
+        (3u8, 5u16, 8u32, 13u64,)
+    );
+
     assert_eq!(this.into_struc::<()>(), ());
     assert_eq!(this.into_struc::<(_,)>(), (3u8,));
     assert_eq!(this.into_struc::<(_, _)>(), (3u8, 5u16,));
@@ -204,42 +227,59 @@ fn ranges_from_structural() {
 
     {
         fn into_range<T>(
-            this: impl IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
-        ) -> Range<T> {
-            this.into_struc()
+            this: impl IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T> + Clone,
+        ) -> [Range<T>; 2] {
+            [
+                this.clone().into_struc(),
+                this.try_into_struc().ok().unwrap(),
+            ]
         }
 
-        assert_eq!(into_range(100..999), 100..999);
+        assert_eq!(into_range(100..999), array2(100..999));
     }
     {
         fn into_rangeinclusive<T>(
-            this: impl IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
-        ) -> RangeInclusive<T> {
-            this.into_struc()
+            this: impl IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T> + Clone,
+        ) -> [RangeInclusive<T>; 2] {
+            [
+                this.clone().into_struc(),
+                this.try_into_struc().ok().unwrap(),
+            ]
         }
 
-        assert_eq!(into_rangeinclusive(100..999), 100..=999);
+        assert_eq!(into_rangeinclusive(100..999), array2(100..=999));
     }
     {
-        fn into_rangefrom<T>(this: impl IntoField<Start_STR, Ty = T>) -> RangeFrom<T> {
-            this.into_struc()
+        fn into_rangefrom<T>(this: impl IntoField<Start_STR, Ty = T> + Clone) -> [RangeFrom<T>; 2] {
+            [
+                this.clone().into_struc(),
+                this.try_into_struc().ok().unwrap(),
+            ]
         }
 
-        assert_eq!(into_rangefrom(100..999), 100..);
+        assert_eq!(into_rangefrom(100..999), array2(100..));
     }
     {
-        fn into_rangeto<T>(this: impl IntoField<End_STR, Ty = T>) -> RangeTo<T> {
-            this.into_struc()
+        fn into_rangeto<T>(this: impl IntoField<End_STR, Ty = T> + Clone) -> [RangeTo<T>; 2] {
+            [
+                this.clone().into_struc(),
+                this.try_into_struc().ok().unwrap(),
+            ]
         }
 
-        assert_eq!(into_rangeto(100..999), ..999);
+        assert_eq!(into_rangeto(100..999), array2(..999));
     }
     {
-        fn into_rangetoi<T>(this: impl IntoField<End_STR, Ty = T>) -> RangeToInclusive<T> {
-            this.into_struc()
+        fn into_rangetoi<T>(
+            this: impl IntoField<End_STR, Ty = T> + Clone,
+        ) -> [RangeToInclusive<T>; 2] {
+            [
+                this.clone().into_struc(),
+                this.try_into_struc().ok().unwrap(),
+            ]
         }
 
-        assert_eq!(into_rangetoi(100..999), ..=999);
+        assert_eq!(into_rangetoi(100..999), array2(..=999));
     }
 }
 
@@ -259,6 +299,17 @@ fn wrappers_from_structural() {
             into_manuallydrop((8, 13, 21, 34)),
             ManuallyDrop::new([8, 13])
         );
+
+        fn try_into_(this: impl sa::OptionMove_SI<u32>) -> Option<ManuallyDrop<Option<u32>>> {
+            this.try_into_struc().ok()
+        }
+
+        assert_eq!(
+            try_into_(ExtraOption::Some(10)),
+            Some(ManuallyDrop::new(Some(10)))
+        );
+        assert_eq!(try_into_(ExtraOption::None), Some(ManuallyDrop::new(None)));
+        assert_eq!(try_into_(ExtraOption::FileNotFound), None);
     }
     {
         fn into_wrapper<T>(
@@ -269,6 +320,16 @@ fn wrappers_from_structural() {
 
         assert_eq!(into_wrapper((3, 5)), StrucWrapper([3, 5]));
         assert_eq!(into_wrapper((8, 13, 21, 34)), StrucWrapper([8, 13]));
+
+        fn try_into_(this: impl sa::OptionMove_SI<u32>) -> Option<StrucWrapper<Option<u32>>> {
+            this.try_into_struc().ok()
+        }
+        assert_eq!(
+            try_into_(ExtraOption::Some(10)),
+            Some(StrucWrapper(Some(10)))
+        );
+        assert_eq!(try_into_(ExtraOption::None), Some(StrucWrapper(None)));
+        assert_eq!(try_into_(ExtraOption::FileNotFound), None);
     }
 }
 
@@ -287,6 +348,19 @@ fn alloc_from_structural() {
 
             assert_eq!(into_ptr((3, 5)), $type::new([3, 5]));
             assert_eq!(into_ptr((8, 13, 21, 34)), $type::new([8, 13]));
+
+            fn try_into_(
+                this: impl sa::ResultMove_SI<u32, u32>,
+            ) -> Option<$type<Result<u32, u32>>> {
+                this.try_into_struc().ok()
+            }
+
+            assert_eq!(try_into_(Ok(100)), Some($type::new(Ok(100))));
+            assert_eq!(try_into_(Err(200)), Some($type::new(Err(200))));
+
+            assert_eq!(try_into_(ExtraResult::Ok(100)), Some($type::new(Ok(100))));
+            assert_eq!(try_into_(ExtraResult::Err(200)), Some($type::new(Err(200))));
+            assert_eq!(try_into_(ExtraResult::Warn), None);
         }};
     }
 
@@ -301,8 +375,19 @@ fn alloc_from_structural() {
             this.into_struc()
         }
 
-        assert_eq!(into_pin((3, 5)), Pin::new(Box::new([3, 5])));
-        assert_eq!(into_pin((8, 13, 21, 34)), Pin::new(Box::new([8, 13])));
+        assert_eq!(into_pin((3, 5)), Box::pin([3, 5]));
+        assert_eq!(into_pin((8, 13, 21, 34)), Box::pin([8, 13]));
+
+        fn try_into_(this: impl sa::ResultMove_SI<u32, u32>) -> Option<Pin<Box<Result<u32, u32>>>> {
+            this.try_into_struc().ok()
+        }
+
+        assert_eq!(try_into_(Ok(100)), Some(Box::pin(Ok(100))));
+        assert_eq!(try_into_(Err(200)), Some(Box::pin(Err(200))));
+
+        assert_eq!(try_into_(ExtraResult::Ok(100)), Some(Box::pin(Ok(100))));
+        assert_eq!(try_into_(ExtraResult::Err(200)), Some(Box::pin(Err(200))));
+        assert_eq!(try_into_(ExtraResult::Warn), None);
     }
 }
 
@@ -322,6 +407,17 @@ fn enum_from_structural() {
         assert_eq!(option_from(Some(8)), Some(8));
         assert_eq!(option_from(Some(13)), Some(13));
         assert_eq!(option_from(None::<()>), None);
+
+        fn try_into_(this: impl sa::OptionMove_SI<u32>) -> Option<Option<u32>> {
+            this.try_into_struc().ok()
+        }
+
+        assert_eq!(try_into_(Some(10)), Some(Some(10)));
+        assert_eq!(try_into_(None), Some(None));
+
+        assert_eq!(try_into_(ExtraOption::Some(10)), Some(Some(10)));
+        assert_eq!(try_into_(ExtraOption::None), Some(None));
+        assert_eq!(try_into_(ExtraOption::FileNotFound), None);
     }
     {
         fn result_from<T, E>(this: impl sa::ResultMove_ESI<T, E>) -> Result<T, E> {
@@ -337,5 +433,23 @@ fn enum_from_structural() {
         assert_eq!(result_from(Ok::<_, ()>(34)), Ok(34));
         assert_eq!(result_from(Err::<(), _>(55)), Err(55));
         assert_eq!(result_from(Err::<(), _>(89)), Err(89));
+
+        fn try_into_(this: impl sa::ResultMove_SI<u32, u32>) -> Option<Result<u32, u32>> {
+            this.try_into_struc().ok()
+        }
+
+        assert_eq!(try_into_(Ok(10)), Some(Ok(10)));
+        assert_eq!(try_into_(Err(20)), Some(Err(20)));
+
+        assert_eq!(try_into_(ExtraResult::Ok(10)), Some(Ok(10)));
+        assert_eq!(try_into_(ExtraResult::Err(20)), Some(Err(20)));
+        assert_eq!(try_into_(ExtraResult::Warn), None);
     }
+}
+
+fn array2<T>(value: T) -> [T; 2]
+where
+    T: Clone,
+{
+    [value.clone(), value]
 }
