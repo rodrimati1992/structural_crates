@@ -7,7 +7,8 @@ use crate::{
         RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     path::{
-        AliasedPaths, FieldPathSet, LargePathSet, NestedFieldPathSet, ShallowFieldPath, UniquePaths,
+        AliasedPaths, FieldPathSet, LargePathSet, NestedFieldPathSet, ShallowFieldPath,
+        SmallPathSet, UniquePaths,
     },
     utils::deref_nested::DerefNested,
 };
@@ -16,10 +17,41 @@ use crate::{
 use core_extensions::SelfOps;
 
 macro_rules! impl_get_multi_field {
-    ( $(($fpath:ident $err:ident $fty:ident))* ) => (
+    (
+        $(
+            (
+                $(($fpath:ident $err:ident $fty:ident))*
+            )
+        )*
+    )=>{
+        $(
+            impl_get_multi_field!{
+                @inner
+                TParam=($($fpath,)*),
+                self=this,
+                destructurer=this.into_paths(),
+                $(($fpath $err $fty))*
+            }
+
+            impl_get_multi_field!{
+                @inner
+                TParam=SmallPathSet<($($fpath,)*)>,
+                self=this,
+                destructurer=this.into_paths().0,
+                $(($fpath $err $fty))*
+            }
+        )*
+    };
+    (
+        @inner
+        TParam=$TParam:ty,
+        self=$self:ident,
+        destructurer=$destructurer:expr,
+        $(($fpath:ident $err:ident $fty:ident))*
+    ) => (
         impl<'a,This:?Sized,$($fpath,$err,$fty,)* U>
             RevGetMultiFieldImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),U>
+        for FieldPathSet<$TParam,U>
         where
             This:'a,
             $(
@@ -37,7 +69,8 @@ macro_rules! impl_get_multi_field {
 
             #[allow(unused_variables)]
             fn rev_get_multi_field_impl(self,this:&'a This)-> Self::UnnormFields {
-                let ($($fpath,)*)=self.into_paths();
+                let $self=self;
+                let ($($fpath,)*)=$destructurer;
                 (
                     $(
                         $fpath.rev_get_field(this),
@@ -48,7 +81,7 @@ macro_rules! impl_get_multi_field {
 
         unsafe impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
             RevGetMultiFieldMutImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),UniquePaths>
+        for FieldPathSet<$TParam,UniquePaths>
         where
             This:'a,
             $(
@@ -78,7 +111,8 @@ macro_rules! impl_get_multi_field {
                 unsafe{
                     let ($($fpath,)*)={
                         #[allow(unused_variables)]
-                        let ($($fpath,)*)=self.into_paths();
+                        let $self=self;
+                        let ($($fpath,)*)=$destructurer;
                         (
                             $(
                                 $fpath.rev_get_field_raw_mut(this),
@@ -102,7 +136,8 @@ macro_rules! impl_get_multi_field {
                 self,
                 this:*mut This,
             )-> Self::UnnormFieldsRawMut {
-                let ($($fpath,)*)=self.into_paths();
+                let $self=self;
+                let ($($fpath,)*)=$destructurer;
                 (
                     $(
                         $fpath.rev_get_field_raw_mut(this),
@@ -113,7 +148,7 @@ macro_rules! impl_get_multi_field {
 
         impl<'a,This,$($fpath,$err,$fty,)*>
             RevIntoMultiFieldImpl<This>
-        for FieldPathSet<($($fpath,)*),UniquePaths>
+        for FieldPathSet<$TParam,UniquePaths>
         where
             This: DropFields,
             $(
@@ -143,7 +178,7 @@ macro_rules! impl_get_multi_field {
 
         impl<'a,This,$($fpath,$err,$fty,)*>
             RevMoveOutMultiFieldImpl<This>
-        for FieldPathSet<($($fpath,)*),UniquePaths>
+        for FieldPathSet<$TParam,UniquePaths>
         where
             This: DropFields,
             $(
@@ -158,7 +193,8 @@ macro_rules! impl_get_multi_field {
                 this: &mut This,
                 moved: &mut MovedOutFields,
             ) -> Self::UnnormIntoFields {
-                let ($($fpath,)*)=self.into_paths();
+                let $self=self;
+                let ($($fpath,)*)=$destructurer;
 
                 (
                     $(
@@ -169,7 +205,7 @@ macro_rules! impl_get_multi_field {
         }
 
 
-        unsafe impl<$($fpath,)* U> ShallowFieldPath for FieldPathSet<($($fpath,)*),U>
+        unsafe impl<$($fpath,)* U> ShallowFieldPath for FieldPathSet<$TParam,U>
         where
             $($fpath: ShallowFieldPath,)*
         {}
@@ -178,28 +214,14 @@ macro_rules! impl_get_multi_field {
 }
 
 impl_get_multi_field! {
-    (F0 E0 T0)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
+    ((F0 E0 T0))
+    ((F0 E0 T0) (F1 E1 T1))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6))
+    ((F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +285,7 @@ macro_rules! impl_get_multi_field_large {
         where
             This:'a,
             $(
-                FieldPathSet<$fpath, AliasedPaths>:
+                FieldPathSet<SmallPathSet<$fpath>, AliasedPaths>:
                     RevGetMultiFieldImpl<'a, This,UnnormFields= $unnorm_a>,
                 $unnorm_a: 'a + NormalizeFields,
             )*
@@ -275,7 +297,8 @@ macro_rules! impl_get_multi_field_large {
                 let LargePathSet(($($fpath,)*))=self.into_paths();
                 (
                     $(
-                        FieldPathSet::many($fpath).rev_get_multi_field_impl(this)
+                        FieldPathSet::many(SmallPathSet($fpath))
+                            .rev_get_multi_field_impl(this)
                     ),*
                 )
             }
@@ -288,7 +311,7 @@ macro_rules! impl_get_multi_field_large {
         where
             This:'a,
             $(
-                FieldPathSet<$fpath, UniquePaths>: RevGetMultiFieldMutImpl<
+                FieldPathSet<SmallPathSet<$fpath>, UniquePaths>: RevGetMultiFieldMutImpl<
                     'a,
                     This,
                     UnnormFieldsMut = $unnorm_a,
@@ -319,7 +342,7 @@ macro_rules! impl_get_multi_field_large {
                 let LargePathSet(($($fpath,)*))=self.into_paths();
                 (
                     $(
-                        FieldPathSet::many($fpath)
+                        FieldPathSet::many(SmallPathSet($fpath))
                             .upgrade_unchecked()
                             .rev_get_multi_field_raw_mut_impl(this)
                     ),*
@@ -334,7 +357,7 @@ macro_rules! impl_get_multi_field_large {
         where
             This: DropFields,
             $(
-                FieldPathSet<$fpath, UniquePaths>:
+                FieldPathSet<SmallPathSet<$fpath>, UniquePaths>:
                     RevMoveOutMultiFieldImpl<This,UnnormIntoFields= $unnorm_a>,
 
                 $unnorm_a: NormalizeFields,
@@ -353,7 +376,7 @@ macro_rules! impl_get_multi_field_large {
                     let (this, moved)=this.inner_and_moved_mut();
                     (
                         $(
-                            FieldPathSet::many($fpath)
+                            FieldPathSet::many(SmallPathSet($fpath))
                                 .upgrade_unchecked()
                                 .rev_move_out_multi_field(this, moved)
                         ),*
@@ -365,7 +388,7 @@ macro_rules! impl_get_multi_field_large {
 
         unsafe impl<$($fpath,)* U> ShallowFieldPath for FieldPathSet<LargePathSet<($($fpath,)*)>,U>
         where
-            $( FieldPathSet<$fpath, U>: ShallowFieldPath,)*
+            $( FieldPathSet<SmallPathSet<$fpath>, U>: ShallowFieldPath,)*
         {}
     )
 }

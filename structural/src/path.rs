@@ -683,6 +683,28 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A workaround for long compile-time errors.
+///
+/// The is used to work compile-time errors that are around 200 kilobytes long,
+/// caused by recusive impls.
+///
+/// This is an example of the code that triggered a long error message:
+/// ```ignore
+/// ().fields(FieldPathSet::many(panic!()))
+/// ```
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[doc(hidden)]
+pub struct SmallPathSet<T>(pub(crate) T);
+
+impl<T> ConstDefault for SmallPathSet<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = SmallPathSet(T::DEFAULT);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 /// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
 /// on the type level.
 pub trait IntoAliasing: IsMultiFieldPath {
