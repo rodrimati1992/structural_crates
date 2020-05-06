@@ -5,10 +5,10 @@ types that represent values.
 // so warning about "type complexity" for them is silly .
 #![allow(clippy::type_complexity)]
 
-pub mod cmp;
+// pub mod cmp;
 pub mod collection_traits;
 
-pub mod integer;
+// pub mod integer;
 #[doc(hidden)]
 pub mod list;
 

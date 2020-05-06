@@ -7,14 +7,10 @@ use crate::{
     },
     path::{FieldPathSet, IsSingleFieldPath, LargePathSet},
     structural_trait::Structural,
-    type_level::{
-        cmp::{Compare, TGreater},
-        integer::{self, IsUnsigned},
-    },
     StructuralExt,
 };
 
-use std_::{marker::PhantomData, mem::ManuallyDrop, ptr};
+use std_::{mem::ManuallyDrop, ptr};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -38,20 +34,15 @@ pub trait ArrayPath: IsSingleFieldPath + Sealed {
     const INDEX: usize;
 
     const DROP_BIT: FieldBit = FieldBit::new(Self::INDEX as u8);
-
-    type Index: IsUnsigned;
 }
 
 /// Used to check whether the index associated with this `ArrayPath` is valid for `Array`.
-pub trait IsPathForArray<Array>: ArrayPath {
-    #[doc(hidden)]
-    const _SEALED_IPFA: SealedIPFA<Self, Array>;
-}
-
-#[doc(hidden)]
-pub struct SealedIPFA<Path, Array> {
-    _marker: PhantomData<(Path, Array)>,
-}
+///
+/// # Safety
+///
+/// Implementors must ensure that `<Self as ArrayPath>::INDEX` is in bounds for
+/// the `Array` type parameter.
+pub unsafe trait IsPathForArray<Array>: ArrayPath {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -79,16 +70,6 @@ macro_rules! array_impls {
 
             impl ArrayPath for $index_name{
                 const INDEX:usize=$index;
-                type Index=integer::$tnum;
-            }
-
-            impl<T,P> IsPathForArray<[T;$index]> for P
-            where
-                P:ArrayPath,
-                integer::$tnum:Compare<P::Index,Output=TGreater>,
-            {
-                #[doc(hidden)]
-                const _SEALED_IPFA:SealedIPFA<P,[T;$index]>=SealedIPFA{_marker:PhantomData};
             }
 
             impl<T,P> FieldType<P> for [T;$index]
@@ -169,6 +150,7 @@ macro_rules! array_impls {
                 }
             }
         )*
+
         array_impls!{
             @inner
             before()
@@ -259,6 +241,67 @@ array_impls! {
     (I31=31,"31",U31,ArrayMove31)
     (I32=32,"32",U32,ArrayMove32)
 }
+
+macro_rules! impl_is_path_for_array {
+    (
+        $( $path:ident[$($i:expr,)*] )*
+    ) => (
+        $($(
+            unsafe impl<T> IsPathForArray<[T;$i]> for $path{}
+        )*)*
+    );
+}
+
+/*
+fn main(){
+    for path in 0..=31 {
+        print!("I{}[",path);
+        for array in path+1..=32 {
+            print!("{},",array);
+        }
+        println!("]");
+    }
+}
+*/
+
+impl_is_path_for_array! {
+    I0[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I1[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I2[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I3[4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I4[5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I5[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I6[7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I7[8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I8[9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I9[10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I10[11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I11[12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I12[13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I13[14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I14[15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I15[16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I16[17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I17[18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I18[19,20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I19[20,21,22,23,24,25,26,27,28,29,30,31,32,]
+    I20[21,22,23,24,25,26,27,28,29,30,31,32,]
+    I21[22,23,24,25,26,27,28,29,30,31,32,]
+    I22[23,24,25,26,27,28,29,30,31,32,]
+    I23[24,25,26,27,28,29,30,31,32,]
+    I24[25,26,27,28,29,30,31,32,]
+    I25[26,27,28,29,30,31,32,]
+    I26[27,28,29,30,31,32,]
+    I27[28,29,30,31,32,]
+    I28[29,30,31,32,]
+    I29[30,31,32,]
+    I30[31,32,]
+    I31[32,]
+}
+
+// fn foo() {
+//     let foo: &dyn crate::structural_aliases::Array8<u32> = &[0, 1, 2];
+// }
 
 ///
 ///
