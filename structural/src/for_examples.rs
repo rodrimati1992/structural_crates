@@ -1,4 +1,7 @@
-use crate::{IntoField, Structural, StructuralExt};
+use crate::{
+    convert::{EmptyTryFromError, TryFromError},
+    IntoField, Structural, StructuralExt,
+};
 
 #[derive(Structural, Debug, Copy, Clone, PartialEq)]
 #[struc(no_trait)]
@@ -187,6 +190,25 @@ pub enum Enum4 {
     Bar(Ordering, Option<u64>),
     Baz { foom: &'static str },
     Qux { uh: [u8; 4], what: (bool, bool) },
+}
+
+structural::z_impl_try_from_structural_for_enum! {
+    impl[F] TryFromStructural<F> for Enum2
+    where[ F: Enum2_SI, ]
+    {
+        type Error = EmptyTryFromError;
+
+        fn try_from_structural(this){
+            switch! {this;
+                Foo(a,b) => Ok(Self::Foo(a,b)),
+                Bar(a,b) => Ok(Self::Bar(a,b)),
+                _ => Err(TryFromError::with_empty_error(this)),
+            }
+        }
+    }
+
+    FromStructural
+    where[ F: Enum2_ESI, ]
 }
 
 ///////////////////////////////////////////////////////////////////////////////
