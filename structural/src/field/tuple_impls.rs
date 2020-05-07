@@ -1,10 +1,8 @@
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{
-        for_arrays::names, DropFields, IntoField, IntoFieldMut, IntoVariantFieldMut, MovedOutFields,
-    },
-    path::{FieldPathSet, LargePathSet},
+    field::{DropFields, IntoField, IntoFieldMut, IntoVariantFieldMut, MovedOutFields},
+    path::{array_paths as names, FieldPathSet, LargePathSet},
     structural_trait::Structural,
     StructuralExt,
 };

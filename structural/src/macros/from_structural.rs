@@ -43,8 +43,14 @@ macro_rules! z_impl_from_structural {
 /// and delegating the implementation of [`FromStructural`] to it.
 ///
 /// The implementation of [`FromStructural`] inherits all the constraints of the
-/// `TryFromStructural` impl,
-/// and assumes that the error branch is unreachable, panicking if it's not.
+/// [`TryFromStructural`] impl.
+///
+/// In order to implement [`FromStructural`],
+/// this macro assumes that the [`TryFromStructural`] implementation written by users:
+///
+/// - Matches on all the variants of the enum
+///
+/// - Returns `Ok` for all the variants of the enum that were matches by name.
 ///
 /// [`FromStructural`]: ./trait.FromStructural.html
 /// [`TryFromStructural`]: ./trait.TryFromStructural.html
@@ -68,6 +74,7 @@ macro_rules! z_impl_try_from_structural_for_enum {
             $($where_preds)*
             $($from_where_preds)*
         {
+            #[inline]
             fn from_structural(from_var: $from) -> Self {
                 let res=<Self as $crate::pmr::TryFromStructural<$from>>::try_from_structural(
                     from_var

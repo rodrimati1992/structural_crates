@@ -1,3 +1,27 @@
+//! Structural aliases for standard library types.
+//!
+//! ### Array Traits
+//!
+//! This module re-exports these traits from [arrays_traits](./arrays_traits/index.html),with:
+//!
+//! - The `Array*` structural aliases to use any type with accessors from 0
+//! until the size of the array,in which all the field types are the same,
+//!
+//! - The `Array*Variant` structural aliases to use any enum variant with accessors from 0
+//! until the size of the array,in which all the field types are the same.
+//!
+//! ### Tuple Traits
+//!
+//! This module re-exports these traits from [for_tuples](./for_tuples/index.html),with:
+//!
+//! - The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
+//! until the size of the tuple,in which all field types can be different,
+//!
+//! - The `Tuple*Variant` structural aliases to use any enum variant with accessors from `TS!(0)`
+//! until the size of the tuple,in which all field types can be different.
+//!
+//!
+
 pub mod array_traits;
 pub mod tuple_traits;
 

@@ -1,7 +1,7 @@
 /*!
 Accessor and extension traits for fields.
 
-# Traits
+# Accessor Traits
 
 ### For structs and enums
 
@@ -26,6 +26,21 @@ accessor traits,that define how a variant field is accessed.
 [IntoVariantFieldMut](./trait.IntoVariantFieldMut.html),
 a trait alias for `GetVariantFieldMut` + `IntoVariantField`.
 
+### Destruction traits
+
+These traits allow a type to release resources (ie:memory) when a type is converted into
+multiple fields by value:
+
+- [`DropFields`]:
+Used to drop the fields that weren't moved out, and run code before they're moved.
+
+- [`PrePostDropFields`]:
+Used to add code that runs before and after an automatically generated
+[`DropFields`] implementation.
+
+[`DropFields`]: ./ownership/trait.DropFields.html
+[`PrePostDropFields`]: ./ownership/trait.PrePostDropFields.html
+
 # Rev* traits
 
 The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-in type.
@@ -43,39 +58,30 @@ Which are [RevGetFieldImpl](./rev_get_field/trait.RevGetFieldImpl.html),
 and [RevIntoFieldImpl](./rev_get_field/trait.RevIntoFieldImpl.html),
 mirroring the regular field accessor traits.
 
+The [RevMoveOutFieldImpl](rev_get_field/trait.RevMoveOutFieldImpl.html) trait mirrors the
+`Into*Field::move_out_*field_` method.
+This is a separate trait because not all single field paths are valid for
+moving out a field,they have to refer to a shallow field.
+
 ### Multiple field traits
 
 For bounds to access multiple fields at once,
-there's [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
-and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
-(no RevIntoMultiField for now).
+there's [RevGetMultiField],[RevGetMultiFieldMut],and [`RevIntoMultiField`].
 
-For implementing a new way to access multiple fields,
-there's [RevGetMultiFieldImpl](./multi_fields/trait.RevGetMultiFieldImpl.html),
-and [RevGetMultiFieldMutImpl](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
-(no RevIntoMultiFieldImpl for now).
+For implementing a way to access multiple fields
+there's [`RevGetMultiFieldImpl`],[`RevGetMultiFieldMutImpl`],and [`RevIntoMultiFieldImpl`].
 
-# Additional items
+There is the [`RevMoveOutMultiFieldImpl`]
+trait for moving out multiple shallow fields, useful for implementing [`RevIntoMultiFieldImpl`].
 
-### Array Traits
+[`RevGetMultiField`]: ./multi_fields/trait.RevGetMultiField.html
+[`RevGetMultiFieldMut`]: ./multi_fields/trait.RevGetMultiFieldMut.html
+[`RevIntoMultiField`]: ./multi_fields/trait.RevIntoMultiField.html
 
-This module re-exports these traits from [for_arrays](./for_arrays/index.html),with:
-
-- The `Array*` structural aliases to use any type with accessors from 0
-until the size of the array,in which all the field types are the same,
-
-- The `Array*Variant` structural aliases to use any enum variant with accessors from 0
-until the size of the array,in which all the field types are the same.
-
-### Tuple Traits
-
-This module re-exports these traits from [for_tuples](./for_tuples/index.html),with:
-
-- The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
-until the size of the tuple,in which all field types can be different,
-
-- The `Tuple*Variant` structural aliases to use any enum variant with accessors from `TS!(0)`
-until the size of the tuple,in which all field types can be different.
+[`RevGetMultiFieldImpl`]: ./multi_fields/trait.RevGetMultiFieldImpl.html
+[`RevGetMultiFieldMutImpl`]: ./multi_fields/trait.RevGetMultiFieldMutImpl.html
+[`RevIntoMultiFieldImpl`]: ./multi_fields/trait.RevIntoMultiFieldImpl.html
+[`RevMoveOutMultiFieldImpl`]: ./multi_fields/trait.RevMoveOutMultiFieldImpl.html
 
 ### type aliases
 
@@ -124,7 +130,6 @@ use std_::ptr::NonNull;
 
 mod enum_impls;
 pub mod errors;
-pub mod for_arrays;
 mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;

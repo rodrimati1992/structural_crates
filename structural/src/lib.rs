@@ -21,6 +21,10 @@ using field-in-trait syntax.
 - The [`impl_struct`] macro to declare structural parameter/return types,
 as well as [`make_struct`] to construct anonymous structs
 
+- The [`FromStructural`] and [`TryFromStructural`] conversion traits,
+similar (but not identical) to the standard library `From` and `TryFrom` traits
+for structural types.
+
 
 # Clarifications
 
@@ -40,20 +44,6 @@ this is useful for exhaustive matching of variants (in the [`switch`] macro).
 
 The only macros that are required to use this crate are the ones for [`TStr`],
 every other macro expands to code that can be written manually.
-
-# Conditional methods
-
-### `*box_*` methods
-
-Every `*Into*Field*` trait has a `*box_*` method that takes a `Box<_>` parameter
-which only exists when the "alloc" feature is enabled (it is enabled by default).
-
-If you don't enable the "alloc" feature yourself (it is enabled by default),
-you must implement those methods using the macros indicated in the `Features`
-section of the documentation for each trait
-
-For an example of how to use those macros,
-you can look at the examples in the docs for each of the `*Into*Field*` traits.
 
 <span id="root-mod-examples"></span>
 # Examples
@@ -504,7 +494,7 @@ This demonstrates how you can construct an anonymous struct.
 For more details you can look at the docs for the
 [`make_struct`](./macro.make_struct.html) macro.
 
-Docs for the [`impl_struct` macro](./macro.impl_struct.html) macro.
+Docs for the [`impl_struct` macro](./macro.impl_struct.html).
 
 ```rust
 
@@ -542,7 +532,7 @@ fn print_name(mut this: impl_struct!{ ref name:String, value:Vec<String> } ) {
 // most structural aliases are object safe
 //
 // This has to use the Person trait,
-// since `impl_struct!{....}` expands to `impl Trait0+Trait0+etc`
+// since `impl_struct!{....}` expands to `impl Trait0+Trait1+etc`
 fn print_name_dyn(this:&mut dyn Person<Vec<String>>){
     println!("Hello, {}!",this.field_(fp!(name)) );
 
@@ -604,6 +594,9 @@ struct Cents(u64);
 [`make_struct`]: ./macro.make_struct.html
 [`structural_alias`]: ./macro.structural_alias.html
 [`switch`]: ./macro.switch.html
+
+[`FromStructural`]: ./convert/trait.FromStructural.html
+[`TryFromStructural`]: ./convert/trait.TryFromStructural.html
 
 */
 #![cfg_attr(feature = "nightly_impl_fields", feature(associated_type_bounds))]

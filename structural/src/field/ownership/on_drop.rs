@@ -47,15 +47,29 @@ impl<T: DropFields> IntoFieldsWrapper<T> {
 
     /// Gets mutable references to the wrapped value,
     /// and the `MovedOutFields` that tracks which fields were moved out of it.
+    ///
+    /// # Safety
+    ///
+    /// The returned references must not be mutated,
+    /// only passed to accessor traits declared in structural.
+    ///
+    /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
     #[inline(always)]
-    pub fn inner_and_moved_mut(&mut self) -> (&mut T, &mut MovedOutFields) {
+    pub unsafe fn inner_and_moved_mut(&mut self) -> (&mut T, &mut MovedOutFields) {
         (&mut self.value, &mut self.moved)
     }
 
     /// Gets mutable pointers to the wrapped value,
     /// and the `MovedOutFields` that tracks which fields were moved out of it.
+    ///
+    /// # Safety
+    ///
+    /// The returned pointers must not be mutated,
+    /// only passed to accessor traits declared in structural.
+    ///
+    /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
     #[inline(always)]
-    pub fn inner_and_moved_raw(&mut self) -> (*mut T, *mut MovedOutFields) {
+    pub unsafe fn inner_and_moved_raw(&mut self) -> (*mut T, *mut MovedOutFields) {
         (&mut *self.value as *mut T, &mut self.moved as *mut _)
     }
 }
@@ -213,7 +227,14 @@ where
 {
     /// Gets mutable references to the wrapped value,
     /// and the `MovedOutFields` that tracks which fields were moved out of it
-    pub fn get_mut_and_moved_fields(&mut self) -> (&mut T, &mut MovedOutFields) {
+    ///
+    /// # Safety
+    ///
+    /// The returned references must not be mutated,
+    /// only passed to accessor traits declared in structural.
+    ///
+    /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
+    pub unsafe fn get_mut_and_moved_fields(&mut self) -> (&mut T, &mut MovedOutFields) {
         (&mut self.mutref, &mut self.moved)
     }
 }

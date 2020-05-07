@@ -25,6 +25,8 @@ use std_::{
 #[cfg(test)]
 mod tests;
 
+pub mod array_paths;
+
 mod to_usize;
 
 include! { "./path/path_components.rs" }

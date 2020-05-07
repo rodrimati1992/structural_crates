@@ -75,8 +75,7 @@ instead the steps [in the section below](#drop-order-section) will happen.
 
 If your type has code that must run when it's dropped,
 you can use the [`#[struc(pre_move="foo_function")]`](#strucpre_move) attribute to
-run that code before the type is converted into multiple fields by value
-(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+run that code before the type is converted into multiple fields by value,
 
 For an example of using the `#[struc(pre_move="foo")]` attribute,[look here](#with-pre-move).
 
@@ -160,6 +159,8 @@ allowing custom code to run before the type is converted into multiple fields by
 For enums: `foo` is called before calling `DropFields::pre_move` on
 the delegated-to field in newtype variants.
 
+For an example of using the `#[struc(pre_move="foo")]` attribute,[look here](#with-pre-move).
+
 For a reference on the what happens when converting a type into multiple fields by value
 [go here](#drop-behavior-section).
 
@@ -225,11 +226,11 @@ The name can be anything,including non-ascii identifiers.
 This requires the `nightly_impl_fields` cargo feature
 (or `impl_fields` if associated type bounds stabilized after the latest release).
 
-Changes the `<DerivingType>_SI` trait (which aliases the accessor traits for this type)
+Changes the generated `*SI` traits (which aliases the accessor traits for this type)
 not to refer to the type of this field,
 instead it will be required to implement the bounds passed to this attribute.
 
-Note that these bounds are only added to the `<DerivingType>_SI` trait.
+Note that these bounds are only added to the generated `*SI` traits.
 
 [Here is the example for this attribute.](#impl-trait-fields)
 
@@ -275,6 +276,10 @@ Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field
 
 When this attribute is used on a non-pub field,
 it'll mark the field as public for the purpose of generating accessor trait impls.
+
+When these attribute are used on enums it generates impls for the
+`GetVariantField`/`GetVariantFieldMut`/`IntoVariantField`
+traits instead of `GetField`/`GetFieldMut`/`IntoField`.
 
 # Container/Field Attributes
 

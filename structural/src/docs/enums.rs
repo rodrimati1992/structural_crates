@@ -4,7 +4,7 @@
 Structural enum traits can be both statically and dynamically dispatched.
 
 Every instance of `<DerivingType>` in the documentation is the name of the enum.
-If have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
+If you have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
 
 # Generated code
 
@@ -69,7 +69,7 @@ struct Bar{
 
 #[derive(Structural)]
 enum Foo{
-    // The `Bar_VSI` trait was generated for teh `Bar` struct by the `Structural` derive.
+    // The `Bar_VSI` trait was generated for thh `Bar` struct by the `Structural` derive.
     #[struc(newtype(bounds="Bar_VSI<@variant>"))]
     Bar(Bar)
 }
@@ -180,6 +180,8 @@ where
     assert_eq!( foo.fields_mut(fp!(::Foo.0, ::Foo.1)), (Some(&mut 3),Some(&mut false)) );
     assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some((&mut 3,&mut false)) );
 
+    assert_eq!( foo.into_fields(fp!(::Foo=>0,1)), Some((3, false)) );
+
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
 
@@ -202,6 +204,7 @@ where
 
         assert_eq!( proxy.fields(fp!(=>0,1)), (&3,&false) );
         assert_eq!( proxy.fields_mut(fp!(=>0,1)), (&mut 3,&mut false) );
+        assert_eq!( proxy.into_fields(fp!(0,1)), (3, false) );
     }
 
     //////////////////////////////////////////////
@@ -340,7 +343,7 @@ enum Foo{
         b:u32,
     },
     // This attribute allows tuple variants with at least `0:u64` and `1:u64` fields
-    // to be used with the generated `Foo_SI` structural alias.
+    // to implement the generated `Foo_SI` structural alias.
     // ie:`Bam(u64,u64)`,`Bam([u64;8])`,`Bam((u64,u64,String,Vec<u64>))`
     #[struc(newtype(bounds="Tuple2Variant<u64,u64,@variant>"))]
     Bam((u64,u64))
@@ -400,9 +403,6 @@ fn main(){
 
 // `Enum_ESI` was generated for `Enum` by the `Structural` derive macro,
 // aliasing the accessor impls of `Enum`.
-//
-// `Enum_ESI` has supertraits that are a superset of what `with_wrapper_vsi` requires,
-// so `this` can be passed without issues.
 fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
     with_wrapper_vsi(this)
 }
@@ -414,7 +414,7 @@ fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
 // is for a `U32` variant that's structurally equivalent to `Wrapper<'a,u32>`.
 //
 // The `Wrapper_VSI<'a,u64,TS!(U64)>` bound:
-// is for a `u64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
+// is for a `U64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
 //
 // `VariantCount<Count=TS!(2)>`
 // makes this require an enum with only 2 variants
