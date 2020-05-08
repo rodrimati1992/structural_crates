@@ -59,7 +59,7 @@ mod path_set_types;
 /// ```
 pub type RevGetFieldType<FieldPath, This> = <FieldPath as RevFieldType<This>>::Ty;
 
-/// Queries the error type returned by `Rev*Field` methods.
+/// Queries the error type returned by `Rev*FieldImpl` methods.
 pub type RevFieldErrOut<FieldPath, This> = <FieldPath as RevFieldErr<This>>::Err;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -395,6 +395,15 @@ pub unsafe trait RevMoveOutFieldImpl<This: ?Sized>:
     RevIntoFieldImpl<This> + ShallowFieldPath
 {
     /// Moves out the field that `self` represents inside of `this`.
+    ///
+    /// # Safety
+    ///
+    /// The same instance of `MovedOutFields` must be passed to every call to
+    /// `rev_move_out_field` on the same instance of `this`,
+    /// as well as not mutating that `MovedOutFields` instance outside of
+    /// `rev_move_out_field` with the same `This` parameter.
+    ///
+    /// Each field must be moved with any method at most once on the same instance of `This`.    
     unsafe fn rev_move_out_field(
         self,
         this: &mut This,
@@ -440,7 +449,7 @@ declare_accessor_trait_alias! {
     ///
     /// # fn main(){
     /// let tup=(3,5,(8,(13,21)));
-    ///     assert_eq!( get_nested(&tup), &13 );
+    /// assert_eq!( get_nested(&tup), &13 );
     /// # }
     ///
     /// fn get_nested<'a,T>(this:&'a T)->&'a i32

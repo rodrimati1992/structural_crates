@@ -482,7 +482,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// `IsVariant<V>` and `IntoVariantField<V, F>` must agree on what variant
 /// the enum currently is.
 /// If `IsVariant` returns true for a particular `V` variant,
-/// then `into_vfield_`,and `box_into_vfield_` must return `Some(_)`.
+/// then `into_vfield_`,and `move_out_vfield_` must return `Some(_)`.
 ///
 /// If overriden, the `*_unchecked` methods must diverge
 /// (abort, panic, or call the equivalent of `std::hint::unreachable_unchecked`)

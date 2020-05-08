@@ -5,10 +5,7 @@ use crate::{
         DropFields, FieldBit, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, IntoField,
         MovedOutFields,
     },
-    path::{
-        array_paths::*,
-        FieldPathSet, LargePathSet,
-    },
+    path::{array_paths::*, FieldPathSet, LargePathSet},
     structural_trait::Structural,
     StructuralExt,
 };

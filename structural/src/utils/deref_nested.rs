@@ -1,15 +1,48 @@
 #![allow(non_snake_case)]
 
+/// For dereferencing tuples of pointers into tuples of mutable references.
+///
+/// # Safety
+///
+/// The mutable raw pointers in `Self` must be dereferenced into mutable references.
+///
+/// The `Dereffed` associated type must have the same structure as `Self`,
+/// in which the mutable pointers are replaced with mutable references with the `'a` lifetime.
+///
+/// # Example
+///
+/// ```rust
+/// use structural::field::InfallibleAccess;
+/// use structural::utils::DerefNested;
+///
+/// let mut left  = 100_u32;
+/// let mut middle = 200_u32;
+/// let mut right = 300_u32;
+///
+/// type ResRawPtr = Result<*mut u32, InfallibleAccess>;
+/// type ResMutRef<'a> = Result<&'a mut u32, InfallibleAccess>;
+///
+/// let tuple: ((ResRawPtr, ResRawPtr),ResRawPtr) =
+///     ((Ok(&mut left as *mut _), Ok(&mut middle as *mut _)), Ok(&mut right as *mut _));
+/// unsafe{
+///     let mutref_tuple: ((ResMutRef<'_>, ResMutRef<'_>), ResMutRef<'_>) =
+///         tuple.deref_nested();
+///     assert_eq!(mutref_tuple, ((Ok(&mut 100), Ok(&mut 200)), Ok(&mut 300)));
+/// }
+/// ```
 pub unsafe trait DerefNested<'a> {
     type Dereffed: 'a;
 
+    /// Dereferences the mutable pointers in this into mutable references.
+    ///
     /// # Safety
     ///
-    /// When `Self` contains any raw pointers,those must point to non-dangling,
-    /// initialized values.
+    /// The raw pointers in `Self` must point to non-dangling, initialized values,
+    /// which are valid for the `'a` lifetime.
     unsafe fn deref_nested(self) -> Self::Dereffed;
 }
 
+/// The return type of the `DerefNested::deref_nested` method for `This`
 pub type DerefNestedOut<'a, This> = <This as DerefNested<'a>>::Dereffed;
 
 macro_rules! deref_nested_impl {

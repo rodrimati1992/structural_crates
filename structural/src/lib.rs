@@ -692,8 +692,7 @@ pub use crate::{
 
 /// Reexports from other crates.
 ///
-/// This reexports from `core_extensions` unconditionally,
-/// and `alloc` conditionally.
+/// This reexports from `core_extensions`.
 pub mod reexports {
     #[doc(no_inline)]
     pub use core_extensions::{

@@ -128,6 +128,7 @@ use core_extensions::ConstDefault;
 
 use std_::ptr::NonNull;
 
+mod array_impls;
 mod enum_impls;
 pub mod errors;
 mod most_impls;
@@ -524,7 +525,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// Every implementation of `IntoField::move_out_field_`
 /// must return field(s) that no other implementation of
-/// `IntoVariantField` or `IntòField` for this type return.
+/// `IntoVariantField` or `IntoField` for this type return.
 ///
 /// The `DropFields::drop_fields` implementation for this type must then
 /// call `is_moved_out` on its `MovedOutFields` parameter
@@ -668,8 +669,7 @@ pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
     /// as well as not mutating that `MovedOutFields` instance outside of
     /// methods of this trait for this type.
     ///
-    /// Each field must be moved with any method at most once on the same instance
-    /// of this type.
+    /// Each field must be moved at most once on the same instance of this type.
     unsafe fn move_out_field_(
         &mut self,
         field_name: FieldName,

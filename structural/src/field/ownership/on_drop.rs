@@ -51,7 +51,7 @@ impl<T: DropFields> IntoFieldsWrapper<T> {
     /// # Safety
     ///
     /// The returned references must not be mutated,
-    /// only passed to accessor traits declared in structural.
+    /// only passed to accessor trait (declared in structural) methods for moving out fields .
     ///
     /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
     #[inline(always)]
@@ -65,7 +65,7 @@ impl<T: DropFields> IntoFieldsWrapper<T> {
     /// # Safety
     ///
     /// The returned pointers must not be mutated,
-    /// only passed to accessor traits declared in structural.
+    /// only passed to accessor trait (declared in structural) methods for moving out fields .
     ///
     /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
     #[inline(always)]
@@ -129,8 +129,13 @@ macro_rules! declare_run_on_drop {
             }
 
             /// Reborrows the wrapped mutable reference.
+            ///
+            /// # Safety
+            ///
+            /// The returned references must not be mutated,
+            /// only passed to accessor trait (declared in structural) methods for moving out fields .
             #[inline(always)]
-            pub fn get_mut(&mut self)->&mut T{
+            pub unsafe fn get_mut(&mut self)->&mut T{
                 self.mutref
             }
         }
@@ -161,7 +166,7 @@ declare_run_on_drop! {
     ///
     /// Once the destructor for this type runs,the pointed-to value must not be used again,
     /// that includes the destructor for the value running.
-    fn new()
+    unsafe fn new()
 
     this=this,
     fn drop(){
@@ -231,7 +236,7 @@ where
     /// # Safety
     ///
     /// The returned references must not be mutated,
-    /// only passed to accessor traits declared in structural.
+    /// only passed to accessor trait (declared in structural) methods for moving out fields .
     ///
     /// Mutating `MovedOutFields` incorrectly can lead to leaks and double dropped fields.
     pub unsafe fn get_mut_and_moved_fields(&mut self) -> (&mut T, &mut MovedOutFields) {

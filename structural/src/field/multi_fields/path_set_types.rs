@@ -10,7 +10,7 @@ use crate::{
         AliasedPaths, FieldPathSet, LargePathSet, NestedFieldPathSet, ShallowFieldPath,
         SmallPathSet, UniquePaths,
     },
-    utils::deref_nested::DerefNested,
+    utils::DerefNested,
 };
 
 #[allow(unused_imports)]

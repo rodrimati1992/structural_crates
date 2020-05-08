@@ -272,7 +272,7 @@ impl_cmp_traits! {
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`] contains unique field paths,
 /// in which no path is a prefix of any other path in the set,
-/// this is required to call `StructuralExt::fields_mut`.
+/// this is required to call `StructuralExt::fields_mut` or `StructuralExt::into_fields`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html
@@ -281,8 +281,8 @@ pub struct UniquePaths;
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
 /// might not contain unique field paths.
-/// Its not possible to pass a `FieldPathSet<_,AliasedPaths>` to
-/// `StructuralExt::fields_mut`.
+/// It's not possible to pass a `FieldPathSet<_,AliasedPaths>` to
+/// `StructuralExt::fields_mut` or `StructuralExt::into_fields`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html
@@ -338,7 +338,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     /// Note that this doesn't enforce that its input is in fact a tuple of
     /// up to 8 field paths (because `const fn` can't have bounds yet).
     ///
-    /// To be able to access multiple fields mutably at the same time,
+    /// To be able to access multiple fields mutably/by value at the same time,
     /// you must call the unsafe `.upgrade()` method.
     ///
     /// To access more than 8 fields, you must use the [large constructor](#method.large).
@@ -357,7 +357,7 @@ impl<T> FieldPathSet<LargePathSet<T>, AliasedPaths> {
     /// Note that this doesn't enforce that its input is in fact a
     /// tuple of tuples of field paths (because `const fn` can't have bounds yet).
     ///
-    /// To be able to access multiple fields mutably at the same time,
+    /// To be able to access multiple fields mutably/by value at the same time,
     /// you must call the unsafe `.upgrade()` method.
     ///
     /// # Example
@@ -451,7 +451,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the field paths are unique,
+    /// You must ensure that all the field paths in the `T` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> FieldPathSet<T, UniquePaths> {
@@ -462,7 +462,8 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that if `U==UniquePaths`,then all the field paths are unique,
+    /// You must ensure that if `U==UniquePaths`,
+    /// then all the field paths in the `T` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> FieldPathSet<T, U> {
@@ -626,7 +627,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the field paths in `S` are unique,
+    /// You must ensure that all the field paths in in the `S` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> NestedFieldPathSet<F, S, UniquePaths> {
@@ -639,7 +640,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     /// # Safety
     ///
     /// If `U == UniquePaths`,
-    /// you must ensure that all the field paths in `S` are unique,
+    /// you must ensure that all the field paths in the `S` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> NestedFieldPathSet<F, S, U> {

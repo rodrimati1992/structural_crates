@@ -6,7 +6,9 @@ use std_::{fmt, marker::PhantomData, mem::ManuallyDrop};
 
 /////////////////////////////////////////////////////////
 
-pub mod deref_nested;
+mod deref_nested;
+
+pub use self::deref_nested::{DerefNested, DerefNestedOut};
 
 /////////////////////////////////////////////////////////
 
@@ -58,18 +60,21 @@ pub fn abort_fmt(args: fmt::Arguments<'_>) -> ! {
 
 //////////////////////////////////
 
-/// Information about a panic,used in `ffi_panic_message`.
+/// Information about a panic,used in `abort_with_info`.
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct PanicInfo {
     pub file: &'static str,
     pub line: u32,
     pub context: &'static str,
 }
 
-/// Prints an error message for attempting to panic out of the `abort_on_return` macro.
+/// Prints an error message for attempting to panic out of the `abort_on_return` macro,
+/// then aborts the process.
 #[inline(never)]
 #[cold]
-pub fn ffi_panic_message(info: &'static PanicInfo) -> ! {
+#[doc(hidden)]
+pub fn abort_with_info(info: &'static PanicInfo) -> ! {
     abort_fmt(format_args!(
         "\n\
         Attempted to panic.\n\
@@ -89,7 +94,7 @@ pub struct AbortBomb {
 
 impl Drop for AbortBomb {
     fn drop(&mut self) {
-        ffi_panic_message(self.fuse);
+        abort_with_info(self.fuse);
     }
 }
 

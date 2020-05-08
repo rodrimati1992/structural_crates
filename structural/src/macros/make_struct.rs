@@ -1,5 +1,5 @@
 /// Constructs an anonymous struct,
-/// which implements all the accessor traits for its field.
+/// which implements all the accessor traits for its fields.
 ///
 /// # Syntax
 ///
@@ -64,11 +64,13 @@
 ///
 /// {
 ///     let runner=ret_get_runner("hello".into());
-///     # let _=runner.field_(fp!(name));
-///     # let _=runner.field_(fp!(stamina));
-///     let (name,stamina)=runner.fields(fp!( name, stamina ));
+///
+///     assert_eq!( runner.field_(fp!(name)).as_str(), "hello" );
+///     assert_eq!( runner.field_(fp!(stamina)), &4_000_000_000 );
+///
+///     let (name,stamina) = runner.into_fields(fp!( name, stamina ));
 ///     assert_eq!( name, "hello" );
-///     assert_eq!( *stamina, 4_000_000_000 );
+///     assert_eq!( stamina, 4_000_000_000 );
 /// }
 ///
 #[cfg_attr(
@@ -83,8 +85,14 @@ fn get_dyn_runner()->Box<dyn Runner>{
 
 {
     let runner=get_dyn_runner();
+
     assert_eq!( runner.field_(fp!(name)).as_str(), "hello" );
     assert_eq!( runner.field_(fp!(stamina)), &4_000_000_000 );
+
+    assert_eq!(
+        runner.into_fields(fp!( name, stamina )),
+        ("hello".to_string(), 4_000_000_000),
+    );
 }
 
 "###

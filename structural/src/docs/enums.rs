@@ -180,7 +180,7 @@ where
     assert_eq!( foo.fields_mut(fp!(::Foo.0, ::Foo.1)), (Some(&mut 3),Some(&mut false)) );
     assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some((&mut 3,&mut false)) );
 
-    assert_eq!( foo.into_fields(fp!(::Foo=>0,1)), Some((3, false)) );
+    assert_eq!( foo.clone().into_fields(fp!(::Foo=>0,1)), Some((3, false)) );
 
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
