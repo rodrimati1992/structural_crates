@@ -48,7 +48,8 @@ These traits alias the accessor traits implemented by the type they're named aft
 
 The only macros that are required to use this crate are the ones for [`TStr`],
 every other macro expands to code that can be written manually
-(except for the `__TS` type, that is an implementation detail that only macros from
+(except for the [`__TS`] type,
+that is an implementation detail that only macros from
 this crate should use by name).
 
 <span id="root-mod-examples"></span>
@@ -600,7 +601,6 @@ fn main() {
 struct Cents(u64);
 ```
 
-
 [`Structural`]: ./docs/structural_macro/index.html
 [`GetField`]: ./field/trait.GetField.html
 [`GetFieldMut`]: ./field/trait.GetFieldMut.html
@@ -616,6 +616,8 @@ struct Cents(u64);
 [`make_struct`]: ./macro.make_struct.html
 [`structural_alias`]: ./macro.structural_alias.html
 [`switch`]: ./macro.switch.html
+
+[`__TS`]: ./struct.TStr.html#semver-concerns
 
 [`FromStructural`]: ./convert/trait.FromStructural.html
 [`TryFromStructural`]: ./convert/trait.TryFromStructural.html
