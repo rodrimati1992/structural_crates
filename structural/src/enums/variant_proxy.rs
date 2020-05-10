@@ -639,7 +639,7 @@ where
                         "\n\n\n\
                         The enum changed the active variant in `<{} as DropFields>::pre_move`\
                         \n\n\n",
-                        std::any::type_name::<Self>(),
+                        std_::any::type_name::<Self>(),
                     );
                 }
             },

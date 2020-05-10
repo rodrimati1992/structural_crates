@@ -113,7 +113,7 @@ macro_rules! array_impls {
                 unsafe fn drop_fields(&mut self,moved: MovedOutFields){
                     for (i,mutref) in (0..$index).zip(self) {
                         if !moved.is_moved_out(FieldBit::new(i)) {
-                            std::ptr::drop_in_place(mutref);
+                            std_::ptr::drop_in_place(mutref);
                         }
                     }
                 }

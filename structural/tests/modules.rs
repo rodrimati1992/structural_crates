@@ -21,6 +21,7 @@
 #![allow(clippy::cognitive_complexity)]
 // Every instance of this warning in tests is wrong
 #![allow(clippy::let_unit_value)]
+#![deny(rust_2018_idioms)]
 
 mod submodules {
     mod accessing_fields;

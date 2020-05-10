@@ -23,7 +23,7 @@ impl<'a, T> OrOnDrop<'a, T> {
     pub fn into_inner(self) -> T {
         self.on_drop();
         let mut this = ManuallyDrop::new(self);
-        unsafe { std::ptr::read(&mut this.value) }
+        unsafe { std_::ptr::read(&mut this.value) }
     }
     pub fn into_inner_and_bits(self) -> (T, u64) {
         let bits = self.bits_to_set();
@@ -154,7 +154,7 @@ impl<'a, T> PushOnDrop<'a, T> {
     pub fn into_inner(self) -> T {
         self.on_drop();
         let mut this = ManuallyDrop::new(self);
-        unsafe { std::ptr::read(&mut this.value) }
+        unsafe { std_::ptr::read(&mut this.value) }
     }
     fn on_drop(&self) {
         self.arr.borrow_mut().push(self.to_push);

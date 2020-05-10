@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::{
     convert::{EmptyTryFromError, TryFromError},
     IntoField, Structural, StructuralExt,

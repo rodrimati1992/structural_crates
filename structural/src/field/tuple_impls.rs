@@ -70,7 +70,7 @@ macro_rules! impl_tuple {
                 $({
                     const BIT: FieldBit = FieldBit::new($field);
                     if !moved.is_moved_out(BIT) {
-                        std::ptr::drop_in_place(&mut self.$field)
+                        std_::ptr::drop_in_place(&mut self.$field)
                     }
                 })*
             }

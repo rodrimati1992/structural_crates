@@ -248,6 +248,7 @@ macro_rules! generic_struct_test {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn box_into_fields() {
     generic_struct_test! {
         constructor=Box::new,

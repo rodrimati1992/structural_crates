@@ -703,6 +703,7 @@ mod wrapper;
 #[cfg(feature = "testing")]
 pub mod test_utils;
 
+#[doc(hidden)]
 #[cfg(feature = "testing")]
 pub mod tests;
 

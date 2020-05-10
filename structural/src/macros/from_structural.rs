@@ -247,7 +247,7 @@ macro_rules! z_impl_try_from_structural_for_enum {
                          such that it doesn't return an error in `FromStructural`.\n\
                         type:\n\t{}\n\
                         error:\n\t{}\n",
-                        std::any::type_name::<Self>(),
+                        $crate::std_::any::type_name::<Self>(),
                         e.error,
                     ),
                 }
