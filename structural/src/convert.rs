@@ -424,9 +424,10 @@ pub trait TryFromStructural<T>: Sized {
 ///     T: TryIntoStructural<U>,
 ///     U: PartialEq,
 /// {
-///     let is_equal = left
-///         .try_into_structural()
-///         .map_or(false,|x|x==right);
+///     let is_equal = match left.try_into_structural() {
+///         Ok(left) => left==right,
+///         Err(_) => false,
+///     };
 ///
 ///     assert_eq!( is_equal, expected );
 /// }
