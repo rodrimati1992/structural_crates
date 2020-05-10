@@ -296,6 +296,8 @@ impl FieldBit {
     ///
     #[inline(always)]
     pub const fn new(index: u8) -> Self {
+        // The effect is that it panics if `index >= 64`
+        #[allow(clippy::no_effect)]
         [(); 64][index as usize];
         FieldBit(1 << index)
     }

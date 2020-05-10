@@ -21,6 +21,39 @@ pub(crate) fn remove_raw_prefix(mut s: String) -> String {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+use std::{
+    cell::RefCell,
+    fmt::{self, Display},
+};
+
+/// Used to more easily implement ToTokens.
+pub(crate) struct DisplayWith<F> {
+    func: RefCell<F>,
+}
+
+impl<F> DisplayWith<F>
+where
+    F: FnMut(&mut fmt::Formatter<'_>) -> fmt::Result,
+{
+    pub(crate) fn new(f: F) -> Self {
+        Self {
+            func: RefCell::new(f),
+        }
+    }
+}
+
+impl<F> Display for DisplayWith<F>
+where
+    F: FnMut(&mut fmt::Formatter<'_>) -> fmt::Result,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut func = RefCell::borrow_mut(&self.func);
+        (&mut *func)(f)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 pub(crate) trait StrExt: AsRef<str> {
     fn surrounded_with(&self, before: &str, after: &str) -> String {
         let this = self.as_ref();

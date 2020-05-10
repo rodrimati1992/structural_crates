@@ -711,6 +711,7 @@ where
 /// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
 /// on the type level.
 pub trait IntoAliasing: IsMultiFieldPath {
+    /// The return value of this trait.
     type Output: IsMultiFieldPath<PathUniqueness = AliasedPaths>;
 }
 

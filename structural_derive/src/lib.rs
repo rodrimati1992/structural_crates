@@ -15,6 +15,9 @@ An implementation detail of structural.
 // The name of this lint is wrong,
 // there's nothing redundant about using pattern matching instead of a method call
 #![allow(clippy::redundant_pattern_matching)]
+// I use `_` patterns to ensure that all fields are matched,
+// using `..` would defeat the purpose for destructuring in the first place.
+#![allow(clippy::unneeded_field_pattern)]
 #![deny(clippy::shadow_unrelated)]
 #![deny(clippy::wildcard_imports)]
 

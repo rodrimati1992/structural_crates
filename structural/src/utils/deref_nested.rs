@@ -31,6 +31,9 @@
 /// }
 /// ```
 pub unsafe trait DerefNested<'a> {
+    /// A type with the same structure as `Self`,
+    /// in which the mutable pointers are replaced with mutable references
+    /// with the `'a` lifetime.
     type Dereffed: 'a;
 
     /// Dereferences the mutable pointers in this into mutable references.

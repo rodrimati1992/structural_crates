@@ -1,6 +1,10 @@
-use crate::{arenas::Arenas, ignored_wrapper::Ignored, utils::remove_raw_prefix};
+use crate::{
+    arenas::Arenas,
+    ignored_wrapper::Ignored,
+    utils::{remove_raw_prefix, DisplayWith},
+};
 
-use std::fmt::{self, Display};
+use std::fmt::Display;
 
 use as_derive_utils::datastructure::FieldIdent;
 
@@ -97,7 +101,19 @@ impl IdentOrIndex {
             IdentOrIndex::Str { str, span } => (str.into(), span.value),
         }
     }
-    pub(crate) fn to_string(&self) -> String {
+
+    #[allow(dead_code)]
+    pub fn display(&self) -> impl Display + '_ {
+        DisplayWith::new(move |f| match self {
+            IdentOrIndex::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
+            IdentOrIndex::Index(x) => Display::fmt(&x.index, f),
+            IdentOrIndex::Str { str, .. } => f.write_str(str),
+        })
+    }
+}
+
+impl ToString for IdentOrIndex {
+    fn to_string(&self) -> String {
         self.string_and_span().0
     }
 }
@@ -105,16 +121,6 @@ impl IdentOrIndex {
 impl ToTokens for IdentOrIndex {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         self.borrowed().to_tokens(tokens)
-    }
-}
-
-impl Display for IdentOrIndex {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IdentOrIndex::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
-            IdentOrIndex::Index(x) => Display::fmt(&x.index, f),
-            IdentOrIndex::Str { str, .. } => f.write_str(str),
-        }
     }
 }
 
@@ -206,7 +212,17 @@ impl<'a> IdentOrIndexRef<'a> {
         }
     }
 
-    pub(crate) fn to_string(&self) -> String {
+    pub fn display(&self) -> impl Display + '_ {
+        DisplayWith::new(move |f| match self {
+            IdentOrIndexRef::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
+            IdentOrIndexRef::Index { index, .. } => Display::fmt(index, f),
+            IdentOrIndexRef::Str { str, .. } => f.write_str(str),
+        })
+    }
+}
+
+impl<'a> ToString for IdentOrIndexRef<'a> {
+    fn to_string(&self) -> String {
         self.string_and_span().0
     }
 }
@@ -225,16 +241,6 @@ impl ToTokens for IdentOrIndexRef<'_> {
                 lit.set_span(span.value);
                 lit.to_tokens(tokens);
             }
-        }
-    }
-}
-
-impl Display for IdentOrIndexRef<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IdentOrIndexRef::Ident(x) => Display::fmt(&remove_raw_prefix(x.to_string()), f),
-            IdentOrIndexRef::Index { index, .. } => Display::fmt(index, f),
-            IdentOrIndexRef::Str { str, .. } => f.write_str(str),
         }
     }
 }

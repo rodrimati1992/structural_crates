@@ -649,9 +649,12 @@ struct Cents(u64);
 #![allow(clippy::type_complexity)]
 // This lint is silly
 #![allow(clippy::blacklisted_name)]
+// This lint is silly
+#![allow(clippy::needless_doctest_main)]
 #![deny(clippy::missing_safety_doc)]
 #![deny(clippy::shadow_unrelated)]
 #![deny(clippy::wildcard_imports)]
+#![deny(missing_docs)]
 
 #[cfg(feature = "std")]
 #[doc(hidden)]

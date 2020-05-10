@@ -45,12 +45,12 @@ impl Access {
         value: true,
     };
 
-    pub(crate) fn has_by_value_access(&self) -> bool {
+    pub(crate) fn has_by_value_access(self) -> bool {
         self.value
     }
 
     #[allow(dead_code)]
-    pub(crate) fn has_mutable_access(&self) -> bool {
+    pub(crate) fn has_mutable_access(self) -> bool {
         self.mutable
     }
 

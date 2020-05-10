@@ -124,6 +124,7 @@ impl Display for InfallibleAccess {
 /// A specialized conversion trait,to convert field accessor error types to other
 /// field accessor error types.
 pub trait IntoFieldErr<T>: IsFieldErr {
+    /// Performs the conversion
     fn into_field_err(self) -> T
     where
         T: IsFieldErr;
@@ -156,6 +157,11 @@ impl IntoFieldErr<FailedAccess> for InfallibleAccess {
 /// This is used by the `Rev*Field*` impls for [NestedFieldPath](../../struct.NestedFieldPath.html) to
 /// determine whether a nested field access is optional or not.
 pub trait CombinedErrs {
+    /// The error type after combining all errors.
+    ///
+    /// In the impls from the structural crate,
+    /// if all errors are `InfallibleAccess`,then `Combined` is `InfallibleAccess`,
+    /// otherwise `Combined` is `FailedAccess`.
     type Combined: IsFieldErr;
 }
 

@@ -329,9 +329,7 @@ z_impl_from_structural! {
     impl[T] FromStructural<T> for ()
     where[]
     {
-        fn from_structural(_from){
-            ()
-        }
+        fn from_structural(_from){}
     }
 }
 

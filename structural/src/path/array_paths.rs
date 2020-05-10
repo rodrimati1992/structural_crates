@@ -12,8 +12,10 @@ use self::sealed::Sealed;
 
 /// A field path that is usable for indexing (some) arrays.
 pub trait ArrayPath: IsSingleFieldPath + Sealed {
+    /// The index that this type represents.
     const INDEX: usize;
 
+    /// The `FieldBit` for the field whose index is`Self::Index`.
     const DROP_BIT: FieldBit = FieldBit::new(Self::INDEX as u8);
 }
 

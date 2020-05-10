@@ -160,6 +160,7 @@ fn delegating_structural<'a>(
     .piped(Ok)
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn deriving_structural<'a>(
     ds: &'a DataStructure<'a>,
     options: &'a StructuralOptions<'a>,

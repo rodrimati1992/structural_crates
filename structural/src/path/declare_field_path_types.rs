@@ -144,7 +144,9 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 #[derive(Copy, Clone)]
 pub struct VariantField<V, F> {
+    /// The variant this accesses.
     pub variant: V,
+    /// The field this accesses inside the variant.
     pub field: F,
 }
 
@@ -218,6 +220,7 @@ pub struct VariantField<V, F> {
 ///
 #[derive(Default, Copy, Clone)]
 pub struct VariantName<V> {
+    /// The variant this accesses.
     pub name: V,
 }
 
@@ -260,6 +263,7 @@ pub struct VariantName<V> {
 #[repr(transparent)]
 #[derive(Default, Copy, Clone)]
 pub struct NestedFieldPath<T> {
+    /// The list of fields this traverses to access a nested field.
     pub list: T,
 }
 

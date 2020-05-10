@@ -702,12 +702,21 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait RevMoveOutMultiFieldImpl<This> :
+/// Moves out mutiple fields from `This`.
+///
+/// This is used by implementors of the [`RevIntoMultiFieldImpl`] trait from 9 up to 64 fields.
+///
+/// # Safety
+///
+/// Implementors must ensure that all the fields moved out of `This` are unique,
+/// meaning that no field is moved out more than once.
+pub unsafe trait RevMoveOutMultiFieldImpl<This> :
     // IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
     RevIntoMultiFieldImpl<This>
 {
     // type MovedFields;
 
+    /// Moves out multiple fields from `this`
     unsafe fn rev_move_out_multi_field(
         self,
         this: &mut This,
