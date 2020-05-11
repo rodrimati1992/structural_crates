@@ -93,6 +93,23 @@
       ],
     ),
     (
+      name:"variant_path_attribute",
+      code:r##"
+        pub enum Huh{
+            #[struc(#f)]
+            Foo,
+        }
+      "##,
+      subcase: [
+        ( replacements: { "#f":"" }, error_count: 0 ),
+        ( 
+          replacements: { "#f":"not_public" },
+          error_count: 1,
+          find_all: [str("unrecognized attribute")],
+        ),
+      ],
+    ),
+    (
       // This test checks that,if a field is private,
       // that accessor trait impls aren't generated.
       //
@@ -156,7 +173,7 @@
       ],
     ),
     (
-      name:"no_docs",
+      name:"no_docs-0",
       code:r##"
         #[struc(#0)]
         #v struct Hello{
@@ -173,6 +190,7 @@
             not(regex(r#"FP *! *\( *a *\) *, *Ty *= *u32"#)),
             not(regex(r#"FP *! *\( *b *\) *, *Ty *= *u32"#)),
             not(regex(r#"FP *! *\( *\\"c\\" *\) *, *Ty *= *u32"#)),
+            not(regex(r#"///"#)),
           ],
           error_count: 0,
         ),
@@ -198,7 +216,7 @@
       ],
     ),
     (
-      name:"no_docs",
+      name:"no_docs-1",
       code:r##"
         #[struc(#0)]
         #v struct Hello{
@@ -220,7 +238,7 @@
       ],
     ),
     (
-      name:"no_docs",
+      name:"no_docs-2",
       code:r##"
         #[derive(Structural)]
         #A

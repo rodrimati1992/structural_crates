@@ -152,6 +152,7 @@ pub enum EnumOptFlying {
         hands: Option<usize>,
         noodles: usize,
     },
+    NotLimb,
 }
 
 #[derive(Structural)]

@@ -177,31 +177,32 @@ macro_rules! ok_or_of {
 #[macro_export]
 macro_rules! declare_querying_trait {
     (
-        trait $trait_name:ident $([$($params:tt)*])?
+        $vis:vis trait $trait_name:ident $([$($g_params:tt)*])?
         $( implements[ $($supertraits:tt)* ] )?
         $( where[ $($where_:tt)* ] )?
-        fn $impls_fn:ident;
+        fn $impls_fn:ident $( ( $($params:tt)* ) )?;
     ) => (
-        trait $trait_name<$($($params)*)?>:Sized{
-            type Impls: $crate::pmr::Boolean;
-            fn $impls_fn(self)->Self::Impls{
-                <Self::Impls as $crate::pmr::MarkerType>::MTVAL
-            }
+        $vis trait $trait_name<$($($g_params)*)?>:Sized{
+            fn $impls_fn(self,$($($params)*)?)->bool;
         }
 
-        impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
+        impl<$($($g_params)*)? __This> $trait_name<$($($g_params)*)?>
         for $crate::pmr::PhantomData<__This>
         where
             $( __This:$($supertraits)*, )?
             $( $($where_)* )?
         {
-            type Impls=$crate::pmr::True;
+            fn $impls_fn(self,$($($params)*)?)->bool{
+                true
+            }
         }
 
-        impl<$($($params)*)? __This> $trait_name<$($($params)*)?>
+        impl<$($($g_params)*)? __This> $trait_name<$($($g_params)*)?>
         for &'_ $crate::pmr::PhantomData<__This>
         {
-            type Impls=$crate::pmr::False;
+            fn $impls_fn(self,$($($params)*)?)->bool{
+                false
+            }
         }
     )
 }

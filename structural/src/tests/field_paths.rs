@@ -370,6 +370,52 @@ mod names_module_tests {
     }
 }
 
+mod bounds {
+    use crate::{
+        field::{RevGetMultiField, RevGetMultiFieldMut, RevIntoMultiField},
+        path::{AliasedPaths, FieldPathSet, UniquePaths},
+    };
+
+    use std_::marker::PhantomData;
+
+    type Tup = (u8, u16, u32, u64, i8, i16, i32, i64);
+
+    declare_querying_trait! {
+        trait ImplsRevGetMultiField
+        implements[RevGetMultiField<'static,Tup>]
+        fn impls_rev_multi_ref;
+    }
+
+    declare_querying_trait! {
+        trait ImplsRevGetMultiFieldMut
+        implements[RevGetMultiFieldMut<'static,Tup>]
+        fn impls_rev_multi_mut;
+    }
+
+    declare_querying_trait! {
+        trait ImplsRevIntoMultiField
+        implements[RevIntoMultiField<Tup>]
+        fn impls_rev_multi_into;
+    }
+
+    #[test]
+    fn path_bounds() {
+        type Path<A> = FieldPathSet<(TS!(0), TS!(1), TS!(2)), A>;
+        {
+            let marker = PhantomData::<Path<AliasedPaths>>;
+            assert!(marker.impls_rev_multi_ref());
+            assert!(!marker.impls_rev_multi_mut());
+            assert!(!marker.impls_rev_multi_into());
+        }
+        {
+            let marker = PhantomData::<Path<UniquePaths>>;
+            assert!(marker.impls_rev_multi_ref());
+            assert!(marker.impls_rev_multi_mut());
+            assert!(marker.impls_rev_multi_into());
+        }
+    }
+}
+
 #[allow(clippy::wildcard_imports)]
 mod tstr_aliases_tests {
     #[cfg(any(not(feature = "use_const_str"), feature = "disable_const_str"))]

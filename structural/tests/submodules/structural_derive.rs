@@ -1,6 +1,6 @@
 use structural::{
-    field_path_aliases, fp, structural_alias, ts, tstr_aliases, GetField, GetFieldMut, IntoField,
-    IntoFieldMut, Structural, StructuralExt, FP,
+    field_path_aliases, fp, structural_alias, ts, tstr_aliases, FieldType, GetField, GetFieldMut,
+    IntoField, IntoFieldMut, IntoVariantFieldMut, Structural, StructuralExt, FP, TS,
 };
 
 // For tests
@@ -151,6 +151,11 @@ assert_equal_bounds! {
     ),
 }
 
+// Testing that this wasn't implemented
+impl FieldType<FP!(c)> for Privacies1 {
+    type Ty = ();
+}
+
 #[test]
 fn privacies() {
     let _ = <Privacies1 as Privacies1Test>::DUMMY;
@@ -236,8 +241,17 @@ struct Renamed {
     pub c: u32,
 }
 
+assert_equal_bounds! {
+    trait RenamedTest,
+    ( Renamed_SI ),
+    (
+        IntoFieldMut<FP!(a), Ty = u32>
+        + IntoFieldMut<FP!(b), Ty = u32>
+        + IntoFieldMut<FP!(e), Ty = u32>
+    ),
+}
+
 #[derive(Structural)]
-#[struc(no_trait)]
 enum Vegetable {
     #[struc(rename = "foo")]
     Potato {
@@ -247,8 +261,17 @@ enum Vegetable {
     #[struc(rename = "baz")]
     Letuce {
         #[struc(rename = "qux")]
-        leaves: u32,
+        leaves: i32,
     },
+}
+
+assert_equal_bounds! {
+    trait VegetableTest,
+    ( Vegetable_SI ),
+    (
+        IntoVariantFieldMut<TS!(foo), TS!(bar), Ty = u32>
+        + IntoVariantFieldMut<TS!(baz), TS!(qux), Ty = i32>
+    ),
 }
 
 #[test]
@@ -268,6 +291,10 @@ fn renamed() {
         assert_eq!(this.field_(fp!(e)), &8);
         assert_eq!(this.field_mut(fp!(e)), &mut 8);
         assert_eq!(this.clone().into_field(fp!(e)), 8);
+
+        impl FieldType<FP!(c)> for Renamed {
+            type Ty = ();
+        }
     }
 
     // enum
@@ -277,6 +304,20 @@ fn renamed() {
     {
         let mut potato = Vegetable::Potato { volume_cm: 13 };
         let mut letuce = Vegetable::Letuce { leaves: 21 };
+
+        impl FieldType<FP!(::Potato.bar)> for Vegetable {
+            type Ty = ();
+        }
+        impl FieldType<FP!(::Potato.volume_cm)> for Vegetable {
+            type Ty = ();
+        }
+
+        impl FieldType<FP!(::Letuce.qux)> for Vegetable {
+            type Ty = ();
+        }
+        impl FieldType<FP!(::Letuce.leaves)> for Vegetable {
+            type Ty = ();
+        }
 
         assert_eq!(potato.field_(fp!(::foo.bar)), Some(&13));
         assert_eq!(potato.field_(fp!(::baz.qux)), None);
@@ -328,15 +369,23 @@ fn delegate_to_test() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#[allow(dead_code)]
+#[derive(Structural)]
+#[struc(no_trait)]
+enum EnumNoTrait {
+    Potato { volume_cm: u32 },
+    Letuce { leaves: u32 },
+}
+
 /// Tests that `#[struc(no_trait)]` has an effect on structs.
 trait Foo_SI {}
 trait Foo_VSI {}
 trait Foo_ESI {}
 
 /// Tests that `#[struc(no_trait)]` has an effect on enums.
-trait Vegetable_SI {}
-trait Vegetable_VSI {}
-trait Vegetable_ESI {}
+trait EnumNoTrait_SI {}
+trait EnumNoTrait_VSI {}
+trait EnumNoTrait_ESI {}
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -54,6 +54,8 @@ macro_rules! pre_post_drop_test {
             // $()
             let $param=$($constructor)* {
                 cell: $cell,
+                // The first parameter is the value of the field,
+                // and the last parameter is the value pushed to `$cell`
                 a: PushOnDrop::new(3,$cell,1),
                 b: PushOnDrop::new(5,$cell,2),
                 c: PushOnDrop::new(8,$cell,3),
