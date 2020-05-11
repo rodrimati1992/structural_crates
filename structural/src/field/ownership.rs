@@ -262,7 +262,13 @@ impl MovedOutFields {
     /// Marks a field as being moved out.
     #[inline(always)]
     pub fn set_moved_out(&mut self, bit: FieldBit) {
+        #[cfg(feature = "testing")]
+        let prev = self.0;
+
         self.0 |= bit.0;
+
+        #[cfg(feature = "testing")]
+        assert_ne!(prev, self.0);
     }
 
     /// Checks whether a field has been moved out.

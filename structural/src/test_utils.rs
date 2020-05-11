@@ -37,7 +37,7 @@ impl<'a, T> OrOnDrop<'a, T> {
         let next = prev | self.bits_to_set;
         assert_ne!(
             prev, next,
-            "Expected a different prev and next,found both the the same value:\n{:b}",
+            "Expected a different prev and next,but they have the same value:\n{:b}",
             prev,
         );
         self.bits.set(next);

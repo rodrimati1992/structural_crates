@@ -39,13 +39,40 @@ macro_rules! pre_post_drop_test {
     (
         type_name=$type:ident,
         constructor($($constructor:tt)*)
-        post_constructor(|$cell:ident,$param:ident|$post_constructor:expr)
+        post_constructor $post_constructor:tt
         $(
             variant=$variant:ident,
             post_method=$unwrap:ident,
         )?
         before($($before:expr),*)
         after($($after:expr),*)
+        $(pre_post_drop_fields $($ppdf:ident)? ,)?
+    ) => (
+        pre_post_drop_test!{
+            @inner
+            type_name=$type,
+            constructor($($constructor)*)
+            post_constructor $post_constructor
+            $(
+                variant=$variant,
+                post_method=$unwrap,
+            )?
+            // If `pre_post_drop_fields,` was passed,
+            // then put `254` in before. and `255` in after.
+            before($($before,)* $( $($ppdf)? 254 )?)
+            after( $( $($ppdf)? 255, )? $($after),* )
+        }
+    );
+    (@inner
+        type_name=$type:ident,
+        constructor($($constructor:tt)*)
+        post_constructor(|$cell:ident,$param:ident|$post_constructor:expr)
+        $(
+            variant=$variant:ident,
+            post_method=$unwrap:ident,
+        )?
+        before($($before:expr),* $(,)?)
+        after($($after:expr),* $(,)?)
     ) => (
         let arr=RefCell::new(FixedArray::new());
         fn make_pps($cell:&RefCell<FixedArray>)->$type<'_>{
@@ -71,29 +98,29 @@ macro_rules! pre_post_drop_test {
             let this=make_pps(&arr);
             let (a,c)=this.into_fields(fp!($(::$variant=>)? a,c)) $(.$unwrap())? ;
 
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,5,7,2,4,6,255 $(,$after)*]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 5,7,2,4,6 $(,$after)*]);
             assert_eq!(a.into_inner(), 3);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,5,7,2,4,6,255 $(,$after)*,1]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 5,7,2,4,6 $(,$after)*,1]);
             assert_eq!(c.into_inner(), 8);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,5,7,2,4,6,255 $(,$after)*,1,3]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 5,7,2,4,6 $(,$after)*,1,3]);
         }
         {
             let this=make_pps(&arr);
             let (c,e)=this.into_fields(fp!($(::$variant=>)? c,e)) $(.$unwrap())? ;
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,7,2,4,6,255 $(,$after)*]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,7,2,4,6 $(,$after)*]);
             assert_eq!(c.into_inner(), 8);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,7,2,4,6,255 $(,$after)*,3]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,7,2,4,6 $(,$after)*,3]);
             assert_eq!(e.into_inner(), 21);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,7,2,4,6,255 $(,$after)*,3,5]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,7,2,4,6 $(,$after)*,3,5]);
         }
         {
             let this=make_pps(&arr);
             let (e,g)=this.into_fields(fp!($(::$variant=>)? e,g)) $(.$unwrap())? ;
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,3,2,4,6,255 $(,$after)*]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,3,2,4,6 $(,$after)*]);
             assert_eq!(e.into_inner(), 21);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,3,2,4,6,255 $(,$after)*,5]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,3,2,4,6 $(,$after)*,5]);
             assert_eq!(g.into_inner(), 55);
-            assert_eq!(&arr.borrow()[..], [$($before,)* 254,1,3,2,4,6,255 $(,$after)*,5,7]);
+            assert_eq!(&arr.borrow()[..], [$($before,)* 1,3,2,4,6 $(,$after)*,5,7]);
         }
     )
 }
@@ -105,6 +132,75 @@ fn drop_order_struct() {
         constructor(PrePostStructA)
         post_constructor(|_arr,a|a)
         before(240)
+        after()
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+#[struc(pre_move = "drop_pre_move_structa")]
+struct PreMoveStructA<'a> {
+    cell: &'a RefCell<FixedArray>,
+    pub a: PushOnDrop<'a, u32>,
+    b: PushOnDrop<'a, u32>,
+    pub c: PushOnDrop<'a, u32>,
+    d: PushOnDrop<'a, u32>,
+    pub e: PushOnDrop<'a, u32>,
+    f: PushOnDrop<'a, u32>,
+    pub g: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_move_structa(this: &mut PreMoveStructA<'_>) {
+    this.cell.borrow_mut().push(240);
+}
+
+#[test]
+fn drop_pre_move_struct_test() {
+    pre_post_drop_test! {
+        type_name=PreMoveStructA,
+        constructor(PreMoveStructA)
+        post_constructor(|_arr,a|a)
+        before(240)
+        after()
+    }
+}
+
+#[test]
+#[should_panic]
+fn drop_pre_move_struct_test_failing() {
+    pre_post_drop_test! {
+        type_name=PreMoveStructA,
+        constructor(PreMoveStructA)
+        post_constructor(|_arr,a|a)
+        before(240)
+        after()
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+struct RegularStructA<'a> {
+    cell: &'a RefCell<FixedArray>,
+    pub a: PushOnDrop<'a, u32>,
+    b: PushOnDrop<'a, u32>,
+    pub c: PushOnDrop<'a, u32>,
+    d: PushOnDrop<'a, u32>,
+    pub e: PushOnDrop<'a, u32>,
+    f: PushOnDrop<'a, u32>,
+    pub g: PushOnDrop<'a, u32>,
+}
+
+#[test]
+fn drop_regular_struct_test() {
+    pre_post_drop_test! {
+        type_name=RegularStructA,
+        constructor(RegularStructA)
+        post_constructor(|_arr,a|a)
+        before()
         after()
     }
 }
@@ -165,6 +261,93 @@ fn drop_order_enum() {
         post_method=unwrap,
         before(241)
         after()
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+enum RegularEnum<'a> {
+    Variant {
+        #[struc(not_public)]
+        cell: &'a RefCell<FixedArray>,
+
+        a: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        b: PushOnDrop<'a, u32>,
+
+        c: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        d: PushOnDrop<'a, u32>,
+
+        e: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        f: PushOnDrop<'a, u32>,
+
+        g: PushOnDrop<'a, u32>,
+    },
+}
+
+#[test]
+fn drop_order_regular_enum() {
+    pre_post_drop_test! {
+        type_name=RegularEnum,
+        constructor(RegularEnum::Variant)
+        post_constructor(|_arr,a|a)
+        variant=Variant,
+        post_method=unwrap,
+        before()
+        after()
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+#[struc(pre_move = "drop_pre_move_enum")]
+enum PreMoveEnum<'a> {
+    Variant {
+        #[struc(not_public)]
+        cell: &'a RefCell<FixedArray>,
+
+        a: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        b: PushOnDrop<'a, u32>,
+
+        c: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        d: PushOnDrop<'a, u32>,
+
+        e: PushOnDrop<'a, u32>,
+
+        #[struc(not_public)]
+        f: PushOnDrop<'a, u32>,
+
+        g: PushOnDrop<'a, u32>,
+    },
+}
+
+fn drop_pre_move_enum(this: &mut PreMoveEnum<'_>) {
+    let PreMoveEnum::Variant { ref mut cell, .. } = *this;
+    cell.borrow_mut().push(120);
+}
+
+#[test]
+fn drop_order_pre_move_enum() {
+    pre_post_drop_test! {
+        type_name=PreMoveEnum,
+        constructor(PreMoveEnum::Variant)
+        post_constructor(|_arr,a|a)
+        variant=Variant,
+        post_method=unwrap,
+        before(120)
+        after()
     }
 }
 
@@ -210,6 +393,7 @@ fn drop_order_enum_newtype() {
         post_method=unwrap,
         before(245,240,160)
         after(161)
+        pre_post_drop_fields,
     }
 }
 
@@ -243,7 +427,7 @@ unsafe impl<'a, T> PrePostDropFields for PrePostStructDeleg<'a, T> {
 }
 
 #[test]
-fn drop_order_derive_delegation() {
+fn drop_order_pre_post_derive_delegation() {
     type Alias<'a> = PrePostStructDeleg<'a, PrePostStructA<'a>>;
 
     pre_post_drop_test! {
@@ -259,6 +443,76 @@ fn drop_order_derive_delegation() {
         })
         before(242,240,250,150,151)
         after(251)
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+#[struc(pre_move = "drop_pre_move_struct_deleg")]
+struct PreMoveStructDeleg<'a, T> {
+    cell: &'a RefCell<FixedArray>,
+    #[struc(delegate_to)]
+    value: T,
+    f0: PushOnDrop<'a, u32>,
+    f1: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_move_struct_deleg<T>(this: &mut PreMoveStructDeleg<'_, T>) {
+    this.cell.borrow_mut().push(242);
+}
+
+#[test]
+fn drop_order_pre_move_derive_delegation() {
+    type Alias<'a> = PreMoveStructDeleg<'a, PrePostStructA<'a>>;
+
+    pre_post_drop_test! {
+        type_name=Alias,
+        constructor(PrePostStructA)
+        post_constructor(|cell,value| {
+            PreMoveStructDeleg {
+                cell,
+                value,
+                f0: PushOnDrop::new(0,cell,150),
+                f1: PushOnDrop::new(0,cell,151),
+            }
+        })
+        before(242,240,150,151)
+        after()
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+#[derive(Structural)]
+struct StructDeleg<'a, T> {
+    cell: &'a RefCell<FixedArray>,
+    #[struc(delegate_to)]
+    value: T,
+    f0: PushOnDrop<'a, u32>,
+    f1: PushOnDrop<'a, u32>,
+}
+
+#[test]
+fn drop_order_nothing_derive_delegation() {
+    type Alias<'a> = StructDeleg<'a, PrePostStructA<'a>>;
+
+    pre_post_drop_test! {
+        type_name=Alias,
+        constructor(PrePostStructA)
+        post_constructor(|cell,value| {
+            StructDeleg {
+                cell,
+                value,
+                f0: PushOnDrop::new(0,cell,150),
+                f1: PushOnDrop::new(0,cell,151),
+            }
+        })
+        before(240,150,151)
+        after()
+        pre_post_drop_fields,
     }
 }
 
@@ -311,7 +565,7 @@ unsafe impl<'a, T> PrePostDropFields for PrePostStructDelegMacro<'a, T> {
 }
 
 #[test]
-fn drop_order_delegation_macro() {
+fn drop_order_pre_post_delegation_macro() {
     type Alias<'a> = PrePostStructDelegMacro<'a, PrePostStructA<'a>>;
 
     pre_post_drop_test! {
@@ -327,5 +581,113 @@ fn drop_order_delegation_macro() {
         })
         before(243,240,100,150,151)
         after(110)
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+struct PreMoveStructDelegMacro<'a, T> {
+    cell: &'a RefCell<FixedArray>,
+    value: T,
+    f0: PushOnDrop<'a, u32>,
+    f1: PushOnDrop<'a, u32>,
+}
+
+fn drop_pre_move_struct_deleg_macro<T>(this: &mut PreMoveStructDelegMacro<'_, T>) {
+    this.cell.borrow_mut().push(243);
+}
+
+unsafe_delegate_structural_with! {
+    // You must write a trailing comma.
+    impl['a,T,] PreMoveStructDelegMacro<'a,T>
+    where[]
+    self_ident=this;
+    specialization_params(Sized);
+    delegating_to_type=T;
+
+    GetField { &this.value }
+
+    GetFieldMut { &mut this.value }
+    as_delegating_raw{ &mut (*this).value as *mut T }
+
+    IntoField{ this.value }
+    move_out_field{ &mut this.value }
+
+    DropFields = {
+        dropped_fields[cell f0 f1]
+        pre_move=drop_pre_move_struct_deleg_macro;
+    }
+}
+
+#[test]
+fn drop_order_pre_move_delegation_macro() {
+    type Alias<'a> = PreMoveStructDelegMacro<'a, PrePostStructA<'a>>;
+
+    pre_post_drop_test! {
+        type_name=Alias,
+        constructor(PrePostStructA)
+        post_constructor(|cell,value| {
+            PreMoveStructDelegMacro {
+                cell,
+                value,
+                f0: PushOnDrop::new(0,cell,150),
+                f1: PushOnDrop::new(0,cell,151),
+            }
+        })
+        before(243,240,150,151)
+        after()
+        pre_post_drop_fields,
+    }
+}
+
+////////////////////////////////////////
+
+struct StructDelegMacro<'a, T> {
+    cell: &'a RefCell<FixedArray>,
+    value: T,
+    f0: PushOnDrop<'a, u32>,
+    f1: PushOnDrop<'a, u32>,
+}
+
+unsafe_delegate_structural_with! {
+    // You must write a trailing comma.
+    impl['a,T,] StructDelegMacro<'a,T>
+    where[]
+    self_ident=this;
+    specialization_params(Sized);
+    delegating_to_type=T;
+
+    GetField { &this.value }
+
+    GetFieldMut { &mut this.value }
+    as_delegating_raw{ &mut (*this).value as *mut T }
+
+    IntoField{ this.value }
+    move_out_field{ &mut this.value }
+
+    DropFields = {
+        dropped_fields[cell f0 f1]
+    }
+}
+
+#[test]
+fn drop_order_nothing_delegation_macro() {
+    type Alias<'a> = StructDelegMacro<'a, PrePostStructA<'a>>;
+
+    pre_post_drop_test! {
+        type_name=Alias,
+        constructor(PrePostStructA)
+        post_constructor(|cell,value| {
+            StructDelegMacro {
+                cell,
+                value,
+                f0: PushOnDrop::new(0,cell,150),
+                f1: PushOnDrop::new(0,cell,151),
+            }
+        })
+        before(240,150,151)
+        after()
+        pre_post_drop_fields,
     }
 }
