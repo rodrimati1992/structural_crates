@@ -19,7 +19,7 @@ use std_::{
     ops::{Index, IndexMut},
 };
 
-/// A wrapper-type alternative to [`StructuralExt`],
+/// A wrapper type alternative to [`StructuralExt`],
 /// with methods for accessing fields in structural types.
 ///
 /// # Example: Struct
@@ -1043,13 +1043,6 @@ where
     }
 }
 
-impl<T> ConstDefault for StrucWrapper<T>
-where
-    T: ConstDefault,
-{
-    const DEFAULT: Self = StrucWrapper(T::DEFAULT);
-}
-
 /// Gets a mutable reference to a non-nested struct field
 ///
 /// # Example
@@ -1083,6 +1076,13 @@ where
     fn index_mut(&mut self, path: F) -> &mut T::Ty {
         self.0.get_field_mut_(path)
     }
+}
+
+impl<T> ConstDefault for StrucWrapper<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = StrucWrapper(T::DEFAULT);
 }
 
 unsafe_delegate_structural_with! {

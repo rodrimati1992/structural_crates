@@ -689,6 +689,7 @@ pub mod convert;
 pub mod docs;
 pub mod enums;
 pub mod field;
+mod field_cloner;
 #[doc(hidden)]
 pub mod msg;
 pub mod path;
@@ -715,6 +716,7 @@ pub use crate::{
         GetFieldType4, GetVariantField, GetVariantFieldMut, GetVariantFieldType, IntoField,
         IntoFieldMut, IntoVariantField, IntoVariantFieldMut,
     },
+    field_cloner::FieldCloner,
     structural_ext::StructuralExt,
     structural_trait::Structural,
     wrapper::StrucWrapper,
