@@ -136,9 +136,37 @@ pub struct FieldCloner<T>(pub T);
 impl<T> FieldCloner<T> {
     /// Turns a `&FieldCloner<T>` into a `FieldCloner<&T>`.
     ///
-    /// # Example
+    /// # Struct Example
     ///
+    /// ```rust
+    /// use structural::{FieldCloner, StructuralExt, fp};
+    /// use structural::for_examples::{FooBarRef, FooBarMove_SI};
     ///
+    /// let this = FieldCloner(FooBarRef{foo: 100, bar: "baz"});
+    ///
+    /// assert_eq!( into_foo(this.as_ref()), 100 );
+    ///
+    /// fn into_foo<T, U>(this: impl FooBarMove_SI<T, U>)-> T {
+    ///     this.into_field(fp!(foo))
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```rust
+    /// use structural::{FieldCloner, StructuralExt, fp};
+    /// use structural::for_examples::{EnumRef, EnumMove_SI};
+    ///
+    /// let this = FieldCloner(EnumRef::Left{left: 10});
+    ///
+    /// assert_eq!( into_left(this.as_ref()), Some(10) );
+    ///
+    /// fn into_left(this: impl EnumMove_SI<u32, bool>)-> Option<u32> {
+    ///     this.into_field(fp!(::Left.left))
+    /// }
+    ///
+    /// ```
     ///
     #[inline(always)]
     pub fn as_ref(&self) -> FieldCloner<&T> {
@@ -146,12 +174,47 @@ impl<T> FieldCloner<T> {
     }
 
     /// Turns a `&mut FieldCloner<T>` into a `FieldCloner<&mut T>`.
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{FieldCloner, StructuralExt, fp};
+    /// use structural::for_examples::{FooBarRef, FooBarMove_SI};
+    ///
+    /// let this = FieldCloner(FooBarRef{foo: 100, bar: "baz"});
+    ///
+    /// assert_eq!( into_bar(this.as_ref()), "baz" );
+    ///
+    /// fn into_bar<T, U>(this: impl FooBarMove_SI<T, U>)-> U {
+    ///     this.into_field(fp!(bar))
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```rust
+    /// use structural::{FieldCloner, StructuralExt, fp};
+    /// use structural::for_examples::{EnumRef, EnumMove_SI};
+    ///
+    /// let mut this = FieldCloner(EnumRef::Right{right: false});
+    ///
+    /// assert_eq!( into_right(this.as_mut()), Some(false) );
+    ///
+    /// fn into_right(this: impl EnumMove_SI<u32, bool>)-> Option<bool> {
+    ///     this.into_field(fp!(::Right.right))
+    /// }
+    ///
+    /// ```
+    ///
     #[inline(always)]
     pub fn as_mut(&mut self) -> FieldCloner<&mut T> {
         FieldCloner(&mut self.0)
     }
 
     /// Transforms the wrapped value with the `func` function.
+    ///
+    ///
     #[inline(always)]
     pub fn map<F, U>(self, f: F) -> FieldCloner<U>
     where

@@ -1,12 +1,15 @@
+use core_extensions::SelfOps;
+
 use structural::{
+    for_examples::NewtypeEnum,
     fp,
-    structural_aliases::{Array5, Array5Variant},
-    Structural, StructuralExt, TS,
+    structural_aliases::{Array4, Array5, Array5Variant},
+    FieldCloner, StructuralExt, TS,
 };
 
 use structural::test_utils::OrOnDrop;
 
-use std::cell::Cell;
+use std::{cell::Cell, sync::Arc};
 
 mod drop_order;
 
@@ -273,9 +276,73 @@ fn box_into_fields() {
     }
 }
 
-#[derive(Structural)]
-#[struc(no_trait)]
-enum NewtypeEnum<T> {
-    #[struc(newtype)]
-    Some(T),
+fn field_cloner_into_fields<This>(
+    check_counts: impl Fn([usize; 4]),
+    constructor: impl Fn() -> FieldCloner<This>,
+) where
+    This: Array4<Arc<u32>>,
+{
+    let check_counts = &check_counts;
+    let constructor =
+        move || -> FieldCloner<This> { constructor().observe(|_| check_counts([2; 4])) };
+
+    check_counts([1; 4]);
+    {
+        let this = constructor();
+        let into = this.as_ref().into_fields(fp!(0, 1, 2, 3));
+        check_counts([3; 4]);
+        assert_eq!(into, (Arc::new(3), Arc::new(5), Arc::new(8), Arc::new(13)));
+    }
+    {
+        let this = constructor();
+        let into = this.as_ref().into_fields(fp!(1, 3));
+        check_counts([2, 3, 2, 3]);
+        assert_eq!(into, (Arc::new(5), Arc::new(13)));
+    }
+    {
+        let this = constructor();
+        let into = this.as_ref().into_fields(fp!(0, 2));
+        check_counts([3, 2, 3, 2]);
+        assert_eq!(into, (Arc::new(3), Arc::new(8)));
+    }
+
+    {
+        let this = constructor();
+        let into = this.into_fields(fp!(0, 1, 2, 3));
+        check_counts([2; 4]);
+        assert_eq!(into, (Arc::new(3), Arc::new(5), Arc::new(8), Arc::new(13)));
+    }
+    {
+        let this = constructor();
+        let into = this.into_fields(fp!(1, 3));
+        check_counts([1, 2, 1, 2]);
+        assert_eq!(into, (Arc::new(5), Arc::new(13)));
+    }
+    {
+        let this = constructor();
+        let into = this.into_fields(fp!(0, 2));
+        check_counts([2, 1, 2, 1]);
+        assert_eq!(into, (Arc::new(3), Arc::new(8)));
+    }
+    check_counts([1; 4]);
+}
+
+#[test]
+fn field_cloner() {
+    let arcs = [Arc::new(3), Arc::new(5), Arc::new(8), Arc::new(13)];
+
+    let check_counts = |counts: [usize; 4]| {
+        for (arc, count) in arcs.iter().zip(counts.iter().copied()) {
+            assert_eq!(Arc::strong_count(arc), count);
+        }
+    };
+
+    field_cloner_into_fields(check_counts, || FieldCloner(arcs.clone()));
+
+    field_cloner_into_fields(check_counts, || {
+        NewtypeEnum::Some(arcs.clone())
+            .into_field(fp!(::Some))
+            .unwrap()
+            .piped(FieldCloner)
+    });
 }

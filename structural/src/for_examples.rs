@@ -100,6 +100,16 @@ pub struct Delegating<T> {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+#[struc(no_trait)]
+pub enum NewtypeEnum<T> {
+    #[struc(newtype)]
+    Some(T),
+    None,
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 use std_::cmp::Ordering;
 
 #[derive(Structural, Copy, Clone, Debug, PartialEq)]
@@ -389,4 +399,17 @@ pub enum EnumRef<L, R> {
     Both(L, R),
     Left { left: L },
     Right { right: R },
+}
+
+structural_alias! {
+    pub trait FooBarMove_SI<A, B>{
+        move foo: A,
+        move bar: B,
+    }
+
+    pub trait EnumMove_SI<L, R> {
+        move Both(L, R),
+        move Left { left: L },
+        move Right { right: R },
+    }
 }
