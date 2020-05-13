@@ -1,24 +1,11 @@
 use structural::{
-    for_examples::NewtypeEnum, fp, reexports::ConstDefault, structural_alias, FieldCloner,
-    StructuralExt,
+    for_examples::{Array4Mut, Array4Ref, NewtypeEnum},
+    fp,
+    reexports::ConstDefault,
+    FieldCloner, StructuralExt,
 };
 
 use std::{cmp::PartialEq, fmt::Debug};
-
-structural_alias! {
-    trait Array4Ref<T>{
-        ref 0: T,
-        ref 1: T,
-        ref 2: T,
-        ref 3: T,
-    }
-    trait Array4Mut<T>{
-        mut 0: T,
-        mut 1: T,
-        mut 2: T,
-        mut 3: T,
-    }
-}
 
 fn for_access_test_ref<T>(params: [FieldCloner<impl Array4Ref<T>>; 2])
 where
@@ -102,6 +89,8 @@ fn field_cloner_mapping() {
     }
     {
         let this = this.as_ref();
+        assert_eq!(this.cloned(), FieldCloner(param.clone()));
+
         assert_eq!(this, FieldCloner(&param.clone()));
 
         assert_eq!(this.field_(fp!(2)), &8);
@@ -114,6 +103,7 @@ fn field_cloner_mapping() {
     {
         let mut this = this.clone();
         assert_eq!(this.as_mut(), FieldCloner(&mut param.clone()));
+        assert_eq!(this.as_mut().cloned(), FieldCloner(param.clone()));
     }
 }
 

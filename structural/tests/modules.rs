@@ -39,5 +39,6 @@ mod submodules {
     mod std_structural_aliases;
     mod structural_alias;
     mod structural_derive;
+    mod structural_wrapper;
     mod switch;
 }

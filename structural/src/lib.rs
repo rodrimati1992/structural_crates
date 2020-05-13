@@ -728,7 +728,7 @@ pub use crate::{
 pub mod reexports {
     #[doc(no_inline)]
     pub use core_extensions::{
-        collection_traits::{Cloned, IntoArray},
+        collection_traits::{Cloned, ClonedOut, IntoArray},
         const_default, ConstDefault,
     };
 

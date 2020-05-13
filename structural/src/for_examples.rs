@@ -412,4 +412,17 @@ structural_alias! {
         move Left { left: L },
         move Right { right: R },
     }
+
+    pub trait Array4Ref<T>{
+        ref 0: T,
+        ref 1: T,
+        ref 2: T,
+        ref 3: T,
+    }
+    pub trait Array4Mut<T>{
+        mut 0: T,
+        mut 1: T,
+        mut 2: T,
+        mut 3: T,
+    }
 }
