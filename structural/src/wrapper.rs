@@ -983,6 +983,22 @@ impl<T> StrucWrapper<T> {
     }
 }
 
+impl<T: Clone> StrucWrapper<&T> {
+    /// Maps the wrapped reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> StrucWrapper<T> {
+        StrucWrapper((*self.0).clone())
+    }
+}
+
+impl<T: Clone> StrucWrapper<&mut T> {
+    /// Maps the wrapped mutable reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> StrucWrapper<T> {
+        StrucWrapper((*self.0).clone())
+    }
+}
+
 impl<'a, T> StrucWrapper<&'a T> {
     /// Turns a `StrucWrapper<&T>` into a `&StrucWrapper<T>`.
     ///

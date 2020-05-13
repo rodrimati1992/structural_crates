@@ -373,3 +373,20 @@ structural_alias! {
         mut move <D>,
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Structural, Debug, Copy, Clone, PartialEq)]
+#[struc(access = "ref")]
+pub struct FooBarRef<A, B> {
+    pub foo: A,
+    pub bar: B,
+}
+
+#[derive(Structural, Copy, Clone, Debug, PartialEq)]
+#[struc(access = "ref")]
+pub enum EnumRef<L, R> {
+    Both(L, R),
+    Left { left: L },
+    Right { right: R },
+}

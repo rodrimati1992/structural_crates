@@ -13,7 +13,7 @@ use core_extensions::ConstDefault;
 /// (requiring `IntoField`/`IntoVariantField`),
 /// by cloning those fields.
 ///
-/// # Example
+/// # Struct Example
 ///
 /// ```rust
 /// use structural::{FieldCloner, Structural, StructuralExt, fp, structural_alias};
@@ -54,7 +54,7 @@ use core_extensions::ConstDefault;
 /// }
 ///
 /// structural::structural_alias!{
-///     // The same fields as TheStruct, with shared and by-value access to the fields.
+///     // The same fields as `TheStruct`, with shared and by-value access to the fields.
 ///     //
 ///     // This trait isn't implemented by `TheStruct` because it only
 ///     // provides shared access to the fields.
@@ -64,12 +64,82 @@ use core_extensions::ConstDefault;
 ///     }
 /// }
 /// ```
+///
+/// # Enum Example
+///
+#[cfg_attr(feature = "alloc", doc = "```rust")]
+#[cfg_attr(not(feature = "alloc"), doc = "```ignore")]
+/// use structural::{FieldCloner, Structural, StructuralExt, fp, structural_alias};
+///
+/// # fn main(){
+///
+/// {
+///     let expected = Some((vec!["foo","bar"], [0, 1, 2]));
+///    
+///     let this = TheEnum::Both(vec!["foo","bar"], [0, 1, 2]);
+///    
+///     // This doesn't compile,because `TheEnum` only provides shared access to the fields,
+///     // implementing `GetField` to access both the `foo` and `bar` fields.
+///     //
+///     // assert_eq!( into_both(Box::new(this)), expected.clone() );
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(this.clone()))), expected.clone() );
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(&this))), expected.clone() );
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(&&&&&this))), expected.clone() );
+/// }
+/// {
+///     let this = TheEnum::Left{left: vec!["foo","bar"]};
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(this.clone()))), None );
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(&this))), None );
+///    
+///     assert_eq!( into_both(Box::new(FieldCloner(&&&&&this))), None );
+/// }
+///
+/// # }
+///
+/// fn into_both<'a,T>(
+///     this: Box<dyn TypeMove<Vec<T>, [u32;3]> + 'a>
+/// )-> Option<(Vec<T>, [u32;3])> {
+///     this.into_fields(fp!(::Both=>0,1))
+/// }
+///
+/// #[derive(Structural, Clone)]
+/// // Makes this enum only implement `GetVariantField` for the fields,
+/// // providing shared access to them.
+/// #[struc(access="ref")]
+/// pub enum TheEnum<L, R> {
+///     Both(L, R),
+///     Left{left: L},
+///     Right{right: R},
+/// }
+///
+/// structural::structural_alias!{
+///     // The same fields as `TheEnum`, with shared and by-value access to the fields.
+///     //
+///     // This trait isn't implemented by `TheEnum` because it only
+///     // provides shared access to the fields.
+///     trait TypeMove<L, R>{
+///         move Both(L, R),
+///         move Left{left: L},
+///         move Right{right: R},
+///     }
+/// }
+/// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct FieldCloner<T>(pub T);
 
 impl<T> FieldCloner<T> {
     /// Turns a `&FieldCloner<T>` into a `FieldCloner<&T>`.
+    ///
+    /// # Example
+    ///
+    ///
+    ///
     #[inline(always)]
     pub fn as_ref(&self) -> FieldCloner<&T> {
         FieldCloner(&self.0)
@@ -97,6 +167,22 @@ impl<T> FieldCloner<T> {
         F: FnOnce(Self) -> U,
     {
         FieldCloner(f(self))
+    }
+}
+
+impl<T: Clone> FieldCloner<&T> {
+    /// Maps the wrapped reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> FieldCloner<T> {
+        FieldCloner((*self.0).clone())
+    }
+}
+
+impl<T: Clone> FieldCloner<&mut T> {
+    /// Maps the wrapped mutable reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> FieldCloner<T> {
+        FieldCloner((*self.0).clone())
     }
 }
 
