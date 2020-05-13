@@ -310,7 +310,7 @@ unsafe impl<T> DropFields for FieldCloner<T> {
     #[inline(always)]
     unsafe fn drop_fields(&mut self, _: MovedOutFields) {
         // No field was moved out, so we can just drop Self.
-        std::ptr::drop_in_place(self);
+        std_::ptr::drop_in_place(self);
     }
 }
 

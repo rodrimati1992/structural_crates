@@ -19,6 +19,10 @@ implement the structural conversion traits more conveniently.
 `StrucWrapper::into_struc`,and `StrucWrapper::try_into_struc` methods,
 which delegate to the structural conversion traits.
 
+- Defined the `FieldCloner` wrapper type,
+to allow types with real-only access to fields to provide by-value access to those fields,
+by cloning them.
+
 - Removed the accessor methods that take a `Box<Self>` parameter.
 
 - Made `IntoField` unsafe to implement,to reqqire that the `move_out_field_` method doesn't
