@@ -1,4 +1,6 @@
-use structural::{field_path_aliases, fp, make_struct, StructuralExt, FP};
+use structural::{
+    field_path_aliases, fp, make_struct, structural_aliases::Array2, StructuralExt, FP,
+};
 
 #[cfg(feature = "alloc")]
 use structural::pmr::Box;
@@ -9,26 +11,56 @@ use core_extensions::{SelfOps, Void};
 #[cfg(feature = "alloc")]
 #[test]
 fn boxed_fields() {
-    let mut f = Box::new((0, 1, Box::new((20, 21)), 3));
-    let (f_0, f_1, f_2_0, f_2_1, f_3) = f.fields_mut(fp!(0, 1, 2.0, 2.1, 3));
-
-    *f_0 = 0;
-    *f_1 = 0;
-    *f_2_0 = 0;
-    *f_2_1 = 0;
-    *f_3 = 0;
+    let erased_a: Box<dyn Array2<u32>> = Box::new((21, 22));
+    let erased_b: Box<dyn Array2<u32>> = Box::new((21, 22));
+    let mut f = Box::new((0, 1, Box::new((20, erased_a)), erased_b));
+    let (f_0, f_1, f_2_0, f_2_1_0, f_2_1_1, f_3_0, f_3_1) =
+        f.fields_mut(fp!(0, 1, 2.0, 2.1.0, 2.1.1, 3.0, 3.1));
 
     *f_0 = 5;
     *f_1 = 6;
     *f_2_0 = 7;
-    *f_2_1 = 8;
-    *f_3 = 9;
+    *f_2_1_0 = 80;
+    *f_2_1_1 = 81;
+    *f_3_0 = 90;
+    *f_3_1 = 91;
+
+    assert_eq!(*f_2_1_0, 80);
+    assert_eq!(*f_2_1_1, 81);
+    assert_eq!(*f_3_0, 90);
+    assert_eq!(*f_3_1, 91);
+    assert_eq!(f.0, 5);
+    assert_eq!(f.1, 6);
+    assert_eq!((f.2).0, 7);
+}
+
+#[test]
+fn multi_nested_mut_refs() {
+    let a = &mut (21, 22);
+    let b = &mut (21, 22);
+    let erased_a: &mut dyn Array2<u32> = &mut *a;
+    let erased_b: &mut dyn Array2<u32> = &mut *b;
+    let mut valuea = (20, erased_a);
+    let mut f = &mut ((0, 1, &mut valuea, erased_b));
+
+    let (f_0, f_1, f_2_0, f_2_1_0, f_2_1_1, f_3_0, f_3_1) =
+        f.fields_mut(fp!(0, 1, 2.0, 2.1.0, 2.1.1, 3.0, 3.1));
+
+    *f_0 = 5;
+    *f_1 = 6;
+    *f_2_0 = 7;
+    *f_2_1_0 = 80;
+    *f_2_1_1 = 81;
+    *f_3_0 = 90;
+    *f_3_1 = 91;
 
     assert_eq!(f.0, 5);
     assert_eq!(f.1, 6);
     assert_eq!((f.2).0, 7);
-    assert_eq!((f.2).1, 8);
-    assert_eq!(f.3, 9);
+    assert_eq!(a.0, 80);
+    assert_eq!(a.1, 81);
+    assert_eq!(b.0, 90);
+    assert_eq!(b.1, 91);
 }
 
 fn wrap_single<T>(value: T) -> (T,) {
