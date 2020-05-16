@@ -69,7 +69,7 @@ The changelog is in the "Changelog.md" file.
 
 # Future plans
 
-None for now
+Making the [`FromStructural`] and [`TryFromStructural`] traits derivable.
 
 # no-std support
 
