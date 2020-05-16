@@ -1,5 +1,8 @@
 use crate::{
-    field::{IntoFieldErr, RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl},
+    field::{
+        CombinedErrs, CombinedErrsOut, IntoFieldErr, MovedOutFields, RevFieldErr, RevFieldType,
+        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
+    },
     FieldPathSet, NestedFieldPathSet,
 };
 
@@ -11,13 +14,19 @@ where
     type Ty = T::Ty;
 }
 
+impl<This, T, U> RevFieldErr<This> for FieldPathSet<(T,), U>
+where
+    This: ?Sized,
+    T: RevFieldErr<This>,
+{
+    type Err = T::Err;
+}
+
 impl<'a, This, T, U> RevGetFieldImpl<'a, This> for FieldPathSet<(T,), U>
 where
     This: ?Sized + 'a,
     T: RevGetFieldImpl<'a, This>,
 {
-    type Err = T::Err;
-
     #[inline(always)]
     fn rev_get_field(self, this: &'a This) -> Result<&'a T::Ty, T::Err> {
         self.into_path().rev_get_field(this)
@@ -40,10 +49,10 @@ where
     }
 }
 
-impl<'a, This, T, U> RevIntoFieldImpl<'a, This> for FieldPathSet<(T,), U>
+impl<This, T, U> RevIntoFieldImpl<This> for FieldPathSet<(T,), U>
 where
-    This: ?Sized + 'a,
-    T: RevIntoFieldImpl<'a, This>,
+    This: ?Sized,
+    T: RevIntoFieldImpl<This>,
 {
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<T::Ty, T::Err>
@@ -52,6 +61,24 @@ where
         T::Ty: Sized,
     {
         self.into_path().rev_into_field(this)
+    }
+}
+
+unsafe impl<This, T, U> RevMoveOutFieldImpl<This> for FieldPathSet<(T,), U>
+where
+    This: ?Sized,
+    T: RevMoveOutFieldImpl<This>,
+{
+    #[inline(always)]
+    unsafe fn rev_move_out_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Result<Self::Ty, Self::Err>
+    where
+        T::Ty: Sized,
+    {
+        self.into_path().rev_move_out_field(this, moved)
     }
 }
 
@@ -66,21 +93,31 @@ where
     type Ty = B::Ty;
 }
 
+impl<This, A, B, U> RevFieldErr<This> for NestedFieldPathSet<A, (B,), U>
+where
+    This: ?Sized,
+    A: RevFieldErr<This>,
+    B: RevFieldErr<A::Ty>,
+    (A::Err, B::Err): CombinedErrs,
+{
+    type Err = CombinedErrsOut<(A::Err, B::Err)>;
+}
+
 impl<'a, This, A, B, U> RevGetFieldImpl<'a, This> for NestedFieldPathSet<A, (B,), U>
 where
     This: ?Sized + 'a,
     A: RevGetFieldImpl<'a, This>,
     B: RevGetFieldImpl<'a, A::Ty>,
     A::Ty: 'a,
-    A::Err: IntoFieldErr<B::Err>,
+    Self: RevFieldErr<This, Ty = B::Ty>,
+    A::Err: IntoFieldErr<Self::Err>,
+    B::Err: IntoFieldErr<Self::Err>,
 {
-    type Err = B::Err;
-
     #[inline(always)]
-    fn rev_get_field(self, this: &'a This) -> Result<&'a B::Ty, B::Err> {
+    fn rev_get_field(self, this: &'a This) -> Result<&'a B::Ty, Self::Err> {
         let (nested, set) = self.into_inner();
         let x = try_fe!(nested.rev_get_field(this));
-        set.into_path().rev_get_field(x)
+        map_fe!(set.into_path().rev_get_field(x))
     }
 }
 
@@ -90,39 +127,43 @@ where
     A: RevGetFieldMutImpl<'a, This>,
     B: RevGetFieldMutImpl<'a, A::Ty>,
     A::Ty: 'a,
-    A::Err: IntoFieldErr<B::Err>,
+    Self: RevFieldErr<This, Ty = B::Ty>,
+    A::Err: IntoFieldErr<Self::Err>,
+    B::Err: IntoFieldErr<Self::Err>,
 {
     #[inline(always)]
-    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut B::Ty, B::Err> {
+    fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut B::Ty, Self::Err> {
         let (nested, set) = self.into_inner();
         let x = try_fe!(nested.rev_get_field_mut(this));
-        set.into_path().rev_get_field_mut(x)
+        map_fe!(set.into_path().rev_get_field_mut(x))
     }
 
     #[inline(always)]
-    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut B::Ty, B::Err> {
+    unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut B::Ty, Self::Err> {
         let (nested, set) = self.into_inner();
         let x = try_fe!(nested.rev_get_field_raw_mut(this));
-        set.into_path().rev_get_field_raw_mut(x)
+        map_fe!(set.into_path().rev_get_field_raw_mut(x))
     }
 }
 
-impl<'a, This, A, B, U> RevIntoFieldImpl<'a, This> for NestedFieldPathSet<A, (B,), U>
+impl<This, A, B, U> RevIntoFieldImpl<This> for NestedFieldPathSet<A, (B,), U>
 where
-    This: ?Sized + 'a,
-    A: RevIntoFieldImpl<'a, This>,
-    B: RevIntoFieldImpl<'a, A::Ty>,
-    A::Ty: 'a + Sized,
-    A::Err: IntoFieldErr<B::Err>,
+    This: ?Sized,
+    A: RevIntoFieldImpl<This>,
+    B: RevIntoFieldImpl<A::Ty>,
+    A::Ty: Sized,
+    Self: RevFieldErr<This, Ty = B::Ty>,
+    A::Err: IntoFieldErr<Self::Err>,
+    B::Err: IntoFieldErr<Self::Err>,
 {
     #[inline(always)]
-    fn rev_into_field(self, this: This) -> Result<B::Ty, B::Err>
+    fn rev_into_field(self, this: This) -> Result<B::Ty, Self::Err>
     where
         This: Sized,
         B::Ty: Sized,
     {
         let (nested, set) = self.into_inner();
         let x = try_fe!(nested.rev_into_field(this));
-        set.into_path().rev_into_field(x)
+        map_fe!(set.into_path().rev_into_field(x))
     }
 }

@@ -27,14 +27,14 @@ where
     let bytes = string.as_ref().bytes().map(move |b| {
         buffer.clear();
         let c = b as char;
-        let _ = if (c.is_alphanumeric() || c == '_') && b < 128 {
+        if (c.is_alphanumeric() || c == '_') && b < 128 {
             buffer.push_str("__");
             buffer.push(c);
         } else {
             buffer.push_str("__0x");
             write_hex(b / 16, &mut buffer);
             write_hex(b % 16, &mut buffer);
-        };
+        }
         syn::Ident::new(&buffer, Span::call_site())
     });
     quote_spanned!(span=>
@@ -45,7 +45,7 @@ where
 #[inline]
 #[allow(dead_code)]
 fn write_hex(mut n: u8, buffer: &mut String) {
-    n = n & 0xF;
+    n &= 0xF;
     const HEX_OFFSET: u8 = b'A' - 10;
     let offset = if n < 10 { b'0' } else { HEX_OFFSET };
     buffer.push((n + offset) as char);

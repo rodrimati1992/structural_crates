@@ -37,7 +37,7 @@ These examples demonstrates all the syntax of the `switch` macro.
 [For a detailed description of the syntax look here](#syntax)
 
 This demonstrates variant access modes:
-```
+```rust
 use structural::{StructuralExt,Structural,fp,switch};
 
 #[derive(Debug,Copy,Clone,Structural)]
@@ -86,14 +86,14 @@ where
             1
         }
 
-        // `move` here means that the enum is taken by value,
-        // wrapped in a `VariantProxy<T,TS!(Baz)>`,
-        move Baz=>{
-            assert_eq!(this.into_field(fp!(c)) ,"hello");
+        // `move` here means that the variant fields are taken by value,
+        move Baz{c}=>{
+            assert_eq!(c ,"hello");
             2
         }
 
-        // The enum is taken by value into the branch(wrapped in a `VariantProxy<T,TS!(Bam)>`),
+        // The enum is taken by value into the branch
+        // (wrapped in a `VariantProxy<EnumType,TS!(Bam)>`),
         // because the default access mode in this switch is `move`,
         // since none was specified in the switch header.
         Bam=>{
@@ -175,14 +175,14 @@ let text="99";
 // the `VariantProxy<Enum,TS!(VariantName)>` inside the switch branch,
 // to access any field of the matched variant(especially those that weren't destructured).
 //
-// If it was just the expression,then the `VariantProxy` would be inaccessible.
+// If an expression is passed(and it's not just a variable),
+// then the `VariantProxy` would be inaccessible.
 let number = switch!{ other = this;
     // `if`s can only be used as guards on the `_` pattern,
     // never as a guard when matching on a variant
     if 2+2!=4 => unreachable!("2+2 is 4, silly!"),
 
-    Baz => other
-        .into_field(fp!(c))
+    Baz{c} => c
         .parse::<u32>()
         .unwrap(),  // The `,` is required here
 
@@ -805,15 +805,6 @@ macro_rules! switch_inn{
     };
     (@access_f $vars:tt () )=>{};
     (@access_f $vars:tt {} )=>{};
-    (@access_f [ move $variant:ident $proxy_:tt ] $fields:tt )=>{
-        compile_error!{concat!(
-            "
-Cannot move fields from enum variants in switch branches yet.
-You can destructure a variant into references or mutable references by prefixing the variant name (or the matched expression) with `ref` or `ref mut` respectively,
-ie: `ref Foo{x,&y}` // Gets a reference to x, copies the y field.
-ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
-")}
-    };
     (@access_f $vars:tt ($($patterns:tt)*) )=>{
         $crate::switch_inn!{@access_f_1 $vars [] tuple ($($patterns)*) }
     };
@@ -975,6 +966,9 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
     (@call_field_method refmut $variant:ident ($ass:ident $proxy_:ident $self_:tt) )=>{
         $proxy_.fields_mut(_switch_fp_::f::$variant)
     };
+    (@call_field_method move $variant:ident ($ass:ident $proxy_:ident $self_:tt) )=>{
+        $proxy_.into_fields(_switch_fp_::f::$variant)
+    };
     ////////////////////////////////////////////////
     (@skip_expr $top:tt $vars:tt $expr:expr $(,$($rem:tt)*)? )=>{
         $crate::switch_inn!{ @branch $top $vars $($($rem)*)? }
@@ -984,9 +978,11 @@ ie: `switch!{ ref this; Foo{x,&y}=>(x,y) }` // equivalent to the other example.
     };
     ////////////////////////////////////////////////
     (@get_expr $expr:block $($rem:tt)*)=>{
+        #[allow(unused_braces)]
         $expr
     };
     (@get_expr $expr:expr $(, $($rem:tt)*)? )=>{
+        #[allow(unused_braces)]
         $expr
     };
     ////////////////////////////////////////////////

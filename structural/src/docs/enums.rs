@@ -4,7 +4,7 @@
 Structural enum traits can be both statically and dynamically dispatched.
 
 Every instance of `<DerivingType>` in the documentation is the name of the enum.
-If have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
+If you have a `Kind` enum,`<DerivingType>_Foo` means `Kind_Foo`.
 
 # Generated code
 
@@ -23,6 +23,9 @@ to query whether the enum is a particular variant with `.ìs_variant(fp!(Foo))`.
 
 - [`VariantCount`] impl for the enum,with the amount of variants in it.<br>
 This isn't generated if the `#[non_exhaustive]` attribute was used on the enum.<br>
+
+- Implementation of the [`DropFields`] trait,
+if the type has by-value accessors (implements [`IntoVariantField`]) for any field.
 
 - Enums with the `#[struc(variant_count_alias)]` attribute
 have the `<DerivingType>_VC` type alias,
@@ -66,7 +69,7 @@ struct Bar{
 
 #[derive(Structural)]
 enum Foo{
-    // The `Bar_VSI` trait was generated for teh `Bar` struct by the `Structural` derive.
+    // The `Bar_VSI` trait was generated for thh `Bar` struct by the `Structural` derive.
     #[struc(newtype(bounds="Bar_VSI<@variant>"))]
     Bar(Bar)
 }
@@ -107,6 +110,34 @@ Every variant also gets a [`IsVariant`] bound.
 [`GetVariantField`]: ../../field/trait.GetVariantField.html
 [`GetVariantFieldMut`]: ../../field/trait.GetVariantFieldMut.html
 [`IntoVariantField`]: ../../field/trait.IntoVariantField.html
+[`DropFields`]: ../../field/ownership/trait.DropFields.html
+
+# Pre move
+
+If you pass a function to the `#[struc(pre_move="....")]` attribute
+that changes what the current active variant is,
+then converting the enum into multiple fields by value will abort the process.
+
+```should_panic
+use structural::{fp,Structural,StructuralExt};
+
+let this=Foo::Bar(3,4);
+let _=this.into_fields(fp!(::Bar=>0,1));
+
+#[derive(Structural)]
+#[struc(pre_move="Foo::pre_move_")]
+pub enum Foo{
+    Bar(u8,u8),
+    Baz(u8,u8),
+}
+
+impl Foo{
+    pub fn pre_move_(&mut self){
+        *self=Foo::Baz(0,1);
+    }
+}
+```
+
 
 # Examples
 
@@ -149,6 +180,8 @@ where
     assert_eq!( foo.fields_mut(fp!(::Foo.0, ::Foo.1)), (Some(&mut 3),Some(&mut false)) );
     assert_eq!( foo.fields_mut(fp!(::Foo=>0,1)), Some((&mut 3,&mut false)) );
 
+    assert_eq!( foo.clone().into_fields(fp!(::Foo=>0,1)), Some((3, false)) );
+
     //////////////////////////////////////////////
     ////    Demonstrating variant proxies
 
@@ -171,12 +204,14 @@ where
 
         assert_eq!( proxy.fields(fp!(=>0,1)), (&3,&false) );
         assert_eq!( proxy.fields_mut(fp!(=>0,1)), (&mut 3,&mut false) );
+        assert_eq!( proxy.into_fields(fp!(0,1)), (3, false) );
     }
 
     //////////////////////////////////////////////
     ////    Demonstrating the `switch` macro
 
     switch!{foo;
+        // Destructuring the Foo variant into references to its fields
         ref Foo(f0,f1)=>{
             assert_eq!( f0, &3 );
             assert_eq!( f1, &false );
@@ -189,6 +224,7 @@ where
         _=>{}
     }
     switch!{foo;
+        // Destructuring the Foo variant into mutable references to its fields
         ref mut Foo(f0,f1)=>{
             assert_eq!( f0, &mut 3 );
             assert_eq!( f1, &mut false );
@@ -200,13 +236,11 @@ where
         }
         _=>{}
     }
-    switch!{variant = foo.clone();
-        // Can't destructure an enum into multiple fields by value yet.
-        Foo=>{
-            let _: VariantProxy<This,TS!(Foo)>= variant;
-
-            assert_eq!( variant.clone().into_field(fp!(0)), 3 );
-            assert_eq!( variant.clone().into_field(fp!(1)), false );
+    switch!{foo;
+        // Destructuring the Foo variant into its fields by value
+        Foo(f0, f1)=>{
+            assert_eq!( f0, 3 );
+            assert_eq!( f1, false );
         }
         _=>{}
     }
@@ -236,7 +270,7 @@ and the difference between the `*_SI`(nonexhaustive enum) and `*_ESI`(exhaustive
 ```rust
 
 use structural::{
-    field::Tuple2Variant,
+    structural_aliases::Tuple2Variant,
     StructuralExt,Structural,
     fp,switch,
 };
@@ -273,6 +307,8 @@ fn main(){
 }
 
 fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
+    // The `ref` here causes the matched variants to destructure into fields by
+    // reference by default.
     Some(switch!{ref this;
         Bar=>0,
         Baz{a,b}=>*a as u64 + *b as u64,
@@ -286,11 +322,12 @@ fn sum_fields(this: &dyn Foo_SI)->Option<u64> {
 
 
 fn sum_fields_exhaustive_variants(this: &impl Foo_ESI)->u64 {
-    // `ref` before the name of every single variant
-    // is equivalent to `ref` before the matched expression.
+    // When no access mode (`ref`/`mut`/`move`) is specified before the matched expression
+    // this defaults to destructuring variants by value.
     switch!{this;
         Bar=>0,
         ref Baz{&a,&b}=>a as u64 + b as u64,
+        // The `ref` here causes the matched variants to destructure into fields by reference.
         ref Bam(t0,t1)=>*t0 + *t1,
         // No need for a default branch,since `Foo_ESI` requires the variants
         // to be `Bar`,`Baz`,`Bam`,and no more
@@ -306,7 +343,7 @@ enum Foo{
         b:u32,
     },
     // This attribute allows tuple variants with at least `0:u64` and `1:u64` fields
-    // to be used with the generated `Foo_SI` structural alias.
+    // to implement the generated `Foo_SI` structural alias.
     // ie:`Bam(u64,u64)`,`Bam([u64;8])`,`Bam((u64,u64,String,Vec<u64>))`
     #[struc(newtype(bounds="Tuple2Variant<u64,u64,@variant>"))]
     Bam((u64,u64))
@@ -366,9 +403,6 @@ fn main(){
 
 // `Enum_ESI` was generated for `Enum` by the `Structural` derive macro,
 // aliasing the accessor impls of `Enum`.
-//
-// `Enum_ESI` has supertraits that are a superset of what `with_wrapper_vsi` requires,
-// so `this` can be passed without issues.
 fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
     with_wrapper_vsi(this)
 }
@@ -380,7 +414,7 @@ fn with_enum_si<'a>(this:impl Enum_ESI<'a>){
 // is for a `U32` variant that's structurally equivalent to `Wrapper<'a,u32>`.
 //
 // The `Wrapper_VSI<'a,u64,TS!(U64)>` bound:
-// is for a `u64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
+// is for a `U64` variant that's structurally equivalent to `Wrapper<'a,u64>`.
 //
 // `VariantCount<Count=TS!(2)>`
 // makes this require an enum with only 2 variants
@@ -392,14 +426,14 @@ fn with_wrapper_vsi<'a>(
         Wrapper_VSI<'a,u64,TS!(U64)> +
         VariantCount<Count=TS!(2)>
 ){
-    switch!{ref this;
+    switch!{this;
         U32(field0,field1)=>{
-            assert_eq!(*field0,3);
-            assert_eq!(**field1,5);
+            assert_eq!(field0,3);
+            assert_eq!(*field1,5);
         }
         U64(field0,field1)=>{
-            assert_eq!(*field0,8);
-            assert_eq!(**field1,13);
+            assert_eq!(field0,8);
+            assert_eq!(*field1,13);
         }
     }
 }

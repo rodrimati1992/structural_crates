@@ -1,21 +1,26 @@
+#![allow(non_snake_case)]
+
 use crate::{
-    field::{for_arrays::names, IntoFieldMut, IntoVariantFieldMut},
+    field::{DropFields, IntoField, IntoFieldMut, IntoVariantFieldMut, MovedOutFields},
+    path::{array_paths as names, FieldPathSet, LargePathSet},
     structural_trait::Structural,
+    StructuralExt,
 };
 
 macro_rules! impl_tuple {
     (inner;
-        ($field:tt,$field_ty:ident,$field_param:ty)
+        ($field:tt,$field_ty:ident,$field_index:expr,$field_param:ty)
         ($($tuple_param:ident),* $(,)* )
     )=>{
         _private_impl_getter!{
             unsafe impl[$($tuple_param),*]
-                IntoFieldMut< $field:$field_ty,$field_param >
+                IntoFieldMut< $field:$field_ty,$field_index,$field_param >
             for ($($tuple_param,)*)
         }
     };
     (
         $the_trait:ident,
+        $move_trait:ident,
         $variant_trait:ident,
         [
             $( ($field:tt,$field_ty:ident,$field_param:ident) ),*
@@ -25,6 +30,7 @@ macro_rules! impl_tuple {
         impl<$($field_ty),*> Structural for $tuple_ty {}
 
         /// A structural alias for a tuple of the size.
+        /// With shared,mutable,and by value access to the fields.
         pub trait $the_trait<$($field_ty),*>:
             $(
                 IntoFieldMut<names::$field_param,Ty=$field_ty>+
@@ -39,6 +45,52 @@ macro_rules! impl_tuple {
                 )*
         {}
 
+        /// A structural alias for a tuple of the size.
+        /// With shared,and by value access to the fields.
+        pub trait $move_trait<$($field_ty),*>:
+            $(
+                IntoField<names::$field_param,Ty=$field_ty>+
+            )*
+        {}
+
+        impl<$($field_ty,)* This> $move_trait<$($field_ty),*> for This
+        where
+            This:
+                $(
+                    IntoField<names::$field_param,Ty=$field_ty>+
+                )*
+        {}
+
+        unsafe impl<$($field_ty,)*> DropFields for $tuple_ty {
+            #[inline(always)]
+            fn pre_move(&mut self){}
+
+            unsafe fn drop_fields(&mut self,moved: MovedOutFields){
+                use $crate::pmr::FieldBit;
+                $({
+                    const BIT: FieldBit = FieldBit::new($field);
+                    if !moved.is_moved_out(BIT) {
+                        std_::ptr::drop_in_place(&mut self.$field)
+                    }
+                })*
+            }
+        }
+
+        z_impl_from_structural!{
+            impl[T, $($field_ty,)* ] FromStructural<T> for $tuple_ty
+            where[ T: $move_trait<$($field_ty),*>, ]
+            {
+                fn from_structural(value){
+                    let path_set=unsafe{
+                        let x=LargePathSet(path_tuple!( $(names::$field_param,)* ));
+                        let x=FieldPathSet::many(x).upgrade_unchecked();
+                        x
+                    };
+                    let field_pat!($($field_ty,)*)=value.into_fields(path_set);
+                    ($($field_ty,)*)
+                }
+            }
+        }
 
         /// A structural alias for a tuple variant of the size,
         /// in which all fields have mutable and by-value accessors.
@@ -62,7 +114,7 @@ macro_rules! impl_tuple {
         $(
             impl_tuple!{
                 inner;
-                ($field,$field_ty,names::$field_param) $tuple_ty
+                ($field, $field_ty, $field, names::$field_param) $tuple_ty
             }
         )*
     }
@@ -79,12 +131,13 @@ fn main(){
         let range=0..x;
         println!(
             "impl_tuple!{{\n\
-                {I4}Tuple{},\n\
-                {I4}Tuple{}Variant,\n\
+                {I4}Tuple{0},\n\
+                {I4}TupleMove{0},\n\
+                {I4}Tuple{0}Variant,\n\
                 {I4}[\n\
-                {I8}{}\n\
+                {I8}{1}\n\
                 {I4}]\n\
-                {I4}({},)\n\
+                {I4}({2},)\n\
             }}",
             x,
             range.clone().map(|x|format!("({0},C{0},I{0})",x)).join(",\n        "),
@@ -99,6 +152,7 @@ fn main(){
 
 impl_tuple! {
     Tuple1,
+    TupleMove1,
     Tuple1Variant,
     [
         (0,C0,I0)
@@ -107,6 +161,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple2,
+    TupleMove2,
     Tuple2Variant,
     [
         (0,C0,I0),
@@ -116,6 +171,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple3,
+    TupleMove3,
     Tuple3Variant,
     [
         (0,C0,I0),
@@ -126,6 +182,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple4,
+    TupleMove4,
     Tuple4Variant,
     [
         (0,C0,I0),
@@ -137,6 +194,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple5,
+    TupleMove5,
     Tuple5Variant,
     [
         (0,C0,I0),
@@ -149,6 +207,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple6,
+    TupleMove6,
     Tuple6Variant,
     [
         (0,C0,I0),
@@ -162,6 +221,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple7,
+    TupleMove7,
     Tuple7Variant,
     [
         (0,C0,I0),
@@ -176,6 +236,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple8,
+    TupleMove8,
     Tuple8Variant,
     [
         (0,C0,I0),
@@ -191,6 +252,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple9,
+    TupleMove9,
     Tuple9Variant,
     [
         (0,C0,I0),
@@ -207,6 +269,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple10,
+    TupleMove10,
     Tuple10Variant,
     [
         (0,C0,I0),
@@ -224,6 +287,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple11,
+    TupleMove11,
     Tuple11Variant,
     [
         (0,C0,I0),
@@ -242,6 +306,7 @@ impl_tuple! {
 }
 impl_tuple! {
     Tuple12,
+    TupleMove12,
     Tuple12Variant,
     [
         (0,C0,I0),
@@ -260,10 +325,18 @@ impl_tuple! {
     (C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,)
 }
 
+z_impl_from_structural! {
+    impl[T] FromStructural<T> for ()
+    where[]
+    {
+        fn from_structural(_from){}
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::redundant_clone)]
 mod tests {
-    use crate::field::for_tuples::{Tuple4, Tuple4Variant};
+    use super::{Tuple4, Tuple4Variant};
     use crate::{fp, GetField, Structural, StructuralExt};
 
     fn get_field_1<T>(val: &T) -> &u64

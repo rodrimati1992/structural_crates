@@ -1,7 +1,8 @@
 use crate::{
     field::{
-        NormalizeFields, RevGetFieldErr as RGFE, RevGetFieldImpl, RevGetFieldMutImpl,
-        RevGetFieldType as RGFT, RevGetMultiFieldImpl, RevGetMultiFieldMutImpl,
+        NormalizeFields, RevFieldErrOut as RGFE, RevGetFieldImpl, RevGetFieldMutImpl,
+        RevGetFieldType as RGFT, RevGetMultiFieldImpl, RevGetMultiFieldMutImpl, RevIntoFieldImpl,
+        RevIntoMultiFieldImpl,
     },
     NestedFieldPath, TStr, VariantField, VariantName,
 };
@@ -13,16 +14,16 @@ macro_rules! delegate_multi_field_traits {
             Self: RevGetFieldImpl<'a, This>,
             This: 'a + ?Sized,
             RGFT<Self,This>:'a,
-            Result<&'a RGFT<Self,This>,RGFE<'a,Self,This>>:
+            Result<&'a RGFT<Self,This>,RGFE<Self,This>>:
                 'a + NormalizeFields,
         {
-            type UnnormFields = (Result<&'a RGFT<Self,This>,RGFE<'a,Self,This>>,);
+            type UnnormFields = (Result<&'a RGFT<Self,This>,RGFE<Self,This>>,);
 
             #[inline(always)]
             fn rev_get_multi_field_impl(
                 self,
                 this: &'a This,
-            ) -> (Result<&'a RGFT<Self,This>,RGFE<'a,Self,This>>,){
+            ) -> (Result<&'a RGFT<Self,This>,RGFE<Self,This>>,){
                 (self.rev_get_field(this),)
             }
         }
@@ -32,17 +33,17 @@ macro_rules! delegate_multi_field_traits {
             Self: RevGetFieldMutImpl<'a, This>,
             This: 'a + ?Sized,
             RGFT<Self,This>:'a,
-            Result<&'a mut RGFT<Self,This>,RGFE<'a,Self,This>>: NormalizeFields,
-            Result<*mut RGFT<Self,This>,RGFE<'a,Self,This>>: NormalizeFields,
+            Result<&'a mut RGFT<Self,This>,RGFE<Self,This>>: NormalizeFields,
+            Result<*mut RGFT<Self,This>,RGFE<Self,This>>: NormalizeFields,
         {
-            type UnnormFieldsMut = (Result<&'a mut RGFT<Self,This>,RGFE<'a,Self,This>>,);
-            type UnnormFieldsRawMut = (Result<*mut RGFT<Self,This>,RGFE<'a,Self,This>>,);
+            type UnnormFieldsMut = (Result<&'a mut RGFT<Self,This>,RGFE<Self,This>>,);
+            type UnnormFieldsRawMut = (Result<*mut RGFT<Self,This>,RGFE<Self,This>>,);
 
             #[inline(always)]
             fn rev_get_multi_field_mut_impl(
                 self,
                 this: &'a mut This,
-            ) -> (Result<&'a mut RGFT<Self,This>,RGFE<'a,Self,This>>,) {
+            ) -> (Result<&'a mut RGFT<Self,This>,RGFE<Self,This>>,) {
                 (self.rev_get_field_mut(this),)
             }
 
@@ -50,9 +51,26 @@ macro_rules! delegate_multi_field_traits {
             unsafe fn rev_get_multi_field_raw_mut_impl(
                 self,
                 this: *mut This,
-            ) -> (Result<*mut RGFT<Self,This>,RGFE<'a,Self,This>>,) {
+            ) -> (Result<*mut RGFT<Self,This>,RGFE<Self,This>>,) {
                 (self.rev_get_field_raw_mut(this),)
             }
+        }
+
+        impl<This, $($impl_params)*> RevIntoMultiFieldImpl<This> for $type
+        where
+            Self: RevIntoFieldImpl<This>,
+            RGFT<Self,This>: Sized,
+            Result<RGFT<Self,This>,RGFE<Self,This>>: NormalizeFields,
+        {
+            type UnnormIntoFields= (Result<RGFT<Self,This>,RGFE<Self,This>>,);
+
+            fn rev_into_multi_field_impl(
+                self,
+                this: This,
+            ) -> (Result<RGFT<Self,This>,RGFE<Self,This>>,) {
+                (self.rev_into_field(this),)
+            }
+
         }
 
     };

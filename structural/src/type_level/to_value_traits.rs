@@ -4,6 +4,7 @@
 
 /// Converts this type-level value to a usize.
 pub trait ToUsize {
+    /// The `usize` that this type represents
     const USIZE: usize;
 }
 
@@ -18,6 +19,7 @@ use self::sealed::Sealed;
 /// Converts this type-level digit to a u8.
 #[doc(hidden)]
 pub trait ToDigit: Sealed {
+    /// The digit that this type represents
     const DIGIT: u8;
 }
 

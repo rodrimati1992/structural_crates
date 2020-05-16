@@ -144,7 +144,9 @@ pub struct TStr<T>(pub(crate) PhantomData<T>);
 ///
 #[derive(Copy, Clone)]
 pub struct VariantField<V, F> {
+    /// The variant this accesses.
     pub variant: V,
+    /// The field this accesses inside the variant.
     pub field: F,
 }
 
@@ -218,6 +220,7 @@ pub struct VariantField<V, F> {
 ///
 #[derive(Default, Copy, Clone)]
 pub struct VariantName<V> {
+    /// The variant this accesses.
     pub name: V,
 }
 
@@ -260,6 +263,7 @@ pub struct VariantName<V> {
 #[repr(transparent)]
 #[derive(Default, Copy, Clone)]
 pub struct NestedFieldPath<T> {
+    /// The list of fields this traverses to access a nested field.
     pub list: T,
 }
 
@@ -276,7 +280,7 @@ pub struct NestedFieldPath<T> {
 /// - [`fp`] macro,when you access multiple fields
 /// (using `=>` constructs a [`NestedFieldPathSet`] instead).
 ///
-/// - The [`one`] or [`many`] constructors.
+/// - The [`one`], [`many`], or [`large`] constructors.
 ///
 /// - The [`NEW`] associated constant,if `T` implements 
 /// `core_extensions::ConstDefault`
@@ -287,31 +291,35 @@ pub struct NestedFieldPath<T> {
 /// If the `U` type parameter is a:
 ///
 /// - [`UniquePaths`]: all the field paths are unique,
-/// and this can be passed to `StructuralExt::fields_mut`.
+/// and this can be passed to `StructuralExt::fields_mut` and `StructuralExt::into_fields`.
 ///
-/// - [`AliasedPaths`]: there might be repeated field paths,
-/// and this cannot be passed to `StructuralExt::fields_mut`,
+/// - [`AliasedPaths`]: there might be repeated field paths.
+/// This cannot be passed to `StructuralExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
+/// This can also not be passed to `StructuralExt::into_fields`,
+/// because a field cannot generally be moved out twice.
 ///
 /// # Drop Types
 ///
 /// To make all the inherent methods in this type `const fn`
 /// this type wraps the `T` inside a `ManuallyDrop`,
 /// which means that `T` won't be dropped inside.
-/// If that is a problem don't construct a FieldPathSet with a `T` that owns some resource.
+/// If that is a problem don't construct a `FieldPathSet` with a `T` that owns some resource.
 ///
 /// # Examples
 /// 
 /// You can look for examples of using this in the multi-field 
 /// [StructuralExt](./trait.StructuralExt.html)
-/// methods, like [`fields`] and [`fields_mut`].
+/// methods, like [`fields`],[`fields_mut`], and [`into_fields`].
 ///
 /// [`fields`]: ./trait.StructuralExt.html#method.fields
 /// [`fields_mut`]: ./trait.StructuralExt.html#method.fields_mut
+/// [`into_fields`]: ./trait.StructuralExt.html#method.into_fields
 /// [`fp`]: ./macro.fp.html
 /// [`NEW`]: #associatedconstant.NEW
 /// [`one`]: #method.one
 /// [`many`]: #method.many
+/// [`large`]: #method.large
 /// [`NestedFieldPathSet`]: ./struct.NestedFieldPathSet.html
 /// [`UniquePaths`]: ./path/struct.UniquePaths.html
 /// [`AliasedPaths`]: ./path/struct.AliasedPaths.html
@@ -336,11 +344,13 @@ pub struct FieldPathSet<T, U> {
 /// If the `U` type parameter is a:
 ///
 /// - [`UniquePaths`]: all the field paths are unique,
-/// and this can be passed to `StructuralExt::fields_mut`.
+/// and this can be passed to `StructuralExt::fields_mut` and `StructuralExt::into_fields`.
 ///
-/// - [`AliasedPaths`]: there might be repeated field paths,
-/// and this cannot be passed to `StructuralExt::fields_mut`,
+/// - [`AliasedPaths`]: there might be repeated field paths.
+/// This cannot be passed to `StructuralExt::fields_mut`,
 /// because it might borrow the same field mutably twice.
+/// This can also not be passed to `StructuralExt::into_fields`,
+/// because a field cannot generally be moved out twice.
 ///
 /// # Construction
 ///
@@ -380,10 +390,11 @@ pub struct FieldPathSet<T, U> {
 /// 
 /// You can look for examples of using this in the multi-field 
 /// [StructuralExt](./trait.StructuralExt.html) 
-/// methods, like [`fields`] and [`fields_mut`] (look for the enum examples).
+/// methods, like [`fields`],[`fields_mut`],and [`into_fields`] (look for the enum examples).
 ///
 /// [`fields`]: ./trait.StructuralExt.html#method.fields
 /// [`fields_mut`]: ./trait.StructuralExt.html#method.fields_mut
+/// [`into_fields`]: ./trait.StructuralExt.html#method.into_fields
 /// [`fp`]: ./macro.fp.html
 /// [`NEW`]: #associatedconstant.NEW
 /// [`NestedFieldPath`]: ./struct.NestedFieldPath.html

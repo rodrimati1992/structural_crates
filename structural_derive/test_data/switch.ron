@@ -1,0 +1,22 @@
+(
+  cases:[
+    (
+      name:"access modifiers:structs",
+      code:r##"
+        A{a #a}
+      "##,
+      subcase: [
+        ( replacements: {"#a":""}, error_count: 0 ),
+        ( replacements: {"#a":", b"}, error_count: 0 ),
+        ( replacements: {"#a":", b: b"}, error_count: 0 ),
+        ( replacements: {"#a":", b: c"}, error_count: 0 ),
+        ( replacements: {"#a":", a"}, error_count: 1, find_all: [str("the same field")] ),
+        ( replacements: {"#a":", a: c"}, error_count: 1, find_all: [str("the same field")] ),
+        ( replacements: {"#a":", b, b"}, error_count: 1, find_all: [str("the same field")] ),
+        ( replacements: {"#a":", b, a"}, error_count: 1, find_all: [str("the same field")] ),
+        ( replacements: {"#a":", b, c, a"}, error_count: 1, find_all: [str("the same field")] ),
+        ( replacements: {"#a":", b, a, c"}, error_count: 1, find_all: [str("the same field")] ),
+      ],
+    ),
+  ]
+)

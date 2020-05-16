@@ -1,9 +1,10 @@
 use crate::{
+    convert::{IntoStructural, TryFromError, TryIntoStructural},
     enums::IsVariant,
     field::{
         GetField, GetFieldMut, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl,
         RevGetFieldMutImpl, RevGetMultiField, RevGetMultiFieldMut, RevGetMultiFieldMutOut,
-        RevGetMultiFieldOut, RevIntoFieldImpl,
+        RevGetMultiFieldOut, RevIntoFieldImpl, RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
 };
@@ -18,14 +19,14 @@ use std_::{
     ops::{Index, IndexMut},
 };
 
-/// A wrapper-type alternative to [`StructuralExt`],
+/// A wrapper type alternative to [`StructuralExt`],
 /// with methods for accessing fields in structural types.
 ///
 /// # Example: Struct
 ///
 /// ```rust
 /// use structural::{StrucWrapper, Structural, fp};
-/// use structural::field::Array3;
+/// use structural::structural_aliases::Array3;
 ///
 /// let mut this=Point{x:3, y:5, z:8};
 /// let mut tuple=(13,21,34);
@@ -134,7 +135,7 @@ impl<T> StrucWrapper<T> {
     ///
     /// ```
     /// use structural::{StrucWrapper, fp};
-    /// use structural::field::Array5;
+    /// use structural::structural_aliases::Array5;
     ///
     /// assertions((0,0,13,0,34));
     /// assertions((0,0,13,0,34,""));
@@ -315,9 +316,9 @@ impl<T> StrucWrapper<T> {
     ///
     /// [`StructuralExt::into_field`]: ./trait.StructuralExt.html#method.into_field
     #[inline(always)]
-    pub fn v<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
+    pub fn v<P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: RevIntoFieldImpl<'a, T>,
+        P: RevIntoFieldImpl<T>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
     {
@@ -442,7 +443,7 @@ impl<T> StrucWrapper<T> {
     ///
     /// ```
     /// use structural::{StrucWrapper, fp};
-    /// use structural::field::Array5;
+    /// use structural::structural_aliases::Array5;
     ///
     /// assertions((0,0,8,0,21));
     /// assertions((0,0,8,0,21,""));
@@ -488,6 +489,128 @@ impl<T> StrucWrapper<T> {
         P: RevGetMultiFieldMut<'a, T>,
     {
         path.rev_get_multi_field_mut(&mut self.0)
+    }
+
+    /// Converts this into multiple fields by value, determined by path.
+    ///
+    /// This function is equivalent to [`StructuralExt::into_fields`],
+    /// which has more complete documentation.
+    ///
+    /// # Valid Paths
+    ///
+    /// As opposed to the other multiple fields accessor methods,
+    /// this method only accepts field paths that refer to
+    /// multiple non-nested fields inside some value (possibly a nested field itself).
+    ///
+    /// For examples of valid and invalid paths to pass as parameter
+    /// [look here](./trait.StructuralExt.html#valid_into_field_paths).
+    ///
+    /// # Example: Struct
+    ///
+    /// ```rust
+    /// use structural::{StrucWrapper, Structural, fp, make_struct};
+    ///
+    /// assert_eq!(
+    ///     into_parts(Bicycle{
+    ///         frame: Frame("wheeee"),
+    ///         wheels: [Wheel("first"), Wheel("second")],
+    ///         handle_bar: HandleBar("hands on me"),
+    ///     }),
+    ///     (Frame("wheeee"), [Wheel("first"), Wheel("second")], HandleBar("hands on me"))
+    /// );
+    ///
+    /// assert_eq!(
+    ///     into_parts(make_struct!{
+    ///         frame: Frame("frame"),
+    ///         wheels: [Wheel("1"), Wheel("4")],
+    ///         handle_bar: HandleBar("9"),
+    ///     }),
+    ///     (Frame("frame"), [Wheel("1"), Wheel("4")], HandleBar("9"))
+    /// );
+    ///
+    /// // The `Bicycle_SI` was generated for the `Bicycle` struct by the `Structural` derive,
+    /// // aliasing it's accessor traits
+    /// fn into_parts(this: impl Bicycle_SI)-> (Frame, [Wheel;2], HandleBar) {
+    ///     let this = StrucWrapper(this);
+    ///
+    ///     this.vals(fp!(frame, wheels, handle_bar))
+    /// }
+    ///
+    /// #[derive(Structural,Debug,Copy,Clone,PartialEq)]
+    /// struct Bicycle{
+    ///     pub frame: Frame,
+    ///     pub wheels: [Wheel;2],
+    ///     pub handle_bar: HandleBar,
+    /// }
+    ///
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct Frame(&'static str);
+    /// #
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct Wheel(&'static str);
+    /// #
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct HandleBar(&'static str);
+    ///
+    /// ```
+    ///
+    /// # Example: Enum
+    ///
+    /// ```rust
+    /// use structural::{StrucWrapper, Structural, TS, fp, make_struct};
+    ///
+    /// let human=Human{name: "bob".into(), gold: 600};
+    /// assert_eq!( enum_into_human(Entities::Human(human.clone())), Some(human.clone()) );
+    ///
+    /// assert_eq!(
+    ///     enum_into_human(MoreEntities::Human{name: "John".into(), gold: 1234}),
+    ///     Some(Human{name: "John".into(), gold: 1234})
+    /// );
+    ///
+    /// // The `Human_VSI` trait was generated for `Human` by the `Structural` derive macro,
+    /// // to access variants with the same fields as Human.
+    /// // The `TS!(Human)` argument makes it require the variant to be `Human`.
+    /// fn enum_into_human(this: impl Human_VSI<TS!(Human)>)-> Option<Human> {
+    ///     let this= StrucWrapper(this);
+    ///     let (name, gold)= this.vals(fp!(::Human=>name,gold))?;
+    ///     Some(Human{name, gold})
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// pub struct Human{
+    ///     pub name: String,
+    ///     pub gold: u64,
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// pub enum Entities {
+    ///     #[struc(newtype(bounds = "Human_VSI<@variant>"))]
+    ///     Human(Human),
+    ///     Wolf,
+    /// }
+    ///
+    /// #[derive(Structural, Clone, Debug, PartialEq)]
+    /// # #[struc(no_trait)]
+    /// pub enum MoreEntities {
+    ///     Human{
+    ///         name: String,
+    ///         gold: u64,
+    ///     },
+    ///     Wolf,
+    ///     Cat,
+    ///     Dog,
+    /// }
+    ///
+    ///
+    /// ```
+    ///
+    /// [`StructuralExt::into_fields`]: ./trait.StructuralExt.html#method.into_fields
+    #[inline(always)]
+    pub fn vals<P>(self, path: P) -> RevIntoMultiFieldOut<P, T>
+    where
+        P: RevIntoMultiField<T>,
+    {
+        path.rev_into_multi_field(self.0)
     }
 
     /// Queries whether an enum is a particular variant.
@@ -548,6 +671,198 @@ impl<T> StrucWrapper<T> {
         T: IsVariant<P>,
     {
         IsVariant::is_variant_(&self.0, _path)
+    }
+
+    /// Converts this into another structural type,using `IntoStructural`.
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     for_examples::{StructFoo, StructBar},
+    ///     FP, IntoField, StrucWrapper, make_struct,
+    /// };
+    ///
+    /// assert_eq!( into_foo(make_struct!{foo: 100}), StructFoo{foo: 100} );
+    /// assert_eq!( into_foo(make_struct!{foo: 200}), StructFoo{foo: 200} );
+    ///
+    /// assert_eq!( into_bar(make_struct!{bar: 3}), StructBar{bar: 3} );
+    /// assert_eq!( into_bar(make_struct!{bar: 5}), StructBar{bar: 5} );
+    ///
+    /// fn into_foo<T>(this: T)->StructFoo<T::Ty>
+    /// where
+    ///     T: IntoField<FP!(foo)>
+    /// {
+    ///     let this=StrucWrapper(this);
+    ///     this.into_struc()
+    /// }
+    ///
+    /// fn into_bar<T>(this: T)->StructBar<T::Ty>
+    /// where
+    ///     T: IntoField<FP!(bar)>
+    /// {
+    ///     let this=StrucWrapper(this);
+    ///     this.into_struc()
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     convert::{EmptyTryFromError, FromStructural, TryFromError, TryFromStructural},
+    ///     for_examples::Enum3,
+    ///     Structural, StrucWrapper, make_struct, switch,
+    /// };
+    ///
+    /// use std::cmp::Ordering;
+    ///
+    /// assert_eq!( into_v(Enum3::Foo(3, 8)), NoPayload::Foo );
+    /// assert_eq!( into_v(Enum3::Bar(Ordering::Less, None)), NoPayload::Bar );
+    /// assert_eq!( into_v(Enum3::Baz{foom: "what"}), NoPayload::Baz );
+    ///
+    /// assert_eq!( into_v(WithPayload::Foo(13)), NoPayload::Foo );
+    /// assert_eq!( into_v(WithPayload::Bar(21)), NoPayload::Bar );
+    /// assert_eq!( into_v(WithPayload::Baz(34)), NoPayload::Baz );
+    ///
+    /// assert_eq!( into_v(NoPayload::Foo), NoPayload::Foo );
+    /// assert_eq!( into_v(NoPayload::Bar), NoPayload::Bar );
+    /// assert_eq!( into_v(NoPayload::Baz), NoPayload::Baz );
+    ///
+    /// // `NoPayload_ESI` was generated by the `Structural` derive macro for `NoPayload`,
+    /// // aliasing its accessor trait impls.
+    /// fn into_v(this: impl NoPayload_ESI)->NoPayload {
+    ///     let this = StrucWrapper(this);
+    ///     this.into_struc()
+    /// }
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum WithPayload<T>{
+    ///     Foo(T),
+    ///     Bar(T),
+    ///     Baz(T),
+    /// }
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum NoPayload{
+    ///     Foo,
+    ///     Bar,
+    ///     Baz,
+    /// }
+    ///
+    /// // This macro allows enums to only implement the `TryFromStructural` trait,
+    /// // delegating the `FromStructural` trait to it.
+    /// structural::z_impl_try_from_structural_for_enum!{
+    ///     impl[F] TryFromStructural<F> for NoPayload
+    ///     where[ F: NoPayload_SI, ]
+    ///     {
+    ///         type Error = EmptyTryFromError;
+    ///
+    ///          fn try_from_structural(this){
+    ///              switch!{this;
+    ///                  Foo => Ok(NoPayload::Foo),
+    ///                  Bar => Ok(NoPayload::Bar),
+    ///                  Baz => Ok(NoPayload::Baz),
+    ///                  _ => Err(TryFromError::with_empty_error(this)),
+    ///              }
+    ///          }
+    ///     }
+    ///     FromStructural
+    ///     where[ F: NoPayload_ESI, ]
+    /// }
+    ///
+    ///
+    /// ```
+    #[inline(always)]
+    pub fn into_struc<U>(self) -> U
+    where
+        T: IntoStructural<U>,
+    {
+        self.0.into_structural()
+    }
+
+    /// Performs a fallible conversion into another structural type using `TryIntoStructural`.
+    ///
+    /// # Enum example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     convert::{EmptyTryFromError, TryFromError},
+    ///     for_examples::ResultLike,
+    ///     Structural, StructuralExt, switch,
+    /// };
+    ///
+    /// assert_eq!(
+    ///     MoreCommand::Open(Door::Green).try_into_struc::<Command>(),
+    ///     Ok(Command::Open(Door::Green)),
+    /// );
+    /// assert_eq!(
+    ///     MoreCommand::Close(Door::Green).try_into_struc::<Command>(),
+    ///     Ok(Command::Close(Door::Green)),
+    /// );
+    ///
+    /// let lock_cmd = MoreCommand::Lock(Door::Green, Key(12345678));
+    /// assert_eq!(
+    ///     lock_cmd.clone().try_into_struc::<Command>(),
+    ///     Err(TryFromError::with_empty_error(lock_cmd)),
+    /// );
+    ///
+    ///
+    /// #[derive(Debug,Clone,Structural,PartialEq)]
+    /// enum Command{
+    ///     Open(Door),
+    ///     Close(Door),
+    /// }
+    ///
+    /// #[derive(Debug,Clone,Structural,PartialEq)]
+    /// enum MoreCommand{
+    ///     Open(Door),
+    ///     Close(Door),
+    ///     Lock(Door, Key),
+    /// }
+    ///
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # enum Door{
+    /// #     Red,
+    /// #     Blue,
+    /// #     Green,
+    /// # }
+    /// #
+    /// # #[derive(Debug,Copy,Clone,PartialEq)]
+    /// # struct Key(u128);
+    ///
+    /// // This macro implements FromStructural in terms of TryFromStructural,
+    /// structural::z_impl_try_from_structural_for_enum!{
+    ///     impl[F] TryFromStructural<F> for Command
+    ///     where[ F: Command_SI, ]
+    ///     {
+    ///         type Error = EmptyTryFromError;
+    ///
+    ///         fn try_from_structural(this){
+    ///             switch! {this;
+    ///                 Open(door) => Ok(Self::Open(door)),
+    ///                 Close(door) => Ok(Self::Close(door)),
+    ///                 _ => Err(TryFromError::with_empty_error(this)),
+    ///             }
+    ///         }
+    ///     }
+    ///
+    ///     // `Command_ESI` was generated by the `Structural` derive for `Command`
+    ///     // aliasing its accessor trait impls,
+    ///     // and requires `F` to only have the `Open`,and `Close` variants.
+    ///     FromStructural
+    ///     where[ F: Command_ESI, ]
+    /// }
+    ///
+    /// ```
+    ///
+    #[inline(always)]
+    pub fn try_into_struc<U>(self) -> Result<U, TryFromError<T, T::Error>>
+    where
+        T: TryIntoStructural<U>,
+    {
+        self.0.try_into_structural()
     }
 }
 
@@ -668,6 +983,22 @@ impl<T> StrucWrapper<T> {
     }
 }
 
+impl<T: Clone> StrucWrapper<&T> {
+    /// Maps the wrapped reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> StrucWrapper<T> {
+        StrucWrapper((*self.0).clone())
+    }
+}
+
+impl<T: Clone> StrucWrapper<&mut T> {
+    /// Maps the wrapped mutable reference into a clone.
+    #[inline(always)]
+    pub fn cloned(self) -> StrucWrapper<T> {
+        StrucWrapper((*self.0).clone())
+    }
+}
+
 impl<'a, T> StrucWrapper<&'a T> {
     /// Turns a `StrucWrapper<&T>` into a `&StrucWrapper<T>`.
     ///
@@ -698,7 +1029,7 @@ impl<'a, T> StrucWrapper<&'a mut T> {
 ///
 /// ```
 /// use structural::{StrucWrapper, fp};
-/// use structural::field::Array4;
+/// use structural::structural_aliases::Array4;
 ///
 /// assertions(["hello","world","foo","bar"]);
 /// assertions(["hello","world","foo","bar","baz"]);
@@ -726,13 +1057,6 @@ where
     fn index(&self, path: F) -> &T::Ty {
         self.0.get_field_(path)
     }
-}
-
-impl<T> ConstDefault for StrucWrapper<T>
-where
-    T: ConstDefault,
-{
-    const DEFAULT: Self = StrucWrapper(T::DEFAULT);
 }
 
 /// Gets a mutable reference to a non-nested struct field
@@ -770,6 +1094,13 @@ where
     }
 }
 
+impl<T> ConstDefault for StrucWrapper<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = StrucWrapper(T::DEFAULT);
+}
+
 unsafe_delegate_structural_with! {
     impl[T,] StrucWrapper<T>
     where[]
@@ -789,5 +1120,14 @@ unsafe_delegate_structural_with! {
 
     IntoField{
         this.0
+    }
+    move_out_field{
+        &mut this.0
+    }
+
+    DropFields = { dropped_fields[] }
+
+    FromStructural {
+        constructor = StrucWrapper;
     }
 }

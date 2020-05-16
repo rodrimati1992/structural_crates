@@ -1,5 +1,116 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
+# 0.4.0
+
+- Changed `Into*Field traits` to support moving out fields.
+
+- Defined `StructuralExt::into_fields` and `StrucWrapper::vals` method,
+to convert a type into multiple fields by value.
+
+- Defined `FromStructural`,`TryFromStructural`,`Intotructural`,and `TryIntotructural` traits
+to convert between structural types.
+
+- Defined `z_impl_from_structural`,and `z_impl_try_from_structural_for_enum` macros to 
+implement the structural conversion traits more conveniently.
+
+- Implemented `*FromStructural` traits for std types that implement accessor traits.
+
+- Defined the `StructuralExt::into_struc`,`StructuralExt::try_into_struc`,
+`StrucWrapper::into_struc`,and `StrucWrapper::try_into_struc` methods,
+which delegate to the structural conversion traits.
+
+- Defined the `FieldCloner` wrapper type,
+to allow types with real-only access to fields to provide by-value access to those fields,
+by cloning them.
+
+- Removed the accessor methods that take a `Box<Self>` parameter.
+
+- Made `IntoField` unsafe to implement,to reqqire that the `move_out_field_` method doesn't
+move out the same field as other impls for the same type
+(the same requirement for `IntoVariantField`).
+
+- Added `ownership` submodule in `structural::field`,
+with traits and types for moving out fields and dropping the type afterwards,
+the most important being:
+
+    - `DropFields`: Methods for dropping the type before and after some fields are moved out.
+
+    - `MovedOutFields`: 64 bit drop flags,storing which fields have been moved out.
+    
+    - `PrePostDropFields`: For use by implementation macros,
+    to define logic that runs after some fields were moved out,
+    before and after the remaining fields are dropped.
+
+- Added `DropFields` as a supertrait of `Into*Field`,
+to drop the type after some fields were been moved out.
+
+- Added `structural::structural_aliases` module with structural aliases for std types,
+moving the array and tuple structural aliases into it.
+
+- Moved `ArrayPath` and `IsPathForArray` to the `structural::path::array_paths` module.
+
+- Added a check that there aren't more than 64 struct/variant fields accessible by value,
+since that's the amount of fields that `MovedOutFields` can track.
+
+- Added the `ShallowFieldPath` marker trait for non-nested field paths (and path sets).
+
+- Added the `RevMoveOutFieldImpl` trait to move out a shallow field,
+`RevIntoMultiField*` to convert a type into multiple fields by value,
+and `RevMoveOutMultiField*` to move out multiple shallow fields.
+
+- Moved out the `Err` associated type out of `RevGetFieldImpl` into the new `RevFieldErr` trait,
+made that a supertrait of all single field `Rev*` traits.
+
+- Removed the lifetime parameter of `RevIntoField*`,and made `RevFieldErr` its only supertrait.
+
+- Defined the `RevIntoFieldRef` and `OptRevIntoFieldRef` trait aliases.
+
+- Added these attributes for the `Structural` derive:
+
+    - `#[struc(pre_post_drop_fields)]`:
+    When the type is converted into its fields by value,
+    this adds calls to the `PrePostDropFields` methods before and after the remaining fields
+    are dropped in `DropFields`.
+
+    - `#[struc(pre_move="foo")]`:
+    Right before type is converted into its fields by value,
+    this adds a call to the `foo` function,acting as the destructor for the type.
+
+- In updating VariantProxy to implement `DropFields`,
+it aborts the process if the enum changes the active variant in its `DropFields::pre_move` impl.
+
+- Added support for accessing from 9 up to 64 fields,
+returning a tuple of (8 element) tuples when 9 or more fields are accessed.
+
+- Defined these items to access over 8 fields:
+
+    - `DerefNested` trait: to dereference tuples of `*mut` into tuples of `&mut`.
+
+    - `LargePathSet` struct: to have separate implementations for 9 up to 64 fields,
+    implemented for `FieldPathSet<LargePathSet<_>,_>`.
+
+    - `field_pat` macro: to destructure tuples of accessed fields of any length,
+    without writing nested tuples over 8 fields.
+    
+    - `path_tuple` macro: usable when constructing a `FieldPathSet<LargePathSet<_>,_>`s manually.
+
+    - `FieldPathSet::large` function: to construct a `FieldPathSet<LargePathSet<_>,_>`,
+
+
+- Fixed `fp!(foo=>bar)` reverse accessor impls.
+
+- Defined the `RunOnDrop` helper type,to run code on Drop.
+
+- Added support in `switch` macro for by-value destructuring of fields.
+
+- Removed the macros to implement the `box_into_*field` methods.
+
+- Removed the `IntoField` impls for:
+    
+    - `RangeInclusive`: since those couldn't be partially moved.
+    
+    - `ManuallyDrop`: since nested field access drops fields.
+
 # 0.3.1
 
 Added generic variant and field names in `structural_alias` macro,

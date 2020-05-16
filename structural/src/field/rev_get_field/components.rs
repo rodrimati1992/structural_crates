@@ -2,8 +2,9 @@ use crate::{
     enums::{EnumExt, IsVariant, VariantProxy},
     field::{
         FailedAccess, FieldType, GetField, GetFieldMut, GetFieldType, GetVariantField,
-        GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField, RevFieldType,
-        RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
+        GetVariantFieldMut, InfallibleAccess, IntoField, IntoVariantField, MovedOutFields,
+        RevFieldErr, RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl,
+        RevMoveOutFieldImpl,
     },
     TStr, VariantField, VariantName,
 };
@@ -33,13 +34,18 @@ where
     type Ty = GetFieldType<This, Self>;
 }
 
+impl<This, T> RevFieldErr<This> for TStr<T>
+where
+    This: ?Sized + FieldType<Self>,
+{
+    type Err = InfallibleAccess;
+}
+
 impl<'a, This, T> RevGetFieldImpl<'a, This> for TStr<T>
 where
     This: ?Sized + 'a + GetField<Self>,
     This::Ty: 'a,
 {
-    type Err = InfallibleAccess;
-
     #[inline(always)]
     fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, InfallibleAccess> {
         Ok(GetField::get_field_(this, self))
@@ -104,17 +110,33 @@ where
     }
 }
 
-impl<'a, This, T> RevIntoFieldImpl<'a, This> for TStr<T>
+impl<This, T> RevIntoFieldImpl<This> for TStr<T>
 where
-    This: ?Sized + 'a + IntoField<Self>,
-    This::Ty: 'a,
+    This: ?Sized + IntoField<Self>,
 {
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<This::Ty, InfallibleAccess>
     where
         This: Sized,
+        Self::Ty: Sized,
     {
         Ok(this.into_field_(self))
+    }
+}
+
+unsafe impl<This, T> RevMoveOutFieldImpl<This> for TStr<T>
+where
+    This: ?Sized + IntoField<Self>,
+{
+    unsafe fn rev_move_out_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Result<Self::Ty, Self::Err>
+    where
+        Self::Ty: Sized,
+    {
+        Ok(this.move_out_field_(self, moved))
     }
 }
 
@@ -129,13 +151,18 @@ where
     type Ty = GetFieldType<This, Self>;
 }
 
+impl<This, _V, _F> RevFieldErr<This> for VariantField<_V, _F>
+where
+    This: ?Sized + FieldType<Self>,
+{
+    type Err = FailedAccess;
+}
+
 impl<'a, This, _V, _F> RevGetFieldImpl<'a, This> for VariantField<_V, _F>
 where
     This: ?Sized + 'a + GetVariantField<_V, _F>,
     This::Ty: 'a,
 {
-    type Err = FailedAccess;
-
     #[inline(always)]
     fn rev_get_field(self, this: &'a This) -> Result<&'a This::Ty, FailedAccess> {
         ok_or_of!(GetVariantField::get_vfield_(this, self.variant, self.field))
@@ -206,10 +233,9 @@ where
     }
 }
 
-impl<'a, This, _V, _F> RevIntoFieldImpl<'a, This> for VariantField<_V, _F>
+impl<This, _V, _F> RevIntoFieldImpl<This> for VariantField<_V, _F>
 where
-    This: ?Sized + 'a + IntoVariantField<_V, _F>,
-    This::Ty: 'a,
+    This: ?Sized + IntoVariantField<_V, _F>,
 {
     #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<This::Ty, FailedAccess>
@@ -217,6 +243,23 @@ where
         This: Sized,
     {
         ok_or_of!(this.into_vfield_(self.variant, self.field))
+    }
+}
+
+unsafe impl<This, _V, _F> RevMoveOutFieldImpl<This> for VariantField<_V, _F>
+where
+    This: ?Sized + IntoVariantField<_V, _F>,
+{
+    #[inline(always)]
+    unsafe fn rev_move_out_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Result<This::Ty, FailedAccess>
+    where
+        This::Ty: Sized,
+    {
+        ok_or_of!(this.move_out_vfield_(self.variant, self.field, moved))
     }
 }
 
@@ -232,13 +275,19 @@ where
     type Ty = VariantProxy<This, TStr<S>>;
 }
 
+impl<This, S> RevFieldErr<This> for VariantName<TStr<S>>
+where
+    This: ?Sized + IsVariant<TStr<S>>,
+    S: 'static,
+{
+    type Err = FailedAccess;
+}
+
 impl<'a, This, S> RevGetFieldImpl<'a, This> for VariantName<TStr<S>>
 where
     This: ?Sized + 'a + IsVariant<TStr<S>>,
     S: 'static,
 {
-    type Err = FailedAccess;
-
     #[inline(always)]
     fn rev_get_field(
         self,
@@ -270,9 +319,9 @@ where
     }
 }
 
-impl<'a, This, S> RevIntoFieldImpl<'a, This> for VariantName<TStr<S>>
+impl<This, S> RevIntoFieldImpl<This> for VariantName<TStr<S>>
 where
-    This: ?Sized + 'a + IsVariant<TStr<S>>,
+    This: ?Sized + IsVariant<TStr<S>>,
     S: 'static,
 {
     #[inline(always)]

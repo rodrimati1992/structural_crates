@@ -1,8 +1,10 @@
 use crate::{
+    convert::{IntoStructural, TryFromError, TryIntoStructural},
     enums::IsVariant,
     field::{
         NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl, RevGetMultiField,
         RevGetMultiFieldMut, RevGetMultiFieldMutOut, RevGetMultiFieldOut, RevIntoFieldImpl,
+        RevIntoMultiField, RevIntoMultiFieldOut,
     },
     path::IsTStr,
 };
@@ -107,6 +109,16 @@ pub trait StructuralExt {
 
     /// Gets references to multiple fields,determined by `path`.
     ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
+    ///
     /// # Example
     ///
     /// ```
@@ -191,6 +203,16 @@ pub trait StructuralExt {
     }
 
     /// Gets clones of multiple fields,determined by `path`.
+    ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
     ///
     /// # Example
     ///
@@ -400,6 +422,16 @@ pub trait StructuralExt {
 
     /// Gets mutable references to multiple fields,determined by `path`.
     ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
+    ///
     /// # Example
     ///
     /// ```
@@ -607,14 +639,123 @@ pub trait StructuralExt {
     ///
     /// ```
     #[inline(always)]
-    fn into_field<'a, P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
+    fn into_field<P>(self, path: P) -> NormalizeFieldsOut<Result<P::Ty, P::Err>>
     where
-        P: RevIntoFieldImpl<'a, Self>,
+        P: RevIntoFieldImpl<Self>,
         P::Ty: Sized,
         Result<P::Ty, P::Err>: NormalizeFields,
         Self: Sized,
     {
         path.rev_into_field(self).normalize_fields()
+    }
+
+    /// Converts `self` into multiple fields by value.
+    ///
+    /// # Access many fields
+    ///
+    /// If you pass a `path` that references over 8 fields,this will return a
+    /// tuple of tuples(each nested tuple with 8 elements) instead of
+    /// a singly nested tuple.
+    ///
+    /// For examples accessing over 8 field look at the docs for the [`field_pat`] macro
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html#the-structuralext-example
+    ///
+    /// # Valid Paths
+    ///
+    /// As opposed to the other multiple fields accessor methods,
+    /// this method only accepts field paths that refer to
+    /// multiple non-nested fields inside some value (possibly a nested field itself).
+    ///
+    /// <span id="valid_into_field_paths"></span>
+    ///
+    /// Examples of accepted field paths:
+    ///
+    /// - `fp!(a, b, c)`:
+    /// Accesses the `a`,`b`,and `c` fields.
+    ///
+    /// - `fp!(a.b.c=> d, e, f)`:
+    /// Accesses the `d`,`e`,and `f` fields inside the `a.b.c` field.
+    ///
+    /// - `fp!(::Foo=> bar, baz)`:
+    /// Accesses the `bar` and `baz` field in the `Foo` variant.
+    ///
+    /// Examples of rejected field paths(accepted in other methods):
+    ///
+    /// - `fp!(a.b, c)`
+    ///
+    /// - `fp!(a.b, c.d)`
+    ///
+    /// - `fp!(::Bar=> a.b, c.d)`
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{StructuralExt,fp,make_struct};
+    /// use structural::for_examples::{Struct2, Struct2_SI, Struct3};
+    ///
+    /// assert_eq!(
+    ///     into_struct2(Struct3{ foo:Some("13".to_string()), bar: 21, baz: 34}),
+    ///     Struct2{ foo:Some("13".to_string()), bar: 21 }
+    /// );
+    ///
+    /// {
+    ///     let value=Struct2{ foo:Some(vec![55, 89]), bar: 144 };
+    ///     assert_eq!( into_struct2(value.clone()), value );
+    /// }
+    ///
+    /// assert_eq!(
+    ///     into_struct2(make_struct!{
+    ///         foo: None::<()>,
+    ///         bar: 233,
+    ///         baz: false,
+    ///         qux: "hello".to_string()
+    ///     }),
+    ///     Struct2{ foo:None, bar: 233 }
+    /// );
+    ///
+    /// // `Struct2_SI` was declared by the `Structural` derive on `Struct2`,
+    /// // aliasing the accessor traits that `Struct2` implements.
+    /// fn into_struct2<T,U>(this: impl Struct2_SI<T,U>)->Struct2<T,U>{
+    ///     let (foo, bar)=this.into_fields(fp!(foo, bar));
+    ///     Struct2{foo, bar}
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum Example
+    ///
+    /// ```rust
+    /// use structural::{StructuralExt,fp};
+    /// use structural::for_examples::{Enum1, Enum1_SI, Enum2, Enum3};
+    ///
+    /// use std::cmp::Ordering;
+    ///
+    /// assert_eq!( into_enum1(Enum1::Foo(3, 5)), Some(Enum1::Foo(3, 5)) );
+    ///
+    /// assert_eq!( into_enum1(Enum2::Foo(8, 13)), Some(Enum1::Foo(8, 13)) );
+    /// assert_eq!( into_enum1(Enum2::Bar(Ordering::Less, None)), None );
+    ///
+    /// assert_eq!( into_enum1(Enum3::Foo(21, 34)), Some(Enum1::Foo(21, 34)) );
+    /// assert_eq!( into_enum1(Enum3::Bar(Ordering::Less, None)), None );
+    /// assert_eq!( into_enum1(Enum3::Baz { foom: "whoop"}), None );
+    ///
+    /// // `Enum1_SI` was declared by the `Structural` derive on `Enum1`,
+    /// // aliasing the accessor traits that `Enum1` implements.
+    /// fn into_enum1(this: impl Enum1_SI)-> Option<Enum1> {
+    ///     this.into_fields(fp!(::Foo=>0,1))
+    ///         .map(|(a,b)| Enum1::Foo(a,b) )
+    /// }
+    ///
+    /// ```
+    ///
+    #[inline(always)]
+    fn into_fields<P>(self, path: P) -> RevIntoMultiFieldOut<P, Self>
+    where
+        P: RevIntoMultiField<Self>,
+        Self: Sized,
+    {
+        path.rev_into_multi_field(self)
     }
 
     /// Checks whether an enum is a particular variant.
@@ -629,7 +770,8 @@ pub trait StructuralExt {
     ///
     /// fn check_colors<T>( red:&T, blue:&T, green:&T )
     /// where
-    ///     // `Color_SI` was declared by the `Structural` derive on `Color`.
+    ///     // `Color_SI` was declared by the `Structural` derive on `Color`,
+    ///     // aliasing the accessor traits that `Color` implements.
     ///     T: Color_SI
     /// {
     ///     assert!(  red.is_variant(fp!(Red)) );
@@ -673,6 +815,160 @@ pub trait StructuralExt {
         Self: IsVariant<P>,
     {
         IsVariant::is_variant_(self, _path)
+    }
+
+    /// Converts this into another structural type using `IntoStructural`.
+    ///
+    /// # Struct Example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     Structural, StructuralExt, fp, make_struct,
+    /// };
+    ///
+    /// assert_eq!( Foo(55, 89, 144, 233).into_struc::<[_;3]>(), [55, 89, 144] );
+    ///
+    /// assert_eq!(
+    ///     make_struct!{x:"foo", y:"bar", z:"baz", w:"what"}.into_struc::<Point<_>>(),
+    ///     Point{x:"foo", y:"bar", z:"baz"}
+    /// );
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// # #[struc(no_trait)]
+    /// struct Foo(pub u8, pub u8, pub u8, pub u8);
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// struct Point<T>{
+    ///     pub x: T,
+    ///     pub y: T,
+    ///     pub z: T,
+    /// }
+    ///
+    /// // This macro also implement TryFromStructural for Point
+    /// structural::z_impl_from_structural!{
+    ///     impl[F, T] FromStructural<F> for Point<T>
+    ///     where[
+    ///         // `Point_SI` was generated for `Point` by the Structural derive.
+    ///         F: Point_SI<T>,
+    ///     ]{
+    ///         fn from_structural(this){
+    ///             let (x,y,z) = this.into_fields(fp!(x, y, z));
+    ///             Self{x,y,z}
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// ```
+    ///
+    /// # Enum example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     for_examples::ResultLike,
+    ///     Structural, StructuralExt, switch,
+    /// };
+    ///
+    /// assert_eq!( ResultLike::<_,()>::Ok (300).into_struc::<ResultV>(), ResultV::Ok );
+    /// assert_eq!( ResultLike::<(),_>::Err(300).into_struc::<ResultV>(), ResultV::Err );
+    ///
+    /// assert_eq!( Ok::<_,()>(300).into_struc::<ResultV>(), ResultV::Ok );
+    /// assert_eq!( Err::<(),_>(300).into_struc::<ResultV>(), ResultV::Err );
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum ResultV{
+    ///     Ok,
+    ///     Err,
+    /// }
+    ///
+    /// // This macro also implement TryFromStructural for ResultV
+    /// structural::z_impl_from_structural!{
+    ///     impl[F] FromStructural<F> for ResultV
+    ///     where[
+    ///         // `ResultV_ESI` was generated for `Point` by the Structural derive.
+    ///         F: ResultV_ESI
+    ///     ]{
+    ///         fn from_structural(this){
+    ///             switch!{this;
+    ///                 Ok => ResultV::Ok,
+    ///                 Err => ResultV::Err,
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// ```
+    ///
+    fn into_struc<U>(self) -> U
+    where
+        Self: IntoStructural<U>,
+    {
+        self.into_structural()
+    }
+
+    /// Performs a fallible conversion into another structural type using `TryIntoStructural`.
+    ///
+    /// # Enum example
+    ///
+    /// ```rust
+    /// use structural::{
+    ///     convert::{EmptyTryFromError, TryFromError},
+    ///     for_examples::ResultLike,
+    ///     Structural, StructuralExt, switch,
+    /// };
+    ///
+    /// assert_eq!( Shapes::Rectangle.try_into_struc::<Shapes>(), Ok(Shapes::Rectangle) );
+    /// assert_eq!( Shapes::Circle.try_into_struc::<Shapes>()   , Ok(Shapes::Circle) );
+    ///
+    /// assert_eq!( MoreShapes::Rectangle.try_into_struc::<Shapes>(), Ok(Shapes::Rectangle) );
+    /// assert_eq!( MoreShapes::Circle.try_into_struc::<Shapes>()   , Ok(Shapes::Circle) );
+    /// assert_eq!(
+    ///     MoreShapes::Hexagon.try_into_struc::<Shapes>(),
+    ///     Err(TryFromError::with_empty_error(MoreShapes::Hexagon)),
+    /// );
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum Shapes{
+    ///     Rectangle,
+    ///     Circle,
+    /// }
+    ///
+    /// #[derive(Debug,Structural,PartialEq)]
+    /// enum MoreShapes{
+    ///     Rectangle,
+    ///     Circle,
+    ///     Hexagon,
+    /// }
+    ///
+    /// // This macro implements FromStructural in terms of TryFromStructural,
+    /// structural::z_impl_try_from_structural_for_enum!{
+    ///     impl[F] TryFromStructural<F> for Shapes
+    ///     where[ F: Shapes_SI, ]
+    ///     {
+    ///         type Error = EmptyTryFromError;
+    ///
+    ///         fn try_from_structural(this){
+    ///             switch! {this;
+    ///                 Rectangle => Ok(Self::Rectangle),
+    ///                 Circle => Ok(Self::Circle),
+    ///                 _ => Err(TryFromError::with_empty_error(this)),
+    ///             }
+    ///         }
+    ///     }
+    ///
+    ///     // `Shapes_ESI` was generated by the `Structural` derive for `Shapes`
+    ///     // aliasing its accessor trait impls,
+    ///     // and requires `F` to only have the `Rectangle` and `Circle` variants.
+    ///     FromStructural
+    ///     where[ F: Shapes_ESI, ]
+    /// }
+    ///
+    /// ```
+    ///
+    fn try_into_struc<U>(self) -> Result<U, TryFromError<Self, Self::Error>>
+    where
+        Self: TryIntoStructural<U>,
+    {
+        self.try_into_structural()
     }
 }
 

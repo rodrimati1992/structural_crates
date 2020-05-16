@@ -312,70 +312,83 @@ macro_rules! fp {
 /// This takes the same input as [the fp macro](./macro.fp.html),
 /// getting the type of that field path.
 ///
-/// # Examples
-///
-/// This demonstrates how one can bound types by the accessor traits in a where clause.
-///
-/// ```rust
-/// use structural::{GetField,StructuralExt,FP,fp,make_struct};
-///
-/// greet_entity(&make_struct!{ name: "Bob" });
-///
-/// fn greet_entity<This,S>(entity:&This)
-/// where
-///     This:GetField<FP!(name),Ty=S>,
-///     S:AsRef<str>,
-/// {
-///     println!("Hello, {}!",entity.field_(fp!(name)).as_ref() );
-///     println!("Goodbye, {}!",entity.field_(fp!("name")).as_ref() );
-///
-///     // The two `fp!` invocations  below are equivalent.
-///     //
-///     // Quotes allow for arbitrary identifiers,
-///     // useful for non-ascii identifiers before they are supported by Rust.
-///     //
-///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
-///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
-/// }
-///
-/// ```
-///
-/// # Example
+/// # Struct Example
 ///
 /// ```rust
 ///
-/// use structural::{GetField,StructuralExt,FP,fp,make_struct};
+/// use structural::{GetField, StructuralExt, FP, fp, make_struct};
 ///
-/// let struc=make_struct!{
-///     name: "Bob",
-///     huh: "John",
-/// };
+/// greet_entity(&make_struct!{ name: "Bob" }, &(99,999,999));
 ///
-/// greet_entity(&struc,&(99,999,999));
+/// type Path_0 = FP!(0);
 ///
-/// type Path_0=FP!(0);
-/// type Path_huh=FP!(huh);
-/// type Path_name=FP!("name"); // Equivalent to FP!(name)
+/// // Equivalent to `type Path_name = FP!(name);`,
+/// // the `FP` and `fp` macros use string literals to emulate non-ascii identifiers.
+/// type Path_name = FP!("name");
 ///
-/// fn greet_entity<This,S,Tup>(entity:&This, tuple:&Tup)
+/// fn greet_entity<S, This, Tup>(entity:&This, tuple:&Tup)
 /// where
-///     This: GetField<FP!(name), Ty= S> + GetField<Path_huh, Ty= &'static str>,
-///     Tup : GetField<Path_0,Ty=u64>,
-///     S:AsRef<str>,
+///     This: GetField<FP!(name), Ty = S>,
+///     Tup : GetField<Path_0, Ty = u64>,
+///     S: AsRef<str>,
 /// {
 ///     assert_eq!( entity.field_(fp!(name)).as_ref(), "Bob" );
-///     assert_eq!( entity.field_(fp!("name")).as_ref(), "Bob" );
 ///     assert_eq!( entity.field_(Path_name::NEW).as_ref(), "Bob" );
-///
-///     assert_eq!( entity.field_(fp!(huh)), &"John" );
-///     assert_eq!( entity.field_(fp!("huh")), &"John" );
-///     assert_eq!( entity.field_(Path_huh::NEW), &"John" );
 ///
 ///     assert_eq!( tuple.field_(fp!(0)), &99 );
 ///     assert_eq!( tuple.field_(Path_0::NEW), &99 );
 /// }
 ///
 /// ```
+///
+/// # Enum Example
+///
+/// ```rust
+///
+/// use structural::{GetVariantField, Structural, StructuralExt, FP, TS};
+///
+/// assert_eq!( get_number(&Enum::Foo(10)), Some(10) );
+/// assert_eq!( get_number(&Enum::Bar{value: 20}), Some(20) );
+///
+/// assert_eq!( get_number(&Other::Foo(30, "foo")), Some(30) );
+/// assert_eq!( get_number(&Other::Bar{value: 40, uh: None}), Some(40) );
+/// assert_eq!( get_number(&Other::Baz), None );
+///
+///
+/// type Path_Foo_0 = FP!(::Foo.0);
+///
+/// // Equivalent to `type Path_name = FP!(::Bar.value);`,
+/// // the `FP` and `fp` macros use string literals to emulate non-ascii identifiers.
+/// type Path_Bar_value = FP!(::Bar."value");
+///
+/// fn get_number<This>(this: &This)->Option<u32>
+/// where
+///     // The `*VariantField*` traits require that you pass a `TStr`,
+///     // using the `TS` macro or a type alias.
+///     This: GetVariantField<TS!(Foo), TS!(0), Ty = u32> +
+///           GetVariantField<TS!(Bar), TS!(value), Ty = u32>,
+/// {
+///     this.field_(Path_Foo_0::NEW)
+///         .or(this.field_(Path_Bar_value::NEW))
+///         .cloned()
+/// }
+///
+/// #[derive(Structural)]
+/// enum Enum{
+///     Foo(u32),
+///     Bar{value: u32},
+/// }
+///
+/// #[derive(Structural)]
+/// enum Other{
+///     Foo(u32, &'static str),
+///     Bar{value: u32, uh: Option<u32>},
+///     Baz,
+/// }
+///
+/// ```
+///
+///
 ///
 #[macro_export]
 macro_rules! FP {

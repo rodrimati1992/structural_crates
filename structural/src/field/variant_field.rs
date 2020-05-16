@@ -482,7 +482,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// `IsVariant<V>` and `IntoVariantField<V, F>` must agree on what variant
 /// the enum currently is.
 /// If `IsVariant` returns true for a particular `V` variant,
-/// then `into_vfield_`,and `box_into_vfield_` must return `Some(_)`.
+/// then `into_vfield_`,and `move_out_vfield_` must return `Some(_)`.
 ///
 /// If overriden, the `*_unchecked` methods must diverge
 /// (abort, panic, or call the equivalent of `std::hint::unreachable_unchecked`)
@@ -490,19 +490,29 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// and return the same field as the checked equivalents if the enum
 /// is currently the `V` variant.
 ///
-/// <span id="features-section"></span>
-/// # Features
+/// ### Implementing `move_out_vfield_`
 ///
-/// If you disable the default feature,and don't enable the "alloc" feature,
-/// you must implement the [`box_into_vfield_`] method using the
-/// [`z_impl_box_into_variant_field_method`] macro,
-/// this trait's [manual implementation example](#manual-impl-example)
-/// shows how you can use the macro.
+/// The way this method is expected to be implemented like this:
 ///
-/// [`box_into_vfield_`]: #tymethod.box_into_vfield_
+/// - Match on the enum,if it's the expected variant continue the steps,
+/// otherwise return `None`.
 ///
-/// [`z_impl_box_into_variant_field_method`]:
-/// ../macro.z_impl_box_into_variant_field_method.html
+/// - Move out the field using `std::ptr::read` or equivalent.
+///
+/// - Mark the field in the `moved_fields` parameter as being moved out using the
+/// `set_moved_out` method,
+/// with a `FieldBit` argument unique to this field in the variant
+/// (fields from different variants can use the same `FieldBit` as fields in other variants).
+///
+/// Every implementation of `IntoVariantField::move_out_vfield_`
+/// must return field(s) that no other implementation of 
+/// `IntoVariantField` or `IntoField` for this type return.
+///
+/// The `DropFields::drop_fields` implementation for this type must then
+/// call `is_moved_out` on its `MovedOutFields` parameter
+/// to decide whether to drop the field, 
+/// passing the same `FieldBit` argument as in the `move_out_vfield_` implementation.
+/// If `is_moved_out` returns false, then the field must be dropped.
 ///
 /// # Example
 ///
@@ -533,6 +543,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// ```
 ///
 /// <span id="manual-impl-example"></span>
+/// <span id="manual-implementation-example"></span>
 /// # Example: Manual implementation
 ///
 /// While this trait is better derived, it can be implemented manually.
@@ -541,6 +552,7 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///
 /// ```rust
 /// use structural::{
+///     field::ownership::{FieldBit, DropFields, MovedOutFields, RunDrop},
 ///     FieldType, GetVariantField, IntoVariantField, FP, TS,
 ///     StructuralExt,fp,structural_alias,
 /// };
@@ -549,14 +561,12 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// // The `FooBounds` trait is defined below.
 /// fn using_enum(bar: impl FooBounds, baz: impl FooBounds){
 ///     assert_eq!( bar.fields(fp!(::Bar=>0,1)), Some((&34, &51)) );
-///     assert_eq!( bar.into_field(fp!(::Bar.0)), Some(34) );
-///     assert_eq!( bar.into_field(fp!(::Bar.1)), Some(51) );
+///     assert_eq!( bar.into_fields(fp!(::Bar=>0,1)), Some((34, 51)) );
 ///     assert_eq!( bar.is_variant(fp!(Bar)), true );
 ///     assert_eq!( bar.is_variant(fp!(Baz)), false );
 ///
 ///     assert_eq!( baz.fields(fp!(::Bar=>0,1)), None );
-///     assert_eq!( baz.into_field(fp!(::Bar.0)), None );
-///     assert_eq!( baz.into_field(fp!(::Bar.1)), None );
+///     assert_eq!( baz.into_fields(fp!(::Bar=>0,1)), None );
 ///     assert_eq!( baz.is_variant(fp!(Bar)), false );
 ///     assert_eq!( baz.is_variant(fp!(Baz)), true );
 /// }
@@ -572,6 +582,9 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///     Bar(u32,u64),
 ///     Baz,
 /// }
+///
+/// const BAR_0_INDEX: FieldBit = FieldBit::new(0);
+/// const BAR_1_INDEX: FieldBit = FieldBit::new(1);
 ///
 /// unsafe impl VariantCount for Foo{
 ///     type Count=TS!(2);
@@ -606,14 +619,20 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///             _=>None,
 ///         }
 ///     }
-///     
-///     // You must use this, even in crates that don't enable the "alloc" feature
-///     // (the "alloc" feature is enabled by default),
-///     // since other crates that depend on structural might enable the feature.
-///     structural::z_impl_box_into_variant_field_method!{
-///         variant_tstr= TS!(Bar),
-///         field_tstr= TS!(0),
-///         field_type= u32,
+///
+///     unsafe fn move_out_vfield_(
+///         &mut self,
+///         _: TS!(Bar),
+///         _: TS!(0),
+///         moved_fields: &mut MovedOutFields,
+///     ) -> Option<u32> {
+///         match self {
+///             Foo::Bar(ret,_)=>{
+///                 moved_fields.set_moved_out(BAR_0_INDEX);
+///                 Some(std::ptr::read(ret))
+///             },
+///             _=>None,
+///         }
 ///     }
 /// }
 ///
@@ -638,14 +657,46 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 ///             _=>None,
 ///         }
 ///     }
-///     
-///     structural::z_impl_box_into_variant_field_method!{
-///         variant_tstr= TS!(Bar),
-///         field_tstr= TS!(1),
-///         field_type= u64,
+///
+///     unsafe fn move_out_vfield_(
+///         &mut self,
+///         _: TS!(Bar),
+///         _: TS!(1),
+///         moved_fields: &mut MovedOutFields,
+///     ) -> Option<u64> {
+///         match self {
+///             Foo::Bar(_,ret)=>{
+///                 moved_fields.set_moved_out(BAR_1_INDEX);
+///                 Some(std::ptr::read(ret))
+///             },
+///             _=>None,
+///         }
 ///     }
 /// }
 ///
+/// unsafe impl DropFields for Foo{
+///     // This type does nothing before fields are moved.
+///     fn pre_move(&mut self){}
+///     
+///     unsafe fn drop_fields(&mut self, moved_fields: MovedOutFields){
+///         match self {
+///             Foo::Bar(field0, field1)=>{
+///                 // RunDrop here ensures that the destructors for all fields are ran 
+///                 // even if any of them panics.
+///                 let _a;
+///                 if moved_fields.is_moved_out(BAR_0_INDEX){
+///                     _a = RunDrop::new(field0);
+///                 }
+///
+///                 let _a;
+///                 if moved_fields.is_moved_out(BAR_1_INDEX){
+///                     _a = RunDrop::new(field1);
+///                 }
+///             }
+///             Foo::Baz=>{}
+///         }
+///     }
+/// }
 ///
 /// unsafe impl IsVariant<TS!(Baz)> for Foo {
 ///     fn is_variant_(&self,_:TS!(Baz))->bool{
@@ -666,22 +717,19 @@ pub type GetVFieldRawMutFn<VariantName, FieldName, FieldTy> =
 /// ```
 ///
 ///
-pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
+pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> + DropFields {
     /// Converts this into the `F` field in the `V` variant by value.
-    fn into_vfield_(self, variant_name: V, field_name: F) -> Option<Self::Ty>
-    where
-        Self: Sized;
-
-    /// Converts this into the `F` field in the `V` variant by value,
-    /// without checking that the enum is currently the `V` variant.
+    fn into_vfield_(self, variant_name: V, field_name: F)->Option<Self::Ty>;
+    
+    /// Converts this into the `F` field in the `V` variant by value.
     ///
     /// # Safety
     ///
     /// The enum must be the `V` variant.
     #[inline(always)]
-    unsafe fn into_vfield_unchecked(self, variant_name: V, field_name: F) -> Self::Ty
+    unsafe fn into_vfield_unchecked_(self, variant_name: V, field_name: F)->Self::Ty
     where
-        Self: Sized,
+        Self: Sized
     {
         match self.into_vfield_(variant_name, field_name) {
             Some(x) => x,
@@ -689,14 +737,23 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
         }
     }
 
-    /// Converts this into the `F` field in the `V` variant by value.
+    /// Moves out the `F` field from the `V` variant.
     ///
-    /// This method exists so that `Box<dyn Trait>` can be converted into a field by value.
-    #[cfg(feature = "alloc")]
-    fn box_into_vfield_(
-        self: crate::alloc::boxed::Box<Self>,
+    /// # Safety
+    ///
+    /// The same instance of `MovedOutFields` must be passed to every call to
+    /// `move_out_vfield_` on the same instance of this type,
+    /// as well as not mutating that `MovedOutFields` instance outside of 
+    /// methods of this trait for this type.
+    /// 
+    /// Each field must be moved with any method at most once on the same instance 
+    /// of this type.
+    /// 
+    unsafe fn move_out_vfield_(
+        &mut self,
         variant_name: V,
         field_name: F,
+        moved_fields: &mut MovedOutFields,
     ) -> Option<Self::Ty>;
 
     /// Converts this into the `F` field in the `V` variant by value,
@@ -708,18 +765,22 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
     ///
     /// The enum must be the `V` variant.
     ///
-    /// # Features
-    ///
-    /// This method is defined conditional on the "alloc" feature,
-    /// read [here](#features-section) for more details.
-    #[cfg(feature = "alloc")]
+    /// The same instance of `MovedOutFields` must be passed to every call to
+    /// `move_out_vfield_unchecked_` on the same instance of this type,
+    /// as well as not mutating that `MovedOutFields` instance outside of 
+    /// methods of this trait for this type.
+    /// 
+    /// Each field must be moved with any method at most once on the same instance 
+    /// of this type.
+    /// 
     #[inline(always)]
-    unsafe fn box_into_vfield_unchecked(
-        self: crate::alloc::boxed::Box<Self>,
+    unsafe fn move_out_vfield_unchecked_(
+        &mut self,
         variant_name: V,
         field_name: F,
+        moved_fields: &mut MovedOutFields,
     ) -> Self::Ty {
-        match self.box_into_vfield_(variant_name, field_name) {
+        match self.move_out_vfield_(variant_name, field_name, moved_fields) {
             Some(x) => x,
             None => crate::utils::unreachable_unchecked(),
         }
@@ -762,7 +823,7 @@ pub unsafe trait IntoVariantField<V, F>: GetVariantField<V, F> {
 ///         Some(( &mut "Because.", &mut &[13,21][..] )),
 ///     );
 ///
-///     assert_eq!( this.into_field(fp!(::Boom.a)), Some("Because.") );
+///     assert_eq!( this.into_fields(fp!(::Boom=>a,b)), Some(( "Because.", &[13,21][..] )) );
 /// }
 ///
 /// example(WithBoom::Boom{ a:"Because.", b:&[13,21] });

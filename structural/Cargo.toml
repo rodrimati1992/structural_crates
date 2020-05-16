@@ -1,6 +1,6 @@
 [package]
 name = "structural"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -38,7 +38,6 @@ hide_reexports=[]
 specialization=[]
 nightly_specialization=["specialization"]
 
-# Re-enable this feature every time you want to test whether const generics work.
 use_const_str=["structural_derive/use_const_str"]
 nightly_use_const_str=["use_const_str"]
 
@@ -49,7 +48,10 @@ nightly_impl_fields=["impl_fields"]
 
 for_examples=[]
 
+# An internal feature
 test_all=["all","testing"]
+
+# An internal feature
 all=[
     "std",
     "hide_reexports",
@@ -61,7 +63,7 @@ all=[
 
 
 [dependencies]
-structural_derive={version="=0.3.1",path="../structural_derive"}
+structural_derive={version="=0.4.0",path="../structural_derive"}
 
 [dependencies.core_extensions]
 version="0.1.16"

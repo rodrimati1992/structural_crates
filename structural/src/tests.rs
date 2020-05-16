@@ -10,15 +10,7 @@
 // Every instance of this warning in tests is wrong
 #![allow(clippy::let_unit_value)]
 
-mod delegation;
-mod enum_derive;
+#[cfg(test)]
 mod field_paths;
-mod impl_struct;
-mod make_struct;
-mod multi_fields;
-mod multi_nested_fields;
-mod optional_fields;
-mod rev_field_traits;
-mod structural_alias;
-mod structural_derive;
-mod switch;
+
+pub mod utils;

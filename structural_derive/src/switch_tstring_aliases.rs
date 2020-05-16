@@ -192,3 +192,16 @@ fn skip_rest_of_field(input: ParseStream<'_>) -> parse::Result<Span> {
         });
     }
 }
+
+////////////////////////////////////////////////////////
+
+#[test]
+fn test_cases() {
+    use as_derive_utils::test_framework::Tests;
+
+    pub fn impl_from_str(input: &str) -> Result<TokenStream2, syn::Error> {
+        syn::parse_str::<SwitchStrAliases>(input).and_then(impl_)
+    }
+
+    Tests::load("switch").run_test(impl_from_str);
+}

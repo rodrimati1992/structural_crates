@@ -1,6 +1,6 @@
-use crate::{path::TStr, StructuralExt};
+use structural::{fp, make_struct, path::TStr, StructuralExt, FP};
 
-crate::structural_alias! {
+structural::structural_alias! {
     trait Hi<T>{
         mut move a:u32,
         mut move b:Option<&'static str>,

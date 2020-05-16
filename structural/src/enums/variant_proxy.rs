@@ -1,7 +1,8 @@
 use crate::{
+    enums::IsVariant,
     field::{
-        FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField, GetVariantFieldMut,
-        IntoField, IntoVariantField, SpecGetFieldMut,
+        DropFields, FieldType, GetField, GetFieldMut, GetFieldRawMutFn, GetVariantField,
+        GetVariantFieldMut, IntoField, IntoVariantField, MovedOutFields, SpecGetFieldMut,
     },
     path::{IsTStr, TStr, VariantField},
 };
@@ -594,7 +595,7 @@ where
     }
 }
 
-impl<T, V, F> IntoField<F> for VariantProxy<T, V>
+unsafe impl<T, V, F> IntoField<F> for VariantProxy<T, V>
 where
     T: IntoVariantField<V, F>,
     V: IsTStr,
@@ -606,8 +607,48 @@ where
     {
         // safety: VariantProxy<T,V> guarantees that it wraps an enum
         // with the variant that `V` names.
-        unsafe { self.value.into_vfield_unchecked(V::DEFAULT, fname) }
+        unsafe { self.value.into_vfield_unchecked_(V::DEFAULT, fname) }
     }
 
-    z_impl_box_into_field_method! {field_tstr=F, field_type=T::Ty}
+    #[inline(always)]
+    unsafe fn move_out_field_(&mut self, fname: F, moved: &mut MovedOutFields) -> T::Ty
+    where
+        Self: Sized,
+    {
+        // safety: VariantProxy<T,V> guarantees that it wraps an enum
+        // with the variant that `V` names.
+        self.value
+            .move_out_vfield_unchecked_(V::DEFAULT, fname, moved)
+    }
+}
+
+unsafe impl<T, V> DropFields for VariantProxy<T, V>
+where
+    T: IsVariant<V> + DropFields,
+    V: IsTStr,
+{
+    fn pre_move(&mut self) {
+        let mut this = crate::utils::RunOnDrop::new(
+            &mut self.value,
+            #[inline(always)]
+            |this| {
+                // This is necessary because the enum can mutate itself into a different variant,
+                // invalidating the safety invariant of this type.
+                if !this.is_variant_(V::DEFAULT) {
+                    abort!(
+                        "\n\n\n\
+                        The enum changed the active variant in `<{} as DropFields>::pre_move`\
+                        \n\n\n",
+                        std_::any::type_name::<Self>(),
+                    );
+                }
+            },
+        );
+
+        <T as DropFields>::pre_move(this.reborrow_mut());
+    }
+
+    unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
+        <T as DropFields>::drop_fields(&mut self.value, moved)
+    }
 }

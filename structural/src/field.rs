@@ -1,7 +1,7 @@
 /*!
 Accessor and extension traits for fields.
 
-# Traits
+# Accessor Traits
 
 ### For structs and enums
 
@@ -26,6 +26,21 @@ accessor traits,that define how a variant field is accessed.
 [IntoVariantFieldMut](./trait.IntoVariantFieldMut.html),
 a trait alias for `GetVariantFieldMut` + `IntoVariantField`.
 
+### Destruction traits
+
+These traits allow a type to release resources (ie:memory) when a type is converted into
+multiple fields by value:
+
+- [`DropFields`]:
+Used to drop the fields that weren't moved out, and run code before they're moved.
+
+- [`PrePostDropFields`]:
+Used to add code that runs before and after an automatically generated
+[`DropFields`] implementation.
+
+[`DropFields`]: ./ownership/trait.DropFields.html
+[`PrePostDropFields`]: ./ownership/trait.PrePostDropFields.html
+
 # Rev* traits
 
 The `Rev*` traits,implemented by field paths,accessing field(s) from the passed-in type.
@@ -43,39 +58,30 @@ Which are [RevGetFieldImpl](./rev_get_field/trait.RevGetFieldImpl.html),
 and [RevIntoFieldImpl](./rev_get_field/trait.RevIntoFieldImpl.html),
 mirroring the regular field accessor traits.
 
+The [RevMoveOutFieldImpl](rev_get_field/trait.RevMoveOutFieldImpl.html) trait mirrors the
+`Into*Field::move_out_*field_` method.
+This is a separate trait because not all single field paths are valid for
+moving out a field,they have to refer to a shallow field.
+
 ### Multiple field traits
 
 For bounds to access multiple fields at once,
-there's [RevGetMultiField](./multi_fields/trait.RevGetMultiField.html),
-and [RevGetMultiFieldMut](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
-(no RevIntoMultiField for now).
+there's [RevGetMultiField],[RevGetMultiFieldMut],and [`RevIntoMultiField`].
 
-For implementing a new way to access multiple fields,
-there's [RevGetMultiFieldImpl](./multi_fields/trait.RevGetMultiFieldImpl.html),
-and [RevGetMultiFieldMutImpl](./multi_fields/trait.RevGetMultiFieldMutImpl.html)
-(no RevIntoMultiFieldImpl for now).
+For implementing a way to access multiple fields
+there's [`RevGetMultiFieldImpl`],[`RevGetMultiFieldMutImpl`],and [`RevIntoMultiFieldImpl`].
 
-# Additional items
+There is the [`RevMoveOutMultiFieldImpl`]
+trait for moving out multiple shallow fields, useful for implementing [`RevIntoMultiFieldImpl`].
 
-### Array Traits
+[`RevGetMultiField`]: ./multi_fields/trait.RevGetMultiField.html
+[`RevGetMultiFieldMut`]: ./multi_fields/trait.RevGetMultiFieldMut.html
+[`RevIntoMultiField`]: ./multi_fields/trait.RevIntoMultiField.html
 
-This module re-exports these traits from [for_arrays](./for_arrays/index.html),with:
-
-- The `Array*` structural aliases to use any type with accessors from 0
-until the size of the array,in which all the field types are the same,
-
-- The `Array*Variant` structural aliases to use any enum variant with accessors from 0
-until the size of the array,in which all the field types are the same.
-
-### Tuple Traits
-
-This module re-exports these traits from [for_tuples](./for_tuples/index.html),with:
-
-- The `Tuple*` structural aliases to use any type with accessors from `TS!(0)`
-until the size of the tuple,in which all field types can be different,
-
-- The `Tuple*Variant` structural aliases to use any enum variant with accessors from `TS!(0)`
-until the size of the tuple,in which all field types can be different.
+[`RevGetMultiFieldImpl`]: ./multi_fields/trait.RevGetMultiFieldImpl.html
+[`RevGetMultiFieldMutImpl`]: ./multi_fields/trait.RevGetMultiFieldMutImpl.html
+[`RevIntoMultiFieldImpl`]: ./multi_fields/trait.RevIntoMultiFieldImpl.html
+[`RevMoveOutMultiFieldImpl`]: ./multi_fields/trait.RevMoveOutMultiFieldImpl.html
 
 ### type aliases
 
@@ -94,7 +100,7 @@ The [RevGetFieldType](./rev_get_field/type.RevGetFieldType.html)
 type alias gets the type of a nested field
 (which one is determined by the field path).
 
-The [RevGetFieldErr](./rev_get_field/type.RevGetFieldErr.html)
+The [RevFieldErrOut](./rev_get_field/type.RevFieldErrOut.html)
 type alias allows querying the `RevGetField::Err` associated type,
 useful when delegating the `Rev*Impl` traits.
 
@@ -122,15 +128,15 @@ use core_extensions::ConstDefault;
 
 use std_::ptr::NonNull;
 
+mod array_impls;
 mod enum_impls;
 pub mod errors;
-pub mod for_arrays;
-pub mod for_tuples;
 mod most_impls;
 pub mod multi_fields;
 mod normalize_fields;
+pub mod ownership;
 pub mod rev_get_field;
-mod tuple_impls;
+pub(crate) mod tuple_impls;
 
 // Using this macro instead of modules because compile-time errors print the full path to the
 // traits even if the variant_field module is private.
@@ -140,17 +146,18 @@ pub use self::{
     errors::{
         CombinedErrs, CombinedErrsOut, FailedAccess, InfallibleAccess, IntoFieldErr, IsFieldErr,
     },
-    for_arrays::array_traits::*,
-    for_tuples::*,
     multi_fields::{
         RevGetMultiField, RevGetMultiFieldImpl, RevGetMultiFieldMut, RevGetMultiFieldMutImpl,
-        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut,
+        RevGetMultiFieldMutOut, RevGetMultiFieldMutRaw, RevGetMultiFieldOut, RevIntoMultiField,
+        RevIntoMultiFieldImpl, RevIntoMultiFieldOut,
     },
     normalize_fields::{NormalizeFields, NormalizeFieldsOut},
+    ownership::{DropFields, FieldBit, MovedOutFields, PrePostDropFields},
     rev_get_field::{
-        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, RevFieldType,
-        RevGetField, RevGetFieldErr, RevGetFieldImpl, RevGetFieldMut, RevGetFieldMutImpl,
-        RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        OptRevGetField, OptRevGetFieldMut, OptRevIntoField, OptRevIntoFieldMut, OptRevIntoFieldRef,
+        RevFieldErr, RevFieldErrOut, RevFieldType, RevGetField, RevGetFieldImpl, RevGetFieldMut,
+        RevGetFieldMutImpl, RevGetFieldType, RevIntoField, RevIntoFieldImpl, RevIntoFieldMut,
+        RevIntoFieldRef, RevMoveOutFieldImpl,
     },
 };
 
@@ -234,12 +241,17 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// Here is one way you can get the type of a `struct` field.
 ///
-/// ```
+// These attributes are a workaround for const generics being broken.
+//
+// When const generics are enabled,
+// there's some lifetime bound errors that can't be worked around.
+#[cfg_attr(not(feature = "use_const_str"), doc = "```rust")]
+#[cfg_attr(feature = "use_const_str", doc = "```ignore")]
 /// use structural::{GetField,StructuralExt,GetFieldType,FP,fp};
 ///
-/// fn get_name<T>(this:&T)->&GetFieldType<T,FP!(name)>
+/// fn get_name<'a,T>(this:&'a T)->&'a GetFieldType<T,FP!(name)>
 /// where
-///     T:GetField<FP!(name)>
+///     T:GetField<FP!(name)>,
 /// {
 ///     this.field_(fp!(name))
 /// }
@@ -281,7 +293,12 @@ pub trait GetField<FieldName>: FieldType<FieldName> {
 ///
 /// This also demonstrates a way to write extension traits.
 ///
-/// ```
+// These attributes are a workaround for const generics being broken.
+//
+// When const generics are enabled,
+// there's some lifetime bound errors that can't be worked around.
+#[cfg_attr(not(feature = "use_const_str"), doc = "```rust")]
+#[cfg_attr(feature = "use_const_str", doc = "```ignore")]
 /// use structural::{FP, StructuralExt, GetFieldType, GetVariantField, Structural, TS, fp};
 /// use structural::for_examples::EnumOptA;
 ///
@@ -491,26 +508,30 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 
 /////////////////////////////////////////////////
 
-/// Converts this type into its `FieldName` field.
+/// Converts this type into its `FieldName` field by value.
 ///
 /// # Safety
 ///
-/// While this trait is not unsafe,
-/// implementors ought not mutate fields inside accessor trait impls.
+/// ### Implementing `move_out_field_`
 ///
-/// Mutating fields is only advisable if those fields don't have field accessor impls.
+/// The way this method is expected to be implemented is like this:
 ///
-/// <span id="features-section"></span>
-/// # Features
+/// - Move out the field using `std::ptr::read` or equivalent.
 ///
-/// If you disable the default feature,and don't enable the "alloc" feature,
-/// you must implement the [`box_into_field_`] method using the
-/// [`z_impl_box_into_field_method`] macro,
-/// this trait's [manual implementation example](#manual-impl-example)
-/// shows how you can use the macro.
+/// - Mark the field in the `moved_fields` parameter as being moved out using the
+/// `set_moved_out` method,
+/// with a `FieldBit` argument unique to this field in this type
+/// (fields from different types can use the same `FieldBit` as fields in other types).
 ///
-/// [`box_into_field_`]: #tymethod.box_into_field_
-/// [`z_impl_box_into_field_method`]: ../macro.z_impl_box_into_field_method.html
+/// Every implementation of `IntoField::move_out_field_`
+/// must return field(s) that no other implementation of
+/// `IntoVariantField` or `IntoField` for this type return.
+///
+/// The `DropFields::drop_fields` implementation for this type must then
+/// call `is_moved_out` on its `MovedOutFields` parameter
+/// to decide whether to drop the field,
+/// passing the same `FieldBit` argument as in the `move_out_field_` implementation.
+/// If `is_moved_out` returns false, then the field must be dropped.
 ///
 /// # Usage as Bound Example
 ///
@@ -520,7 +541,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// fn example<T>(this: T)
 /// where
-///     T: Copy + IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
+///     T: IntoField<FP!(foo), Ty=Option<i8>> + IntoField<FP!(bar), Ty=&'static str>
 /// {
 ///     assert_eq!( this.field_(fp!(foo)), &None );
 ///     assert_eq!( this.field_(fp!(bar)), &"great" );
@@ -530,8 +551,7 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///     // This can't be called with `IntoField` you need `IntoFieldMut` for that.
 ///     // assert_eq!( this.field_mut(fp!(bar)), &mut "great" );
 ///
-///     assert_eq!( this.into_field(fp!(foo)), None );
-///     assert_eq!( this.into_field(fp!(bar)), "great" );
+///     assert_eq!( this.into_fields(fp!(foo, bar)), (None, "great") );
 /// }
 ///
 /// example(Struct2{ foo:None, bar: "great" });
@@ -547,51 +567,114 @@ pub type GetFieldRawMutFn<FieldName, FieldTy> = unsafe fn(*mut (), FieldName) ->
 ///
 /// ```rust
 /// use structural::{FieldType,GetField,IntoField,Structural,FP};
+/// use structural::field::ownership::{DropFields, MovedOutFields, RunDrop, FieldBit};
 ///
 /// struct Huh<T>{
-///     value:T,
+///     first:T,
+///     second:T,
 /// }
 ///
 ///
 /// impl<T> Structural for Huh<T>{}
 ///
-/// impl<T> FieldType<FP!(value)> for Huh<T>{
+///
+/// impl<T> FieldType<FP!(first)> for Huh<T>{
 ///     type Ty=T;
 /// }
 ///
-/// impl<T> GetField<FP!(value)> for Huh<T>{
-///     fn get_field_(&self,_:FP!(value))->&Self::Ty{
-///         &self.value
+/// impl<T> GetField<FP!(first)> for Huh<T>{
+///     fn get_field_(&self, _: FP!(first))->&Self::Ty{
+///         &self.first
 ///     }
 /// }
 ///
-/// impl<T> IntoField<FP!(value)> for Huh<T>{
-///     fn into_field_(self,_:FP!(value))->Self::Ty{
-///         self.value
+/// const FIRST_INDEX: FieldBit = FieldBit::new(0);
+///
+/// unsafe impl<T> IntoField<FP!(first)> for Huh<T>{
+///     fn into_field_(self, _: FP!(first))->Self::Ty{
+///         self.first
 ///     }
 ///
-///     // You must use this, even in crates that don't enable the "alloc" feature
-///     // (the "alloc" feature is enabled by default),
-///     // since other crates that depend on structural might enable the feature.
-///     structural::z_impl_box_into_field_method!{field_tstr=FP!(value)}
+///     unsafe fn move_out_field_(
+///         &mut self,
+///         field_name: FP!(first),
+///         moved_fields: &mut MovedOutFields,
+///     ) -> Self::Ty {
+///         moved_fields.set_moved_out(FIRST_INDEX);
+///         std::ptr::read(&mut self.first)
+///     }
+/// }
+///
+///
+/// impl<T> FieldType<FP!(second)> for Huh<T>{
+///     type Ty=T;
+/// }
+///
+/// impl<T> GetField<FP!(second)> for Huh<T>{
+///     fn get_field_(&self, _: FP!(second))->&Self::Ty{
+///         &self.second
+///     }
+/// }
+///
+/// const SECOND_INDEX: FieldBit = FieldBit::new(1);
+///
+/// unsafe impl<T> IntoField<FP!(second)> for Huh<T>{
+///     fn into_field_(self, _: FP!(second))->Self::Ty{
+///         self.second
+///     }
+///
+///     unsafe fn move_out_field_(
+///         &mut self,
+///         field_name: FP!(second),
+///         moved_fields: &mut MovedOutFields,
+///     ) -> Self::Ty {
+///         moved_fields.set_moved_out(SECOND_INDEX);
+///         std::ptr::read(&mut self.second)
+///     }
+/// }
+///
+///
+/// unsafe impl<T> DropFields for Huh<T>{
+///     // This type does nothing before fields are moved.
+///     fn pre_move(&mut self){}
+///
+///     unsafe fn drop_fields(&mut self, moved: MovedOutFields){
+///         let Self{first, second} = self;
+///
+///         // RunDrop here ensures that the destructors for all fields are ran
+///         // even if any of them panics.
+///         let _drop;
+///         if moved.is_moved_out(FIRST_INDEX) {
+///             _drop = unsafe{ RunDrop::new(first) };
+///         }
+///         let _drop;
+///         if moved.is_moved_out(SECOND_INDEX) {
+///             _drop = unsafe{ RunDrop::new(second) };
+///         }
+///     }
 /// }
 ///
 /// ```
 ///
-pub trait IntoField<FieldName>: GetField<FieldName> {
-    /// Converts self into the field.
-    fn into_field_(self, field_name: FieldName) -> Self::Ty
-    where
-        Self: Sized;
+pub unsafe trait IntoField<FieldName>: GetField<FieldName> + DropFields {
+    /// Converts this into the field by value.
+    fn into_field_(self, field_name: FieldName) -> Self::Ty;
 
-    /// Converts a boxed self into the field.
+    /// Moves out the field from self.
     ///
-    /// # Features
+    /// # Safety
     ///
-    /// This method is defined conditional on the "alloc" feature,
-    /// read [here](#features-section) for more details.
-    #[cfg(feature = "alloc")]
-    fn box_into_field_(self: crate::pmr::Box<Self>, field_name: FieldName) -> Self::Ty;
+    /// The same instance of `MovedOutFields` must be passed to every call to
+    /// `move_out_field_` on the same instance of this type,
+    /// as well as not mutating that `MovedOutFields` instance outside of
+    /// methods of this trait for this type.
+    ///
+    /// Each field must be moved at most once on the same instance of this type.
+    unsafe fn move_out_field_(
+        &mut self,
+        field_name: FieldName,
+        moved_fields: &mut MovedOutFields,
+    ) -> Self::Ty;
 }
 
 /// A bound for shared, mutable,and by-value access to the `FieldName` field.
@@ -609,7 +692,6 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 /// use structural::{StructuralExt,IntoFieldMut,FP,fp};
 /// use structural::for_examples::{Struct2,Struct3};
 ///
-///
 /// fn example(mut this:Box<dyn Bounds>){
 ///     assert_eq!( this.field_(fp!(foo)), &Some(false) );
 ///     assert_eq!( this.field_(fp!(bar)), &"oh boy" );
@@ -623,7 +705,7 @@ pub trait IntoField<FieldName>: GetField<FieldName> {
 ///
 ///     assert_eq!( this.fields_mut(fp!(foo,bar)), (&mut Some(false), &mut "oh boy") );
 ///
-///     assert_eq!( this.into_field(fp!(bar)), "oh boy" );
+///     assert_eq!( this.into_fields(fp!(foo, bar)), (Some(false), "oh boy") );
 /// }
 ///
 /// example(Box::new(Struct2{ foo:Some(false), bar: "oh boy" }));

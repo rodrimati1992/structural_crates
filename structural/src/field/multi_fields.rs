@@ -4,14 +4,15 @@ Contains traits for accessing multiple fields at once.
 #![allow(non_snake_case)]
 
 use crate::{
-    field::{IsFieldErr, NormalizeFields, NormalizeFieldsOut, RevGetFieldImpl, RevGetFieldMutImpl},
-    path::{FieldPathSet, IsMultiFieldPath, NestedFieldPathSet, UniquePaths},
+    field::{MovedOutFields, NormalizeFields, NormalizeFieldsOut},
+    path::{IsMultiFieldPath, UniquePaths},
 };
 
 #[allow(unused_imports)]
 use core_extensions::SelfOps;
 
-mod components;
+mod path_set_types;
+mod single_field_path;
 
 /// Queries the type returned by the
 /// `RevGetMultiFieldImpl::rev_get_multi_field_impl` method.
@@ -32,6 +33,12 @@ pub type RevGetMultiFieldMutImplRaw<'a, Path, This> =
     <Path as RevGetMultiFieldMutImpl<'a, This>>::UnnormFieldsRawMut;
 
 /// Queries the type returned by the
+/// `RevIntoMultiFieldImpl::rev_into_multi_field_impl` method.
+/// This is some collection of values.
+pub type RevIntoMultiFieldImplOut<Path, This> =
+    <Path as RevIntoMultiFieldImpl<This>>::UnnormIntoFields;
+
+/// Queries the type returned by the
 /// `RevGetMultiField::rev_get_multi_field` method.
 /// This is some collection of references.
 pub type RevGetMultiFieldOut<'a, Path, This> = <Path as RevGetMultiField<'a, This>>::Fields;
@@ -47,6 +54,11 @@ pub type RevGetMultiFieldMutOut<'a, Path, This> =
 /// This is some collection of mutable pointers.
 pub type RevGetMultiFieldMutRaw<'a, Path, This> =
     <Path as RevGetMultiFieldMut<'a, This>>::FieldsRawMut;
+
+/// Queries the type returned by the
+/// `RevIntoMultiField::rev_into_multi_field` method.
+/// This is some collection of values.
+pub type RevIntoMultiFieldOut<Path, This> = <Path as RevIntoMultiField<This>>::IntoFields;
 
 /// Gets references to multiple fields from `This`,
 /// usually a tuple of `Result<&_, E: IsFieldErr>`s,
@@ -488,231 +500,226 @@ where
     }
 }
 
-macro_rules! impl_get_multi_field {
-    ( $(($fpath:ident $err:ident $fty:ident))* ) => (
-        impl<'a,This:?Sized,$($fpath,$err,$fty,)* U>
-            RevGetMultiFieldImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),U>
-        where
-            This:'a,
-            $(
-                $fpath:RevGetFieldImpl<'a, This, Ty=$fty, Err=$err >,
-                $fty:'a,
-                $err:IsFieldErr,
-                Result<&'a $fty,$err>: NormalizeFields,
-            )*
-        {
-            type UnnormFields=(
-                $(
-                    Result<&'a $fty,$err>,
-                )*
-            );
+////////////////////////////////////////////////////////////////////////////////
 
-            #[allow(unused_variables)]
-            fn rev_get_multi_field_impl(self,this:&'a This)-> Self::UnnormFields {
-                let ($($fpath,)*)=self.into_paths();
-                (
-                    $(
-                        $fpath.rev_get_field(this),
-                    )*
-                )
-            }
-        }
+/// Converts `This` into multiple fields by value,
+/// usually returning a tuple of `Result<T, E: IsFieldErr>`s,
+///
+/// `This` is the type we are accessing,and `Self` is a field path.
+///
+/// To get `Option<T>`s and `T`s instead of each of those `Result`s,
+/// you can use the [`RevIntoMultiField`] as a bound instead.
+///
+/// <span id="implementation-example"></span>
+/// # Example: implementation
+///
+/// This example demonstrates how you can implement this trait by delegating to
+/// implementations of `RevMoveOutFieldImpl` known not to alias.
+///
+/// ```rust
+/// use structural::{FP, make_struct};
+/// use structural::for_examples::{Struct2, Struct3};
+/// use structural::path::{IsMultiFieldPath, UniquePaths};
+/// use structural::field::{
+///     ownership::IntoFieldsWrapper,
+///     DropFields, IsFieldErr, NormalizeFields,
+///     RevIntoMultiFieldImpl, RevIntoMultiFieldOut, RevIntoMultiField, RevMoveOutFieldImpl
+/// };
+///
+/// let value_0=Struct2{foo: Some(5), bar: 8};
+/// assert_eq!(into_foo_bar(value_0), (Some(5), 8));
+///
+/// let value_1=Struct3{foo: Some(13), bar: 21, baz: 34};
+/// assert_eq!(into_foo_bar(value_1), (Some(13), 21));
+///
+/// fn into_foo_bar<T>(this: T)->RevIntoMultiFieldOut<FooBarPair, T>
+/// where
+///     FooBarPair: RevIntoMultiField<T>,
+/// {
+///     FooBarPair.rev_into_multi_field(this)
+/// }
+///
+///
+/// struct FooBarPair;
+///
+/// type Foo_P=FP!(foo);
+/// type Bar_P=FP!(bar);
+///
+/// impl IsMultiFieldPath for FooBarPair{
+///     type PathUniqueness = UniquePaths;
+/// }
+///
+/// impl<T0,T1,E0,E1,This> RevIntoMultiFieldImpl<This> for FooBarPair
+/// where
+///     This: DropFields,
+///     Foo_P: RevMoveOutFieldImpl<This, Ty=T0, Err=E0>,
+///     Bar_P: RevMoveOutFieldImpl<This, Ty=T1, Err=E1>,
+///     E0: IsFieldErr,
+///     E1: IsFieldErr,
+///     (
+///         Result<T0, E0>,
+///         Result<T1, E1>,
+///     ): NormalizeFields
+/// {
+///     type UnnormIntoFields=(
+///         Result<T0, E0>,
+///         Result<T1, E1>,
+///     );
+///
+///     fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields{
+///         // This is unsafe because:
+///         //
+///         // - The `moved: &mut MovedOutFields` passed to `rev_move_out_field` must only
+///         // be mutated inside of `rev_move_out_field`
+///         //
+///         // - `rev_move_out_field` must be called only once for any given field,
+///         // since calling it twice would move a field twice.
+///         unsafe{
+///             let mut this=IntoFieldsWrapper::new(this);
+///
+///             let (this, moved)=this.inner_and_moved_mut();
+///             (
+///                 <Foo_P>::NEW.rev_move_out_field(this, moved),
+///                 <Bar_P>::NEW.rev_move_out_field(this, moved),
+///             )
+///         }
+///     }
+/// }
+///
+/// ```
+///
+/// [`RevIntoMultiField`]: ./trait.RevIntoMultiField.html
+///
+///
+pub trait RevIntoMultiFieldImpl<This>:
+    IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
+{
+    /// This is usually a tuple of `Result<_, E: IsFieldErr>`s.
+    type UnnormIntoFields: NormalizeFields;
 
-        unsafe impl<'a,This:?Sized,$($fpath,$err,$fty,)*>
-            RevGetMultiFieldMutImpl<'a,This>
-        for FieldPathSet<($($fpath,)*),UniquePaths>
-        where
-            This:'a,
-            $(
-                $fpath: RevGetFieldMutImpl<'a,This, Ty=$fty, Err=$err >,
-                Result<&'a mut $fty,$err>: NormalizeFields,
-                Result<*mut $fty,$err>: NormalizeFields,
-                $fty:'a,
-                $err:IsFieldErr,
-            )*
-        {
-            type UnnormFieldsMut=(
-                $(
-                    Result<&'a mut $fty,$err>,
-                )*
-            );
-            type UnnormFieldsRawMut=(
-                $(
-                    Result<*mut $fty,$err>,
-                )*
-            );
-
-            #[allow(unused_unsafe,unused_variables)]
-            fn rev_get_multi_field_mut_impl(
-                self,
-                this:&'a mut This,
-            )-> Self::UnnormFieldsMut {
-                unsafe{
-                    let ($($fpath,)*)={
-                        #[allow(unused_variables)]
-                        let ($($fpath,)*)=self.into_paths();
-                        (
-                            $(
-                                $fpath.rev_get_field_raw_mut(this),
-                            )*
-                        )
-                    };
-
-                    (
-                        $(
-                            match $fpath {
-                                Ok($fpath)=>Ok(&mut *$fpath),
-                                Err(e)=>Err(e),
-                            },
-                        )*
-                    )
-                }
-            }
-
-            #[allow(unused_variables)]
-            unsafe fn rev_get_multi_field_raw_mut_impl(
-                self,
-                this:*mut This,
-            )-> Self::UnnormFieldsRawMut {
-                let ($($fpath,)*)=self.into_paths();
-                (
-                    $(
-                        $fpath.rev_get_field_raw_mut(this),
-                    )*
-                )
-            }
-        }
-    )
-}
-
-impl_get_multi_field! {}
-impl_get_multi_field! {
-    (F0 E0 T0)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6)
-}
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
+    /// Converts `this` into multiple fields by value,
+    /// usually a tuple of `Result<_, E: IsFieldErr>`s.
+    fn rev_into_multi_field_impl(self, this: This) -> Self::UnnormIntoFields;
 }
 
-impl_get_multi_field! {
-    (F0 E0 T0) (F1 E1 T1) (F2 E2 T2) (F3 E3 T3) (F4 E4 T4) (F5 E5 T5) (F6 E6 T6) (F7 E7 T7)
-    (F8 E8 T8) (F9 E9 T9) (F10 E10 T10) (F11 E11 T11) (F12 E12 T12)
+/// Converts `This` into multiple fields by value.
+///
+/// This trait has a blanket implementation for the [`RevIntoMultiFieldImpl`] trait,
+/// implementing that trait is necessary to be able to use this trait.
+///
+/// This is used by the
+/// [`StructuralExt::into_fields`](../../trait.StructuralExt.html#method.into_fields)
+/// method.
+///
+/// There's also the [`RevIntoMultiFieldOut`] type alias to get this trait's
+/// [`IntoFields`] associated type.
+///
+/// # Example
+///
+/// This demonstrates how you can use `RevIntoMultiField` with structs.
+///
+/// ```rust
+/// use structural::{
+///     field::RevIntoMultiField,
+///     for_examples::{Tuple3, Tuple4},
+///     FP, StructuralExt, fp,
+/// };
+///
+/// assert_eq!(into_pair((13,21,34)), (13,21));
+///
+/// assert_eq!(into_pair(('a','b','c','d','e')), ('a','b'));
+///
+/// assert_eq!(into_pair(Tuple3(Some(3),5,8)), (Some(3),5));
+///
+/// assert_eq!(into_pair(Tuple4(Some("foo"),"bar","baz","qux")), (Some("foo"),"bar"));
+///
+/// fn into_pair<A,B,T>(this: T)->(A,B)
+/// where
+///     FP!(0,1): RevIntoMultiField<T,IntoFields= (A,B)>,
+/// {
+///     this.into_fields(fp!(0,1))
+/// }
+///
+/// ```
+///
+/// # Example
+///
+/// This demonstrates how you can use `RevIntoMultiField` with enums.
+///
+/// ```rust
+/// use structural::{
+///     field::RevIntoMultiField,
+///     for_examples::{Bomb, WithBoom},
+///     FP, StructuralExt, fp,
+/// };
+///
+/// let with_0 = WithBoom::Nope;
+/// let with_1 = WithBoom::Boom{a:"hi", b: &[0,1,2]};
+/// assert_eq!( into_pair(with_0), None );
+/// assert_eq!( into_pair(with_1), Some(("hi", &[0,1,2][..])) );
+///
+/// let bomb_0 = Bomb::Nope;
+/// let bomb_1 = Bomb::Boom{a:"hello", b: &[5,8,13]};
+/// assert_eq!( into_pair(bomb_0), None );
+/// assert_eq!( into_pair(bomb_1), Some(("hello", &[5,8,13][..])) );
+///
+/// fn into_pair<A,B,T>(this: T)->Option<(A,B)>
+/// where
+///     FP!(::Boom=>a,b): RevIntoMultiField<T,IntoFields= Option<(A,B)>>,
+/// {
+///     this.into_fields(fp!(::Boom=>a,b))
+/// }
+///
+/// ```
+///
+/// [`RevIntoMultiFieldOut`]: ./type.RevIntoMultiFieldOut.html
+///
+/// [`RevIntoMultiFieldImpl`]: ./trait.RevIntoMultiFieldImpl.html
+///
+/// [`FieldsMut`]: ./trait.RevIntoMultiField.html#associatedtype.FieldsMut
+///
+/// [`IntoFields`]: ./trait.RevIntoMultiField.html#associatedtype.IntoFields
+///
+pub trait RevIntoMultiField<This>: RevIntoMultiFieldImpl<This> {
+    /// This is usually a tuple of `Option<T>`s and `T`s.
+    type IntoFields;
+
+    /// Converts `this` into multiple fields by value.
+    /// usually a tuple of `Option<T>`s and `T`s.
+    fn rev_into_multi_field(self, this: This) -> Self::IntoFields;
+}
+
+impl<This, Path> RevIntoMultiField<This> for Path
+where
+    Path: RevIntoMultiFieldImpl<This>,
+{
+    type IntoFields = NormalizeFieldsOut<Path::UnnormIntoFields>;
+
+    fn rev_into_multi_field(self, this: This) -> Self::IntoFields {
+        self.rev_into_multi_field_impl(this).normalize_fields()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<'a, F, S, U, This, Mid, OutTy, OutErr> RevGetMultiFieldImpl<'a, This>
-    for NestedFieldPathSet<F, S, U>
-where
-    F: RevGetFieldImpl<'a, This, Ty = Mid, Err = OutErr>,
-    FieldPathSet<S, U>: RevGetMultiFieldImpl<'a, Mid, UnnormFields = OutTy>,
-    OutErr: IsFieldErr,
-    This: 'a + ?Sized,
-    Mid: 'a + ?Sized,
-    OutTy: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutTy, OutErr>: 'a + NormalizeFields,
-{
-    type UnnormFields = NestedFieldPathSetOutput<OutTy, OutErr>;
-
-    #[inline(always)]
-    fn rev_get_multi_field_impl(self, this: &'a This) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
-}
-
-unsafe impl<'a, F, S, This, Mid, OutTy, OutRawTy, OutErr> RevGetMultiFieldMutImpl<'a, This>
-    for NestedFieldPathSet<F, S, UniquePaths>
-where
-    F: RevGetFieldMutImpl<'a, This, Ty = Mid, Err = OutErr>,
-    FieldPathSet<S, UniquePaths>:
-        RevGetMultiFieldMutImpl<'a, Mid, UnnormFieldsMut = OutTy, UnnormFieldsRawMut = OutRawTy>,
-    This: 'a + ?Sized,
-    OutErr: IsFieldErr,
-    Mid: 'a + ?Sized,
-    OutTy: 'a + NormalizeFields,
-    OutRawTy: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutTy, OutErr>: 'a + NormalizeFields,
-    NestedFieldPathSetOutput<OutRawTy, OutErr>: 'a + NormalizeFields,
-{
-    type UnnormFieldsMut = NestedFieldPathSetOutput<OutTy, OutErr>;
-    type UnnormFieldsRawMut = NestedFieldPathSetOutput<OutRawTy, OutErr>;
-
-    #[inline(always)]
-    fn rev_get_multi_field_mut_impl(
-        self,
-        this: &'a mut This,
-    ) -> NestedFieldPathSetOutput<OutTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field_mut(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_mut_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
-
-    #[inline(always)]
-    unsafe fn rev_get_multi_field_raw_mut_impl(
-        self,
-        this: *mut This,
-    ) -> NestedFieldPathSetOutput<OutRawTy, OutErr> {
-        let (nested, set) = self.into_inner();
-        nested
-            .rev_get_field_raw_mut(this)
-            .map({
-                #[inline(always)]
-                |mid| set.rev_get_multi_field_raw_mut_impl(mid)
-            })
-            .piped(NestedFieldPathSetOutput)
-    }
-}
-
-/// The return type of NestedFieldPathSet's `Rev*MultiField*Impl` impls,
+/// Moves out mutiple fields from `This`.
 ///
-/// This implements NormalizeFields so that a the wrapped `Result<TupleType,Err>`
-/// also normalizes the tuple type itself,
-/// turning each individual `Result<T,E>` in the tuple into `T` or `Option<T>`.
-pub struct NestedFieldPathSetOutput<T, E>(pub Result<T, E>);
-
-impl<T, E> NormalizeFields for NestedFieldPathSetOutput<T, E>
-where
-    T: NormalizeFields,
-    Result<T::Output, E>: NormalizeFields,
+/// This is used by implementors of the [`RevIntoMultiFieldImpl`] trait from 9 up to 64 fields.
+///
+/// # Safety
+///
+/// Implementors must ensure that all the fields moved out of `This` are unique,
+/// meaning that no field is moved out more than once.
+pub unsafe trait RevMoveOutMultiFieldImpl<This> :
+    // IsMultiFieldPath<PathUniqueness = UniquePaths> + Sized
+    RevIntoMultiFieldImpl<This>
 {
-    type Output = NormalizeFieldsOut<Result<T::Output, E>>;
+    // type MovedFields;
 
-    #[inline(always)]
-    fn normalize_fields(self) -> Self::Output {
-        match self.0 {
-            Ok(x) => Ok(x.normalize_fields()),
-            Err(e) => Err(e),
-        }
-        .normalize_fields()
-    }
+    /// Moves out multiple fields from `this`
+    unsafe fn rev_move_out_multi_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Self::UnnormIntoFields;
 }

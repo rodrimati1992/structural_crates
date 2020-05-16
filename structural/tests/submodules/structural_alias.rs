@@ -1,13 +1,16 @@
 // Every one of these modules is independent
 #![allow(clippy::wildcard_imports)]
 
-use crate::{
+use structural::{
     enums::{IsVariant, VariantCount},
-    FieldType, GetField, GetFieldMut, GetVariantField, GetVariantFieldMut, IntoField, IntoFieldMut,
-    IntoVariantField, IntoVariantFieldMut, Structural, StructuralExt,
+    field_path_aliases, fp, structural_alias, tstr_aliases, FieldType, GetField, GetFieldMut,
+    GetVariantField, GetVariantFieldMut, IntoField, IntoFieldMut, IntoVariantField,
+    IntoVariantFieldMut, Structural, StructuralExt, FP, TS,
 };
 
-use std_::fmt::Debug;
+use structural::assert_equal_bounds;
+
+use std::fmt::Debug;
 
 mod with_super_traits {
     use super::*;
@@ -484,7 +487,7 @@ mod with_defaulted_items {
 
 mod non_ident_variant_names {
     use super::*;
-    use crate::path::string_aliases as tstrs;
+    use structural::path::string_aliases as tstrs;
 
     structural_alias! {
         trait NonIdentVariantNames{

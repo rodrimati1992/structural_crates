@@ -1,13 +1,15 @@
-use crate::{
-    field::Array3,
+use structural::{
     field_path_aliases,
     for_examples::{EnumOptFlying, EnumOptFlying_SI},
-    structural_alias, GetField, GetFieldMut, IntoField, Structural, StructuralExt,
+    fp, structural_alias,
+    structural_aliases::Array3,
+    unsafe_delegate_structural_with, GetField, GetFieldMut, IntoField, Structural, StructuralExt,
 };
 
-use std_::{fmt::Debug, marker::PhantomData, mem};
+// For test
+use structural::declare_querying_trait;
 
-use core_extensions::type_level_bool::{False, True};
+use std::{fmt::Debug, marker::PhantomData, mem};
 
 field_path_aliases! {
     mod paths{
@@ -28,6 +30,7 @@ structural_alias! {
             hands: Option<usize>,
             noodles: usize,
         },
+        mut NotLimb,
     }
 }
 
@@ -35,6 +38,7 @@ fn struct_testing<T>(mut this: T)
 where
     T: MutArray3<u32>,
 {
+    assert_eq!(this.fields(fp!(0, 1, 2)), (&2, &3, &5));
     let (a, b, c) = this.fields_mut(fp!(0, 1, 2));
     mem::swap(a, c);
     assert_eq!(a, &mut 5);
@@ -49,14 +53,15 @@ where
     assert_eq!(this.clone().into_field(fp!(0)), 2);
     assert_eq!(this.clone().into_field(fp!(1)), 3);
     assert_eq!(this.clone().into_field(fp!(2)), 5);
+    assert_eq!(this.clone().into_fields(fp!(0, 1, 2)), (2, 3, 5));
 
     #[cfg(feature = "alloc")]
     {
-        use crate::reexports::Box;
         let erase = |v: &T| Box::new(v.clone()) as Box<dyn Array3<u32>>;
         assert_eq!(erase(&this).into_field(fp!(0)), 2);
         assert_eq!(erase(&this).into_field(fp!(1)), 3);
         assert_eq!(erase(&this).into_field(fp!(2)), 5);
+        assert_eq!(erase(&this).into_fields(fp!(0, 1, 2)), (2, 3, 5));
     }
 }
 
@@ -64,6 +69,18 @@ fn enum_testing<T>(mut this: T)
 where
     T: EnumOptFlying_Mut_SI,
 {
+    assert!(this.is_variant(fp!(Limbs)));
+    assert!(!this.is_variant(fp!(NotLimb)));
+
+    assert_eq!(
+        this.fields(fp!(::Limbs=>legs?,hands?,noodles)),
+        Some((Some(&3), Some(&5), &8)),
+    );
+
+    assert_eq!(this.field_(fp!(::Limbs.legs?)), Some(&3));
+    assert_eq!(this.field_(fp!(::Limbs.hands?)), Some(&5));
+    assert_eq!(this.field_(fp!(::Limbs.noodles)), Some(&8));
+
     let (a, b, c) = this.fields_mut(fp!(::Limbs=>legs,hands,noodles)).unwrap();
     assert_eq!(a, &mut Some(3));
     assert_eq!(b, &mut Some(5));
@@ -80,17 +97,27 @@ fn enum_val_testing<T>(this: T)
 where
     T: EnumOptFlying_SI + Clone,
 {
+    assert!(this.is_variant(fp!(Limbs)));
+    assert!(!this.is_variant(fp!(NotLimb)));
+
     assert_eq!(this.clone().into_field(fp!(::Limbs.legs?)), Some(3));
     assert_eq!(this.clone().into_field(fp!(::Limbs.hands?)), Some(5));
     assert_eq!(this.clone().into_field(fp!(::Limbs.noodles)), Some(8));
+    assert_eq!(
+        this.clone().into_fields(fp!(::Limbs=>legs,hands,noodles)),
+        Some((Some(3), Some(5), 8))
+    );
 
     #[cfg(feature = "alloc")]
     {
-        use crate::reexports::Box;
         let erase = |v: &T| Box::new(v.clone()) as Box<dyn EnumOptFlying_SI>;
         assert_eq!(erase(&this).into_field(fp!(::Limbs.legs?)), Some(3));
         assert_eq!(erase(&this).into_field(fp!(::Limbs.hands?)), Some(5));
         assert_eq!(erase(&this).into_field(fp!(::Limbs.noodles)), Some(8));
+        assert_eq!(
+            erase(&this).into_fields(fp!(::Limbs=>legs,hands,noodles)),
+            Some((Some(3), Some(5), 8))
+        );
     }
 }
 
@@ -131,21 +158,21 @@ struct BoundedFoo<T> {
 }
 
 declare_querying_trait! {
-    trait ImplsGetField
-    implements [GetField<paths::p0,Ty=()>]
-    fn impls_get_field;
+    trait ImplsGetField[P,]
+    implements [GetField<P>]
+    fn impls_get_field(_: P);
 }
 
 declare_querying_trait! {
-    trait ImplsGetFieldMut
-    implements [GetFieldMut<paths::p0,Ty=()>]
-    fn impls_get_field_mut;
+    trait ImplsGetFieldMut[P,]
+    implements [GetFieldMut<P>]
+    fn impls_get_field_mut(_: P);
 }
 
 declare_querying_trait! {
-    trait ImplsIntoField
-    implements [IntoField<paths::p0,Ty=()>]
-    fn impls_into_field;
+    trait ImplsIntoField[P,]
+    implements [IntoField<P>]
+    fn impls_into_field(_: P);
 }
 
 declare_querying_trait! {
@@ -186,39 +213,39 @@ fn bounded_delegation_tests() {
 
     {
         let this = PhantomData::<BoundedFoo<((), NotClone)>>;
-        let _: False = this.impls_clone();
-        let _: False = this.impls_copy();
-        let _: False = this.impls_debug();
-        let _: False = this.impls_get_field();
-        let _: False = this.impls_get_field_mut();
-        let _: False = this.impls_into_field();
+        assert!(!this.impls_clone());
+        assert!(!this.impls_copy());
+        assert!(!this.impls_debug());
+        assert!(!this.impls_get_field(paths::p0));
+        assert!(!this.impls_get_field_mut(paths::p0));
+        assert!(!this.impls_into_field(paths::p0));
     }
     {
         let this = PhantomData::<BoundedFoo<((), CloneNotCopy)>>;
-        let _: True = this.impls_clone();
-        let _: False = this.impls_copy();
-        let _: False = this.impls_debug();
-        let _: True = this.impls_get_field();
-        let _: False = this.impls_get_field_mut();
-        let _: False = this.impls_into_field();
+        assert!(this.impls_clone());
+        assert!(!this.impls_copy());
+        assert!(!this.impls_debug());
+        assert!(this.impls_get_field(paths::p0));
+        assert!(!this.impls_get_field_mut(paths::p0));
+        assert!(!this.impls_into_field(paths::p0));
     }
     {
         let this = PhantomData::<BoundedFoo<((), CopyNotDebug)>>;
-        let _: True = this.impls_clone();
-        let _: True = this.impls_copy();
-        let _: False = this.impls_debug();
-        let _: True = this.impls_get_field();
-        let _: True = this.impls_get_field_mut();
-        let _: False = this.impls_into_field();
+        assert!(this.impls_clone());
+        assert!(this.impls_copy());
+        assert!(!this.impls_debug());
+        assert!(this.impls_get_field(paths::p0));
+        assert!(this.impls_get_field_mut(paths::p0));
+        assert!(!this.impls_into_field(paths::p0));
     }
     {
         let this = PhantomData::<BoundedFoo<((), CopyDebug)>>;
-        let _: True = this.impls_clone();
-        let _: True = this.impls_copy();
-        let _: True = this.impls_debug();
-        let _: True = this.impls_get_field();
-        let _: True = this.impls_get_field_mut();
-        let _: True = this.impls_into_field();
+        assert!(this.impls_clone());
+        assert!(this.impls_copy());
+        assert!(this.impls_debug());
+        assert!(this.impls_get_field(paths::p0));
+        assert!(this.impls_get_field_mut(paths::p0));
+        assert!(this.impls_into_field(paths::p0));
     }
 }
 

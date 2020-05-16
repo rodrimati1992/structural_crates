@@ -93,7 +93,8 @@ pub(crate) fn write_datatype_docs(
             printed_variant_name,
             try_opt2(type_name, variant.pub_vari_rename).map_or(String::new(), |(t, v)| format!(
                 "(named `{}` in `{}`)",
-                v, t
+                v.display(),
+                t
             )),
             variant_name_clarification,
         );
@@ -228,13 +229,14 @@ fn write_field_docs(
         field_ty,
         try_opt2(type_name, field.pub_field_rename).map_or(String::new(), |(t, f)| format!(
             "(named `{}` in `{}`)",
-            f, t
+            f.display(),
+            t
         )),
         LP = left_padding,
     )?;
     match variant {
         Some(IdentType::Ident(vari_name)) => {
-            write!(buff, " in the `{}` variant", vari_name)?;
+            write!(buff, " in the `{}` variant", vari_name.display())?;
         }
         Some(IdentType::Generic(generic)) => {
             write!(buff, " in the `<{}>` variant", generic)?;

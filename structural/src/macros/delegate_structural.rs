@@ -14,13 +14,53 @@ methods from `structural` traits are called in a sequence
 (with no method calls from non-`structural`-traits in between).
 
 You must ensure that the variable that you delegate `Get*Field` to is the same as the one
-you delegate `Get*FieldMut` to,
-as well as ensuring that there are no other impls of the `Get*FieldMut` trait
-borrowing from the same delegated-to variable mutably.
+you delegate `Get*FieldMut`/`Into*Field` to,
+as well as ensuring that there are no other impls of the `Get*FieldMut`/`Into*Field` traits
+accessing the same delegated-to variable.
 
-###  general
+# Drop behavior
 
+When converting a type into multiple fields by value
+(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+the regular destructor (`Drop::drop`) won't run,
+instead the steps [in the section below](#drop-order-section) will happen.
 
+If your type has code that must run when it's dropped,
+you can pass `DropFields= { ..... pre_move = foo_function; }` to this macro
+to run that code before the type is converted into multiple fields by value
+(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+
+<span id="drop-order-section"></span>
+### Drop order
+
+The order of operations when invoking [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]
+is this by default:
+
+- Call [`DropFields::pre_move`].
+
+- Move out the fields.
+
+- Call [`PrePostDropFields::pre_drop`].
+
+- Drop the fields passed to `dropped_fields[]`, in the order that they were passed.
+
+- Drop the delegated-to variable with [`DropFields::drop_fields`].
+
+- Call [`PrePostDropFields::post_drop`].
+
+- Return the moved out fields
+
+[`DropFields`]: ./field/ownership/trait.DropFields.html
+
+[`DropFields::drop_fields`]: ./field/ownership/trait.DropFields.html#tymethod.drop_fields
+
+[`DropFields::pre_move`]: ./field/ownership/trait.DropFields.html#tymethod.pre_move
+
+[`PrePostDropFields`]: ./field/ownership/trait.PrePostDropFields.html
+
+[`PrePostDropFields::pre_drop`]: ./field/ownership/trait.PrePostDropFields.html#method.pre_drop
+
+[`PrePostDropFields::post_drop`]: ./field/ownership/trait.PrePostDropFields.html#method.post_drop
 
 # Example with all syntax
 
@@ -31,7 +71,15 @@ use structural::unsafe_delegate_structural_with;
 # impl<T> Trait for T{}
 
 struct Foo<T>{
+    a: (),
+    b: (),
+    c: (),
+    d: Bar,
     value:T
+}
+
+struct Bar{
+    e: (),
 }
 
 unsafe_delegate_structural_with!{
@@ -49,13 +97,14 @@ unsafe_delegate_structural_with!{
     // `specialization_params(Sized);` is the default when this the parameter is not passed,
     // it means that no specialization is used,always requiring `Self:Sized`.
     //
-    specialization_params(Sized);
+    // This is the default value for the parameter:
+    // `specialization_params(Sized);`
 
     // This means that the type is `?Sized` and not specialization is used,
     // this may be slower in debug builds because this always uses a
     // function pointer call in raw-pointer-taking methods.
     //
-    // specialization_params(?Sized);
+    // `specialization_params(?Sized);`
 
     // This means that the type is `?Sized` by default.
     // The `cfg(anything)` argument enables specialization conditionally,
@@ -67,7 +116,7 @@ unsafe_delegate_structural_with!{
     // When specialization is enabled,the impl is specializes on `Self:Sized`
     // to remove the overhead of raw-pointer methods.
     //
-    // specialization_params(cfg(anything));
+    // `specialization_params(cfg(anything));`
 
 
     // This is the type of the variable we delegate to,
@@ -94,13 +143,12 @@ unsafe_delegate_structural_with!{
     ]{
         &mut this.value
     }
-
     // This gets a raw mutable pointer to the variable this delegates to.
     as_delegating_raw{
         &mut (*this).value as *mut T
     }
 
-    // This block of code is used to get the delegated-to variable by value in IntoField.
+    // This block of code is used to get the delegated-to variable in IntoField::into_field.
     IntoField
     where [
         // This is an optional where clause
@@ -109,7 +157,90 @@ unsafe_delegate_structural_with!{
     ]{
         this.value
     }
+    // This block of code is used to get the delegated-to variable in
+    // IntoField::move_out_field_.
+    move_out_field{
+        &mut this.value
+    }
+
+    // `DropFields = .... ` determines what happens in the DropFields implementation
+    // for the type, which isn't as trivial as delegating to the delegated_to type.
+    //
+    DropFields = {
+        // Which fields are dropped in `DropFields::drop_fields`,
+        // in the order that they're dropped.
+        //
+        // If you're dropping a nested field,it must be wrapped in parentheses(ie:`(a.b.c)`).
+        dropped_fields[ a,b,c,(d.e) ]
+
+        // An optional argument for code to run right before fields are moved.
+        //
+        // `some_function` is called in the implementation of
+        // `DropFields::pre_move` generated for this type.
+        //
+        // The passed in function must have this signature: `fn(&mut Self)`
+        // in this example it would be `fn<T: Trait>(&mut Foo<T>)`
+        //
+        // `pre_move = some_function;`
+
+        // An optional argument which determines whether there's pre/post field-drop logic
+        // in `DropFields::drop_fields`.
+        //
+        // With `pre_post_drop_fields=true;` this inserts
+        // a `PrePostDropFields::pre_drop(self)` call before the fields are dropped,
+        // and a `PrePostDropFields::post_drop(self)` call after the fields are dropped,
+        //
+        // To use this the type must implement the `PrePostDropFields` trait
+        // to do something before and after the listed fields (and the delegated_to variable)
+        // are dropped.
+        //
+        // This is the default value:
+        // `pre_post_drop_fields=false;`
+
+        // Whether to drop the fields in the delegated_to variable,with `DropFields::drop_fields`.
+        //
+        // With `drop_delegated_drop_variable=true;`,
+        // this calls `DropFields::drop_fields` on the delegated to variable.
+        //
+        // With `drop_delegated_drop_variable=false;`,
+        // it does not drop the delegated to variable in an way.
+        //
+        drop_delegated_to_variable=true;
+    }
+
+    // Requires that the DropFields trait is implemented manually.
+    // DropFields = manual;
+
+    // This is an optional parameter,
+    // which determines how the FromStructural and TryFromStructural traits are delegated.
+    //
+    // If this parameter is not passed,
+    // then neither FromStructural and TryFromStructural is implemented.
+    FromStructural
+    // An optional where clause, with additional constraints
+    where [ u32: Copy, ]
+    {
+        // An optional parameter, defaults to the delegated-to type.
+        converted_from = T;
+
+        // The function that constructs this type from the `converted_from` type.
+        constructor = Foo::new;
+    }
 }
+
+
+impl<T> Foo<T>{
+    pub fn new(value: T)->Self{
+        Self{
+            a: (),
+            b: (),
+            c: (),
+            d: Bar{e: ()},
+            value,
+        }
+    }
+}
+
 ```
 
 # Example
@@ -175,6 +306,13 @@ unsafe_delegate_structural_with!{
 #       T::clone;
 #       <T as Debug>::fmt;
         ManuallyDrop::into_inner(this.value)
+    }
+    move_out_field{
+        &mut *this.value
+    }
+
+    DropFields = {
+        dropped_fields[]
     }
 }
 
@@ -266,6 +404,18 @@ macro_rules! unsafe_delegate_structural_with_inner {
             IntoField
             $( where[ $($into_where_clause:tt)* ] )?
             $into_field_closure:block
+            move_out_field $move_out_field_closure:block
+
+            DropFields = $drop_fields_param:tt $(;)?
+        )?
+
+        $(
+            FromStructural
+            $( where $from_struc_where:tt )?
+            {
+                $(converted_from=$converted_from:ty;)?
+                constructor = $constructor:expr;
+            }
         )?
     ) => (
 
@@ -312,6 +462,35 @@ macro_rules! unsafe_delegate_structural_with_inner {
                 self_ident=$this;
                 delegating_to_type=$delegating_to_type;
                 IntoField $into_field_closure
+                move_out_field $move_out_field_closure
+            }
+
+            $crate::unsafe_delegate_structural_with_inner!{
+                @drop_fields_impls
+                impl $impl_params $self
+                where $where_clause
+                where [ $( $($into_where_clause)* )? ]
+                self_ident=$this;
+                delegating_to_type=$delegating_to_type;
+                IntoField $into_field_closure
+                move_out_field $move_out_field_closure
+
+                DropFields = $drop_fields_param
+            }
+        )?
+
+        $(
+            $crate::unsafe_delegate_structural_with_inner!{
+                inner;
+                impl $impl_params $self
+                where $where_clause
+                $(where $from_struc_where)?
+
+                FromStructural {
+                    $(converted_from = $converted_from;)?
+                    converted_from = $delegating_to_type;
+                    constructor = $constructor;
+                }
             }
         )?
     );
@@ -861,12 +1040,63 @@ macro_rules! unsafe_delegate_structural_with_inner {
     };
     (inner;
         impl [$($impl_params:tt)*] $self:ty
+        where [$($where_clause_a:tt)*]
+        $(where [$($where_clause_b:tt)*])?
+
+        FromStructural {
+            converted_from=$converted_from:ty;
+            $(converted_from=$converted_from_b:ty;)?
+            constructor = $constructor:expr;
+        }
+    )=>{
+        impl<$($impl_params)* __From> $crate::pmr::FromStructural<__From> for $self
+        where
+            $($where_clause_a)*
+            $($($where_clause_b)*)?
+            $converted_from: $crate::pmr::FromStructural<__From>,
+        {
+            #[inline]
+            fn from_structural(from: __From) -> Self {
+                let delegating_to=
+                    <$converted_from as
+                        $crate::pmr::FromStructural<__From>
+                    >::from_structural(from);
+                $constructor(delegating_to)
+            }
+        }
+
+        impl<$($impl_params)* __From,__Err> $crate::pmr::TryFromStructural<__From> for $self
+        where
+            $($where_clause_a)*
+            $($($where_clause_b)*)?
+            $converted_from: $crate::pmr::TryFromStructural<__From, Error=__Err>,
+        {
+            type Error=__Err;
+
+            #[inline]
+            fn try_from_structural(
+                from: __From,
+            ) -> Result<Self, $crate::pmr::TryFromError<__From,__Err>> {
+                let res=
+                    <$converted_from as
+                        $crate::pmr::TryFromStructural<__From>
+                    >::try_from_structural(from);
+                match res {
+                    Ok(x) => Ok($constructor(x)),
+                    Err(e) => Err(e),
+                }
+            }
+        }
+    };
+    (inner;
+        impl [$($impl_params:tt)*] $self:ty
         where [$($where_clause:tt)*]
         where [$($into_where_clause:tt)*]
         self_ident=$this:ident;
         delegating_to_type=$delegating_to_type:ty;
 
         IntoField $into_field_closure:block
+        move_out_field $move_out_field_closure:block
     )=>{
 
         unsafe impl<$($impl_params)* __V,__F,__Ty>
@@ -874,55 +1104,240 @@ macro_rules! unsafe_delegate_structural_with_inner {
         for $self
         where
             $delegating_to_type:
-                Sized+
                 $crate::pmr::IntoVariantField<$crate::TStr<__V>,__F,Ty=__Ty>,
             $($into_where_clause)*
             $($where_clause)*
         {
             #[inline(always)]
-            fn into_vfield_(
-                self,
-                vname:$crate::TStr<__V>,
-                fname:__F,
-            )->Option<$crate::GetVariantFieldType<$delegating_to_type,$crate::TStr<__V>,__F>>{
+            fn into_vfield_(self,vname:$crate::TStr<__V>,fname: __F)->Option<__Ty>{
                 let $this=self;
                 let field:$delegating_to_type=$into_field_closure;
-                $crate::IntoVariantField::<$crate::TStr<__V>,__F>::into_vfield_(field,vname,fname)
+                $crate::IntoVariantField::<$crate::TStr<__V>, __F>::into_vfield_(
+                    field,
+                    vname,
+                    fname,
+                )
             }
 
-            $crate::z_impl_box_into_variant_field_method!{
-                variant_tstr= $crate::TStr<__V>,
-                field_tstr= __F,
-                field_type= $crate::GetVariantFieldType<$delegating_to_type,$crate::TStr<__V>,__F>,
+            #[inline(always)]
+            unsafe fn move_out_vfield_(
+                &mut self,
+                vname:$crate::TStr<__V>,
+                fname:__F,
+                moved: &mut $crate::pmr::MovedOutFields,
+            )->Option<__Ty>{
+                let $this=self;
+                let field:&mut $delegating_to_type=$move_out_field_closure;
+                $crate::IntoVariantField::<$crate::TStr<__V>,__F>::move_out_vfield_(
+                    field,
+                    vname,
+                    fname,
+                    moved,
+                )
             }
         }
 
-        impl<$($impl_params)* __F,__Ty>
+        unsafe impl<$($impl_params)* __F,__Ty>
             $crate::IntoField< __F>
             for $self
         where
             $delegating_to_type:
-                Sized+
                 $crate::IntoField<__F,Ty=__Ty>,
             $($into_where_clause)*
             $($where_clause)*
         {
             #[inline(always)]
-            fn into_field_(
-                self,
-                fname: __F,
-            )->__Ty{
+            fn into_field_(self,fname: __F)->__Ty{
                 let $this=self;
                 let field:$delegating_to_type=$into_field_closure;
-                $crate::IntoField::<__F>::into_field_(field,fname)
+                $crate::IntoField::<__F>::into_field_(field, fname)
             }
 
-            $crate::z_impl_box_into_field_method!{
-                field_tstr=__F,
-                field_type=__Ty,
+            #[inline(always)]
+            unsafe fn move_out_field_(
+                &mut self,
+                fname:__F,
+                moved: &mut $crate::pmr::MovedOutFields,
+            )->__Ty{
+                let $this=self;
+                let field:&mut $delegating_to_type=$move_out_field_closure;
+                $crate::IntoField::<__F>::move_out_field_(
+                    field,
+                    fname,
+                    moved,
+                )
             }
         }
     };
+    (@drop_fields_impls
+        impl [$($impl_params:tt)*] $self:ty
+        where [$($where_clause:tt)*]
+        where [$($into_where_clause:tt)*]
+        self_ident=$this:ident;
+        delegating_to_type=$delegating_to_type:ty;
+
+        IntoField $into_field_closure:block
+
+        DropFields = manual
+    )=>{
+
+    };
+    (@drop_fields_impls
+        impl [$($impl_params:tt)*] $self:ty
+        where [$($where_clause:tt)*]
+        where [$($into_where_clause:tt)*]
+        self_ident=$this:ident;
+        delegating_to_type=$delegating_to_type:ty;
+
+        IntoField $into_field_closure:block
+        move_out_field $move_out_field_closure:block
+
+        DropFields = {
+            dropped_fields[$($field:tt)*]
+
+            $(pre_move = $pre_move:expr;)?
+
+            $(pre_post_drop_fields=$pp_drop_fields:ident;)?
+            $(drop_delegated_to_variable=$drop_delegated:ident;)?
+        }
+    )=>{
+        unsafe impl<$($impl_params)*> $crate::pmr::DropFields for $self
+        where
+            $delegating_to_type: $crate::pmr::DropFields,
+            $($into_where_clause)*
+            $($where_clause)*
+        {
+            #[inline(always)]
+            fn pre_move(&mut self){
+                #[allow(unused_variables,unused_mut)]
+                let mut guard=$crate::pmr::RunOnDrop::new(
+                    self,
+                    #[inline(always)]
+                    |$this|{
+                        let field:&mut $delegating_to_type=$move_out_field_closure;
+                        $crate::pmr::DropFields::pre_move(field);
+                    }
+                );
+
+                $(
+                    let func=$pre_move;
+                    func(guard.reborrow_mut());
+                )?
+            }
+
+            #[allow(unused_variables)]
+            unsafe fn drop_fields(&mut self, moved: $crate::pmr::MovedOutFields) {
+                let $this=self;
+
+                $crate::delegate_to_into_helper!{
+                    post_drop=$($pp_drop_fields)?,
+                    self_ident=$this,
+                }
+
+                // Remember that:
+                //
+                // - the fields are dropped in the destructor for RunDrop
+                //
+                // - the delegated-to variable is dropped in the destructor for
+                // RunDropFields.
+                //
+                // Destructors run in the opposite order in which variables are declared,
+                // and after all statements.
+                let mut $this=$crate::pmr::RunOnDrop::new(
+                    $this,
+                    #[inline(always)]
+                    |$this|{
+                        $crate::delegate_to_into_helper!{
+                            drop_delegated_to=$($drop_delegated)?,
+                            self_ident=$this,
+                            delegating_to_type=$delegating_to_type,
+                            delegating_to=$move_out_field_closure,
+                            moved_fields_variable=moved,
+                        }
+
+                        $crate::reverse_code!{
+                            $((
+                                $crate::delegate_to_into_helper!{
+                                    drop_field($field),
+                                    self_ident=$this,
+                                }
+                            ))*
+                        }
+                    }
+                );
+
+                let $this=$this.reborrow_mut();
+                $crate::delegate_to_into_helper!{
+                    pre_drop=$($pp_drop_fields)?,
+                    self_ident=$this,
+                }
+            }
+        }
+    };
+    ( $($stuff:tt)* )=>{
+        compile_error!{concat!(
+            "Unrecognized `unsafe_delegate_structural_with_inner` arguments:",
+            $(stringify!($stuff),)*
+        )}
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! delegate_to_into_helper {
+    (
+        drop_field(($($nested:tt)*)),
+        self_ident=$this:ident,
+    )=>{
+        let _a=$crate::pmr::RunDrop::new(&mut $this.$($nested)*);
+    };
+    (
+        // Ignoring the optional commas separating the fields
+        drop_field(,),
+        self_ident=$this:ident,
+    )=>{};
+    (
+        drop_field($field:tt),
+        self_ident=$this:ident,
+    )=>{
+        let _a=$crate::pmr::RunDrop::new(&mut $this.$field);
+    };
+    //////////////////////////////////////////////////////////////////////
+    (
+        $(pre_drop)? $(post_drop)?=$(false)?,
+        self_ident=$this:ident,
+    ) => ();
+    (
+        pre_drop=true,
+        self_ident=$this:ident,
+    ) => (
+        $crate::pmr::PrePostDropFields::pre_drop($this);
+    );
+    (
+        post_drop=true,
+        self_ident=$this:ident,
+    ) => (
+        let mut $this = $crate::pmr::RunPostDrop::new($this);
+        let $this=$this.get_mut();
+    );
+    //////////////////////////////////////////////////////////////////////
+    (
+        drop_delegated_to=false,
+        self_ident=$this:ident,
+        delegating_to_type=$delegating_to_type:ty,
+        delegating_to=$into_field_closure:block,
+        moved_fields_variable=$moved_fields_var:ident,
+    ) => ();
+    (
+        drop_delegated_to=$(true)?,
+        self_ident=$this:ident,
+        delegating_to_type=$delegating_to_type:ty,
+        delegating_to=$into_field_closure:block,
+        moved_fields_variable=$moved_fields_var:ident,
+    ) => (
+        let delegated_to:&mut $delegating_to_type = $into_field_closure;
+        let _a=$crate::pmr::RunDropFields::new(delegated_to,$moved_fields_var);
+    );
 }
 
 //////////////////////////////////////////////////////////////////////////////

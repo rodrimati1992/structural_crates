@@ -1,11 +1,11 @@
 #![allow(non_camel_case_types)]
 
-use crate::{FieldType, GetField, IntoField, Structural};
+use crate::{fp, FieldType, GetField, IntoField, Structural};
 
 #[allow(unused_imports)]
 use crate::StructuralExt;
 
-use core::{
+use std_::{
     //marker::Unpin,
     mem::ManuallyDrop,
     ops::Deref,
@@ -22,8 +22,22 @@ _private_impl_getters_for_derive_struct! {
     impl[T] Range<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",> )
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields={just_fields,} }
+
+        (IntoFieldMut < start : T,0,Start_STR,"start",> )
+        (IntoFieldMut < end : T,1,End_STR,"end",> )
+    }
+}
+
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for Range<T>
+    where[
+        F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let (start, end) = this.into_fields(fp!(start, end));
+            Self { start, end }
+        }
     }
 }
 
@@ -31,7 +45,21 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeFrom<T>
     where[]
     {
-        (IntoFieldMut < start : T,Start_STR,"start",> )
+        DropFields{ drop_fields={just_fields,} }
+
+        (IntoFieldMut < start : T,0,Start_STR,"start",> )
+    }
+}
+
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeFrom<T>
+    where[
+        F: IntoField<Start_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let start = this.into_field(fp!(start));
+            Self { start }
+        }
     }
 }
 
@@ -39,7 +67,21 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeTo<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields={just_fields,} }
+
+        (IntoFieldMut < end : T,0,End_STR,"end",> )
+    }
+}
+
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeTo<T>
+    where[
+        F: IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let end = this.into_field(fp!(end));
+            Self { end }
+        }
     }
 }
 
@@ -47,7 +89,21 @@ _private_impl_getters_for_derive_struct! {
     impl[T] RangeToInclusive<T>
     where[]
     {
-        (IntoFieldMut < end : T,End_STR,"end",> )
+        DropFields{ drop_fields={just_fields,} }
+
+        (IntoFieldMut < end : T,0,End_STR,"end",> )
+    }
+}
+
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeToInclusive<T>
+    where[
+        F: IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let end = this.into_field(fp!(end));
+            Self { end }
+        }
     }
 }
 
@@ -73,17 +129,16 @@ impl<T> GetField<End_STR> for RangeInclusive<T> {
     }
 }
 
-impl<T> IntoField<Start_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: Start_STR) -> Self::Ty {
-        self.into_inner().0
+z_impl_from_structural! {
+    impl[F, T] FromStructural<F> for RangeInclusive<T>
+    where[
+        F: IntoField<Start_STR, Ty = T> + IntoField<End_STR, Ty = T>,
+    ]{
+        fn from_structural(this){
+            let (start, end) = this.into_fields(fp!(start, end));
+            Self::new(start, end)
+        }
     }
-    z_impl_box_into_field_method! {field_tstr=Start_STR}
-}
-impl<T> IntoField<End_STR> for RangeInclusive<T> {
-    fn into_field_(self, _: End_STR) -> Self::Ty {
-        self.into_inner().0
-    }
-    z_impl_box_into_field_method! {field_tstr=End_STR}
 }
 
 ///////////////////////////////////////////////////////
@@ -101,7 +156,9 @@ unsafe_delegate_structural_with! {
     GetFieldMut { this }
     as_delegating_raw{ this as *mut ManuallyDrop<T> as *mut T }
 
-    IntoField { ManuallyDrop::into_inner(this) }
+    FromStructural {
+        constructor = ManuallyDrop::new;
+    }
 }
 
 #[test]
@@ -114,11 +171,6 @@ fn delegated_mdrop() {
         mdrop.fields_mut(fp!(0, 1, 2, 3)),
         (&mut 2, &mut 3, &mut 5, &mut 8)
     );
-
-    assert_eq!(mdrop.clone().into_field(fp!(0)), 2);
-    assert_eq!(mdrop.clone().into_field(fp!(1)), 3);
-    assert_eq!(mdrop.clone().into_field(fp!(2)), 5);
-    assert_eq!(mdrop.clone().into_field(fp!(3)), 8);
 }
 
 ///////////////////////////////////////////////////////
@@ -133,6 +185,13 @@ unsafe_delegate_structural_with! {
     delegating_to_type=P::Target;
 
     GetField { &*this }
+
+    FromStructural
+    where [ P::Target: Unpin, ]
+    {
+        converted_from = P;
+        constructor = Pin::new;
+    }
 }
 
 #[test]
@@ -147,8 +206,15 @@ fn delegated_pin() {
 
 #[cfg(feature = "alloc")]
 mod alloc_impls {
-    use crate::alloc::{boxed::Box, rc::Rc, sync::Arc};
-    use crate::{IntoField, IntoVariantField, TStr};
+    use crate::{
+        alloc::{boxed::Box, rc::Rc, sync::Arc},
+        field::{
+            ownership::{DropFields, IntoFieldsWrapper, MovedOutFields},
+            IntoField, IntoVariantField,
+        },
+        TStr,
+    };
+    use std_::mem::ManuallyDrop;
 
     macro_rules! impl_shared_ptr_accessors {
         ( $this:ident ) => {
@@ -161,6 +227,10 @@ mod alloc_impls {
 
                 GetField {
                     &*this
+                }
+
+                FromStructural{
+                    constructor = $this::new;
                 }
             }
         };
@@ -186,17 +256,31 @@ mod alloc_impls {
         as_delegating_raw{
             *(this as *mut Box<T> as *mut *mut T)
         }
+
+        FromStructural {
+            constructor = Box::new;
+        }
     }
 
-    impl<T, P> IntoField<P> for Box<T>
+    unsafe impl<T, P> IntoField<P> for Box<T>
     where
         T: ?Sized + IntoField<P>,
     {
         #[inline(always)]
         fn into_field_(self, path: P) -> Self::Ty {
-            <T as IntoField<P>>::box_into_field_(self, path)
+            unsafe {
+                let mut this = IntoFieldsWrapper::new(self);
+                let (this, moved) = this.inner_and_moved_mut();
+                let this: &mut T = this;
+                this.move_out_field_(path, moved)
+            }
         }
-        crate::z_impl_box_into_field_method! {field_tstr=P}
+
+        #[inline(always)]
+        unsafe fn move_out_field_(&mut self, path: P, moved: &mut MovedOutFields) -> Self::Ty {
+            let this: &mut T = self;
+            this.move_out_field_(path, moved)
+        }
     }
 
     unsafe impl<T, V, F, Ty> IntoVariantField<TStr<V>, F> for Box<T>
@@ -205,12 +289,42 @@ mod alloc_impls {
     {
         #[inline(always)]
         fn into_vfield_(self, vname: TStr<V>, fname: F) -> Option<Ty> {
-            <T as IntoVariantField<TStr<V>, F>>::box_into_vfield_(self, vname, fname)
+            unsafe {
+                let mut this = IntoFieldsWrapper::new(self);
+                let (this, moved) = this.inner_and_moved_mut();
+                let this: &mut T = this;
+                this.move_out_vfield_(vname, fname, moved)
+            }
         }
-        crate::z_impl_box_into_variant_field_method! {
-            variant_tstr= TStr<V>,
-            field_tstr=F,
-            field_type=Ty,
+
+        #[inline(always)]
+        unsafe fn move_out_vfield_(
+            &mut self,
+            vname: TStr<V>,
+            fname: F,
+            moved: &mut MovedOutFields,
+        ) -> Option<Ty> {
+            let this: &mut T = self;
+            this.move_out_vfield_(vname, fname, moved)
+        }
+    }
+
+    unsafe impl<T> DropFields for Box<T>
+    where
+        T: ?Sized + DropFields,
+    {
+        #[inline(always)]
+        fn pre_move(&mut self) {
+            <T as DropFields>::pre_move(&mut **self);
+        }
+
+        #[inline(always)]
+        unsafe fn drop_fields(&mut self, moved: MovedOutFields) {
+            let mut this = Box::<ManuallyDrop<T>>::from_raw(
+                &mut **({ self } as *mut Box<T> as *mut Box<ManuallyDrop<T>>),
+            );
+            let this: &mut T = &mut **this;
+            <T as DropFields>::drop_fields(this, moved)
         }
     }
 }
@@ -224,7 +338,6 @@ unsafe_delegate_structural_with! {
     delegating_to_type=T;
 
     GetField { &**this }
-
 }
 
 ///////////////////////////////////////////////////////

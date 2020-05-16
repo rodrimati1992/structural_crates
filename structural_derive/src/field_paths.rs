@@ -5,13 +5,13 @@ use crate::{
     tokenizers::{variant_field_tokens, variant_name_tokens},
 };
 
-// use as_derive_utils::spanned_err;
+use as_derive_utils::ToTokenFnMut;
 
 use core_extensions::SelfOps;
 
 use proc_macro2::TokenStream as TokenStream2;
 
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, TokenStreamExt};
 
 use syn::{
     parse::{self, Parse, ParseStream},
@@ -106,21 +106,33 @@ impl FieldPaths {
     /// Gets a the type-level identifier.
     pub(crate) fn type_tokens(&self) -> TokenStream2 {
         if self.is_set() {
-            let path = self.paths.iter().map(|x| x.to_token_stream());
             let uniqueness = self.path_uniqueness;
+
+            let tuple_param = if self.paths.len() > INNER_TUPLE_LEN {
+                let inside_paren = ToTokenFnMut::new(|tokens| {
+                    for nested_paths in self.paths.chunks(INNER_TUPLE_LEN) {
+                        let path = nested_paths.iter().map(|x| x.to_token_stream());
+                        tokens.append_all(quote!( (#(#path,)*), ));
+                    }
+                });
+                quote!( ::structural::path::LargePathSet<(#inside_paren)>)
+            } else {
+                let path = self.paths.iter().map(|x| x.to_token_stream());
+                quote!((#(#path,)*))
+            };
 
             if let Some(prefix) = &self.prefix {
                 let prefix_tokens = prefix.to_token_stream();
                 quote!(
                     ::structural::NestedFieldPathSet<
                         #prefix_tokens,
-                        (#(#path,)*),
+                        #tuple_param,
                         #uniqueness
                     >
                 )
             } else {
                 quote!(
-                    ::structural::FieldPathSet<(#(#path,)*),#uniqueness>
+                    ::structural::FieldPathSet<#tuple_param,#uniqueness>
                 )
             }
         } else {
@@ -171,6 +183,9 @@ impl Parse for FieldPaths {
         Ok(this)
     }
 }
+
+/// The amount of field paths
+pub(crate) const INNER_TUPLE_LEN: usize = 8;
 
 ///////////////////////////////////////////////////////////////////////////////
 

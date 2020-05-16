@@ -1,3 +1,9 @@
+// This module is not being used for anything right now,
+// because expressions other than string literals can't reliably be used
+// as a `&'static str` const parameter yet
+// (they cause compiler errors depending on the nightly version).
+//
+//
 // Helpers for operating on a `&str` const parameter,
 // when `TStr` internally uses a `&'static str` const parameter instead of
 // a tuple of char type-level characters(a bunch of structs).

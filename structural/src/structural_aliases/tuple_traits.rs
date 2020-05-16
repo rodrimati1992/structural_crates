@@ -14,10 +14,10 @@ Demonstrates that you can use the `Tuple*` trait with structs.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
 by-value accessor trait impls,
-satisfying the [IntoFieldMut trait](crate::field::IntoFieldMut)
+satisfying the [IntoFieldMut trait](../../field/trait.IntoFieldMut.html)
 
 ```
-use structural::field::for_tuples::Tuple4;
+use structural::structural_aliases::tuple_traits::Tuple4;
 use structural::{StructuralExt,Structural, fp};
 
 fn sum_tuple_4(tuple: impl Tuple4<u8, u16, u32, u64>) -> u64 {
@@ -50,10 +50,10 @@ Demonstrates that you can use the `Tuple*Variant` trait with enums.
 
 Note that the `Tuple*Variant` traits require the fields to have mutable and
 by-value accessor traits,
-satisfying the ([IntoVariantFieldMut trait](../trait.IntoVariantFieldMut.html))
+satisfying the ([IntoVariantFieldMut trait](../../field/trait.IntoVariantFieldMut.html))
 
 ```
-use structural::field::Tuple2Variant;
+use structural::structural_aliases::Tuple2Variant;
 use structural::{StructuralExt,Structural,TS,fp};
 
 use std::cmp::{Ordering,PartialEq};
@@ -117,4 +117,4 @@ enum OtherEnum<T>{
 
 */
 
-pub use super::tuple_impls::*;
+pub use crate::field::tuple_impls::*;

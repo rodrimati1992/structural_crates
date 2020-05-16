@@ -1,7 +1,7 @@
 use crate::{
     field::{
-        CombinedErrs, InfallibleAccess, IntoFieldErr, IsFieldErr, RevFieldType, RevGetFieldImpl,
-        RevGetFieldMutImpl, RevIntoFieldImpl,
+        CombinedErrs, InfallibleAccess, IntoFieldErr, IsFieldErr, MovedOutFields, RevFieldErr,
+        RevFieldType, RevGetFieldImpl, RevGetFieldMutImpl, RevIntoFieldImpl, RevMoveOutFieldImpl,
     },
     NestedFieldPath,
 };
@@ -36,21 +36,35 @@ macro_rules! impl_get_nested_field_inner {
             type Ty=$fty_l;
         }
 
-        impl<'a,$($fname_a,$fty_a, $ferr_a,)* This,CombErr>
-            RevGetFieldImpl<'a,This>
-        for NestedFieldPath<($($fname_a,)*)>
+
+        impl<$($fname_a, $fty_a, $ferr_a,)* This,CombErr> RevFieldErr<This>
+            for NestedFieldPath<($($fname_a,)*)>
         where
-            This:?Sized+'a,
+            This:?Sized,
             $(
-                $fname_a: RevGetFieldImpl<'a,$receiver, Ty=$fty_a, Err=$ferr_a>,
-                $fty_a:?Sized+'a,
-                $ferr_a:IntoFieldErr< CombErr >,
+                $fname_a: RevFieldErr<$receiver, Ty=$fty_a, Err=$ferr_a>,
+                $ferr_a:IsFieldErr,
+                $fty_a:?Sized,
             )*
             ( $($ferr_a,)* ): CombinedErrs<Combined= CombErr >,
             CombErr:IsFieldErr,
         {
             type Err=CombErr;
+        }
 
+        impl<'a,$($fname_a,$fty_a,)* This,CombErr>
+            RevGetFieldImpl<'a,This>
+        for NestedFieldPath<($($fname_a,)*)>
+        where
+            This:?Sized+'a,
+            Self: RevFieldErr<This,Ty=$fty_l,Err= CombErr>,
+            CombErr: IsFieldErr,
+            $(
+                $fname_a: RevGetFieldImpl<'a,$receiver, Ty=$fty_a>,
+                $fty_a:?Sized+'a,
+                $fname_a::Err: IntoFieldErr<CombErr>,
+            )*
+        {
             #[inline(always)]
             fn rev_get_field(self,field:&'a This)->Result<&'a $fty_l,CombErr>{
                 let ($($fname_a,)*)=self.list;
@@ -62,19 +76,19 @@ macro_rules! impl_get_nested_field_inner {
         }
 
 
-        unsafe impl<'a,$($fname_a,$fty_a, $ferr_a,)* This,CombErr>
+        unsafe impl<'a,$($fname_a,$fty_a,)* This,CombErr>
             RevGetFieldMutImpl<'a,This>
         for NestedFieldPath<($($fname_a,)*)>
         where
             This:?Sized+'a,
-            $(
-                $fname_a: RevGetFieldMutImpl<'a,$receiver, Ty=$fty_a, Err=$ferr_a>,
-                $fty_a:'a,
-                $ferr_a:IntoFieldErr< CombErr >,
-            )*
             Self:RevGetFieldImpl<'a,This,Ty=$fty_l,Err=CombErr>,
+            CombErr: IsFieldErr,
+            $(
+                $fname_a: RevGetFieldMutImpl<'a,$receiver, Ty=$fty_a>,
+                $fty_a:'a,
+                $fname_a::Err: IntoFieldErr<CombErr>,
+            )*
             $fty_l: Sized,
-            CombErr:IsFieldErr,
         {
             #[inline(always)]
             fn rev_get_field_mut(self,field:&'a mut This)->Result<&'a mut $fty_l,CombErr >{
@@ -85,6 +99,7 @@ macro_rules! impl_get_nested_field_inner {
                 Ok(field)
             }
 
+            #[inline(always)]
             unsafe fn rev_get_field_raw_mut(
                 self,
                 field:*mut  This
@@ -101,20 +116,18 @@ macro_rules! impl_get_nested_field_inner {
         }
 
 
-        impl<'a,$($fname_a, $fty_a:'a, $ferr_a,)* This ,CombErr>
-            RevIntoFieldImpl<'a,This>
+        impl<$($fname_a, $fty_a, $ferr_a,)* This ,CombErr>
+            RevIntoFieldImpl<This>
         for NestedFieldPath<($($fname_a,)*)>
         where
-            Self:RevGetFieldImpl<'a,This,Ty=$fty_l,Err=CombErr>,
+            Self: RevFieldErr<This,Ty=$fty_l,Err=CombErr>,
             CombErr:IsFieldErr,
 
-            This:?Sized+'a,
-            $fname0: RevIntoFieldImpl< 'a, This, Ty=$fty0, Err=$ferr0>,
-
+            This:?Sized,
+            $fname0: RevIntoFieldImpl<This, Ty=$fty0, Err=$ferr0>,
             $(
-                $fname_s: RevIntoFieldImpl<'a, $fty_m, Ty=$fty_s, Err=$ferr_s>,
+                $fname_s: RevIntoFieldImpl<$fty_m, Ty=$fty_s, Err=$ferr_s>,
             )*
-
             $( $ferr_a:IntoFieldErr< CombErr >, )*
         {
             #[inline(always)]
@@ -129,7 +142,6 @@ macro_rules! impl_get_nested_field_inner {
                 Ok(field)
             }
         }
-
     };
     (
         ($fname0:ident $ferr0:ident $fty0:ident)
@@ -223,12 +235,18 @@ where
     type Ty = This;
 }
 
+impl<This> RevFieldErr<This> for NestedFieldPath<()>
+where
+    This: ?Sized,
+{
+    type Err = InfallibleAccess;
+}
+
 impl<'a, This> RevGetFieldImpl<'a, This> for NestedFieldPath<()>
 where
     This: ?Sized + 'a,
 {
-    type Err = InfallibleAccess;
-
+    #[inline(always)]
     fn rev_get_field(self, this: &'a This) -> Result<&'a Self::Ty, Self::Err> {
         Ok(this)
     }
@@ -238,19 +256,19 @@ unsafe impl<'a, This> RevGetFieldMutImpl<'a, This> for NestedFieldPath<()>
 where
     This: ?Sized + 'a,
 {
+    #[inline(always)]
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut Self::Ty, Self::Err> {
         Ok(this)
     }
 
+    #[inline(always)]
     unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut Self::Ty, Self::Err> {
         Ok(this)
     }
 }
 
-impl<'a, This> RevIntoFieldImpl<'a, This> for NestedFieldPath<()>
-where
-    This: Sized + 'a,
-{
+impl<This> RevIntoFieldImpl<This> for NestedFieldPath<()> {
+    #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<Self::Ty, Self::Err> {
         Ok(this)
     }
@@ -268,13 +286,20 @@ where
     type Ty = F0::Ty;
 }
 
+impl<This, F0> RevFieldErr<This> for NestedFieldPath<(F0,)>
+where
+    This: ?Sized,
+    F0: RevFieldErr<This>,
+{
+    type Err = F0::Err;
+}
+
 impl<'a, This, F0> RevGetFieldImpl<'a, This> for NestedFieldPath<(F0,)>
 where
     This: ?Sized + 'a,
     F0: RevGetFieldImpl<'a, This>,
 {
-    type Err = F0::Err;
-
+    #[inline(always)]
     fn rev_get_field(self, this: &'a This) -> Result<&'a F0::Ty, F0::Err> {
         self.list.0.rev_get_field(this)
     }
@@ -285,25 +310,46 @@ where
     This: ?Sized + 'a,
     F0: RevGetFieldMutImpl<'a, This>,
 {
+    #[inline(always)]
     fn rev_get_field_mut(self, this: &'a mut This) -> Result<&'a mut F0::Ty, F0::Err> {
         self.list.0.rev_get_field_mut(this)
     }
 
+    #[inline(always)]
     unsafe fn rev_get_field_raw_mut(self, this: *mut This) -> Result<*mut F0::Ty, F0::Err> {
         self.list.0.rev_get_field_raw_mut(this)
     }
 }
 
-impl<'a, This, F0> RevIntoFieldImpl<'a, This> for NestedFieldPath<(F0,)>
+impl<This, F0> RevIntoFieldImpl<This> for NestedFieldPath<(F0,)>
 where
-    This: ?Sized + 'a,
-    F0: RevIntoFieldImpl<'a, This>,
+    This: ?Sized,
+    F0: RevIntoFieldImpl<This>,
 {
+    #[inline(always)]
     fn rev_into_field(self, this: This) -> Result<F0::Ty, F0::Err>
     where
         This: Sized,
         F0::Ty: Sized,
     {
         self.list.0.rev_into_field(this)
+    }
+}
+
+unsafe impl<This, F0> RevMoveOutFieldImpl<This> for NestedFieldPath<(F0,)>
+where
+    This: ?Sized,
+    F0: RevMoveOutFieldImpl<This>,
+{
+    #[inline(always)]
+    unsafe fn rev_move_out_field(
+        self,
+        this: &mut This,
+        moved: &mut MovedOutFields,
+    ) -> Result<Self::Ty, Self::Err>
+    where
+        Self::Ty: Sized,
+    {
+        self.list.0.rev_move_out_field(this, moved)
     }
 }

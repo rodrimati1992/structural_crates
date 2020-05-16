@@ -266,7 +266,7 @@ impl ReplaceBounds {
 
     pub(crate) fn get_docs(&self, variant_name: IdentType<'_>) -> String {
         let replacement = match variant_name {
-            IdentType::Ident(ident) => format!("TS!({})", ident),
+            IdentType::Ident(ident) => format!("TS!({})", ident.display()),
             IdentType::Generic(ident) => ident.to_string(),
             IdentType::SomeType(ty) => ty.to_token_stream().to_string(),
         };

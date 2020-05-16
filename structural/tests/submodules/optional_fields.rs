@@ -1,8 +1,12 @@
-use crate::{
+use structural::{
     enums::IsVariant,
     field::{IntoFieldMut, IntoVariantFieldMut},
-    Structural, StructuralExt,
+    field_path_aliases, fp, tstr_aliases, Structural, StructuralExt,
+    _private_impl_getters_for_derive_enum, _private_impl_getters_for_derive_struct, TS,
 };
+
+// For tests
+use structural::assert_equal_bounds;
 
 field_path_aliases! {
     mod names{
@@ -29,10 +33,12 @@ _private_impl_getters_for_derive_struct! {
     impl[] StructManual
     where[]
     {
-        (IntoFieldMut < a : Option<u32>,names::a,"a",> )
-        (IntoFieldMut < b : Option<u64>,names::b,"b",> )
-        (IntoFieldMut < c : Option<&'static str>,names::c,"c",> )
-        (IntoFieldMut < d : Option<bool>,names::d,"d",> )
+        DropFields{ drop_fields={just_fields,} }
+
+        (IntoFieldMut < a : Option<u32>,0,names::a,"a",> )
+        (IntoFieldMut < b : Option<u64>,1,names::b,"b",> )
+        (IntoFieldMut < c : Option<&'static str>,2,names::c,"c",> )
+        (IntoFieldMut < d : Option<bool>,3,names::d,"d",> )
     }
 }
 
@@ -155,22 +161,25 @@ _private_impl_getters_for_derive_enum! {
     where[]
     {
         enum=EnumManual
+        drop_fields={just_fields,}
         variant_count=TS!(3),
         (
             A,
             strings::A,
             kind=regular,
+            not_public(),
             fields(
-                (IntoVariantFieldMut,a:Option<u32>,strings::a)
-                (IntoVariantFieldMut,b:Option<u64>,strings::b)
-                (IntoVariantFieldMut,c:Option<&'static str>,strings::c)
-                (IntoVariantFieldMut,d:Option<bool>,strings::d)
+                (IntoVariantFieldMut,a:Option<u32>,dropping(a, 0),strings::a)
+                (IntoVariantFieldMut,b:Option<u64>,dropping(b, 1),strings::b)
+                (IntoVariantFieldMut,c:Option<&'static str>,dropping(c, 2),strings::c)
+                (IntoVariantFieldMut,d:Option<bool>,dropping(d, 3),strings::d)
             )
         )
         (
             C,
             strings::C,
             kind=regular,
+            not_public(),
             fields()
         )
     }

@@ -24,6 +24,9 @@ with documentation describing all the accessor trait impls for the type.
 - Implementations of the accessor traits ([`GetField`]/[`GetFieldMut`]/[`IntoField`])
 for pub fields.
 
+- Implementation of the [`DropFields`] trait,
+if the type has by-value accessors (implements [`IntoField`]) for any field.
+
 - A trait named `<DerivingType>_SI`,aliasing the accessor traits for the type,
 implemented for all types with the same accessor trait impls.
 
@@ -32,7 +35,7 @@ to use the struct (or any other struct that implements the same accessor traits)
 in a newtype variant,by annotating the variant with
 `#[struc(newtype(bounds="<DerivingType>_VSI<@variant>"))]`.
 
-All of these can be overriden.
+Many of these can be overriden.
 
 [`GetField`]: ../../field/trait.GetField.html
 [`GetFieldMut`]: ../../field/trait.GetFieldMut.html
@@ -42,6 +45,59 @@ All of these can be overriden.
 [`IntoVariantField`]: ../../field/trait.IntoVariantField.html
 [`TStr`]: ../../struct.TStr.html
 
+[`StructuralExt::into_fields`]: ../../trait.StructuralExt.html#method.into_fields
+
+[`StrucWrapper::vals`]: ../../struct.StrucWrapper.html#method.vals
+
+[`DropFields`]: ../../field/ownership/trait.DropFields.html
+
+[`DropFields::drop_fields`]:
+../../field/ownership/trait.DropFields.html#tymethod.drop_fields
+
+[`DropFields::pre_move`]:
+../../field/ownership/trait.DropFields.html#tymethod.pre_move
+
+[`PrePostDropFields`]: ../../field/ownership/trait.PrePostDropFields.html
+
+[`PrePostDropFields::pre_drop`]:
+../../field/ownership/trait.PrePostDropFields.html#method.pre_drop
+
+[`PrePostDropFields::post_drop`]:
+../../field/ownership/trait.PrePostDropFields.html#method.post_drop
+
+<span id="drop-behavior-section"></span>
+# Drop behavior
+
+When converting a type into multiple fields by value
+(using [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]),
+the regular destructor (`Drop::drop`) won't run,
+instead the steps [in the section below](#drop-order-section) will happen.
+
+If your type has code that must run when it's dropped,
+you can use the [`#[struc(pre_move="foo_function")]`](#strucpre_move) attribute to
+run that code before the type is converted into multiple fields by value,
+
+For an example of using the `#[struc(pre_move="foo")]` attribute,[look here](#with-pre-move).
+
+<span id="drop-order-section"></span>
+### Drop order
+
+The order of operations when invoking [`StructuralExt::into_fields`] or [`StrucWrapper::vals`]
+is this by default:
+
+- Call [`DropFields::pre_move`].
+
+- Move out the fields.
+
+- Call [`PrePostDropFields::pre_drop`].
+
+- Drop the public fields (those with accessor impls) that weren't moved out,in declaration order.
+
+- Drop the private fields(fields that don't have accessor impls),in declaration order.
+
+- Call [`PrePostDropFields::post_drop`].
+
+- Return the moved out fields
 
 # Container Attributes
 
@@ -93,6 +149,34 @@ For this enum:`pub enum Foo{Bar,Baz}`<br>
 This macro would generate:`pub type Foo_VC=TS!(2);`<br>
 As well as documentaion explaining what the alias is.
 
+### `#[struc(pre_move="foo")]`
+
+This only has an effect for types with at least one by-value accessor impl.
+
+Changes the implementation of [`DropFields::pre_move`] to run the `foo` function,
+allowing custom code to run before the type is converted into multiple fields by value.
+
+For enums: `foo` is called before calling `DropFields::pre_move` on
+the delegated-to field in newtype variants.
+
+For an example of using the `#[struc(pre_move="foo")]` attribute,[look here](#with-pre-move).
+
+For a reference on the what happens when converting a type into multiple fields by value
+[go here](#drop-behavior-section).
+
+### `#[struc(pre_post_drop_fields)]`
+
+This only has an effect for types with at least one by-value accessor impl.
+
+Changes the implementation of [`DropFields`] to run
+[`PrePostDropFields::pre_drop`] before and [`PrePostDropFields::post_drop`]
+after the non-moved-out fields are dropped in [`DropFields::drop_fields`].
+
+This requires a manual implementation of [`PrePostDropFields`].
+
+For a reference on the what happens when converting a type into multiple fields by value
+[go here](#drop-behavior-section).
+
 # Variant Attributes
 
 ### `#[struc(rename="<new_name>")]`
@@ -142,11 +226,11 @@ The name can be anything,including non-ascii identifiers.
 This requires the `nightly_impl_fields` cargo feature
 (or `impl_fields` if associated type bounds stabilized after the latest release).
 
-Changes the `<DerivingType>_SI` trait (which aliases the accessor traits for this type)
+Changes the generated `*SI` traits (which aliases the accessor traits for this type)
 not to refer to the type of this field,
 instead it will be required to implement the bounds passed to this attribute.
 
-Note that these bounds are only added to the `<DerivingType>_SI` trait.
+Note that these bounds are only added to the generated `*SI` traits.
 
 [Here is the example for this attribute.](#impl-trait-fields)
 
@@ -193,6 +277,10 @@ Generates impls of the `GetField`+`GetFieldMut`+`IntoField` traits for the field
 When this attribute is used on a non-pub field,
 it'll mark the field as public for the purpose of generating accessor trait impls.
 
+When these attribute are used on enums it generates impls for the
+`GetVariantField`/`GetVariantFieldMut`/`IntoVariantField`
+traits instead of `GetField`/`GetFieldMut`/`IntoField`.
+
 # Container/Field Attributes
 
 Unless stated otherwise,
@@ -219,10 +307,16 @@ This example shows many of the ways that fields can be accessed.
 use structural::{StructuralExt,Structural,fp};
 
 fn main(){
+    let array=[
+        10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,
+        26,27,28,29,30,31,32,33,34,35,36,37,38,39,30,31,
+    ];
+
     with_struct(Foo{
         name: "foo",
         year: 2020,
         tuple: Some((3,5,8)),
+        array,
     });
 
     with_struct(Bar{
@@ -230,6 +324,7 @@ fn main(){
         surname:"metavariable",
         year: 2020,
         tuple: Some((3,5,8)),
+        array,
     });
 }
 
@@ -286,6 +381,30 @@ where
     // it returns an `Option` wrapping all references to the fields.
     assert_eq!( foo.fields(fp!(tuple?=>0,1,2)), Some((&3,&5,&8)) );
 
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7)),
+        (&10,&11,&12,&13,&14,&15,&16,&17),
+    );
+
+    // If you access more than 8 fields,the fields method returns tuples of tuples,
+    // in which the nested tuples reference 8 fields each.
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (&10,&11,&12,&13,&14,&15,&16,&17),
+            (&18,),
+        )
+    );
+    assert_eq!(
+        foo.fields(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (&10,&11,&12,&13,&14,&15,&16,&17),
+            (&18,&19,&20,&21,&22,&23,&24,&25),
+            (&26,&27),
+        )
+    );
+
+
     ////////////////////////////////////////////////////
     ////            fields_mut method
     assert_eq!( foo.fields_mut(fp!(name, year)), (&mut "foo",&mut 2020) );
@@ -297,6 +416,60 @@ where
     );
     assert_eq!( foo.fields_mut(fp!(tuple?=>0,1,2)), Some((&mut 3, &mut 5, &mut 8)) );
 
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7)),
+        (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+    );
+
+    // If you access more than 8 fields,the `fields_mut` method returns tuples of tuples,
+    // in which the nested tuples reference 8 fields each.
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+            (&mut 18,),
+        )
+    );
+    assert_eq!(
+        foo.fields_mut(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (&mut 10, &mut 11, &mut 12, &mut 13, &mut 14, &mut 15, &mut 16, &mut 17),
+            (&mut 18, &mut 19, &mut 20, &mut 21, &mut 22, &mut 23, &mut 24, &mut 25),
+            (&mut 26, &mut 27),
+        )
+    );
+
+    ////////////////////////////////////////////////////
+    ////            into_fields method
+    assert_eq!( foo.clone().into_fields(fp!(name, year)), ("foo",2020) );
+    assert_eq!( foo.clone().into_fields(fp!(=>name,year)), ("foo",2020) );
+
+    assert_eq!( foo.clone().into_fields(fp!(tuple?=>0,1,2)), Some((3, 5, 8)) );
+
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7)),
+        (10, 11, 12, 13, 14, 15, 16, 17),
+    );
+
+    // If you access more than 8 fields,the `into_fields` method returns tuples of tuples,
+    // in which the nested tuples have 8 fields each.
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7,8)),
+        (
+            (10, 11, 12, 13, 14, 15, 16, 17),
+            (18,),
+        )
+    );
+    assert_eq!(
+        foo.clone().into_fields(fp!(array=>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)),
+        (
+            (10, 11, 12, 13, 14, 15, 16, 17),
+            (18, 19, 20, 21, 22, 23, 24, 25),
+            (26, 27),
+        )
+    );
+
+
 }
 
 #[derive(Structural,Clone)]
@@ -305,6 +478,7 @@ struct Foo{
     name: &'static str,
     year: i64,
     tuple: Option<(u32,u32,u32)>,
+    array: [u8;32],
 }
 
 #[derive(Structural,Clone)]
@@ -315,6 +489,7 @@ struct Bar{
     surname:&'static str,
     year:i64,
     tuple: Option<(u32,u32,u32)>,
+    array: [u8;32],
 }
 
 
@@ -727,5 +902,87 @@ assert_eq!( letuce.field_mut(fp!(::"Ziemniak"."centymetry objętości")), None )
 assert_eq!( letuce.field_mut(fp!(::"生菜"."树叶")), Some(&mut 21) );
 
 ```
+
+<span id="with-pre-move"></span>
+### Using the `#[struc(pre_move="foo")]` attribute
+
+This demonstrates how you can run code when converting a type into multiple fields by value.
+
+```rust
+use structural::{fp, StructuralExt, Structural};
+
+{
+    let mut vector=Vec::new();
+    drop(WithDropLogic{
+        vector: &mut vector,
+        x: 0,
+        y: 0,
+        z: 0
+    });
+    // The vector was written to in WithDropLogic's impl of `Drop::drop`
+    assert_eq!(vector, [1001]);
+}
+{
+    let mut vector=Vec::new();
+    let this=WithDropLogic{
+        vector: &mut vector,
+        x: 3,
+        y: 5,
+        z: 8
+    };
+    assert_eq!(into_xyz(this), (3, 5, 8));
+    // The vector was written to in `WithDropLogic::drop_`,
+    // because `DropFields::pre_move` delegates to it.
+    // (`WithDropLogic::drop_` was passed to the `#[struc(pre_move="...")]` attribute)
+    assert_eq!(vector, [1001]);
+}
+{
+    let this=Variables{
+        x: 13,
+        y: 21,
+        z: 34,
+    };
+    assert_eq!(into_xyz(this), (13, 21, 34));
+}
+
+// The `Variables_SI` trait was generated by the `Structural` derive on `Variables`,
+// aliasing its accessor trait impls.
+fn into_xyz(this: impl Variables_SI)->(u32,u32,u32) {
+    this.into_fields(fp!(x,y,z))
+}
+
+
+#[derive(Structural)]
+struct Variables{
+    pub x: u32,
+    pub y: u32,
+    pub z: u32,
+}
+
+#[derive(Structural)]
+# #[struc(no_trait)]
+#[struc(pre_move="WithDropLogic::drop_")]
+struct WithDropLogic<'a>{
+    vector: &'a mut Vec<u32>,
+    pub x: u32,
+    pub y: u32,
+    pub z: u32,
+}
+
+impl WithDropLogic<'_>{
+    fn drop_(&mut self){
+        self.vector.push(1001);
+    }
+}
+
+impl Drop for WithDropLogic<'_>{
+    fn drop(&mut self){
+        self.drop_();
+    }
+}
+
+
+```
+
 
 */

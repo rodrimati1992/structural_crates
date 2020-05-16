@@ -25,6 +25,8 @@ use std_::{
 #[cfg(test)]
 mod tests;
 
+pub mod array_paths;
+
 mod to_usize;
 
 include! { "./path/path_components.rs" }
@@ -83,6 +85,17 @@ impl<T> Sealed for TStr<T> {}
 /// This type is expected to implement `RevGetFieldImpl`,`RevGetFieldMutImpl`, `RevIntoFieldImpl`.
 pub trait IsSingleFieldPath: Sized {}
 
+/// A marker trait for field paths of non-nested field(s).
+///
+/// # Safety
+///
+/// If this type implements any of the
+/// `RevGetFieldImpl`/`RevGetFieldMutImpl`/`RevIntoFieldImpl` traits,
+/// it must delegate those impls to non-nested
+/// `Get*Field`/`Get*FieldMut`/`Into*Field` impls
+/// of the `this` parameter (the `This` type parameter in the `Rev*` traits).
+pub unsafe trait ShallowFieldPath: Sized {}
+
 /// A marker trait for field paths that refer to multiple fields
 ///
 /// # Expectations
@@ -105,6 +118,8 @@ pub trait IsMultiFieldPath: Sized {
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<T> IsSingleFieldPath for NestedFieldPath<T> {}
+
+unsafe impl<F0> ShallowFieldPath for NestedFieldPath<(F0,)> where F0: ShallowFieldPath {}
 
 impl<T> IsMultiFieldPath for NestedFieldPath<T> {
     type PathUniqueness = UniquePaths;
@@ -257,7 +272,7 @@ impl_cmp_traits! {
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`] contains unique field paths,
 /// in which no path is a prefix of any other path in the set,
-/// this is required to call `StructuralExt::fields_mut`.
+/// this is required to call `StructuralExt::fields_mut` or `StructuralExt::into_fields`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html
@@ -266,8 +281,8 @@ pub struct UniquePaths;
 
 /// A merker type indicating that a ([`Nested`])[`FieldPathSet`]
 /// might not contain unique field paths.
-/// Its not possible to pass a `FieldPathSet<_,AliasedPaths>` to
-/// `StructuralExt::fields_mut`.
+/// It's not possible to pass a `FieldPathSet<_,AliasedPaths>` to
+/// `StructuralExt::fields_mut` or `StructuralExt::into_fields`.
 ///
 /// [`FieldPathSet`]: ../struct.FieldPathSet.html
 /// [`Nested`]: ../struct.NestedFieldPathSet.html
@@ -318,16 +333,79 @@ impl<T> FieldPathSet<(T,), UniquePaths> {
 }
 
 impl<T> FieldPathSet<T, AliasedPaths> {
-    /// Constructs a FieldPathSet from a tuple of field paths.
+    /// Constructs a FieldPathSet from a tuple of up to 8 field paths.
     ///
-    /// Note that this doesn't enforce that its input is in fact a tuple of field paths
-    /// (because `const fn` can't have bounds yet).
+    /// Note that this doesn't enforce that its input is in fact a tuple of
+    /// up to 8 field paths (because `const fn` can't have bounds yet).
     ///
-    /// To be able to access multiple fields mutably at the same time,
+    /// To be able to access multiple fields mutably/by value at the same time,
     /// you must call the unsafe `.upgrade()` method.
+    ///
+    /// To access more than 8 fields, you must use the [large constructor](#method.large).
     pub const fn many(paths: T) -> Self {
         FieldPathSet {
             paths: ManuallyDrop::new(paths),
+            uniqueness: PhantomData,
+        }
+    }
+}
+
+impl<T> FieldPathSet<LargePathSet<T>, AliasedPaths> {
+    /// Constructs a FieldPathSet from a tuple of tuples of field paths,
+    /// for accessing up to 64 fields.
+    ///
+    /// Note that this doesn't enforce that its input is in fact a
+    /// tuple of tuples of field paths (because `const fn` can't have bounds yet).
+    ///
+    /// To be able to access multiple fields mutably/by value at the same time,
+    /// you must call the unsafe `.upgrade()` method.
+    ///
+    /// # Example
+    ///
+    /// This example demonstrates calling this function with 8 and 9 field paths,
+    /// as well as the return value of `StructuralExt` methods for both path sets.
+    ///
+    /// Accessing over 8 fields returns a tuple of tuples (8 fields each).
+    ///
+    /// You can also destructure the tuple returned by accessor methods by using
+    /// the [`field_pat`] macro, usable from 0 to 64 fields.
+    ///
+    /// ```rust
+    /// use structural::{ FieldPathSet, StructuralExt, path_tuple, ts };
+    ///
+    /// let array = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    ///
+    /// {
+    ///     let path8 = FieldPathSet::large(path_tuple!(
+    ///         ts!(0), ts!(1), ts!(2), ts!(3), ts!(4), ts!(5), ts!(6), ts!(7),
+    ///     ));
+    ///     
+    ///     assert_eq!(
+    ///         array.cloned_fields(path8),
+    ///         (10, 11, 12, 13, 14, 15, 16, 17),
+    ///     );
+    /// }
+    /// {
+    ///     let path9 = FieldPathSet::large(path_tuple!(
+    ///         ts!(0), ts!(1), ts!(2), ts!(3), ts!(4), ts!(5), ts!(6), ts!(7),
+    ///         ts!(8),
+    ///     ));
+    ///     
+    ///     assert_eq!(
+    ///         array.cloned_fields(path9),
+    ///         (
+    ///             (10, 11, 12, 13, 14, 15, 16, 17),
+    ///             (18,),
+    ///         ),
+    ///     );
+    /// }
+    ///
+    /// ```
+    ///
+    /// [`field_pat`]: ./macro.field_pat.html    
+    pub const fn large(paths: T) -> Self {
+        FieldPathSet {
+            paths: ManuallyDrop::new(LargePathSet(paths)),
             uniqueness: PhantomData,
         }
     }
@@ -373,7 +451,7 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the field paths are unique,
+    /// You must ensure that all the field paths in the `T` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> FieldPathSet<T, UniquePaths> {
@@ -384,7 +462,8 @@ impl<T> FieldPathSet<T, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that if `U==UniquePaths`,then all the field paths are unique,
+    /// You must ensure that if `U==UniquePaths`,
+    /// then all the field paths in the `T` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> FieldPathSet<T, U> {
@@ -548,7 +627,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     ///
     /// # Safety
     ///
-    /// You must ensure that all the field paths in `S` are unique,
+    /// You must ensure that all the field paths in in the `S` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn upgrade_unchecked(self) -> NestedFieldPathSet<F, S, UniquePaths> {
@@ -561,7 +640,7 @@ impl<F, S> NestedFieldPathSet<F, S, AliasedPaths> {
     /// # Safety
     ///
     /// If `U == UniquePaths`,
-    /// you must ensure that all the field paths in `S` are unique,
+    /// you must ensure that all the field paths in the `S` type parameter are unique,
     /// there must be no field path that is a prefix of any other field path.
     #[inline(always)]
     pub const unsafe fn set_uniqueness<U>(self) -> NestedFieldPathSet<F, S, U> {
@@ -591,9 +670,48 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A newtype wrapper used to allow `FieldPathSet` to access from 9 up to 64 fields.
+///
+/// For examples of constructing and using `FieldPathSet<LargePathSet<_>,_>` you can look at
+/// the [docs for `FieldPathSet::large`](../struct.FieldPathSet.html#method.large)
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct LargePathSet<T>(pub T);
+
+impl<T> ConstDefault for LargePathSet<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = LargePathSet(T::DEFAULT);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// A workaround for long compile-time errors.
+///
+/// The is used to work compile-time errors that are around 200 kilobytes long,
+/// caused by recusive impls.
+///
+/// This is an example of the code that triggered a long error message:
+/// ```ignore
+/// ().fields(FieldPathSet::many(panic!()))
+/// ```
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[doc(hidden)]
+pub struct SmallPathSet<T>(pub(crate) T);
+
+impl<T> ConstDefault for SmallPathSet<T>
+where
+    T: ConstDefault,
+{
+    const DEFAULT: Self = SmallPathSet(T::DEFAULT);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 /// Converts a `FieldPathSet<_,UniquePaths>` into a `FieldPathSet<_,AliasedPaths>`
 /// on the type level.
 pub trait IntoAliasing: IsMultiFieldPath {
+    /// The return value of this trait.
     type Output: IsMultiFieldPath<PathUniqueness = AliasedPaths>;
 }
 
