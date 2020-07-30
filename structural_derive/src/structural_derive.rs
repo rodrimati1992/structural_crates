@@ -25,9 +25,13 @@ use quote::{quote, ToTokens, TokenStreamExt};
 
 use syn::{punctuated::Punctuated, DeriveInput, Ident, Visibility};
 
+mod attribute_config;
+
 mod attribute_parsing;
 
 mod delegation;
+
+mod from_structural;
 
 #[cfg(test)]
 mod tests;
@@ -529,6 +533,11 @@ fn deriving_structural<'a>(
         }
     };
 
+    let from_structural_tokens = match &options.from_struc {
+        Some(fso) => from_structural::deriving_from_structural(ds, options, fso)?,
+        None => TokenStream2::new(),
+    };
+
     let mut impl_docs = String::new();
     if options.generate_docs {
         write_docs::write_datatype_docs(&mut impl_docs, DocsFor::Type, &sdt)?;
@@ -538,6 +547,8 @@ fn deriving_structural<'a>(
     let extra_where_preds = options.bounds.iter();
 
     quote!(
+        #from_structural_tokens
+
         #structural_alias_trait
 
         #soe_specific_out

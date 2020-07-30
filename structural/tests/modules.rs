@@ -30,6 +30,7 @@ mod submodules {
     mod enum_derive;
     mod field_cloner;
     mod from_structural;
+    mod from_structural_derive;
     mod impl_struct;
     mod into_fields;
     mod make_struct;

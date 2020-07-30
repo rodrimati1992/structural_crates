@@ -63,7 +63,7 @@ all=[
 
 
 [dependencies]
-structural_derive={version="=0.4.0",path="../structural_derive"}
+structural_derive={version="=0.4.1",path="../structural_derive"}
 
 [dependencies.core_extensions]
 version="0.1.16"
