@@ -41,9 +41,11 @@ use std::error::Error as StdError;
 /// - Matching on all the variants of the enum with the switch macro,
 /// returning the same variant.
 ///
-/// # Struct Example
+/// # Struct Examples
 ///
-/// This example demonstrates how this trait can be manually implemented for structs.
+/// ### Derivation
+///
+/// This example demonstrates how this trait can be derived for structs.
 ///
 /// ```rust
 /// use structural::{convert::FromStructural, StructuralExt, Structural, fp, make_struct};
@@ -67,6 +69,41 @@ use std::error::Error as StdError;
 }
 "###
 )]
+///
+/// #[derive(Structural)]
+/// struct Point<T>{
+///     pub x: T,
+///     pub y: u32,
+/// }
+///
+/// #[derive(Debug,PartialEq,Structural)]
+/// #[struc(from_structural)]
+/// struct Entity{
+///     #[struc(public)]
+///     x: u32,
+///
+///     #[struc(public)]
+///     y: u32,
+///
+///     #[struc(init_with_lit = 100)]
+///     health: u32,
+/// }
+/// ```
+///
+///
+/// ### Semi-manual impl
+///
+/// You can implement the `FromStructural` trait manually by using the `z_impl_from_structural`
+/// macro.
+///
+/// ```rust
+///
+/// use structural::{convert::FromStructural, StructuralExt, Structural, fp, make_struct};
+///
+/// {
+///     let this = Point{x: 33, y:45};
+///     assert_eq!(this.into_struc::<Entity>(), Entity{x: 33, y: 45, health: 100});
+/// }
 ///
 /// #[derive(Structural)]
 /// struct Point<T>{
@@ -103,9 +140,54 @@ use std::error::Error as StdError;
 ///
 /// ```
 ///
-/// # Enum Example
+/// # Enum Examples
 ///
-/// This example demonstrates how this trait can be manually implemented for an enum with one
+/// ### Derivation
+///
+/// This example demonstrates how this trait can be derived for an enum with one
+/// private field.
+///
+/// ```rust
+/// use structural::{
+///     convert::FromStructural,
+///     for_examples::OptionLike,
+///     StructuralExt, Structural, switch,
+/// };
+///
+/// assert_eq!(Some(100).into_struc::<UberOption<_>>(), UberOption::Some(100, 0));
+/// assert_eq!(None.into_struc::<UberOption<u32>>(), UberOption::None);
+///
+/// assert_eq!(OptionLike::Some(3).into_struc::<UberOption<_>>(), UberOption::Some(3, 0));
+/// assert_eq!(OptionLike::None.into_struc::<UberOption<u32>>(), UberOption::None);
+///
+/// // Converting an UberOption back to itself with `FromStructural` drops the
+/// // `#[struct(not_public)]` field,because it has no accessor impls.
+/// assert_eq!(
+///     UberOption::Some(5, 200).into_struc::<UberOption<_>>(),
+///     UberOption::Some(5, 0)
+/// );
+/// assert_eq!(
+///     UberOption::None.into_struc::<UberOption<u32>>(),
+///     UberOption::None,
+/// );
+///
+/// #[derive(Debug,Structural,PartialEq)]
+/// #[struc(from_structural(bound = "T: Default"))]
+/// enum UberOption<T>{
+///     Some(
+///         T,
+///         #[struc(init_with_default)]
+///         T,
+///     ),
+///     None,
+/// }
+///
+/// ```
+///
+/// ### Semi-manual
+///
+/// This example demonstrates how this trait can be semi-manually
+/// implemented for an enum with one
 /// private field (as in a field that doesn't have accessor impls to get it).
 ///
 /// ```rust
@@ -230,7 +312,55 @@ where
 /// returning `Ok` with a variant if the parameter matches that enum variant.
 /// If the parameter doesn't match any of the enum variants,an error is returned.
 ///
-/// # Example
+/// # Enum Examples
+///
+/// ### Derived
+///
+/// This example demonstrates how this trait can be derived.
+///
+/// ```rust
+/// use structural::{
+///     convert::{EmptyTryFromError, TryFromError},
+///     for_examples::{Enum3, Enum4},
+///     Structural, StructuralExt, switch,
+/// };
+///
+/// use std::cmp::Ordering;
+///
+/// assert_eq!(
+///     Enum3::Foo(3, 5).try_into_struc::<Variants>(),
+///     Ok(Variants::Foo(3)),
+/// );
+/// assert_eq!(
+///     Enum3::Bar(Ordering::Less, None).try_into_struc::<Variants>(),
+///     Ok(Variants::Bar),
+/// );
+/// assert_eq!(
+///     Enum3::Baz{foom: "hi"}.try_into_struc::<Variants>(),
+///     Ok(Variants::Baz{foom: "hi"}),
+/// );
+///
+/// let qux=Enum4::Qux { uh: [0; 4], what: (false, false) };
+/// assert_eq!(
+///     qux.try_into_struc::<Variants>(),
+///     Err(TryFromError::with_empty_error(qux)),
+/// );
+///
+///
+/// #[derive(Structural, Copy, Clone, Debug, PartialEq)]
+/// // This attribute tells the `Structural` derive to generate the
+/// // `TryFromStructural` and `FromStructural` impls
+/// #[struc(from_structural)]
+/// enum Variants {
+///     Foo(u8),
+///     Bar,
+///     Baz { foom: &'static str },
+/// }
+///
+///  
+/// ```
+///
+/// ### Semi-manual impl
 ///
 /// This example demonstrates how this trait can be implemented with the
 /// `z_impl_try_from_structural_for_enum` macro.

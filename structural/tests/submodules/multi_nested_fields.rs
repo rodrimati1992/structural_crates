@@ -41,7 +41,7 @@ fn multi_nested_mut_refs() {
     let erased_a: &mut dyn Array2<u32> = &mut *a;
     let erased_b: &mut dyn Array2<u32> = &mut *b;
     let mut valuea = (20, erased_a);
-    let mut f = &mut ((0, 1, &mut valuea, erased_b));
+    let f = &mut ((0, 1, &mut valuea, erased_b));
 
     let (f_0, f_1, f_2_0, f_2_1_0, f_2_1_1, f_3_0, f_3_1) =
         f.fields_mut(fp!(0, 1, 2.0, 2.1.0, 2.1.1, 3.0, 3.1));
