@@ -5,7 +5,11 @@ use crate::{
     structural_alias_impl_mod::{ReplaceBounds, TypeParamBounds},
 };
 
-use super::delegation::{DelegateTo, RawMutImplParam};
+use super::{
+    attribute_config::{DropParams, FieldConfig, VariantConfig},
+    delegation::{DelegateTo, RawMutImplParam},
+    from_structural::{FromStructuralConfig, InitWith},
+};
 
 use as_derive_utils::{
     attribute_parsing::with_nested_meta,
@@ -29,8 +33,9 @@ use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub(crate) struct StructuralOptions<'a> {
+    pub(crate) from_struc: Option<FromStructuralConfig>,
     pub(crate) variants: Vec<VariantConfig>,
-    pub(crate) fields: FieldMap<FieldConfig>,
+    pub(crate) fields: FieldMap<FieldConfig<'a>>,
     pub(crate) make_variant_count_alias: bool,
     pub(crate) bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
@@ -47,6 +52,7 @@ pub(crate) struct StructuralOptions<'a> {
 impl<'a> StructuralOptions<'a> {
     fn new(_ds: &'a DataStructure<'a>, this: StructuralAttrs<'a>) -> Result<Self, syn::Error> {
         let StructuralAttrs {
+            from_struc,
             variants,
             fields,
             make_variant_count_alias,
@@ -71,6 +77,7 @@ impl<'a> StructuralOptions<'a> {
         };
 
         Ok(Self {
+            from_struc,
             variants,
             fields,
             make_variant_count_alias,
@@ -88,44 +95,10 @@ impl<'a> StructuralOptions<'a> {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
-pub(crate) struct NewtypeConfig {
-    pub(crate) replace_bounds: Option<ReplaceBounds>,
-}
-
-#[derive(Debug, Default, Clone)]
-pub(crate) struct VariantConfig {
-    pub(crate) renamed: Option<IdentOrIndex>,
-    pub(crate) is_newtype: bool,
-    pub(crate) replace_bounds: Option<ReplaceBounds>,
-}
-
-#[derive(Debug, Default)]
-pub(crate) struct FieldConfig {
-    pub(crate) access: Access,
-    pub(crate) renamed: Option<IdentOrIndex>,
-    /// Whether the type is replaced with bounds in the `<deriving_type>_SI` trait.
-    pub(crate) is_impl: Option<TypeParamBounds>,
-
-    /// Determines whether the field is considered public.
-    ///
-    /// `false`: means that the field does not get an accessor.
-    /// `true`: means that the field gets an accessor.
-    pub(crate) is_pub: bool,
-}
-
-#[derive(Debug, Clone, Default)]
-pub(crate) struct DropParams {
-    pub(crate) pre_post_drop_fields: bool,
-    pub(crate) pre_move: Option<syn::Path>,
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Default)]
 struct StructuralAttrs<'a> {
+    from_struc: Option<FromStructuralConfig>,
     variants: Vec<VariantConfig>,
-    fields: FieldMap<FieldConfig>,
+    fields: FieldMap<FieldConfig<'a>>,
     make_variant_count_alias: Option<Span>,
     bounds: Punctuated<WherePredicate, syn::Token!(,)>,
 
@@ -165,17 +138,28 @@ enum ParseContext<'a> {
 pub(crate) fn parse_attrs_for_structural<'a>(
     ds: &'a DataStructure<'a>,
 ) -> Result<StructuralOptions<'a>, syn::Error> {
-    let mut this = StructuralAttrs::default();
-    this.variants = vec![VariantConfig::default(); ds.variants.len()];
-    this.with_trait_alias = true;
-    this.generate_docs = matches!(syn::Visibility::Public{..} = ds.vis);
-
-    this.fields = FieldMap::with(ds, |field| FieldConfig {
-        access: Default::default(),
-        renamed: Default::default(),
-        is_impl: None,
-        is_pub: field.is_public() || ds.data_variant == DataVariant::Enum,
-    });
+    let mut this = StructuralAttrs {
+        from_struc: None,
+        variants: vec![VariantConfig::default(); ds.variants.len()],
+        fields: FieldMap::with(ds, |field| FieldConfig {
+            field,
+            access: Default::default(),
+            renamed: Default::default(),
+            init_with: None,
+            is_impl: None,
+            is_pub: field.is_public() || ds.data_variant == DataVariant::Enum,
+        }),
+        make_variant_count_alias: None,
+        bounds: Punctuated::new(),
+        drop_params: DropParams::default(),
+        debug_print: false,
+        with_trait_alias: true,
+        generate_docs: matches!(syn::Visibility::Public{..} = ds.vis),
+        non_exhaustive_attr: false,
+        delegate_to: None,
+        errors: LinearResult::ok(()),
+        _marker: PhantomData,
+    };
 
     let name = ds.name;
 
@@ -287,6 +271,19 @@ fn parse_sabi_attr<'a>(
                 }
                 let bounds: TypeParamBounds = value.parse::<ParsePunctuated<_, _>>()?.list;
                 this.fields[field].is_impl = Some(bounds)
+            } else if path.is_ident("init_with_fn") {
+                set_init_with(this, InitWith::Fn(value.parse()?), field, &path)?;
+            } else if path.is_ident("init_with_val") {
+                set_init_with(this, InitWith::Val(value.parse()?), field, &path)?;
+            } else if path.is_ident("init_with_lit") {
+                set_init_with(this, InitWith::Lit(Lit::Str(value)), field, &path)?;
+            } else {
+                return Err(make_err(&path));
+            }
+        }
+        (ParseContext::Field { field, .. }, Meta::NameValue(MetaNameValue { lit, path, .. })) => {
+            if path.is_ident("init_with_lit") {
+                set_init_with(this, InitWith::Lit(lit), field, &path)?;
             } else {
                 return Err(make_err(&path));
             }
@@ -298,6 +295,8 @@ fn parse_sabi_attr<'a>(
                 this.fields[field].is_pub = false;
             } else if path.is_ident("delegate_to") {
                 parse_delegate_to(this, Default::default(), path.span(), field)?;
+            } else if path.is_ident("init_with_default") {
+                set_init_with(this, InitWith::Default, field, &path)?;
             } else {
                 return Err(make_err(&path));
             }
@@ -386,8 +385,17 @@ fn parse_sabi_attr<'a>(
                 for (_, field) in this.fields.iter_mut() {
                     field.is_pub = false;
                 }
+            } else if path.is_ident("from_structural") {
+                this.from_struc = Some(parse_from_struc(Punctuated::new())?);
             } else {
                 return Err(make_err(&path));
+            }
+        }
+        (ParseContext::TypeAttr { .. }, Meta::List(list)) => {
+            if list.path.is_ident("from_structural") {
+                this.from_struc = Some(parse_from_struc(list.nested)?);
+            } else {
+                return Err(make_err(&list));
             }
         }
         (
@@ -421,6 +429,24 @@ fn parse_sabi_attr<'a>(
         }
         (_, x) => return Err(make_err(&x)),
     }
+    Ok(())
+}
+
+fn set_init_with<'a>(
+    this: &mut StructuralAttrs<'a>,
+    init_with: InitWith,
+    field: &'a Field<'a>,
+    tokens: &dyn ToTokens,
+) -> Result<(), syn::Error> {
+    if this.from_struc.is_none() {
+        return_spanned_err!(
+            tokens,
+            "Cannot use this attribute without deriving FromStructural.\n\
+             You can use the `#[struc(from_structural)]` attribute to derive FromStructural.\n\
+            "
+        )
+    }
+    this.fields[field].init_with = Some(init_with);
     Ok(())
 }
 
@@ -504,4 +530,34 @@ fn parse_is_newtype(
         }
         Ok(())
     })
+}
+
+fn parse_from_struc(
+    list: Punctuated<NestedMeta, syn::Token![,]>,
+) -> Result<FromStructuralConfig, syn::Error> {
+    let mut cfg = FromStructuralConfig {
+        bounds: Punctuated::new(),
+    };
+
+    const ATTR_MSG: &str = "unexpected `#[struc(from_structural())]` subattribute";
+
+    with_nested_meta("from_structural", list, |attr| {
+        match attr {
+            Meta::NameValue(MetaNameValue {
+                path,
+                lit: Lit::Str(lit),
+                ..
+            }) => {
+                if path.is_ident("bound") {
+                    cfg.bounds.push(lit.parse::<WherePredicate>()?);
+                } else {
+                    return_spanned_err!(path, "{}", ATTR_MSG)
+                }
+            }
+            _ => return_spanned_err!(attr, "{}", ATTR_MSG),
+        }
+        Ok(())
+    })?;
+
+    Ok(cfg)
 }

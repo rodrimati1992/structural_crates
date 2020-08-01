@@ -121,6 +121,16 @@ Removes the docs for the generated traits,and impl of `Structural`.
 
 The documentation describes variants and fields that the accessor trait impls represent.
 
+### `#[struc(from_structural)]`
+
+Causes the [`FromStructural`] and [`TryFromStructural`] traits to be derived.
+
+The trait impls require that the converted-from type has
+by-value accessors with the same names and type as this type's public fields.
+
+Private fields must be annotated with one of the [`#[struc(init_*)]`](#init-attributes)
+attributes.
+
 ### `#[non_exhaustive]`
 
 This is only usable on enums.
@@ -251,6 +261,77 @@ Optional arguments for `delegate_to`:
 - `mut_bound="T:bound"`: Adds the constraint to the `GetField` impl.
 - `into_bound="T:bound"`: Adds the constraint to the `IntoField` impl.
 
+<span id="init-attributes"></span>
+
+### `#[struc(init_with_fn = "<callable_expression>")]`
+
+This can only be used in combination with the `#[struc(from_structural)]` container attribute.
+
+Initialize the field in the `FromStructural` impl  with the return value of
+calling the `<callable_expression>` expression.
+
+The `init_*` attributes are necessary when deriving `FromStructural` in structs
+with private fields.
+
+Public fields with `init_*` attributes aren't added as bounds for the converted-from type,
+which means that removeing the `init_*` attributes is a breaking change.
+
+Examples:<br>
+- `#[struc(init_with_fn = "foo::bar")]` <br>
+- `#[struc(init_with_fn = r#"|| expensive(100, "hello") "#)]` <br>
+
+### `#[struc(init_with_val = "<expression>")]`
+
+This can only be used in combination with the `#[struc(from_structural)]` container attribute.
+
+Initialize the field in the `FromStructural` impl  with the `<expression>` expression.
+
+[`init_with_lit`](#init_with_lit) is better to initialize the field with a string literal,
+since this attribute requires escaping the string literal, or using raw strings.
+
+The `init_*` attributes are necessary when deriving `FromStructural` in structs
+
+Public fields with `init_*` attributes aren't added as bounds for the converted-from type,
+which means that removeing the `init_*` attributes is a breaking change.
+with private fields.
+
+Examples:<br>
+- `#[struc(init_with_val = "()")]`<br>
+- `#[struc(init_with_val = "100")]`<br>
+- `#[struc(init_with_val = r"100")]`<br>
+- `#[struc(init_with_val = "()")]`<br>
+
+<span id="init_with_lit"></span>
+### `#[struc(init_with_lit = <literal>)]`
+
+This can only be used in combination with the `#[struc(from_structural)]` container attribute.
+
+Initialize the field in the `FromStructural` impl  with the `<literal>` literal.
+Note that only literals parseable as `syn::Lit` can be used here,
+numbers, strings, bools, etc.
+
+The `init_*` attributes are necessary when deriving `FromStructural` in structs
+with private fields.
+
+Public fields with `init_*` attributes aren't added as bounds for the converted-from type,
+which means that removeing the `init_*` attributes is a breaking change.
+
+Examples:<br>
+- `#[struc(init_with_lit = "foo")]`<br>
+- `#[struc(init_with_lit = 100)]`<br>
+
+
+### `#[struc(init_with_default)]`
+
+This can only be used in combination with the `#[struc(from_structural)]` container attribute.
+
+Initialize the field with its default value, requires the field type to implement `Default`.
+
+The `init_*` attributes are necessary when deriving `FromStructural` in structs
+with private fields.
+
+Public fields with `init_*` attributes aren't added as bounds for the converted-from type,
+which means that removeing the `init_*` attributes is a breaking change.
 
 # Container/Variant/Field Attributes
 
@@ -983,6 +1064,9 @@ impl Drop for WithDropLogic<'_>{
 
 
 ```
+
+[`FromStructural`]: ../../convert/trait.FromStructural.html
+[`TryFromStructural`]: ../../convert/trait.TryFromStructural.html
 
 
 */

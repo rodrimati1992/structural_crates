@@ -1,5 +1,15 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
+# 0.4.3
+
+- Added opt-in FromStructural/TryFromStructural derivation,
+with the `#[struc(from_structural)]` helper attribute of the `Structural` derive.
+
+Dependencies:
+
+- Bumped the `as_derive_utils` dependency to `0.8.3`,
+which works around a false positive lifetime error in some nightly and beta rustc versions.
+
 # 0.4.0
 
 - Changed `Into*Field traits` to support moving out fields.
@@ -110,6 +120,14 @@ returning a tuple of (8 element) tuples when 9 or more fields are accessed.
     - `RangeInclusive`: since those couldn't be partially moved.
     
     - `ManuallyDrop`: since nested field access drops fields.
+
+Dependencies:
+
+- Bumped `core_extensions` dependency to `0.1.16`.
+
+- Bumped the `rustc_version` dependency to `0.2.3`
+
+- Bumped the `as_derive_utils` dependency to `0.8.2`
 
 # 0.3.1
 
