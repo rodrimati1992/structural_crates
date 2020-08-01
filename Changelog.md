@@ -1,6 +1,6 @@
 This is the changelog,summarising changes in each version(some minor changes may be ommited).
 
-# 0.4.1
+# 0.4.3
 
 - Added opt-in FromStructural/TryFromStructural derivation,
 with the `#[struc(from_structural)]` helper attribute of the `Structural` derive.
