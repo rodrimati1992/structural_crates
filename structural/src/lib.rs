@@ -1,6 +1,6 @@
 /*!
 
-This library provides field accessor traits,and emulation of structural types.
+This library provides field accessor traits and emulation of structural types.
 
 # Features
 
